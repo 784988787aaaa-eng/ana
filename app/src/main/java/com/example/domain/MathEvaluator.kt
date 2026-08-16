@@ -5,35 +5,61 @@ import java.math.RoundingMode
 
 /**
  * Safe equation evaluator using BigDecimal with full operator precedence.
+ * Fully supports Western (0-9), Eastern Arabic (٠-٩), and Persian (۰-۹) digits,
+ * standard arithmetic operators (+ - * / × ÷), and decimal separators.
  */
 fun evaluateSimpleExpression(expr: String): BigDecimal? {
     val trimmed = expr.trim()
     if (trimmed.isEmpty()) return null
-    val lastChar = trimmed.last()
-    if (lastChar in "+-*/×÷") return null
 
     return runCatching {
         val numbers = ArrayList<BigDecimal>()
         val operators = ArrayList<Char>()
         val sb = StringBuilder(16)
 
+        var seenDotInCurrentToken = false
+
         for (i in 0 until trimmed.length) {
             val c = trimmed[i]
-            if (c.isDigit() || c == '.') {
-                sb.append(c)
-            } else if (c in "+-*/×÷") {
-                if (sb.isEmpty()) return null
-                numbers.add(BigDecimal(sb.toString()))
-                sb.setLength(0)
-                operators.add(when (c) {
-                    '×' -> '*'
-                    '÷' -> '/'
-                    else -> c
-                })
+            when {
+                c.isWhitespace() -> continue
+                c in '0'..'9' -> sb.append(c)
+                c in '٠'..'٩' -> sb.append((c - '٠' + '0'.code).toChar())
+                c in '۰'..'۹' -> sb.append((c - '۰' + '0'.code).toChar())
+                c == '.' || c == ',' || c == '٫' -> {
+                    if (!seenDotInCurrentToken) {
+                        sb.append('.')
+                        seenDotInCurrentToken = true
+                    }
+                }
+                c in "+-*/×÷" -> {
+                    if (sb.isEmpty()) {
+                        // Allow unary minus at the very start of a token if no previous number
+                        if (c == '-' && numbers.isEmpty()) {
+                            sb.append('-')
+                            continue
+                        }
+                        return null
+                    }
+                    val numStr = sb.toString()
+                    if (numStr == "-" || numStr == "." || numStr == "-.") return null
+                    numbers.add(BigDecimal(numStr))
+                    sb.setLength(0)
+                    seenDotInCurrentToken = false
+
+                    operators.add(when (c) {
+                        '×' -> '*'
+                        '÷' -> '/'
+                        else -> c
+                    })
+                }
+                else -> return null // Unknown token
             }
         }
         if (sb.isNotEmpty()) {
-            numbers.add(BigDecimal(sb.toString()))
+            val numStr = sb.toString()
+            if (numStr == "-" || numStr == "." || numStr == "-.") return null
+            numbers.add(BigDecimal(numStr))
         }
 
         if (numbers.isEmpty() || numbers.size != operators.size + 1) return null
@@ -71,5 +97,6 @@ fun evaluateSimpleExpression(expr: String): BigDecimal? {
         result
     }.getOrNull()
 }
+
 
 

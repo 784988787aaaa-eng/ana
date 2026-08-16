@@ -88,10 +88,11 @@ fun ComprehensiveReportDialog(
         val foreignMap = mutableMapOf<String, BigDecimal>()
 
         customers.forEach { c ->
-            val bdVal = BigDecimal.valueOf(c.netDebt)
-            if (c.netDebt > 0.0) {
+            val bdVal = c.defaultCurrencyTotal
+            val cmp = bdVal.compareTo(BigDecimal.ZERO)
+            if (cmp > 0) {
                 owedByThem = owedByThem.add(bdVal)
-            } else if (c.netDebt < 0.0) {
+            } else if (cmp < 0) {
                 owedToThem = owedToThem.add(bdVal.abs())
             }
             c.foreignDebts.forEach { (curr, valBd) ->

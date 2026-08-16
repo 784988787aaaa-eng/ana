@@ -11,8 +11,10 @@ import com.example.ui.state.CustomersUiState
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-private const val PREFIX_CAT_LINK = "CAT_LINK_"
-private const val CATEGORY_CLOSED = "CLOSED"
+import com.example.ui.viewmodel.FinanceConstants
+
+private const val PREFIX_CAT_LINK = HabayebCategoryManager.PREFIX_CAT_LINK
+private const val CATEGORY_CLOSED = FinanceConstants.CATEGORY_CLOSED
 
 data class HabayebFilterParameters(
     val query: String,

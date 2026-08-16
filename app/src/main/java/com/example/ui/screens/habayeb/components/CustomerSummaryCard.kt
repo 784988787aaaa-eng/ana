@@ -99,10 +99,7 @@ fun BalanceCompactChip(
     val surfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     val outlineColor = MaterialTheme.colorScheme.outline
 
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val chipState = remember(amount, currencyCode, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, surfaceVariantColor, outlineColor, onSurfaceColor, onSurfaceVariantColor) {
+    val chipState = remember(amount, currencyCode, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, surfaceVariantColor, outlineColor) {
         val cmp = amount.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO)
         val isZero = cmp == 0
 
@@ -112,7 +109,7 @@ fun BalanceCompactChip(
         val greenHeaderColor = if (isDark) ChipGreenHeaderDark else ChipGreenHeaderLight
 
         val (chipColor, headerTextColor, stateLabel) = when {
-            isZero -> Triple(if (isDark) onSurfaceColor else outlineColor, if (isDark) onSurfaceVariantColor else outlineColor, clearedStr)
+            isZero -> Triple(outlineColor, outlineColor, clearedStr)
             cmp > 0 -> Triple(redColor, redHeaderColor, remainingOnHimStr)
             cmp < 0 -> Triple(greenColor, greenHeaderColor, remainingForHimStr)
             else -> Triple(surfaceVariantColor, surfaceVariantColor, clearedStr)

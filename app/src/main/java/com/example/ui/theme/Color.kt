@@ -12,7 +12,7 @@ val EmeraldPrimary = Color(0xFF4B36A2)      // Premium Glowing Violet/Purple (#4
 val EmeraldLight = Color(0xFF8C7CFF)        // Lighter Purple/Lavender for beautiful gradients (#8C7CFF)
 val CoralAccent = Color(0xFF00B2FE)         // Neon Cyan / Electric Blue Accent (#00B2FE)
 
-val EmeraldDark = Color(0xFF9E86FF)         // Luminous Lavender for ultra-clear high contrast primary in dark mode
+val EmeraldDark = Color(0xFF4B36A2)         // Rich Glowing Violet/Purple directly in dark mode
 val CoralDark = Color(0xFF00B2FE)           // Rich Glowing Neon Cyan directly in dark mode
 val IvoryBackground = Color(0xFFF0F3FC)     // Soft modern lavender-tinted background (Eye safe)
 

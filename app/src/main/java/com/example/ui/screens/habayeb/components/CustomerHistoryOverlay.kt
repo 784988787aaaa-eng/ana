@@ -156,15 +156,11 @@ fun CustomerHistoryOverlay(
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
@@ -267,7 +263,6 @@ fun CustomerHistoryOverlay(
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
-    }
     }
 
     CustomerHistoryShareBottomSheet(

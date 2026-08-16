@@ -1,6 +1,7 @@
 package com.example.ui.screens.habayeb.utils
 
 import com.example.data.local.entities.HabayebTransaction
+import com.example.domain.model.TransactionType
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -58,20 +59,22 @@ object CustomerHistoryCalculator {
             currencySet.add(txCurrency)
 
             val safeBd = bdAmount.setScale(4, RoundingMode.HALF_EVEN)
+            val txType = TransactionType.fromValue(tx.type)
 
             // Accumulate by type using exact BigDecimal math
-            when (tx.type) {
-                "OWED_BY_THEM" -> owedByThemBD[txCurrency] = (owedByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
-                "PAYMENT_BY_THEM" -> paymentByThemBD[txCurrency] = (paymentByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
-                "OWED_TO_THEM" -> owedToThemBD[txCurrency] = (owedToThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
-                "PAYMENT_TO_THEM" -> paymentToThemBD[txCurrency] = (paymentToThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
+            when (txType) {
+                TransactionType.OWED_BY_THEM -> owedByThemBD[txCurrency] = (owedByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
+                TransactionType.PAYMENT_BY_THEM -> paymentByThemBD[txCurrency] = (paymentByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
+                TransactionType.OWED_TO_THEM -> owedToThemBD[txCurrency] = (owedToThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
+                TransactionType.PAYMENT_TO_THEM -> paymentToThemBD[txCurrency] = (paymentToThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
+                else -> {}
             }
 
             // Calculate running balance using exact BigDecimal math
             var currentBalBD = currentBalBDMap[txCurrency] ?: BigDecimal.ZERO
-            currentBalBD = when (tx.type) {
-                "OWED_BY_THEM", "PAYMENT_TO_THEM" -> currentBalBD.add(safeBd)
-                "PAYMENT_BY_THEM", "OWED_TO_THEM" -> currentBalBD.subtract(safeBd)
+            currentBalBD = when (txType) {
+                TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> currentBalBD.add(safeBd)
+                TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> currentBalBD.subtract(safeBd)
                 else -> currentBalBD
             }.setScale(4, RoundingMode.HALF_EVEN)
 
@@ -146,4 +149,5 @@ object CustomerHistoryCalculator {
         )
     }
 }
+
 

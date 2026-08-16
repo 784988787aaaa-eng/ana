@@ -66,25 +66,24 @@ fun AppNavigationDrawer(
         windowInsets = WindowInsets(0, 0, 0, 0)
     ) {
         // Shared Drawer Header Card
-        val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
-        val isDark = remember(settings.themeMode, systemDark) {
-            when (settings.themeMode) {
-                1 -> false
-                2 -> true
-                else -> systemDark
-            }
-        }
-        val headerBrush = if (isDark) com.example.ui.theme.HeaderCardGradientDark else com.example.ui.theme.PrimaryGradient
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-                .background(headerBrush)
+                .background(MaterialTheme.colorScheme.primary)
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val isDark = remember(settings.themeMode, systemDark) {
+                    when (settings.themeMode) {
+                        1 -> false
+                        2 -> true
+                        else -> systemDark
+                    }
+                }
+
                 IconButton(
                     onClick = {
                         val newMode = if (isDark) 1 else 2

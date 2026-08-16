@@ -66,9 +66,10 @@ object PdfReportCalculator {
             val isPureBase = tx.currencyCode == FinanceConstants.DEFAULT_CURRENCY_CODE || tx.currencyCode.isBlank() || tx.currencyCode == currencySymbol
             val pureBaseAmount = if (isPureBase) tx.foreignAmount else BigDecimal.ZERO
 
-            if (tx.type == TransactionType.OWED_BY_THEM.value || tx.type == TransactionType.PAYMENT_TO_THEM.value) {
+            val txType = TransactionType.fromValue(tx.type)
+            if (txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM) {
                 totalDebtsBase = totalDebtsBase.add(pureBaseAmount)
-            } else if (tx.type == TransactionType.PAYMENT_BY_THEM.value || tx.type == TransactionType.OWED_TO_THEM.value) {
+            } else if (txType == TransactionType.PAYMENT_BY_THEM || txType == TransactionType.OWED_TO_THEM) {
                 totalPaymentsBase = totalPaymentsBase.add(pureBaseAmount)
             }
 

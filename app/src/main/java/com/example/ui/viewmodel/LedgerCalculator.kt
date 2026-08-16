@@ -2,6 +2,7 @@ package com.example.ui.viewmodel
 
 import com.example.data.local.entities.TransactionDb
 import com.example.domain.DateUtils
+import com.example.domain.model.TransactionType
 import java.math.BigDecimal
 
 object LedgerCalculator {
@@ -36,7 +37,8 @@ object LedgerCalculator {
                 var dayIncome = BigDecimal.ZERO
                 var dayExpense = BigDecimal.ZERO
                 for (tx in dayTx) {
-                    if (tx.type == "INCOME") {
+                    val txType = TransactionType.fromValue(tx.type)
+                    if (txType == TransactionType.INCOME) {
                         dayIncome = dayIncome.add(tx.amount)
                     } else {
                         dayExpense = dayExpense.add(tx.amount)
@@ -79,3 +81,4 @@ object LedgerCalculator {
         return ledgerList.sortedByDescending { it.monthKey }
     }
 }
+

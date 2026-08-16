@@ -222,10 +222,11 @@ object CsvReportGenerator {
                             resolvedAmount
                         }
 
+                        val txType = TransactionType.fromValue(tx.type)
                         val isCol4 = if (isOwedToThemAccount) {
-                            tx.type == TransactionType.OWED_TO_THEM.value || tx.type == TransactionType.PAYMENT_BY_THEM.value
+                            txType == TransactionType.OWED_TO_THEM || txType == TransactionType.PAYMENT_BY_THEM
                         } else {
-                            tx.type == TransactionType.OWED_BY_THEM.value || tx.type == TransactionType.PAYMENT_TO_THEM.value
+                            txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM
                         }
 
                         if (isCol4) {
@@ -234,11 +235,11 @@ object CsvReportGenerator {
                             runningBalance = runningBalance.subtract(baseCurrencyAmount)
                         }
 
-                        val typeName = when (tx.type) {
-                            TransactionType.OWED_BY_THEM.value -> context.getString(R.string.pdf_tx_type_owed_by_them)
-                            TransactionType.PAYMENT_BY_THEM.value -> if (isOwedToThemAccount) context.getString(R.string.pdf_tx_type_payment_to_them) else context.getString(R.string.pdf_tx_type_payment_by_them)
-                            TransactionType.OWED_TO_THEM.value -> context.getString(R.string.pdf_tx_type_owed_to_them)
-                            TransactionType.PAYMENT_TO_THEM.value -> context.getString(R.string.pdf_tx_type_payment_to_them)
+                        val typeName = when (txType) {
+                            TransactionType.OWED_BY_THEM -> context.getString(R.string.pdf_tx_type_owed_by_them)
+                            TransactionType.PAYMENT_BY_THEM -> if (isOwedToThemAccount) context.getString(R.string.pdf_tx_type_payment_to_them) else context.getString(R.string.pdf_tx_type_payment_by_them)
+                            TransactionType.OWED_TO_THEM -> context.getString(R.string.pdf_tx_type_owed_to_them)
+                            TransactionType.PAYMENT_TO_THEM -> context.getString(R.string.pdf_tx_type_payment_to_them)
                             else -> context.getString(R.string.pdf_tx_type_new)
                         }
 
