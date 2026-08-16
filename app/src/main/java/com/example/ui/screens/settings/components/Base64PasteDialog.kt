@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.financialCreditColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -81,7 +82,7 @@ fun Base64PasteDialog(
                     .focusRequester(focusRequester),
                 textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Left, fontSize = 11.sp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDark) Color(0xFF34D399) else EmeraldPrimary,
+                    focusedBorderColor = if (isDark) financialCreditColor(isDark) else EmeraldPrimary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )
             )

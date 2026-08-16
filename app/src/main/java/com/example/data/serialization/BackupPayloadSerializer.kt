@@ -14,7 +14,6 @@ import com.example.data.local.entities.TransactionDb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.security.MessageDigest

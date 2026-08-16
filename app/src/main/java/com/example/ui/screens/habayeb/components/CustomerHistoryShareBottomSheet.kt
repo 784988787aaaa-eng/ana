@@ -1,7 +1,6 @@
 package com.example.ui.screens.habayeb.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +26,12 @@ import com.example.data.serialization.PdfReportGenerator
 import com.example.data.serialization.PdfAction
 import com.example.ui.helper.formatCurrency
 import com.example.ui.screens.habayeb.utils.CustomerShareHelper
+import com.example.ui.theme.CreditContainerLight
+import com.example.ui.theme.CreditGreen
+import com.example.ui.theme.DebtContainerLight
+import com.example.ui.theme.DebtRed
+import com.example.ui.theme.IndigoAccent
+import com.example.ui.theme.WhatsAppGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,8 +134,8 @@ fun CustomerHistoryShareBottomSheet(
                             else -> stringResource(id = R.string.habayeb_balanced)
                         }
                         val statusColor = when {
-                            netDebt > 0.0 -> Color(0xFFDC2626) // Red
-                            netDebt < 0.0 -> Color(0xFF059669) // Emerald
+                            netDebt > 0.0 -> DebtRed
+                            netDebt < 0.0 -> CreditGreen
                             else -> MaterialTheme.colorScheme.outline
                         }
 
@@ -162,8 +167,8 @@ fun CustomerHistoryShareBottomSheet(
             // PDF Option Row
             FileShareOptionRow(
                 icon = Icons.Default.PictureAsPdf,
-                iconTint = Color(0xFFDC2626),
-                iconBgColor = Color(0xFFFEE2E2),
+                iconTint = DebtRed,
+                iconBgColor = DebtContainerLight,
                 title = stringResource(id = R.string.share_pdf_title),
                 description = stringResource(id = R.string.share_pdf_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -211,8 +216,8 @@ fun CustomerHistoryShareBottomSheet(
             // Excel (CSV) Option Row
             FileShareOptionRow(
                 icon = Icons.Default.GridOn,
-                iconTint = Color(0xFF059669),
-                iconBgColor = Color(0xFFDCFCE7),
+                iconTint = CreditGreen,
+                iconBgColor = CreditContainerLight,
                 title = stringResource(id = R.string.share_csv_title),
                 description = stringResource(id = R.string.share_csv_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -285,7 +290,7 @@ fun CustomerHistoryShareBottomSheet(
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF128C7E),
+                        containerColor = WhatsAppGreen,
                         contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp),
@@ -312,7 +317,7 @@ fun CustomerHistoryShareBottomSheet(
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4F46E5),
+                        containerColor = IndigoAccent,
                         contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp),
@@ -401,8 +406,8 @@ private fun FileShareOptionRow(
                     onClick = onWhatsAppDirectClick,
                     enabled = isPhoneAvailable,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = if (isPhoneAvailable) Color(0xFF128C7E).copy(alpha = 0.1f) else Color.Transparent,
-                        contentColor = Color(0xFF128C7E)
+                        containerColor = if (isPhoneAvailable) WhatsAppGreen.copy(alpha = 0.1f) else Color.Transparent,
+                        contentColor = WhatsAppGreen
                     ),
                     modifier = Modifier.size(36.dp)
                 ) {

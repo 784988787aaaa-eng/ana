@@ -125,7 +125,7 @@ fun SignatureCard() {
             Text(
                 text = stringResource(R.string.settings_signature_desc),
                 fontSize = 11.sp,
-                color = Color(0xFF4B5563),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Right,
                 modifier = Modifier.fillMaxWidth(),
                 lineHeight = 16.sp
@@ -133,7 +133,7 @@ fun SignatureCard() {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -166,7 +166,7 @@ fun SignatureCard() {
                         text = stringResource(R.string.settings_sha1_label),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF374151)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
@@ -174,13 +174,13 @@ fun SignatureCard() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 4.dp)
-                        .background(Color(0xFFF3F4F6), RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
                         .padding(8.dp)
                 ) {
                     Text(
                         text = sha1Fingerprint,
                         fontSize = 10.sp,
-                        color = Color(0xFF1F2937),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Left,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -218,7 +218,7 @@ fun SignatureCard() {
                         text = stringResource(R.string.settings_sha256_label),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF374151)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -226,13 +226,13 @@ fun SignatureCard() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 4.dp)
-                        .background(Color(0xFFF3F4F6), RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
                         .padding(8.dp)
                 ) {
                     Text(
                         text = sha256Fingerprint,
                         fontSize = 10.sp,
-                        color = Color(0xFF1F2937),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Left,
                         modifier = Modifier.fillMaxWidth()
                     )

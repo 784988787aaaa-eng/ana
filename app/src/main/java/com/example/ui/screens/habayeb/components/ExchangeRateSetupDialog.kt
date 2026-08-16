@@ -43,6 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.financialDebtColor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
@@ -116,8 +118,8 @@ fun ExchangeRateSetupContent(
 
     val statusColor by animateColorAsState(
         targetValue = when {
-            isChecked -> if (isDark) Color(0xFF34D399) else Color(0xFF2E7D32)
-            showUncheckedError -> if (isDark) Color(0xFFFF5252) else Color(0xFFD32F2F)
+            isChecked -> financialCreditColor(isDark)
+            showUncheckedError -> financialDebtColor(isDark)
             else -> activeThemeColor.copy(alpha = 0.85f)
         },
         animationSpec = tween(durationMillis = 180),

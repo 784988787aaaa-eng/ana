@@ -46,7 +46,7 @@ fun SettingsDeveloperFooter(
             text = stringResource(R.string.settings_developer_info),
             fontWeight = FontWeight.Bold,
             fontSize = 11.sp,
-            color = Color(0xFF788282),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -66,12 +66,12 @@ fun SettingsDeveloperFooter(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = 0.08f))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f))
             ) {
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = stringResource(R.string.settings_desc_call_support),
-                    tint = Color(0xFF788282),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -86,12 +86,12 @@ fun SettingsDeveloperFooter(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = 0.08f))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f))
             ) {
                 Icon(
                     imageVector = Icons.Default.Chat,
                     contentDescription = stringResource(R.string.settings_desc_whatsapp),
-                    tint = Color(0xFF788282),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }

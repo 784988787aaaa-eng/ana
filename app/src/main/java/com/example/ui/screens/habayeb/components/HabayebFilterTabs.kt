@@ -43,46 +43,71 @@ import com.example.R
 import com.example.ui.helper.HabayebMathHelper
 import java.math.BigDecimal
 
+import com.example.ui.theme.ChipGreenBgDarkSelected
+import com.example.ui.theme.ChipGreenBgDarkUnselected
+import com.example.ui.theme.ChipGreenBgLightSelected
+import com.example.ui.theme.ChipGreenBgLightUnselected
+import com.example.ui.theme.ChipGreenBorderDarkSelected
+import com.example.ui.theme.ChipGreenBorderDarkUnselected
+import com.example.ui.theme.ChipGreenBorderLightSelected
+import com.example.ui.theme.ChipGreenBorderLightUnselected
+import com.example.ui.theme.ChipGreenHeaderDark
+import com.example.ui.theme.ChipGreenHeaderLight
+import com.example.ui.theme.ChipGreenTextDark
+import com.example.ui.theme.ChipGreenTextLight
+import com.example.ui.theme.ChipRedBgDarkSelected
+import com.example.ui.theme.ChipRedBgDarkUnselected
+import com.example.ui.theme.ChipRedBgLightSelected
+import com.example.ui.theme.ChipRedBgLightUnselected
+import com.example.ui.theme.ChipRedBorderDarkSelected
+import com.example.ui.theme.ChipRedBorderDarkUnselected
+import com.example.ui.theme.ChipRedBorderLightSelected
+import com.example.ui.theme.ChipRedBorderLightUnselected
+import com.example.ui.theme.ChipRedHeaderDark
+import com.example.ui.theme.ChipRedHeaderLight
+import com.example.ui.theme.ChipRedTextDark
+import com.example.ui.theme.ChipRedTextLight
+
 private const val PRIVACY_MASK = "*****"
 
 private object ChipColors {
     fun redBg(isDark: Boolean, isSelected: Boolean): Color {
         return if (isDark) {
-            if (isSelected) Color(0xFF3F1015) else Color(0xFF220D10)
+            if (isSelected) ChipRedBgDarkSelected else ChipRedBgDarkUnselected
         } else {
-            if (isSelected) Color(0xFFFFE4E6) else Color(0xFFFFF5F5)
+            if (isSelected) ChipRedBgLightSelected else ChipRedBgLightUnselected
         }
     }
 
     fun redBorder(isDark: Boolean, isSelected: Boolean): Color {
         return if (isDark) {
-            if (isSelected) Color(0xFFEF4444) else Color(0xFF531A21)
+            if (isSelected) ChipRedBorderDarkSelected else ChipRedBorderDarkUnselected
         } else {
-            if (isSelected) Color(0xFFE11D48) else Color(0xFFFECDD3)
+            if (isSelected) ChipRedBorderLightSelected else ChipRedBorderLightUnselected
         }
     }
 
-    fun redText(isDark: Boolean): Color = if (isDark) Color(0xFFF87171) else Color(0xFFE11D48)
-    fun redHeader(isDark: Boolean): Color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF9F1239)
+    fun redText(isDark: Boolean): Color = if (isDark) ChipRedTextDark else ChipRedTextLight
+    fun redHeader(isDark: Boolean): Color = if (isDark) ChipRedHeaderDark else ChipRedHeaderLight
 
     fun greenBg(isDark: Boolean, isSelected: Boolean): Color {
         return if (isDark) {
-            if (isSelected) Color(0xFF064E3B) else Color(0xFF0A221A)
+            if (isSelected) ChipGreenBgDarkSelected else ChipGreenBgDarkUnselected
         } else {
-            if (isSelected) Color(0xFFDCFCE7) else Color(0xFFF0FDF4)
+            if (isSelected) ChipGreenBgLightSelected else ChipGreenBgLightUnselected
         }
     }
 
     fun greenBorder(isDark: Boolean, isSelected: Boolean): Color {
         return if (isDark) {
-            if (isSelected) Color(0xFF10B981) else Color(0xFF134E3A)
+            if (isSelected) ChipGreenBorderDarkSelected else ChipGreenBorderDarkUnselected
         } else {
-            if (isSelected) Color(0xFF10B981) else Color(0xFFA7F3D0)
+            if (isSelected) ChipGreenBorderLightSelected else ChipGreenBorderLightUnselected
         }
     }
 
-    fun greenText(isDark: Boolean): Color = if (isDark) Color(0xFF34D399) else Color(0xFF059669)
-    fun greenHeader(isDark: Boolean): Color = if (isDark) Color(0xFF86EFAC) else Color(0xFF065F46)
+    fun greenText(isDark: Boolean): Color = if (isDark) ChipGreenTextDark else ChipGreenTextLight
+    fun greenHeader(isDark: Boolean): Color = if (isDark) ChipGreenHeaderDark else ChipGreenHeaderLight
 }
 
 @Composable

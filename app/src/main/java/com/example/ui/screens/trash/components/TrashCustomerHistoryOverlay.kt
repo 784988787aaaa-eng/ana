@@ -28,6 +28,8 @@ import com.example.data.local.entities.DeletedItemEntity
 import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.helper.getInitialColor
 import com.example.ui.screens.trash.utils.ParsedTrashData
+import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.financialDebtColor
 
 @Composable
 fun TrashCustomerHistoryOverlay(
@@ -45,6 +47,9 @@ fun TrashCustomerHistoryOverlay(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
+    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
+    val creditColor = financialCreditColor(isDark)
+    val debtColor = financialDebtColor(isDark)
     val avatarColor = remember(parsedData.titleText) { getInitialColor(parsedData.titleText) }
     val firstLetter = remember(parsedData.titleText) {
         parsedData.titleText.trim().firstOrNull()?.toString()?.uppercase() ?: "؟"
@@ -170,8 +175,8 @@ fun TrashCustomerHistoryOverlay(
                 ) {
                     parsedData.currencyBreakdown.forEach { (curr, sum) ->
                         val isNeg = sum < BigDecimal.ZERO
-                        val chipBg = if (isNeg) errorColor.copy(alpha = 0.1f) else Color(0xFF43A047).copy(alpha = 0.1f)
-                        val chipText = if (isNeg) errorColor else Color(0xFF2E7D32)
+                        val chipBg = if (isNeg) debtColor.copy(alpha = 0.1f) else creditColor.copy(alpha = 0.1f)
+                        val chipText = if (isNeg) debtColor else creditColor
                         val formattedSum = com.example.ui.helper.HabayebMathHelper.formatSmart(sum.abs())
 
                         Surface(
@@ -249,14 +254,14 @@ fun TrashCustomerHistoryOverlay(
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
-                                                .background(Color(0xFF43A047).copy(alpha = 0.12f))
+                                                .background(creditColor.copy(alpha = 0.12f))
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
                                             Text(
                                                 text = stringResource(id = R.string.trash_rate_active_format, tx.exchangeRateText),
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF2E7D32)
+                                                color = creditColor
                                             )
                                         }
                                     }
@@ -272,7 +277,7 @@ fun TrashCustomerHistoryOverlay(
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     val isNegative = tx.isNegative
-                                    val txColor = if (isNegative) Color(0xFFE53935) else Color(0xFF43A047)
+                                    val txColor = if (isNegative) debtColor else creditColor
                                     val arrowSymbol = if (isNegative) "↗" else "↙"
 
                                     Row(

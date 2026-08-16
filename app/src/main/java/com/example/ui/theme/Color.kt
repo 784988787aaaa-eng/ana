@@ -12,7 +12,7 @@ val EmeraldPrimary = Color(0xFF4B36A2)      // Premium Glowing Violet/Purple (#4
 val EmeraldLight = Color(0xFF8C7CFF)        // Lighter Purple/Lavender for beautiful gradients (#8C7CFF)
 val CoralAccent = Color(0xFF00B2FE)         // Neon Cyan / Electric Blue Accent (#00B2FE)
 
-val EmeraldDark = Color(0xFF4B36A2)         // Rich Glowing Violet/Purple directly in dark mode
+val EmeraldDark = Color(0xFF9E86FF)         // Luminous Lavender for ultra-clear high contrast primary in dark mode
 val CoralDark = Color(0xFF00B2FE)           // Rich Glowing Neon Cyan directly in dark mode
 val IvoryBackground = Color(0xFFF0F3FC)     // Soft modern lavender-tinted background (Eye safe)
 
@@ -142,6 +142,110 @@ val InfoBlueBgLight = Color(0xFFEFF6FF)
 val InfoBlueBgDark = Color(0xFF1E293B)
 val InfoBlueTextLight = Color(0xFF1D4ED8)
 val InfoBlueTextDark = Color(0xFF60A5FA)
+
+// Slate & UI Accents
+val Slate50 = Color(0xFFF8FAFC)
+val Slate100 = Color(0xFFF1F5F9)
+val Slate200 = Color(0xFFE2E8F0)
+val Slate300 = Color(0xFFCBD5E1)
+val Slate400 = Color(0xFF94A3B8)
+val Slate500 = Color(0xFF64748B)
+val Slate600 = Color(0xFF475569)
+val Slate700 = Color(0xFF334155)
+val Slate800 = Color(0xFF1E293B)
+val Slate900 = Color(0xFF0F172A)
+
+// Status & Action tokens
+val NeonGreen = Color(0xFF00E676)
+val NeonCyan = Color(0xFF00B0FF)
+val IndigoAccent = Color(0xFF6366F1)
+val PurpleAccent = Color(0xFF8B5CF6)
+val SoftLavender = Color(0xFFC4B5FD)
+val WarningRed = Color(0xFFE53935)
+val WarningRedBorder = Color(0xFFB91C1C)
+val WarningRedBorderLight = Color(0xFFD93025)
+val LightRedTint = Color(0xFFFF8A80)
+
+// Alert Gold (Yellow/Amber badge tokens)
+val AlertGoldBgDark = Color(0xFF451A03)
+val AlertGoldBorderDark = Color(0xFF92400E)
+val AlertGoldTextDark = Color(0xFFFBBF24)
+val AlertGoldTextLight = Color(0xFFB45309)
+
+// Success Green badge tokens
+val SuccessGreenBgDark = Color(0xFF064E3B)
+val SuccessGreenBgLight = Color(0xFFE6F4EA)
+val SuccessGreenBorderDark = Color(0xFF10B981)
+val SuccessGreenBorderLight = Color(0xFF137333)
+val MutedTextDark = Color(0xFF9AA0A6)
+val MutedTextLight = Color(0xFF5F6368)
+val DarkNeutralTrack = Color(0xFF2D2D2D)
+val LightNeutralTrack = Color(0xFFEEEEEE)
+
+// Chip Filter Color Tokens
+val ChipRedBgDarkSelected = Color(0xFF3F1015)
+val ChipRedBgDarkUnselected = Color(0xFF220D10)
+val ChipRedBgLightSelected = Color(0xFFFFE4E6)
+val ChipRedBgLightUnselected = Color(0xFFFFF5F5)
+
+val ChipRedBorderDarkSelected = Color(0xFFEF4444)
+val ChipRedBorderDarkUnselected = Color(0xFF531A21)
+val ChipRedBorderLightSelected = Color(0xFFE11D48)
+val ChipRedBorderLightUnselected = Color(0xFFFECDD3)
+
+val ChipRedTextDark = Color(0xFFF87171)
+val ChipRedTextLight = Color(0xFFE11D48)
+val ChipRedHeaderDark = Color(0xFFFCA5A5)
+val ChipRedHeaderLight = Color(0xFF9F1239)
+
+val ChipGreenBgDarkSelected = Color(0xFF064E3B)
+val ChipGreenBgDarkUnselected = Color(0xFF0A221A)
+val ChipGreenBgLightSelected = Color(0xFFDCFCE7)
+val ChipGreenBgLightUnselected = Color(0xFFF0FDF4)
+
+val ChipGreenBorderDarkSelected = Color(0xFF10B981)
+val ChipGreenBorderDarkUnselected = Color(0xFF134E3A)
+val ChipGreenBorderLightSelected = Color(0xFF10B981)
+val ChipGreenBorderLightUnselected = Color(0xFFA7F3D0)
+
+val ChipGreenTextDark = Color(0xFF34D399)
+val ChipGreenTextLight = Color(0xFF059669)
+val ChipGreenHeaderDark = Color(0xFF86EFAC)
+val ChipGreenHeaderLight = Color(0xFF065F46)
+
+// Financial Semantic Color Resolvers
+fun financialCreditColor(isDark: Boolean): Color = if (isDark) CreditGreenDark else CreditGreen
+fun financialDebtColor(isDark: Boolean): Color = if (isDark) DebtRedDark else DebtRed
+fun financialCreditBg(isDark: Boolean): Color = if (isDark) CreditContainerDark else CreditContainerLight
+fun financialDebtBg(isDark: Boolean): Color = if (isDark) DebtContainerDark else DebtContainerLight
+fun financialCreditBorder(isDark: Boolean): Color = if (isDark) CreditBorderDark else CreditBorderLight
+fun financialDebtBorder(isDark: Boolean): Color = if (isDark) DebtBorderDark else DebtBorderLight
+
+// Category Palette Tokens for Domain Utils
+object CategoryPalette {
+    val AMBER_DARK = Color(0xFF451A03)
+    val AMBER_LIGHT = Color(0xFFFEF3C7)
+    val PINK_DARK = Color(0xFF4D1222)
+    val PINK_LIGHT = Color(0xFFFCE7F3)
+    val GRAY_LIGHT_DARK = Color(0xFF262626)
+    val GRAY_LIGHT_LIGHT = Color(0xFFEFEFEF)
+    val RED_SOFT_DARK = Color(0xFF3E1F1F)
+    val RED_SOFT_LIGHT = Color(0xFFFEE2E2)
+    val YELLOW_DARK = Color(0xFF3F3701)
+    val YELLOW_LIGHT = Color(0xFFFEF9C3)
+    val BLUE_SOFT_DARK = Color(0xFF172554)
+    val BLUE_SOFT_LIGHT = Color(0xFFDBEAFE)
+    val SKY_DARK = Color(0xFF0C4A6E)
+    val SKY_LIGHT = Color(0xFFE0F2FE)
+    val PURPLE_DARK = Color(0xFF3B0764)
+    val PURPLE_LIGHT = Color(0xFFF3E8FF)
+    val EMERALD_SOFT_DARK = Color(0xFF064E3B)
+    val EMERALD_SOFT_LIGHT = Color(0xFFD1FAE5)
+    val GREEN_FIFTY_DARK = Color(0xFF022C22)
+    val GREEN_FIFTY_LIGHT = Color(0xFFECFDF5)
+    val SLATE_DEFAULT_DARK = Slate900
+    val SLATE_DEFAULT_LIGHT = Slate100
+}
 
 // Avatar Pastel Palette
 val AvatarPastelPalette = listOf(

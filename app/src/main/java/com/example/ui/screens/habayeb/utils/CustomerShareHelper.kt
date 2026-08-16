@@ -7,9 +7,6 @@ import com.example.R
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.ui.helper.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 object CustomerShareHelper {
 

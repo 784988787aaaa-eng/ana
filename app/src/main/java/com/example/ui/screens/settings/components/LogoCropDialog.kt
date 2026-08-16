@@ -80,7 +80,7 @@ fun LogoCropDialog(
                     modifier = Modifier
                         .size(200.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant, if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp))
-                        .border(1.dp, Color(0xFFCBD5E1), if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp))
                         .clip(if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -147,7 +147,7 @@ fun LogoCropDialog(
                         colors = SliderDefaults.colors(
                             thumbColor = activeThemeColor,
                             activeTrackColor = activeThemeColor,
-                            inactiveTrackColor = Color(0xFFE2E8F0)
+                            inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
                 }

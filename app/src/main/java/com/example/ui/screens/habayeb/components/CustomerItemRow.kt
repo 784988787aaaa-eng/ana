@@ -42,6 +42,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
+import com.example.ui.theme.Slate800
+import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.financialDebtColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -362,7 +365,7 @@ private fun CustomerInfoSection(
                 val categoryBgColor = remember(categoryEmoji, isDarkTheme) {
                     com.example.domain.getEmojiBgColor(categoryEmoji, isDarkTheme)
                 }
-                val categoryTextColor = if (isDarkTheme) Color.White else Color(0xFF1E293B)
+                val categoryTextColor = if (isDarkTheme) Color.White else Slate800
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -422,8 +425,8 @@ private fun CustomerDebtSummarySection(
     val initialType = customer.originalCustomer.initialType
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val activeRed = if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
-    val activeGreen = if (isDark) Color(0xFF34D399) else Color(0xFF059669)
+    val activeRed = financialDebtColor(isDark)
+    val activeGreen = financialCreditColor(isDark)
 
     val (debtColor, isOwedByThem) = remember(initialType, isPositive, isNegative, isZero, activeRed, activeGreen, textSecondaryColor) {
         when (initialType) {

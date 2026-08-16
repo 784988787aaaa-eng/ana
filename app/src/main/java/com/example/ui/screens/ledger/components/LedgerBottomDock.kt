@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,7 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.SoftRed
+import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.financialDebtColor
 
 @Composable
 fun LedgerBottomDock(
@@ -55,8 +55,8 @@ fun LedgerBottomDock(
             ) {
                 val bgMatColor = MaterialTheme.colorScheme.background
                 val isDark = remember(bgMatColor) { bgMatColor.run { red < 0.5f } }
-                val incomeBg = remember(isDark) { if (isDark) Color(0xFF10B981) else Color(0xFF16A34A) }
-                val expenseBg = remember(isDark) { if (isDark) Color(0xFFEF4444) else Color(0xFFDC2626) }
+                val incomeBg = remember(isDark) { financialCreditColor(isDark) }
+                val expenseBg = remember(isDark) { financialDebtColor(isDark) }
 
                 // Add Income Button (First element - Right side in RTL)
                 Button(
@@ -81,8 +81,8 @@ fun LedgerBottomDock(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF8F9FA))
-                        .border(1.dp, if (isDark) MaterialTheme.colorScheme.outlineVariant else Color(0xFFE0E0E0), CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                         .clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onShowCommitmentsClick()

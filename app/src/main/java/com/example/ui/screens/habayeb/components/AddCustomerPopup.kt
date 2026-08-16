@@ -33,6 +33,8 @@ import com.example.domain.model.TransactionType
 import com.example.ui.helper.rememberContactPicker
 import com.example.ui.screens.CalculatorDialog
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
+import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.financialDebtColor
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import java.util.Calendar
 
@@ -54,8 +56,8 @@ fun AddCustomerPopup(
     var initialType by rememberSaveable { mutableStateOf<String?>(null) }
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
-    val debtRed = remember(isDark) { if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626) }
-    val creditGreen = remember(isDark) { if (isDark) Color(0xFF34D399) else Color(0xFF10B981) }
+    val debtRed = remember(isDark) { financialDebtColor(isDark) }
+    val creditGreen = remember(isDark) { financialCreditColor(isDark) }
     val defaultPrimary = MaterialTheme.colorScheme.primary
 
     val dynamicThemeColor = remember(initialType, isDark, debtRed, creditGreen, defaultPrimary) {
@@ -99,7 +101,7 @@ fun AddCustomerPopup(
             initialMillis = selectedCalendar.timeInMillis,
             onDismiss = { showCustomDatePicker = false },
             onDateTimeSelected = { millis ->
-                selectedCalendar = Calendar.getInstance().apply { timeInMillis = millis }
+                selectedCalendar = (selectedCalendar.clone() as Calendar).apply { timeInMillis = millis }
                 showCustomDatePicker = false
             }
         )

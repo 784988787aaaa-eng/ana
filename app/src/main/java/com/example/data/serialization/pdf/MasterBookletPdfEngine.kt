@@ -8,23 +8,18 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
-import android.os.Build
 import android.text.Layout
-import android.text.StaticLayout
 import android.util.Log
 import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.repository.FinanceRepository
 import com.example.data.serialization.BusinessProfileLoader
-import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.state.CustomerUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import java.io.File
 import java.io.FileOutputStream
-import java.math.BigDecimal
 import java.util.Date
 import kotlin.coroutines.coroutineContext
 
