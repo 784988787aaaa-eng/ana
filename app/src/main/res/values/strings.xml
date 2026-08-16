@@ -922,11 +922,18 @@
     <string name="currency_setup_rate_desc">ضبط سعر الصرف</string>
     <string name="currency_foreign_cash">نقد أجنبي</string>
     <string name="datetime_picker_title">ضبط الوقت والتاريخ</string>
+    <string name="datetime_picker_schedule_title">ضبط فترة وتوقيت الجدولة</string>
+    <string name="datetime_picker_filter_title">تحديد نطاق التاريخ</string>
+    <string name="datetime_picker_from_date">تاريخ البداية (من)</string>
+    <string name="datetime_picker_to_date">تاريخ النهاية (إلى)</string>
+    <string name="datetime_picker_range_tab_start">من (البداية)</string>
+    <string name="datetime_picker_range_tab_end">إلى (النهاية)</string>
     <string name="datetime_picker_date">التاريخ</string>
     <string name="datetime_picker_day">اليوم</string>
     <string name="datetime_picker_month">الشهر</string>
     <string name="datetime_picker_year">السنة</string>
     <string name="datetime_picker_time">الوقت</string>
+    <string name="datetime_picker_time_section">وقت التنفيذ</string>
     <string name="datetime_picker_hour">الساعة</string>
     <string name="datetime_picker_minute">الدقيقة</string>
     <string name="datetime_picker_period">الفترة</string>
@@ -935,6 +942,8 @@
     <string name="datetime_picker_confirm">موافق</string>
     <string name="datetime_picker_increase">زيادة</string>
     <string name="datetime_picker_decrease">نقصان</string>
+    <string name="datetime_picker_quick_today">اليوم</string>
+    <string name="datetime_picker_quick_plus_month">+30 يوم</string>
 
     <!-- ============================================================================== -->
     <!-- 09. النوافذ الحوارية ورسائل التأكيد (Dialogs, Overlays & Alert Messages)           -->

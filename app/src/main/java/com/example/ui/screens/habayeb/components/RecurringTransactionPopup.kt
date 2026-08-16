@@ -64,8 +64,6 @@ fun RecurringTransactionPopup(
     activeThemeColor: Color,
     activeSubColor: Color
 ) {
-    val bgColor = MaterialTheme.colorScheme.background
-    val isDark = remember(bgColor) { bgColor.run { red < 0.5f } }
     val context = LocalContext.current
 
     val existingConfigs = remember(transaction.id) { HabayebRecurringManager.getAllConfigs(context) }
@@ -96,18 +94,18 @@ fun RecurringTransactionPopup(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth(0.88f)
-                    .heightIn(max = 500.dp)
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = 520.dp)
                     .imePadding(),
-                shape = RoundedCornerShape(16.dp),
-                color = if (isDark) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Header Banner (Ultra Compact)
+                    // Header Banner (Refined and modern)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -116,7 +114,7 @@ fun RecurringTransactionPopup(
                                     colors = listOf(activeThemeColor, activeSubColor)
                                 )
                             )
-                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                            .padding(vertical = 10.dp, horizontal = 14.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -125,25 +123,25 @@ fun RecurringTransactionPopup(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                        .size(28.dp)
+                                        .background(Color.White.copy(alpha = 0.22f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Sync,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(14.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                                 Text(
                                     text = stringResource(id = R.string.habayeb_recurring_title),
                                     color = MaterialTheme.colorScheme.onPrimary,
-                                    fontSize = 13.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -155,8 +153,8 @@ fun RecurringTransactionPopup(
                             val currStr = transaction.currencyCode.ifEmpty { fallbackCurrency }
                             Box(
                                 modifier = Modifier
-                                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(
                                     text = "$customerName • $formattedAmount $currStr",
@@ -171,8 +169,8 @@ fun RecurringTransactionPopup(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // 1. Frequency selector
                         RecurringFrequencySelector(
@@ -183,10 +181,10 @@ fun RecurringTransactionPopup(
                             selectedDaysOfMonth = selectedDaysOfMonth,
                             onDaysOfMonthChange = { selectedDaysOfMonth = it },
                             activeThemeColor = activeThemeColor,
-                            isDark = isDark
+                            isDark = false
                         )
 
-                        // 2. Date and Time section
+                        // 2. Date and Time section (Intelligent Range & Time Picker)
                         RecurringDateTimeSection(
                             hour = hour,
                             minute = minute,
@@ -198,9 +196,9 @@ fun RecurringTransactionPopup(
                             activeThemeColor = activeThemeColor
                         )
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
-                        // Action Buttons
+                        // 3. Action Buttons
                         RecurringActionsRow(
                             existingConfig = existingConfig,
                             transaction = transaction,
@@ -245,14 +243,16 @@ private fun RecurringActionsRow(
     ) {
         OutlinedButton(
             onClick = onDismiss,
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(40.dp),
+            shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
         ) {
             Text(
                 text = stringResource(id = R.string.habayeb_cancel),
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -264,8 +264,10 @@ private fun RecurringActionsRow(
                     Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_stop_success), Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
-                modifier = Modifier.weight(1.3f),
-                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .weight(1.2f)
+                    .height(40.dp),
+                shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
@@ -275,13 +277,13 @@ private fun RecurringActionsRow(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = null,
-                    modifier = Modifier.size(11.dp),
+                    modifier = Modifier.size(13.dp),
                     tint = MaterialTheme.colorScheme.error
                 )
                 Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = stringResource(id = R.string.habayeb_recurring_btn_stop_short),
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -323,14 +325,16 @@ private fun RecurringActionsRow(
                 Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_schedule_success), Toast.LENGTH_LONG).show()
                 onDismiss()
             },
-            modifier = Modifier.weight(1.5f),
+            modifier = Modifier
+                .weight(1.5f)
+                .height(40.dp),
             colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(10.dp),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
         ) {
             Text(
                 text = if (existingConfig != null) stringResource(id = R.string.habayeb_recurring_btn_update) else stringResource(id = R.string.habayeb_recurring_btn_activate),
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimary
             )

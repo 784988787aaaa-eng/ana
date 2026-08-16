@@ -98,9 +98,12 @@ data class RecurringConfig(
                 }
             }
 
+            val rawOriginalTxId = obj.optString("originalTxId", "").trim()
+            val cleanOriginalTxId = if (rawOriginalTxId.isBlank() || rawOriginalTxId.equals("null", ignoreCase = true) || rawOriginalTxId == "0") "" else rawOriginalTxId
+
             return RecurringConfig(
                 id = obj.getString("id"),
-                originalTxId = obj.optString("originalTxId", ""),
+                originalTxId = cleanOriginalTxId,
                 customerId = obj.getString("customerId"),
                 customerName = obj.optString("customerName", defaultName),
                 amount = parseBD("amount", "0"),
@@ -137,7 +140,10 @@ object HabayebRecurringManager {
         try {
             val array = JSONArray(jsonStr)
             for (i in 0 until array.length()) {
-                list.add(RecurringConfig.fromJsonObject(array.getJSONObject(i), context))
+                val parsed = RecurringConfig.fromJsonObject(array.getJSONObject(i), context)
+                if (parsed.id.isNotBlank() && parsed.originalTxId.isNotBlank() && parsed.customerId.isNotBlank()) {
+                    list.add(parsed)
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()

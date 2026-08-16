@@ -35,10 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.InfoBlueBgDark
-import com.example.ui.theme.InfoBlueBgLight
-import com.example.ui.theme.InfoBlueTextDark
-import com.example.ui.theme.InfoBlueTextLight
 import com.example.ui.viewmodel.FinanceConstants
 import java.util.Calendar
 
@@ -83,17 +79,17 @@ fun RecurringFrequencySelector(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-            .padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         options.forEach { (key, label) ->
             val selected = frequency == key
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(28.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .height(30.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(if (selected) activeThemeColor else Color.Transparent)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -104,7 +100,7 @@ fun RecurringFrequencySelector(
                 Text(
                     text = label,
                     color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -114,7 +110,7 @@ fun RecurringFrequencySelector(
     Crossfade(targetState = frequency, label = "freqConfig") { targetFreq ->
         when (targetFreq) {
             FinanceConstants.FREQ_DAILY -> {
-                DailyInfoBanner(isDark = isDark)
+                DailyInfoBanner()
             }
             FinanceConstants.FREQ_WEEKLY -> {
                 WeeklyDayPicker(
@@ -154,30 +150,31 @@ fun RecurringFrequencySelector(
 }
 
 @Composable
-private fun DailyInfoBanner(isDark: Boolean) {
-    val bgColor = if (isDark) InfoBlueBgDark else InfoBlueBgLight
-    val iconTint = if (isDark) InfoBlueTextDark else InfoBlueTextLight
-    val textColor = if (isDark) InfoBlueTextDark else InfoBlueTextLight
-
+private fun DailyInfoBanner() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(bgColor, RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(
             imageVector = Icons.Default.Info,
             contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(14.dp)
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(16.dp)
         )
         Text(
             text = stringResource(id = R.string.habayeb_recurring_daily_desc),
-            fontSize = 10.sp,
-            color = textColor,
-            lineHeight = 13.sp
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            lineHeight = 15.sp
         )
     }
 }
@@ -200,21 +197,21 @@ private fun WeeklyDayPicker(
                 val isSelected = selectedDays.contains(dayInt)
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (isSelected) activeColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) activeColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         .border(
                             1.dp,
-                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant,
-                            RoundedCornerShape(6.dp)
+                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                            RoundedCornerShape(8.dp)
                         )
                         .clickable { onDayToggle(dayInt) }
-                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = name,
                         color = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -242,16 +239,21 @@ private fun MonthlyDayGrid(
                 val isSelected = selectedDays.contains(dayNum)
                 Box(
                     modifier = Modifier
-                        .size(22.dp)
+                        .size(24.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant)
+                        .background(if (isSelected) activeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                        .border(
+                            0.5.dp,
+                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            CircleShape
+                        )
                         .clickable { onDayToggle(dayNum) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = dayNum.toString(),
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

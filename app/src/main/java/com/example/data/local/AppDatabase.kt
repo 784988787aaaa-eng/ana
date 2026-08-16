@@ -13,6 +13,8 @@ import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.local.entities.TransactionDb
 
+import androidx.sqlite.db.SupportSQLiteDatabase
+
 @Database(
     entities = [
         AppSettings::class,
@@ -50,6 +52,26 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                 .addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        try {
+                            db.execSQL("""
+                                UPDATE habayeb_transactions 
+                                SET linkedMainTxId = NULL 
+                                WHERE linkedMainTxId IS NOT NULL 
+                                  AND (
+                                      TRIM(linkedMainTxId) = '' 
+                                      OR LOWER(TRIM(linkedMainTxId)) = 'null' 
+                                      OR TRIM(linkedMainTxId) = '0' 
+                                      OR linkedMainTxId = id
+                                  )
+                            """)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                })
                 .build().also { INSTANCE = it }
             }
         }

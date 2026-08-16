@@ -16,6 +16,7 @@ import com.example.data.local.entities.TransactionDb
 import com.example.data.repository.FinanceRepository
 import com.example.domain.DateUtils
 import com.example.domain.StringUtils
+import com.example.domain.model.TransactionType
 import com.example.ui.state.MainLedgerUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -169,9 +170,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun calculateSumByType(transactions: List<TransactionDb>, type: String): BigDecimal {
+        val targetType = TransactionType.fromValue(type)
         var sum = BigDecimal.ZERO
         for (tx in transactions) {
-            if (tx.type == type) {
+            val txType = TransactionType.fromValue(tx.type)
+            if (txType == targetType || tx.type.equals(type, ignoreCase = true)) {
                 sum = sum.add(tx.amount)
             }
         }
@@ -194,7 +197,8 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             var yesterdayExpenses = BigDecimal.ZERO
 
             for (tx in txList) {
-                if (tx.type == TRANSACTION_TYPE_EXPENSE) {
+                val txType = TransactionType.fromValue(tx.type)
+                if (txType == TransactionType.EXPENSE || tx.type.equals(TRANSACTION_TYPE_EXPENSE, ignoreCase = true)) {
                     val txDate = DateUtils.formatDateFull(tx.timestamp)
                     if (txDate == todayKey) {
                         todayExpenses = todayExpenses.add(tx.amount)

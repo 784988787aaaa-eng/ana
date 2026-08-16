@@ -135,6 +135,17 @@ class HabayebTransactionUseCase(
         onActivationRequired: () -> Unit
     ) {
         val txId = editingTxId ?: generateTxId()
+        val candidateLinkedId = if (linkedMainTxId != null) {
+            linkedMainTxId
+        } else if (editingTxId != null) {
+            repository.getHabayebTransactionById(editingTxId)?.linkedMainTxId
+        } else {
+            null
+        }
+        val cleanLinkedMainTxId = candidateLinkedId?.trim()?.takeIf { 
+            it.isNotBlank() && !it.equals("null", ignoreCase = true) && it != "0" && it != txId 
+        }
+
         val transaction = HabayebTransaction(
             id = txId,
             customerId = customerId,
@@ -142,7 +153,7 @@ class HabayebTransactionUseCase(
             amount = amount,
             timestamp = timestamp,
             description = desc,
-            linkedMainTxId = linkedMainTxId,
+            linkedMainTxId = cleanLinkedMainTxId,
             isForeign = isForeign,
             currencyCode = currencyCode,
             foreignAmount = foreignAmount,

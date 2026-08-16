@@ -156,14 +156,15 @@ fun CustomerTransactionRow(
         val isTxForeign = txCurrencySymbol != currencySymbol
         val cleanDescription = if (parsedCurrencyInfo.first != CURRENCY_NONE_TAG) parsedCurrencyInfo.second else tx.description
 
-        val indicatorColor = when (tx.type) {
-            TransactionType.OWED_BY_THEM.value, TransactionType.OWED_TO_THEM.value -> RowColors.debtRed(isDark)
+        val txType = TransactionType.fromValue(tx.type)
+        val indicatorColor = when (txType) {
+            TransactionType.OWED_BY_THEM, TransactionType.OWED_TO_THEM -> RowColors.debtRed(isDark)
             else -> RowColors.creditGreen(isDark)
         }
 
-        val txArrow = when (tx.type) {
-            TransactionType.OWED_BY_THEM.value, TransactionType.PAYMENT_TO_THEM.value -> Icons.Default.ArrowUpward
-            TransactionType.PAYMENT_BY_THEM.value, TransactionType.OWED_TO_THEM.value -> Icons.Default.ArrowDownward
+        val txArrow = when (txType) {
+            TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> Icons.Default.ArrowUpward
+            TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> Icons.Default.ArrowDownward
             else -> Icons.Default.ArrowUpward
         }
 
@@ -205,11 +206,11 @@ fun CustomerTransactionRow(
         val timeStr = HabayebDateFormatter.formatTime12h(d)
         val dayNameResId = HabayebDateFormatter.getDayOfWeekResId(tx.timestamp)
 
-        val typeResId = when (tx.type) {
-            TransactionType.OWED_BY_THEM.value -> R.string.habayeb_pdf_tx_owed_by
-            TransactionType.PAYMENT_BY_THEM.value -> R.string.habayeb_pdf_tx_payment_by
-            TransactionType.OWED_TO_THEM.value -> R.string.habayeb_pdf_tx_owed_to
-            TransactionType.PAYMENT_TO_THEM.value -> R.string.habayeb_pdf_tx_payment_to
+        val typeResId = when (txType) {
+            TransactionType.OWED_BY_THEM -> R.string.habayeb_pdf_tx_owed_by
+            TransactionType.PAYMENT_BY_THEM -> R.string.habayeb_pdf_tx_payment_by
+            TransactionType.OWED_TO_THEM -> R.string.habayeb_pdf_tx_owed_to
+            TransactionType.PAYMENT_TO_THEM -> R.string.habayeb_pdf_tx_payment_to
             else -> R.string.habayeb_pdf_tx_generic
         }
 
@@ -424,7 +425,7 @@ fun CustomerTransactionRow(
                                 color = RowColors.alertGoldText(isDark)
                             )
                         }
-                    } else if (tx.linkedMainTxId != null) {
+                    } else if (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id) {
                         Box(
                             modifier = Modifier
                                 .background(RowColors.infoBlueBg(isDark), RoundedCornerShape(4.dp))
@@ -432,7 +433,7 @@ fun CustomerTransactionRow(
                                 .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = stringResource(id = R.string.habayeb_auto_generated_sub, parentTxSeq ?: 0),
+                                text = stringResource(id = R.string.habayeb_auto_generated_sub, parentTxSeq),
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,

@@ -197,15 +197,23 @@ object MzdBackupSerializer {
                     amtVal
                 }
 
+                val rawLinkedId = when {
+                    obj.has("linked_main_tx_id") && !obj.isNull("linked_main_tx_id") -> obj.optString("linked_main_tx_id", "").trim()
+                    obj.has("linkedMainTxId") && !obj.isNull("linkedMainTxId") -> obj.optString("linkedMainTxId", "").trim()
+                    else -> null
+                }
+                val txId = obj.getString("id")
+                val cleanLinkedId = if (rawLinkedId.isNullOrBlank() || rawLinkedId.equals("null", ignoreCase = true) || rawLinkedId == "0" || rawLinkedId == txId) null else rawLinkedId
+
                 result.add(
                     HabayebTransaction(
-                        id = obj.getString("id"),
+                        id = txId,
                         customerId = obj.optString("customer_id", obj.optString("customerId", "")),
                         type = obj.getString("type"),
                         amount = amtVal,
                         timestamp = obj.getLong("timestamp"),
                         description = obj.optString("description", ""),
-                        linkedMainTxId = obj.optString("linked_main_tx_id", obj.optString("linkedMainTxId", null)),
+                        linkedMainTxId = cleanLinkedId,
                         isForeign = isForeign,
                         currencyCode = currencyCode,
                         foreignAmount = foreignAmountVal,

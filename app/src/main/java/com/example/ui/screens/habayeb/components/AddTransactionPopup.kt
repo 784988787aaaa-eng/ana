@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
+import com.example.domain.model.TransactionType
 import com.example.ui.screens.CalculatorDialog
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
@@ -49,7 +50,7 @@ import java.math.BigDecimal
 fun AddTransactionPopup(
     customer: HabayebCustomer,
     viewModel: HabayebFinanceViewModel,
-    initialSelectedType: String = "OWED_BY_THEM",
+    initialSelectedType: String = TransactionType.OWED_BY_THEM.value,
     editingTransaction: HabayebTransaction? = null,
     onDismiss: () -> Unit,
     onTransactionSaved: () -> Unit = {},
@@ -111,7 +112,7 @@ fun AddTransactionPopup(
 
     val amountStr = amountTfv.text
     val descStr = descTfv.text
-    val isLendOperationSelected = customer.initialType == "OWED_BY_THEM"
+    val isLendOperationSelected = TransactionType.fromValue(customer.initialType) == TransactionType.OWED_BY_THEM || customer.initialType == TransactionType.OWED_BY_THEM.value
     var selectedType by rememberSaveable { mutableStateOf(editingTransaction?.type ?: initialSelectedType) }
 
     val amountFocusRequester = remember { FocusRequester() }
@@ -364,7 +365,7 @@ fun AddTransactionPopup(
                             ) {
                                 Button(
                                     enabled = !isSaving,
-                                    onClick = { handleActionClick(if (isLendOperationSelected) "OWED_BY_THEM" else "OWED_TO_THEM") },
+                                    onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = Color.White),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
@@ -380,7 +381,7 @@ fun AddTransactionPopup(
 
                                 Button(
                                     enabled = !isSaving,
-                                    onClick = { handleActionClick(if (isLendOperationSelected) "PAYMENT_BY_THEM" else "PAYMENT_TO_THEM") },
+                                    onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = Color.White),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),

@@ -107,7 +107,9 @@ fun CustomerHistoryDialogsManager(
     if (dialogState.transactionForOptionsDialog != null) {
         val optTx = dialogState.transactionForOptionsDialog
         val isRecurringOriginal = optTx.id in activeRecurringTxIds
-        val parentSeq = if (optTx.linkedMainTxId != null) txSequenceNumbers[optTx.linkedMainTxId] else null
+        val parentSeq = if (!optTx.linkedMainTxId.isNullOrBlank() && !optTx.linkedMainTxId.equals("null", ignoreCase = true) && optTx.linkedMainTxId != "0" && optTx.linkedMainTxId != optTx.id) {
+            txSequenceNumbers[optTx.linkedMainTxId]
+        } else null
 
         val onWhatsAppShare = remember(optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) {
             { CustomerShareHelper.triggerSingleTxWhatsApp(context, optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) }

@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,34 +35,8 @@ fun CustomerHistoryFilterSheet(
     activeThemeColor: Color,
     onDismissRequest: () -> Unit
 ) {
-    val context = LocalContext.current
-
-    val showDatePicker = remember(context) {
-        { initialTime: Long?, onDateSelected: (Long) -> Unit ->
-            val calendar = java.util.Calendar.getInstance()
-            if (initialTime != null) {
-                calendar.timeInMillis = initialTime
-            }
-            android.app.DatePickerDialog(
-                context,
-                { _, year, month, dayOfMonth ->
-                    val selectedCal = java.util.Calendar.getInstance().apply {
-                        set(java.util.Calendar.YEAR, year)
-                        set(java.util.Calendar.MONTH, month)
-                        set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
-                        set(java.util.Calendar.HOUR_OF_DAY, 0)
-                        set(java.util.Calendar.MINUTE, 0)
-                        set(java.util.Calendar.SECOND, 0)
-                        set(java.util.Calendar.MILLISECOND, 0)
-                    }
-                    onDateSelected(selectedCal.timeInMillis)
-                },
-                calendar.get(java.util.Calendar.YEAR),
-                calendar.get(java.util.Calendar.MONTH),
-                calendar.get(java.util.Calendar.DAY_OF_MONTH)
-            ).show()
-        }
-    }
+    var showRangePicker by remember { mutableStateOf(false) }
+    var selectedRangeTab by remember { mutableStateOf(RangeTab.START) }
 
     val strAllTime = stringResource(id = R.string.habayeb_filter_all_time)
     val strToday = stringResource(id = R.string.habayeb_filter_today)
@@ -96,6 +69,25 @@ fun CustomerHistoryFilterSheet(
         val start = customStartDate?.let { formatter.format(Date(it)) } ?: "..."
         val end = customEndDate?.let { formatter.format(Date(it)) } ?: "..."
         Pair(start, end)
+    }
+
+    if (showRangePicker) {
+        val now = System.currentTimeMillis()
+        val initStart = customStartDate ?: now
+        val initEnd = customEndDate ?: (initStart + 30L * 24 * 60 * 60 * 1000)
+        CustomDateRangePickerDialog(
+            initialStartMillis = initStart,
+            initialEndMillis = initEnd,
+            includeTime = false,
+            initialSelectedTab = selectedRangeTab,
+            onDismiss = { showRangePicker = false },
+            onRangeSelected = { start, end, _, _ ->
+                onCustomStartDateChange(start)
+                onCustomEndDateChange(end)
+                onDateFilterModeChange(3)
+                showRangePicker = false
+            }
+        )
     }
 
     ModalBottomSheet(
@@ -140,12 +132,8 @@ fun CustomerHistoryFilterSheet(
                             .clickable {
                                 onDateFilterModeChange(mode)
                                 if (mode == 3 && customStartDate == null) {
-                                    showDatePicker(customStartDate) { start ->
-                                        onCustomStartDateChange(start)
-                                        showDatePicker(customEndDate ?: start) { end ->
-                                            onCustomEndDateChange(end)
-                                        }
-                                    }
+                                    selectedRangeTab = RangeTab.START
+                                    showRangePicker = true
                                 }
                             }
                             .padding(vertical = 8.dp),
@@ -167,7 +155,10 @@ fun CustomerHistoryFilterSheet(
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.outlineVariant)
-                            .clickable { showDatePicker(customStartDate) { onCustomStartDateChange(it) } }
+                            .clickable {
+                                selectedRangeTab = RangeTab.START
+                                showRangePicker = true
+                            }
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -182,7 +173,10 @@ fun CustomerHistoryFilterSheet(
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.outlineVariant)
-                            .clickable { showDatePicker(customEndDate ?: customStartDate) { onCustomEndDateChange(it) } }
+                            .clickable {
+                                selectedRangeTab = RangeTab.END
+                                showRangePicker = true
+                            }
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {

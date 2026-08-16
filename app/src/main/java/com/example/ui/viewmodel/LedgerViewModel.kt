@@ -12,6 +12,7 @@ import com.example.data.local.entities.CustomCategory
 import com.example.data.local.entities.TransactionDb
 import com.example.data.repository.FinanceRepository
 import com.example.domain.StringUtils
+import com.example.domain.model.TransactionType
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -112,7 +113,8 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
             var sum = BigDecimal.ZERO
             for (i in txList.indices) {
                 val tx = txList[i]
-                if (tx.type.equals("INCOME", ignoreCase = true)) {
+                val txType = TransactionType.fromValue(tx.type)
+                if (txType == TransactionType.INCOME || tx.type.equals("INCOME", ignoreCase = true)) {
                     sum = sum.add(tx.amount)
                 }
             }
@@ -125,7 +127,8 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
             var sum = BigDecimal.ZERO
             for (i in txList.indices) {
                 val tx = txList[i]
-                if (tx.type.equals("EXPENSE", ignoreCase = true)) {
+                val txType = TransactionType.fromValue(tx.type)
+                if (txType == TransactionType.EXPENSE || tx.type.equals("EXPENSE", ignoreCase = true)) {
                     sum = sum.add(tx.amount)
                 }
             }

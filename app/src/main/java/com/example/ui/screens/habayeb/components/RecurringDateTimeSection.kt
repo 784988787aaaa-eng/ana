@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
@@ -35,8 +36,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private enum class ActivePicker { TIME, START_DATE, END_DATE }
-
 @Composable
 fun RecurringDateTimeSection(
     hour: Int,
@@ -48,9 +47,10 @@ fun RecurringDateTimeSection(
     onEndDateChange: (Long) -> Unit,
     activeThemeColor: Color
 ) {
-    var activePicker by remember { mutableStateOf<ActivePicker?>(null) }
+    var showRangeDialog by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(RangeTab.START) }
 
-    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH) }
+    val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH) }
     val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale("ar")) }
 
     val formattedStartDate = remember(startDateMillis) {
@@ -67,39 +67,22 @@ fun RecurringDateTimeSection(
         }
     }
 
-    when (activePicker) {
-        ActivePicker.TIME -> {
-            CustomDateTimePickerDialog(
-                initialMillis = timeCalendar.timeInMillis,
-                onDismiss = { activePicker = null },
-                onDateTimeSelected = { selectedMillis ->
-                    val cal = Calendar.getInstance().apply { timeInMillis = selectedMillis }
-                    onTimeChange(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-                    activePicker = null
-                }
-            )
-        }
-        ActivePicker.START_DATE -> {
-            CustomDateTimePickerDialog(
-                initialMillis = startDateMillis,
-                onDismiss = { activePicker = null },
-                onDateTimeSelected = { selectedMillis ->
-                    onStartDateChange(selectedMillis)
-                    activePicker = null
-                }
-            )
-        }
-        ActivePicker.END_DATE -> {
-            CustomDateTimePickerDialog(
-                initialMillis = endDateMillis,
-                onDismiss = { activePicker = null },
-                onDateTimeSelected = { selectedMillis ->
-                    onEndDateChange(selectedMillis)
-                    activePicker = null
-                }
-            )
-        }
-        null -> {}
+    if (showRangeDialog) {
+        CustomDateRangePickerDialog(
+            initialStartMillis = startDateMillis,
+            initialEndMillis = endDateMillis,
+            initialHour = hour,
+            initialMinute = minute,
+            includeTime = true,
+            initialSelectedTab = selectedTab,
+            onDismiss = { showRangeDialog = false },
+            onRangeSelected = { start, end, h, m ->
+                onStartDateChange(start)
+                onEndDateChange(end)
+                onTimeChange(h, m)
+                showRangeDialog = false
+            }
+        )
     }
 
     Row(
@@ -112,26 +95,35 @@ fun RecurringDateTimeSection(
             icon = Icons.Default.Schedule,
             text = timeFormatter.format(timeCalendar.time),
             iconTint = activeThemeColor,
-            onClick = { activePicker = ActivePicker.TIME },
+            onClick = {
+                selectedTab = RangeTab.START
+                showRangeDialog = true
+            },
             modifier = Modifier.weight(1f)
         )
 
-        // Start Date Pill
+        // Start Date Pill (من)
         DateTimePill(
             icon = Icons.Default.CalendarToday,
             text = stringResource(R.string.recurring_from_prefix, formattedStartDate),
             iconTint = activeThemeColor,
-            onClick = { activePicker = ActivePicker.START_DATE },
-            modifier = Modifier.weight(1.1f)
+            onClick = {
+                selectedTab = RangeTab.START
+                showRangeDialog = true
+            },
+            modifier = Modifier.weight(1.15f)
         )
 
-        // End Date Pill
+        // End Date Pill (إلى)
         DateTimePill(
-            icon = Icons.Default.CalendarToday,
+            icon = Icons.Default.CalendarMonth,
             text = stringResource(R.string.recurring_to_prefix, formattedEndDate),
-            iconTint = MaterialTheme.colorScheme.onSurface,
-            onClick = { activePicker = ActivePicker.END_DATE },
-            modifier = Modifier.weight(1.1f)
+            iconTint = MaterialTheme.colorScheme.primary,
+            onClick = {
+                selectedTab = RangeTab.END
+                showRangeDialog = true
+            },
+            modifier = Modifier.weight(1.15f)
         )
     }
 }
@@ -146,12 +138,12 @@ private fun DateTimePill(
 ) {
     Card(
         modifier = modifier.clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -165,7 +157,8 @@ private fun DateTimePill(
                 text = text,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
             )
         }
     }

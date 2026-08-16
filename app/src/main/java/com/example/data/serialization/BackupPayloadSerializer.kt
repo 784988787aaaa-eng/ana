@@ -213,8 +213,11 @@ object BackupPayloadSerializer {
             jsonWriter.name(KEY_AMOUNT).value(t.amount.toPlainString())
             jsonWriter.name(KEY_TIMESTAMP).value(t.timestamp)
             jsonWriter.name(KEY_DESCRIPTION).value(t.description)
-            if (t.linkedMainTxId != null) {
-                jsonWriter.name(KEY_LINKED_MAIN_TX_ID).value(t.linkedMainTxId)
+            val cleanLinkedId = t.linkedMainTxId?.trim()?.takeIf { 
+                it.isNotBlank() && !it.equals("null", ignoreCase = true) && it != "0" && it != t.id 
+            }
+            if (cleanLinkedId != null) {
+                jsonWriter.name(KEY_LINKED_MAIN_TX_ID).value(cleanLinkedId)
             } else {
                 jsonWriter.name(KEY_LINKED_MAIN_TX_ID).nullValue()
             }

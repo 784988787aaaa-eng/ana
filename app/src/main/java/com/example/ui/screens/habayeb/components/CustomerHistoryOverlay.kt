@@ -142,8 +142,16 @@ fun CustomerHistoryOverlay(
 
     var refreshRecurringTrigger by remember { mutableStateOf(0) }
     val activeRecurringTxIds = remember(activeCustomer.id, refreshRecurringTrigger, allCustomerTxs) {
+        val existingTxIds = allCustomerTxs.map { it.id }.toSet()
         HabayebRecurringManager.getAllConfigs(context)
-            .filter { it.isActive && it.customerId == activeCustomer.id }
+            .filter { config ->
+                config.isActive &&
+                config.customerId == activeCustomer.id &&
+                config.originalTxId.isNotBlank() &&
+                !config.originalTxId.equals("null", ignoreCase = true) &&
+                config.originalTxId != "0" &&
+                existingTxIds.contains(config.originalTxId)
+            }
             .map { it.originalTxId }
             .toSet()
     }

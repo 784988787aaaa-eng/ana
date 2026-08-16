@@ -107,9 +107,10 @@ fun CustomerHistoryTableSection(
                     val isSelected = selectedTxIds.contains(tx.id)
                     val hasActiveRecurring = tx.id in activeRecurringTxIds
                     val txSeqNo = txSequenceNumbers[tx.id] ?: 0
-                    val parentTxSeq = remember(tx.linkedMainTxId, txSequenceNumbers) {
-                        if (tx.linkedMainTxId != null) {
-                            txSequenceNumbers[tx.linkedMainTxId]
+                    val parentTxSeq = remember(tx.linkedMainTxId, txSequenceNumbers, tx.id) {
+                        val linkedId = tx.linkedMainTxId?.trim()
+                        if (!linkedId.isNullOrBlank() && !linkedId.equals("null", ignoreCase = true) && linkedId != "0" && linkedId != tx.id) {
+                            txSequenceNumbers[linkedId]
                         } else null
                     }
 

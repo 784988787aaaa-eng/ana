@@ -249,7 +249,7 @@ fun TransactionOptionsDialog(
                                 )
                             }
                         }
-                    } else if (parentSeqNumber != null) {
+                    } else if (parentSeqNumber != null && parentSeqNumber > 0) {
                         val infoBg = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
                         val infoBorder = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f)
                         val infoText = MaterialTheme.colorScheme.onSecondaryContainer
