@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.AppSettings
-import com.example.ui.theme.IndigoAccent
 import com.example.ui.viewmodel.BackupSyncViewModel
 
 @Composable
@@ -37,8 +36,8 @@ fun BackupBase64Handler(
     QuadBackupItem(
         title = stringResource(R.string.settings_backup_base64_title),
         description = stringResource(R.string.settings_backup_base64_desc),
-        accentColor = IndigoAccent,
-        icon = { Icon(Icons.Default.ContentCopy, contentDescription = null, tint = IndigoAccent, modifier = Modifier.size(18.dp)) }
+        accentColor = Color(0xFF6366F1),
+        icon = { Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Color(0xFF6366F1), modifier = Modifier.size(18.dp)) }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -51,7 +50,7 @@ fun BackupBase64Handler(
                         Toast.makeText(context, context.getString(R.string.settings_toast_base64_copied), Toast.LENGTH_SHORT).show()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = IndigoAccent),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.weight(1f).height(40.dp)
             ) {

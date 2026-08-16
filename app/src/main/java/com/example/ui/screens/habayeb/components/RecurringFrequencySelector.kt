@@ -35,10 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.InfoBlueBgDark
-import com.example.ui.theme.InfoBlueBgLight
-import com.example.ui.theme.InfoBlueTextDark
-import com.example.ui.theme.InfoBlueTextLight
 import com.example.ui.viewmodel.FinanceConstants
 import java.util.Calendar
 
@@ -155,9 +151,9 @@ fun RecurringFrequencySelector(
 
 @Composable
 private fun DailyInfoBanner(isDark: Boolean) {
-    val bgColor = if (isDark) InfoBlueBgDark else InfoBlueBgLight
-    val iconTint = if (isDark) InfoBlueTextDark else InfoBlueTextLight
-    val textColor = if (isDark) InfoBlueTextDark else InfoBlueTextLight
+    val bgColor = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF)
+    val iconTint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+    val textColor = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E3A8A)
 
     Row(
         modifier = Modifier

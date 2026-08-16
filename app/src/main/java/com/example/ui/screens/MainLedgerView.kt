@@ -50,6 +50,7 @@ import com.example.ui.screens.ledger.components.MainLedgerSelectionBar
 import com.example.ui.screens.ledger.components.PinnedMainLedgerHeader
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.ui.viewmodel.HabayebFinanceViewModel
+import com.example.ui.viewmodel.LedgerUiEvent
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -278,6 +279,8 @@ fun MainLedgerView(
                 modifier = Modifier.weight(1f)
             )
         }
+
+
 
         LedgerBottomDock(
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomPadding + 12.dp),

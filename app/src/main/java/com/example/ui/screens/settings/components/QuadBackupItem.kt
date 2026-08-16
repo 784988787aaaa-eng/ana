@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,7 +31,7 @@ fun QuadBackupItem(
             .fillMaxWidth()
             .border(1.dp, accentColor.copy(alpha = 0.25f), RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F7F6))
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -60,14 +59,14 @@ fun QuadBackupItem(
                         text = title,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFF075E54)
                     )
                 }
             }
             Text(
                 text = description,
                 fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color(0xFF5A625E),
                 textAlign = TextAlign.Right,
                 modifier = Modifier.fillMaxWidth(),
                 lineHeight = 14.sp

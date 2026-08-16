@@ -2,6 +2,7 @@ package com.example.ui.screens.habayeb.components
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,7 +37,6 @@ import com.example.R
 import com.example.data.local.entities.HabayebCustomer
 import com.example.domain.StringUtils
 import com.example.ui.helper.rememberContactPicker
-import com.example.ui.theme.financialDebtColor
 
 @Composable
 fun CustomerDeleteConfirmationDialog(
@@ -49,7 +49,7 @@ fun CustomerDeleteConfirmationDialog(
     val singleCustomerName = customer?.name ?: ""
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val debtRed = financialDebtColor(isDark)
+    val debtRed = if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
 
     AlertDialog(
         onDismissRequest = onDismiss,

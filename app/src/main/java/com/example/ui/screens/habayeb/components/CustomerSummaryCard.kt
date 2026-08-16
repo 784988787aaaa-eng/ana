@@ -36,12 +36,6 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.example.ui.theme.ChipGreenHeaderDark
-import com.example.ui.theme.ChipGreenHeaderLight
-import com.example.ui.theme.ChipRedHeaderDark
-import com.example.ui.theme.ChipRedHeaderLight
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
 
 @Composable
 fun AutoSizeText(
@@ -97,19 +91,18 @@ fun BalanceCompactChip(
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val surfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val outlineColor = MaterialTheme.colorScheme.outline
 
-    val chipState = remember(amount, currencyCode, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, surfaceVariantColor, outlineColor) {
+    val chipState = remember(amount, currencyCode, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, surfaceVariantColor) {
         val cmp = amount.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO)
         val isZero = cmp == 0
 
-        val redColor = financialDebtColor(isDark)
-        val redHeaderColor = if (isDark) ChipRedHeaderDark else ChipRedHeaderLight
-        val greenColor = financialCreditColor(isDark)
-        val greenHeaderColor = if (isDark) ChipGreenHeaderDark else ChipGreenHeaderLight
+        val redColor = if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
+        val redHeaderColor = if (isDark) Color(0xFFFF8A8A) else Color(0xFFB91C1C)
+        val greenColor = if (isDark) Color(0xFF34D399) else Color(0xFF059669)
+        val greenHeaderColor = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857)
 
         val (chipColor, headerTextColor, stateLabel) = when {
-            isZero -> Triple(outlineColor, outlineColor, clearedStr)
+            isZero -> Triple(Color(0xFF757575), Color(0xFF757575), clearedStr)
             cmp > 0 -> Triple(redColor, redHeaderColor, remainingOnHimStr)
             cmp < 0 -> Triple(greenColor, greenHeaderColor, remainingForHimStr)
             else -> Triple(surfaceVariantColor, surfaceVariantColor, clearedStr)

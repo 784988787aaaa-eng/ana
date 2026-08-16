@@ -31,7 +31,7 @@ fun GeneralSettingsCard(
             Text(
                 text = stringResource(R.string.settings_currency_title),
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFF075E54),
                 fontSize = 14.sp
             )
             Spacer(modifier = Modifier.height(12.dp))

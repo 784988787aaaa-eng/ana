@@ -9,13 +9,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-import com.example.ui.theme.Slate900
 import com.example.ui.theme.SplashRadialGlow
 import com.example.ui.theme.SplashSweepGradient
 
@@ -30,7 +31,7 @@ fun TheMasterSplashScreen(
     }
 
     // Modern Deep Night Matte Dark Background
-    val deepMatteDark = Slate900 // Premium slate-900 security look
+    val deepMatteDark = Color(0xFF0F172A) // Premium slate-900 security look
 
     // Core Animation loop for high refresh rates (120Hz optimal)
     val infiniteTransition = rememberInfiniteTransition(label = "PortalAnimation")

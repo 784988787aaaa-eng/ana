@@ -19,8 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.InfoBlue
-import com.example.ui.theme.WarningAmber
 
 @Composable
 fun BackupPermissionExplanationDialog(
@@ -71,7 +69,7 @@ fun BackupPermissionExplanationDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.settings_permissions_manage_files_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                        Icon(Icons.Default.SettingsSuggest, contentDescription = null, tint = InfoBlue, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.SettingsSuggest, contentDescription = null, tint = Color(0xFF0EA5E9), modifier = Modifier.size(16.dp))
                     }
                 }
                 
@@ -82,7 +80,7 @@ fun BackupPermissionExplanationDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.settings_permissions_notifications_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
                     }
                 }
                 

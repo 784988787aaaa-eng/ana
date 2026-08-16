@@ -42,7 +42,7 @@ fun SettingsAutoBackupCard(
                     onCheckedChange = onCheckedChange,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                        checkedTrackColor = Color(0xFF075E54)
                     )
                 )
 
@@ -54,12 +54,12 @@ fun SettingsAutoBackupCard(
                         text = stringResource(R.string.settings_auto_backup_title),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFF075E54)
                     )
                     Icon(
                         imageVector = Icons.Default.Update,
                         contentDescription = stringResource(R.string.settings_desc_auto_backup),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Color(0xFF075E54),
                         modifier = Modifier.size(20.dp)
                     )
                 }

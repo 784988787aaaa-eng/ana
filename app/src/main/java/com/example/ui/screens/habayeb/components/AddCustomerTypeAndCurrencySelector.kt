@@ -41,8 +41,6 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.domain.model.TransactionType
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
 @Composable
@@ -65,8 +63,8 @@ fun AddCustomerTypeAndCurrencySelector(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    val debtRed = remember(isDark) { financialDebtColor(isDark) }
-    val creditGreen = remember(isDark) { financialCreditColor(isDark) }
+    val debtRed = remember(isDark) { if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626) }
+    val creditGreen = remember(isDark) { if (isDark) Color(0xFF34D399) else Color(0xFF10B981) }
 
     val currentTypeThemeColor = remember(initialType, debtRed, creditGreen, activeThemeColor) {
         when (initialType) {

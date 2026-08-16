@@ -3,6 +3,7 @@ package com.example.ui.screens.ledger.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -12,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -19,12 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
-import com.example.ui.theme.financialCreditBg
-import com.example.ui.theme.financialCreditBorder
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtBg
-import com.example.ui.theme.financialDebtBorder
-import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -61,13 +57,13 @@ fun CommitmentsSummaryCards(
     }
 
     val outlineVarColor = MaterialTheme.colorScheme.outlineVariant
-    val netBg = remember(isDark) { financialCreditBg(isDark) }
-    val netTextColor = remember(isDark) { financialCreditColor(isDark) }
-    val netBorderColor = remember(isDark, outlineVarColor) { if (isDark) financialCreditBorder(isDark).copy(alpha = 0.4f) else outlineVarColor.copy(alpha = 0.3f) }
+    val netBg = remember(isDark) { if (isDark) Color(0xFF1B3B22) else Color(0xFFEDF7ED) }
+    val netTextColor = remember(isDark) { if (isDark) Color(0xFF81C784) else Color(0xFF2E7D32) }
+    val netBorderColor = remember(isDark, outlineVarColor) { if (isDark) Color(0xFF2E7D32).copy(alpha = 0.4f) else outlineVarColor.copy(alpha = 0.3f) }
 
-    val remainingBg = remember(isDark) { financialDebtBg(isDark) }
-    val remainingTextColor = remember(isDark) { financialDebtColor(isDark) }
-    val remainingBorderColor = remember(isDark, outlineVarColor) { if (isDark) financialDebtBorder(isDark).copy(alpha = 0.4f) else outlineVarColor.copy(alpha = 0.3f) }
+    val remainingBg = remember(isDark) { if (isDark) Color(0xFF4C1C1C) else Color(0xFFFDEDED) }
+    val remainingTextColor = remember(isDark) { if (isDark) Color(0xFFE57373) else Color(0xFFC62828) }
+    val remainingBorderColor = remember(isDark, outlineVarColor) { if (isDark) Color(0xFFC62828).copy(alpha = 0.4f) else outlineVarColor.copy(alpha = 0.3f) }
 
     Row(
         modifier = modifier

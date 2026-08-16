@@ -4,9 +4,11 @@ import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material3.*
@@ -35,8 +37,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.example.data.local.entities.TransactionDb
 import com.example.ui.screens.CalculatorDialog
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.CoralAccent
+import com.example.ui.theme.EmeraldPrimary
 
 @Composable
 fun TransactionRecordDialog(
@@ -102,9 +104,9 @@ fun TransactionRecordDialog(
 
     // Colors: Green for Income (وارد), Red for Expense (منصرف) matching action buttons
     val themeColor = if (isIncome) {
-        financialCreditColor(isDark)
+        if (isDark) Color(0xFF34D399) else Color(0xFF16A34A)
     } else {
-        financialDebtColor(isDark)
+        if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
     }
     val themeColorSub = themeColor.copy(alpha = 0.85f)
 

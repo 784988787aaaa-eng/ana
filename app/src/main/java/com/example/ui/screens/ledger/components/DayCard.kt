@@ -41,15 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SoftGreen
-import com.example.ui.theme.SoftRed
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,17 +56,9 @@ import com.example.data.local.entities.TransactionDb
 import com.example.domain.DateUtils
 import com.example.domain.getEmojiBgColor
 import com.example.domain.model.TransactionType
-import com.example.ui.theme.CreditContainerDark
-import com.example.ui.theme.CreditContainerLight
-import com.example.ui.theme.DebtContainerDark
-import com.example.ui.theme.DebtContainerLight
-import com.example.ui.theme.WhatsAppLightGreen
-import com.example.ui.theme.financialCreditBg
-import com.example.ui.theme.financialCreditBorder
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtBg
-import com.example.ui.theme.financialDebtBorder
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftGreen
+import com.example.ui.theme.SoftRed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -453,10 +443,10 @@ fun DayCard(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(financialCreditBg(isDark))
+                                        .background(if (isDark) Color(0xFF14241B) else Color(0xFFE8F5E9))
                                         .border(
                                             1.dp,
-                                            financialCreditBorder(isDark).copy(alpha = if (isDark) 0.35f else 0.45f),
+                                            if (isDark) Color(0xFF2E7D32).copy(alpha = 0.35f) else Color(0xFF81C784).copy(alpha = 0.45f),
                                             RoundedCornerShape(12.dp)
                                         )
                                         .padding(vertical = 4.dp, horizontal = 4.dp)
@@ -464,13 +454,13 @@ fun DayCard(
                                     Text(
                                         text = stringResource(id = R.string.ledger_daily_income),
                                         fontSize = 10.sp,
-                                        color = financialCreditColor(isDark),
+                                        color = if (isDark) Color(0xFF81C784) else Color(0xFF2E7D32),
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = formatCurrency(dailyIncome, currencySymbol),
                                         fontSize = 12.sp,
-                                        color = financialCreditColor(isDark),
+                                        color = if (isDark) Color(0xFF81C784) else Color(0xFF2E7D32),
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                 }
@@ -482,10 +472,10 @@ fun DayCard(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(financialDebtBg(isDark))
+                                        .background(if (isDark) Color(0xFF2D1A1A) else Color(0xFFFFEBEE))
                                         .border(
                                             1.dp,
-                                            financialDebtBorder(isDark).copy(alpha = if (isDark) 0.35f else 0.45f),
+                                            if (isDark) Color(0xFFC62828).copy(alpha = 0.35f) else Color(0xFFE57373).copy(alpha = 0.45f),
                                             RoundedCornerShape(12.dp)
                                         )
                                         .padding(vertical = 4.dp, horizontal = 4.dp)
@@ -493,23 +483,23 @@ fun DayCard(
                                     Text(
                                         text = stringResource(id = R.string.ledger_daily_expense),
                                         fontSize = 10.sp,
-                                        color = financialDebtColor(isDark),
+                                        color = if (isDark) Color(0xFFE57373) else Color(0xFFC62828),
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = formatCurrency(dailyExpense, currencySymbol),
                                         fontSize = 12.sp,
-                                        color = financialDebtColor(isDark),
+                                        color = if (isDark) Color(0xFFE57373) else Color(0xFFC62828),
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                 }
 
                                 // Daily Net badge (Full Width Weight 1f)
-                                val netColor = if (dailyNet > BigDecimal.ZERO) financialCreditColor(isDark) else if (dailyNet < BigDecimal.ZERO) financialDebtColor(isDark) else MaterialTheme.colorScheme.onSurfaceVariant
+                                val netColor = if (dailyNet > BigDecimal.ZERO) SoftGreen else if (dailyNet < BigDecimal.ZERO) SoftRed else MaterialTheme.colorScheme.onSurfaceVariant
                                 val netBg = if (isDark) {
-                                    if (dailyNet > BigDecimal.ZERO) CreditContainerDark else if (dailyNet < BigDecimal.ZERO) DebtContainerDark else MaterialTheme.colorScheme.surfaceVariant
+                                    if (dailyNet > BigDecimal.ZERO) Color(0xFF14241B) else if (dailyNet < BigDecimal.ZERO) Color(0xFF2D1A1A) else Color(0xFF2C2C2C)
                                 } else {
-                                    if (dailyNet > BigDecimal.ZERO) CreditContainerLight else if (dailyNet < BigDecimal.ZERO) DebtContainerLight else MaterialTheme.colorScheme.surfaceVariant
+                                    if (dailyNet > BigDecimal.ZERO) Color(0xFFE8F5E9) else if (dailyNet < BigDecimal.ZERO) Color(0xFFFFEBEE) else Color(0xFFF5F5F5)
                                 }
                                 val netSign = if (dailyNet > BigDecimal.ZERO) "+" else ""
 
@@ -545,8 +535,8 @@ fun DayCard(
                             // 2. WhatsApp Share button (Sleek full-width integration)
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = WhatsAppLightGreen.copy(alpha = 0.08f),
-                                border = BorderStroke(1.dp, WhatsAppLightGreen.copy(alpha = 0.25f)),
+                                color = Color(0xFF25D366).copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.25f)),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
@@ -597,7 +587,7 @@ fun DayCard(
                                         text = stringResource(id = R.string.ledger_whatsapp_whatsapp),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = WhatsAppLightGreen
+                                        color = Color(0xFF25D366)
                                     )
                                 }
                             }

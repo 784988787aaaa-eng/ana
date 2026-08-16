@@ -1,6 +1,7 @@
 package com.example.ui.screens.ledger.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 import java.math.BigDecimal
 
 @Composable

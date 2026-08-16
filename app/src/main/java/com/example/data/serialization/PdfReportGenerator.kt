@@ -19,6 +19,8 @@ import com.example.data.serialization.pdf.PdfDrawingUtils
 import com.example.data.serialization.pdf.PdfPageRenderer
 import com.example.data.serialization.pdf.PdfReportCalculator
 import com.example.data.serialization.pdf.PdfRowRenderer
+import com.example.domain.model.TransactionType
+import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.state.CustomerUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.io.File
 import java.io.FileOutputStream
+import java.math.BigDecimal
 import java.util.Date
 
 enum class PdfAction {

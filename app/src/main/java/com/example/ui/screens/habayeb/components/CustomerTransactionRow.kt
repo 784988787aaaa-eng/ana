@@ -9,13 +9,16 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -56,54 +60,28 @@ import com.example.ui.screens.habayeb.utils.HabayebDateFormatter
 import com.example.ui.viewmodel.FinanceConstants
 import java.util.Date
 
-import com.example.ui.theme.AlertGoldBgDark
-import com.example.ui.theme.AlertGoldBorderDark
-import com.example.ui.theme.AlertGoldTextDark
-import com.example.ui.theme.AlertGoldTextLight
-import com.example.ui.theme.InfoBlue
-import com.example.ui.theme.InfoBlueBgDark
-import com.example.ui.theme.InfoBlueBgLight
-import com.example.ui.theme.InfoBlueTextDark
-import com.example.ui.theme.InfoBlueTextLight
-import com.example.ui.theme.MutedTextDark
-import com.example.ui.theme.MutedTextLight
-import com.example.ui.theme.Slate100
-import com.example.ui.theme.Slate300
-import com.example.ui.theme.Slate600
-import com.example.ui.theme.Slate800
-import com.example.ui.theme.SuccessGreenBgDark
-import com.example.ui.theme.SuccessGreenBgLight
-import com.example.ui.theme.SuccessGreenBorderDark
-import com.example.ui.theme.SuccessGreenBorderLight
-import com.example.ui.theme.WarningAmberBg
-import com.example.ui.theme.WarningAmberBorder
-import com.example.ui.theme.WarningRedBorder
-import com.example.ui.theme.WarningRedBorderLight
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
-
 private const val CURRENCY_NONE_TAG = "NONE"
 
 private object RowColors {
-    fun creditGreen(isDark: Boolean) = financialCreditColor(isDark)
-    fun debtRed(isDark: Boolean) = financialDebtColor(isDark)
-    fun mutedGray(isDark: Boolean) = if (isDark) MutedTextDark else MutedTextLight
+    fun creditGreen(isDark: Boolean) = if (isDark) Color(0xFF34D399) else Color(0xFF059669)
+    fun debtRed(isDark: Boolean) = if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
+    fun mutedGray(isDark: Boolean) = if (isDark) Color(0xFF9AA0A6) else Color(0xFF5F6368)
     
     // الألوان المتكيفة لبادج التكرار المجدول الأصفر
-    fun alertGoldBg(isDark: Boolean) = if (isDark) AlertGoldBgDark else WarningAmberBg
-    fun alertGoldBorder(isDark: Boolean) = if (isDark) AlertGoldBorderDark else WarningAmberBorder
-    fun alertGoldText(isDark: Boolean) = if (isDark) AlertGoldTextDark else AlertGoldTextLight
+    fun alertGoldBg(isDark: Boolean) = if (isDark) Color(0xFF451A03) else Color(0xFFFEF3C7)
+    fun alertGoldBorder(isDark: Boolean) = if (isDark) Color(0xFF92400E) else Color(0xFFF59E0B)
+    fun alertGoldText(isDark: Boolean) = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309)
     
     // الألوان المتكيفة لبادج التفاصيل والعمليات المساعدة الزرقاء
-    fun infoBlueBg(isDark: Boolean) = if (isDark) InfoBlueBgDark else InfoBlueBgLight
-    fun infoBlueBorder(isDark: Boolean) = InfoBlue
-    fun infoBlueText(isDark: Boolean) = if (isDark) InfoBlueTextDark else InfoBlueTextLight
+    fun infoBlueBg(isDark: Boolean) = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF)
+    fun infoBlueBorder(isDark: Boolean) = if (isDark) Color(0xFF3B82F6) else Color(0xFF3B82F6)
+    fun infoBlueText(isDark: Boolean) = if (isDark) Color(0xFF60A5FA) else Color(0xFF1D4ED8)
     
     // الألوان المتكيفة لبادجات تأكيد وحفظ أسعار الصرف بنجاح
-    fun successGreenBg(isDark: Boolean) = if (isDark) SuccessGreenBgDark else SuccessGreenBgLight
-    fun successGreenBorder(isDark: Boolean) = if (isDark) SuccessGreenBorderDark else SuccessGreenBorderLight
-    fun warningRedBorder(isDark: Boolean) = if (isDark) WarningRedBorder else WarningRedBorderLight
-    fun darkGray(isDark: Boolean) = if (isDark) MutedTextDark else MutedTextLight
+    fun successGreenBg(isDark: Boolean) = if (isDark) Color(0xFF064E3B) else Color(0xFFE6F4EA)
+    fun successGreenBorder(isDark: Boolean) = if (isDark) Color(0xFF10B981) else Color(0xFF137333)
+    fun warningRedBorder(isDark: Boolean) = if (isDark) Color(0xFFB91C1C) else Color(0xFFD93025)
+    fun darkGray(isDark: Boolean) = if (isDark) Color(0xFF9AA0A6) else Color(0xFF5F6368)
 }
 
 @androidx.compose.runtime.Immutable
@@ -452,12 +430,12 @@ fun CustomerTransactionRow(
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(
                                     if (isCalculated) RowColors.successGreenBg(isDark)
-                                    else if (isDark) Slate800.copy(alpha = 0.5f) else Slate100
+                                    else if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF1F5F9)
                                 )
                                 .border(
                                     0.5.dp,
                                     if (isCalculated) RowColors.successGreenBorder(isDark)
-                                    else if (isDark) Slate600.copy(alpha = 0.6f) else Slate300,
+                                    else if (isDark) Color(0xFF475569).copy(alpha = 0.6f) else Color(0xFFCBD5E1),
                                     RoundedCornerShape(4.dp)
                                 )
                                 .clickable { onExchangeRateClick(tx) }

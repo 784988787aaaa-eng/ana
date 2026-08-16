@@ -8,8 +8,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-import com.example.ui.theme.CategoryPalette
-
 private val EMOJI_REGEX = "[\\uD83C-\\uDBFF\\uDC00-\\uDFFF]+".toRegex()
 private val ARABIC_LOCALE = Locale("ar")
 
@@ -38,22 +36,47 @@ fun extractEmoji(category: String, defaultEmoji: String): String {
     }
 }
 
-private inline fun selectColor(isDark: Boolean, dark: Color, light: Color) = if (isDark) dark else light
+private object CategoryColors {
+    val AMBER_DARK = Color(0xFF451A03)
+    val AMBER_LIGHT = Color(0xFFFEF3C7)
+    val PINK_DARK = Color(0xFF4D1222)
+    val PINK_LIGHT = Color(0xFFFCE7F3)
+    val GRAY_LIGHT_DARK = Color(0xFF262626)
+    val GRAY_LIGHT_LIGHT = Color(0xFFEFEFEF)
+    val RED_SOFT_DARK = Color(0xFF3E1F1F)
+    val RED_SOFT_LIGHT = Color(0xFFFEE2E2)
+    val YELLOW_DARK = Color(0xFF3F3701)
+    val YELLOW_LIGHT = Color(0xFFFEF9C3)
+    val BLUE_SOFT_DARK = Color(0xFF172554)
+    val BLUE_SOFT_LIGHT = Color(0xFFDBEAFE)
+    val SKY_DARK = Color(0xFF0C4A6E)
+    val SKY_LIGHT = Color(0xFFE0F2FE)
+    val PURPLE_DARK = Color(0xFF3B0764)
+    val PURPLE_LIGHT = Color(0xFFF3E8FF)
+    val EMERALD_SOFT_DARK = Color(0xFF064E3B)
+    val EMERALD_SOFT_LIGHT = Color(0xFFD1FAE5)
+    val GREEN_FIFTY_DARK = Color(0xFF022C22)
+    val GREEN_FIFTY_LIGHT = Color(0xFFECFDF5)
+    val SLATE_DEFAULT_DARK = Color(0xFF0F172A)
+    val SLATE_DEFAULT_LIGHT = Color(0xFFF1F5F9)
+
+    inline fun select(isDark: Boolean, dark: Color, light: Color) = if (isDark) dark else light
+}
 
 fun getEmojiBgColor(emoji: String, isDark: Boolean = false): Color {
     return when (emoji) {
-        "🌾" -> selectColor(isDark, CategoryPalette.AMBER_DARK, CategoryPalette.AMBER_LIGHT)
-        "🍬", "🍭" -> selectColor(isDark, CategoryPalette.PINK_DARK, CategoryPalette.PINK_LIGHT)
-        "☕" -> selectColor(isDark, CategoryPalette.GRAY_LIGHT_DARK, CategoryPalette.GRAY_LIGHT_LIGHT)
-        "🔥" -> selectColor(isDark, CategoryPalette.RED_SOFT_DARK, CategoryPalette.RED_SOFT_LIGHT)
-        "⚡" -> selectColor(isDark, CategoryPalette.YELLOW_DARK, CategoryPalette.YELLOW_LIGHT)
-        "💧" -> selectColor(isDark, CategoryPalette.BLUE_SOFT_DARK, CategoryPalette.BLUE_SOFT_LIGHT)
-        "🚀", "🌐" -> selectColor(isDark, CategoryPalette.SKY_DARK, CategoryPalette.SKY_LIGHT)
-        "🍼", "👶" -> selectColor(isDark, CategoryPalette.PURPLE_DARK, CategoryPalette.PURPLE_LIGHT)
-        "🎒" -> selectColor(isDark, CategoryPalette.SKY_DARK, CategoryPalette.SKY_LIGHT)
-        "🏦" -> selectColor(isDark, CategoryPalette.EMERALD_SOFT_DARK, CategoryPalette.EMERALD_SOFT_LIGHT)
-        "💰" -> selectColor(isDark, CategoryPalette.GREEN_FIFTY_DARK, CategoryPalette.GREEN_FIFTY_LIGHT)
-        else -> selectColor(isDark, CategoryPalette.SLATE_DEFAULT_DARK, CategoryPalette.SLATE_DEFAULT_LIGHT)
+        "🌾" -> CategoryColors.select(isDark, CategoryColors.AMBER_DARK, CategoryColors.AMBER_LIGHT)
+        "🍬", "🍭" -> CategoryColors.select(isDark, CategoryColors.PINK_DARK, CategoryColors.PINK_LIGHT)
+        "☕" -> CategoryColors.select(isDark, CategoryColors.GRAY_LIGHT_DARK, CategoryColors.GRAY_LIGHT_LIGHT)
+        "🔥" -> CategoryColors.select(isDark, CategoryColors.RED_SOFT_DARK, CategoryColors.RED_SOFT_LIGHT)
+        "⚡" -> CategoryColors.select(isDark, CategoryColors.YELLOW_DARK, CategoryColors.YELLOW_LIGHT)
+        "💧" -> CategoryColors.select(isDark, CategoryColors.BLUE_SOFT_DARK, CategoryColors.BLUE_SOFT_LIGHT)
+        "🚀", "🌐" -> CategoryColors.select(isDark, CategoryColors.SKY_DARK, CategoryColors.SKY_LIGHT)
+        "🍼", "👶" -> CategoryColors.select(isDark, CategoryColors.PURPLE_DARK, CategoryColors.PURPLE_LIGHT)
+        "🎒" -> CategoryColors.select(isDark, CategoryColors.SKY_DARK, CategoryColors.SKY_LIGHT)
+        "🏦" -> CategoryColors.select(isDark, CategoryColors.EMERALD_SOFT_DARK, CategoryColors.EMERALD_SOFT_LIGHT)
+        "💰" -> CategoryColors.select(isDark, CategoryColors.GREEN_FIFTY_DARK, CategoryColors.GREEN_FIFTY_LIGHT)
+        else -> CategoryColors.select(isDark, CategoryColors.SLATE_DEFAULT_DARK, CategoryColors.SLATE_DEFAULT_LIGHT)
     }
 }
 

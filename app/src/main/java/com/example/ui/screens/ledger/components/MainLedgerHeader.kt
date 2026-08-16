@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
@@ -38,14 +39,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
-import com.example.ui.theme.LightRedTint
-import com.example.ui.theme.NeonCyan
-import com.example.ui.theme.NeonGreen
-import com.example.ui.theme.PurpleAccent
-import com.example.ui.theme.Slate200
-import com.example.ui.theme.SoftLavender
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -151,7 +148,7 @@ fun PinnedMainLedgerHeader(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = stringResource(id = R.string.ledger_bulk_delete_days_desc),
-                        tint = if (selectedDayKeys.isEmpty()) Color.White.copy(alpha = 0.4f) else LightRedTint,
+                        tint = if (selectedDayKeys.isEmpty()) Color.White.copy(alpha = 0.4f) else Color(0xFFFF8A80),
                         modifier = Modifier.size(15.dp)
                     )
                 }
@@ -327,9 +324,9 @@ fun MainLedgerHeader(
                         checked = linkHabayebDebts,
                         onCheckedChange = onLinkHabayebDebtsChange,
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = SoftLavender,
-                            checkedTrackColor = PurpleAccent,
-                            uncheckedThumbColor = Slate200,
+                            checkedThumbColor = Color(0xFFF3E8FF),
+                            checkedTrackColor = Color(0xFF8B5CF6),
+                            uncheckedThumbColor = Color(0xFFE2E8F0),
                             uncheckedTrackColor = Color.White.copy(alpha = 0.15f)
                         ),
                         modifier = Modifier.height(18.dp).scale(0.7f)
@@ -348,15 +345,15 @@ fun MainLedgerHeader(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(5.dp))
-                            .background(NeonGreen.copy(alpha = 0.2f))
-                            .border(1.dp, NeonGreen, RoundedCornerShape(5.dp))
+                            .background(Color(0xFF00E676).copy(alpha = 0.2f))
+                            .border(1.dp, Color(0xFF00E676), RoundedCornerShape(5.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp)
                     ) {
                         Text(
                             text = "${(percentFloat * 100).toInt()}%",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = NeonGreen
+                            color = Color(0xFF00E676)
                         )
                     }
                     Text(
@@ -371,8 +368,8 @@ fun MainLedgerHeader(
                 val neonGradient = remember {
                     Brush.horizontalGradient(
                         colors = listOf(
-                            NeonGreen,
-                            NeonCyan
+                            Color(0xFF00E676),
+                            Color(0xFF00B0FF)
                         )
                     )
                 }
@@ -391,7 +388,7 @@ fun MainLedgerHeader(
                                 .fillMaxWidth(percentFloat)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(if (linkHabayebDebts) androidx.compose.ui.graphics.SolidColor(SoftLavender) else neonGradient)
+                                .background(if (linkHabayebDebts) androidx.compose.ui.graphics.SolidColor(Color(0xFFC4B5FD)) else neonGradient)
                         )
                     }
                 }

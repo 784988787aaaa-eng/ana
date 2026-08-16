@@ -6,7 +6,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.os.Build
 import android.text.Layout
+import android.text.StaticLayout
 import com.example.R
 import com.example.data.serialization.pdf.PdfDrawingUtils.drawArabicText
 import com.example.domain.model.TransactionType

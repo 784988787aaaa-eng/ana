@@ -38,11 +38,6 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.ui.viewmodel.FinanceConstants
 
-import com.example.ui.theme.DarkNeutralTrack
-import com.example.ui.theme.LightNeutralTrack
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
-
 /**
  * نافذة تحكم الحساب المبتكرة والأنيقة للغاية:
  * تم تصميمها لتعبر عن طابع عصري رشيق، وتضم خيار الحذف المباشر السهل والسريع.
@@ -233,9 +228,9 @@ fun CustomerContextBottomSheet(
                         // قسم تغيير نوع الحساب معزول بصرياً بالأسفل بشكل فائق الأناقة والرشاقة
                         val bgColor = MaterialTheme.colorScheme.background
                         val isDark = remember(bgColor) { bgColor.run { red < 0.5f } }
-                        val activeRedColor = remember(isDark) { financialDebtColor(isDark) }
-                        val activeGreenColor = remember(isDark) { financialCreditColor(isDark) }
-                        val inactiveBgColor = remember(isDark) { if (isDark) DarkNeutralTrack else LightNeutralTrack }
+                        val activeRedColor = remember(isDark) { if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626) }
+                        val activeGreenColor = remember(isDark) { if (isDark) Color(0xFF34D399) else Color(0xFF10B981) }
+                        val inactiveBgColor = remember(isDark) { if (isDark) Color(0xFF2D2D2D) else Color(0xFFEEEEEE) }
                         val inactiveTextColor = remember(isDark) { if (isDark) Color.Gray else Color.DarkGray }
 
                         Box(
@@ -350,8 +345,8 @@ fun CustomerContextBottomSheet(
                                 dismissButton = {
                                     // زر (تأكيد) غير بارز وبسيط للحماية ولونه ديناميكي بالكامل يتوافق مع الخيار المستهدف
                                     val confirmButtonColor = when (pendingTypeChange) {
-                                        FinanceConstants.TYPE_OWED_TO_THEM -> financialCreditColor(isDark)
-                                        FinanceConstants.TYPE_OWED_BY_THEM -> financialDebtColor(isDark)
+                                        FinanceConstants.TYPE_OWED_TO_THEM -> if (isDark) Color(0xFF34D399) else Color(0xFF16A34A)
+                                        FinanceConstants.TYPE_OWED_BY_THEM -> if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
                                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                                     }
                                     TextButton(
