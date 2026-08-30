@@ -1,5 +1,17 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة ألسنة تبويب وتصفية الحبايب (Habayeb Filter Tabs Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على كبسولات التصفية التفاعلية السريعة (لي عند الناس / علي للناس):
+ * 1. حساب وعرض إجمالي المديونيات الدائنة والمدينة وتنسيقها بشكل ذكي مع رمز العملة.
+ * 2. دعم وضع الخصوصية والتمويه (Privacy Mode Masking) لإخفاء الأرقام عند الرغبة.
+ * 3. نظام ألوان ديناميكي متجاوب مع السمات والوضعين النهاري والليلي (ChipColors).
+ * 4. تأثيرات حركية تفاعلية واهتزاز لمسي خفيف (Haptic Feedback) عند النقر.
+ * =====================================================================================
+ */
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -186,10 +198,6 @@ private fun RowScope.FilterTabChip(
     onClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-    val bgColor by animateColorAsState(targetValue = targetBgColor, animationSpec = tween(220), label = "${animLabel}Bg")
-    val borderColor by animateColorAsState(targetValue = targetBorderColor, animationSpec = tween(220), label = "${animLabel}Border")
-    val animHeaderColor by animateColorAsState(targetValue = headerColor, animationSpec = tween(220), label = "${animLabel}Header")
-    val animTextColor by animateColorAsState(targetValue = textColor, animationSpec = tween(220), label = "${animLabel}Text")
 
     Box(
         modifier = Modifier
@@ -200,11 +208,11 @@ private fun RowScope.FilterTabChip(
                 shape = RoundedCornerShape(14.dp)
             )
             .clip(RoundedCornerShape(14.dp))
-            .background(bgColor)
+            .background(targetBgColor)
             .border(
                 BorderStroke(
                     width = if (isSelected) 1.5.dp else 1.dp,
-                    color = borderColor
+                    color = targetBorderColor
                 ),
                 RoundedCornerShape(14.dp)
             )
@@ -225,22 +233,27 @@ private fun RowScope.FilterTabChip(
                 text = title,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = animHeaderColor,
+                color = headerColor,
                 textAlign = TextAlign.Center
             )
+            val displayValue = if (isPrivacyMode) PRIVACY_MASK else "$formattedAmount $currencySymbol"
             AnimatedContent(
-                targetState = formattedAmount,
+                targetState = displayValue,
                 transitionSpec = {
-                    (fadeIn(animationSpec = tween(200)) + slideInVertically(animationSpec = tween(200)) { height -> height / 3 })
-                        .togetherWith(fadeOut(animationSpec = tween(150)) + slideOutVertically(animationSpec = tween(150)) { height -> -height / 3 })
+                    if (targetState == PRIVACY_MASK || initialState == PRIVACY_MASK) {
+                        fadeIn(animationSpec = tween(90)).togetherWith(fadeOut(animationSpec = tween(60)))
+                    } else {
+                        (fadeIn(animationSpec = tween(150)) + slideInVertically(animationSpec = tween(150)) { height -> height / 3 })
+                            .togetherWith(fadeOut(animationSpec = tween(100)) + slideOutVertically(animationSpec = tween(100)) { height -> -height / 3 })
+                    }
                 },
                 label = animLabel
             ) { animatedVal ->
                 Text(
-                    text = if (isPrivacyMode) PRIVACY_MASK else "$animatedVal $currencySymbol",
+                    text = animatedVal,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
-                    color = animTextColor,
+                    color = textColor,
                     textAlign = TextAlign.Center
                 )
             }

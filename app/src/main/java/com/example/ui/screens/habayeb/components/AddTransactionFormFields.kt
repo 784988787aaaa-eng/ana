@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة حقول نموذج إضافة المعاملة المالية (Add Transaction Form Fields Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على الحقول النصية ومكونات الإدخال الأساسية لتسجيل دفعة أو قيد مالي جديد:
+ * - حقل إدخال المبلغ المالي مع رمز العملة وأيقونة تشغيل الآلة الحاسبة السريعة.
+ * - حقل إدخال بيان المعاملة (الوصف) مع عرض التاريخ المنسق وأيقونة منتقي التاريخ والوقت.
+ * - إدارة التنقل بين الحقول عبر لوحة المفاتيح والتركيز البؤري (FocusRequester).
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +54,25 @@ import com.example.R
 import com.example.ui.screens.habayeb.utils.HabayebDateFormatter
 import java.util.Date
 
+/*
+ * =====================================================================================
+ * حقول نموذج إضافة المعاملة (AddTransactionFormFields)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * يعرض حقلي إدخال المبلغ والبيان لمعاملة مالية:
+ * 1. حقل المبلغ: مخصص للأرقام، يتضمن أيقونة فتح الآلة الحاسبة ورمز العملة، وينتقل تلقائياً للبيان.
+ * 2. حقل البيان: مخصص لوصف الحركة، يتضمن التاريخ المحدد هجرياً/ميلادياً وزر التقويم.
+ *
+ * [المُدخلات]:
+ * - amountTfv / onAmountChange: قيمة كائن المبلغ ورد نداء تغييره.
+ * - descTfv / onDescChange: قيمة كائن الوصف ورد نداء تغييره.
+ * - selectedTransactionCurrency: رمز العملة المحددة للمعاملة.
+ * - dateMillis: الطابع الزمني المختار للتاريخ بالميلي ثانية.
+ * - dynamicThemeColor: اللون السمة النشط للتركيز والأيقونات.
+ * - amountFocusRequester / descFocusRequester: كائنات إدارة التركيز البؤري.
+ * - onOpenCalculator / onOpenDatePicker: ردود نداء لفتح الآلة الحاسبة ومنتقي التاريخ.
+ * =====================================================================================
+ */
 @Composable
 fun AddTransactionFormFields(
     amountTfv: TextFieldValue,
@@ -72,6 +102,7 @@ fun AddTransactionFormFields(
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        // حقل إدخال المبلغ
         OutlinedTextField(
             value = amountTfv,
             onValueChange = onAmountChange,
@@ -125,6 +156,7 @@ fun AddTransactionFormFields(
             HabayebDateFormatter.formatDateArabic(Date(dateMillis))
         }
 
+        // حقل إدخال تفاصيل وبيان المعاملة
         OutlinedTextField(
             value = descTfv,
             onValueChange = onDescChange,
@@ -188,3 +220,4 @@ fun AddTransactionFormFields(
         )
     }
 }
+

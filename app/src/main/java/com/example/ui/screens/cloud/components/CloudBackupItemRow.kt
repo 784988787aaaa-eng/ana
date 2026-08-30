@@ -1,5 +1,16 @@
 package com.example.ui.screens.cloud.components
 
+/*
+ * =====================================================================================
+ * حزمة صف عنصر النسخة السحابية (Cloud Backup Item Row Component Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على المكون البصري المخصص لعرض بطاقة نسخة احتياطية سحابية واحدة:
+ * - عرض تاريخ ووقت إنشاء النسخة وحجمها التخزيني بالكيلوبايت.
+ * - دعم التفاعل بالقائمة المنبثقة (خيارات الاستعادة والحذف الفردي).
+ * - دعم وضع التحديد المتعدد (Selection Mode) مع مؤشرات الاختيار التفاعلية والضغط المطول.
+ * =====================================================================================
+ */
+
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.foundation.BorderStroke
@@ -25,6 +36,29 @@ import com.example.data.CloudBackupFile
 
 import androidx.compose.ui.graphics.luminance
 
+/*
+ * =====================================================================================
+ * بطاقة عرض عنصر النسخة الاحتياطية السحابية (CloudBackupItemRow)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * بطاقة مضغوطة عالية الوضوح لعرض بيانات ملف النسخة السحابية:
+ * 1. استخراج وتنسيق تاريخ ووقت الملف عبر دالة `formatBackupDateTime`.
+ * 2. حساب حجم الملف بالكيلوبايت وعرضه بشكل مناسب.
+ * 3. قائمة خيارات منبثقة تتضمن: استعادة هذه النسخة أو حذفها من Google Drive.
+ * 4. دعم الضغط المطول والنقر لتفعيل وتعديل التحديد عند تشغيل وضع الحذف المتعدد.
+ *
+ * [المُدخلات]:
+ * - backup: كائن بيانات النسخة السحابية (CloudBackupFile).
+ * - menuExpanded: هل قائمة الخيارات المنبثقة لهذا العنصر مفتوحة.
+ * - onMenuToggle: رد نداء لتبديل حالة فتح/إغلاق القائمة.
+ * - onRestoreClick: رد نداء عند طلب استرجاع وتنزيل النسخة.
+ * - onDeleteClick: رد نداء عند طلب حذف النسخة السحابية.
+ * - isSelectionMode: هل وضع التحديد المتعدد نشط حالياً.
+ * - isSelected: هل هذا العنصر محدد ضمن العناصر المختارة.
+ * - onSelectedChange: رد نداء تبديل حالة تحديد هذا العنصر.
+ * - onLongClick: رد نداء الضغط المطول لتفعيل وضع التحديد المتعدد.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CloudBackupItemRow(
@@ -47,6 +81,7 @@ fun CloudBackupItemRow(
     val unknownSize = stringResource(R.string.cloud_size_unknown)
     val sizeKbPattern = stringResource(R.string.cloud_size_kb_pattern)
 
+    // حساب وعرض حجم الملف بتنسيق دقيق بالكيلوبايت
     val displaySize = remember(backup.size, unknownSize, sizeKbPattern) {
         if (backup.size <= 0L) {
             unknownSize
@@ -55,17 +90,18 @@ fun CloudBackupItemRow(
         }
     }
 
+    // بطاقة الحاوية مع تمييز لوني عند التحديد
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                com.example.ui.theme.InfoBlue.copy(alpha = if (isDark) 0.22f else 0.12f)
+                MaterialTheme.colorScheme.secondary.copy(alpha = if (isDark) 0.22f else 0.12f)
             } else {
                 MaterialTheme.colorScheme.surface
             }
         ),
         border = BorderStroke(
             width = if (isSelected) 1.5.dp else 0.8.dp,
-            color = if (isSelected) com.example.ui.theme.InfoBlue else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         ),
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier
@@ -88,7 +124,7 @@ fun CloudBackupItemRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Far Left: Size and 3-dots Menu
+            // الجانب الأيسر: الحجم والقائمة المنبثقة أو مؤشر التحديد
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -116,6 +152,7 @@ fun CloudBackupItemRow(
                             )
                         }
 
+                        // قائمة الخيارات المنبثقة (استعادة / حذف)
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { onMenuToggle(false) },
@@ -127,7 +164,7 @@ fun CloudBackupItemRow(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(Icons.Default.Restore, contentDescription = null, tint = com.example.ui.theme.CreditGreen, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
                                         Text(
                                             text = stringResource(R.string.cloud_menu_restore_this),
                                             fontSize = 12.sp,
@@ -157,11 +194,11 @@ fun CloudBackupItemRow(
                         }
                     }
                 } else {
-                    // Checkbox indicator for selection mode
+                    // مؤشر التحديد الدائري أثناء وضع التحديد المتعدد
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = if (isSelected) com.example.ui.theme.InfoBlue else MaterialTheme.colorScheme.outlineVariant,
+                        tint = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
                         modifier = Modifier
                             .size(20.dp)
                             .padding(start = 2.dp)
@@ -169,7 +206,7 @@ fun CloudBackupItemRow(
                 }
             }
 
-            // Right: Date & Time details
+            // الجانب الأيمن: التاريخ والوقت
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = dateStr,
@@ -186,3 +223,4 @@ fun CloudBackupItemRow(
         }
     }
 }
+

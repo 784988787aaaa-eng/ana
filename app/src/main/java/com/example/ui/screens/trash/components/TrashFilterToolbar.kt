@@ -4,18 +4,37 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.AutoDelete
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,167 +53,134 @@ fun TrashFilterToolbar(
     onAutoCleanupPeriodChanged: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
     var showCleanupMenu by remember { mutableStateOf(false) }
-    var buttonWidth by remember { mutableStateOf(0) }
 
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(horizontal = 16.dp, vertical = 2.dp)
+            .horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Quick Category Badges Row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val filters = listOf(
-                    TrashFilterType.ALL to stringResource(id = R.string.trash_filter_all_label),
-                    TrashFilterType.CUSTOMERS to stringResource(id = R.string.trash_filter_customers),
-                    TrashFilterType.TRANSACTIONS to stringResource(id = R.string.trash_filter_transactions)
-                )
+        // Quick Category Badges
+        val filters = listOf(
+            TrashFilterType.ALL to stringResource(id = R.string.trash_filter_all_label),
+            TrashFilterType.TRANSACTIONS to stringResource(id = R.string.trash_filter_transactions),
+            TrashFilterType.CUSTOMERS to stringResource(id = R.string.trash_filter_customers)
+        )
 
-                filters.forEach { (type, label) ->
-                    val isSelected = selectedFilter == type
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                            )
-                            .clickable {
-                                onFilterSelected(if (isSelected && type != TrashFilterType.ALL) TrashFilterType.ALL else type)
-                            }
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+        filters.forEach { (type, label) ->
+            val isSelected = selectedFilter == type
+            Surface(
+                onClick = {
+                    onFilterSelected(if (isSelected && type != TrashFilterType.ALL) TrashFilterType.ALL else type)
+                },
+                shape = RoundedCornerShape(10.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = if (isSelected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.height(30.dp)
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Sort Dropdown Button
+        Box {
+            Surface(
+                onClick = { showSortMenu = true },
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.height(30.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = stringResource(id = R.string.trash_sort_btn_label),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
 
-            // Sort Dropdown Button
-            Box {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .clickable { showMenu = true }
-                        .border(
-                            0.8.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                            RoundedCornerShape(10.dp)
-                        )
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = stringResource(id = R.string.trash_sort_btn_label),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false },
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(
+                        0.5.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        RoundedCornerShape(12.dp)
+                    )
+            ) {
+                val sortOptions = listOf(
+                    TrashSortType.NEWEST_DELETED to stringResource(id = R.string.trash_sort_newest),
+                    TrashSortType.OLDEST_DELETED to stringResource(id = R.string.trash_sort_oldest),
+                    TrashSortType.HIGHEST_AMOUNT to stringResource(id = R.string.trash_sort_highest),
+                    TrashSortType.ALPHABETICAL to stringResource(id = R.string.trash_sort_alphabetical)
+                )
 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(
-                            0.5.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                            RoundedCornerShape(8.dp)
-                        )
-                ) {
+                sortOptions.forEach { (sortType, sortLabel) ->
+                    val isSelected = selectedSort == sortType
                     DropdownMenuItem(
                         text = {
-                            Text(
-                                text = stringResource(id = R.string.trash_sort_newest),
-                                fontWeight = if (selectedSort == TrashSortType.NEWEST_DELETED) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp,
-                                color = if (selectedSort == TrashSortType.NEWEST_DELETED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = sortLabel,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                if (isSelected) {
+                                    Text(
+                                        text = "✔",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                         onClick = {
-                            onSortSelected(TrashSortType.NEWEST_DELETED)
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(id = R.string.trash_sort_oldest),
-                                fontWeight = if (selectedSort == TrashSortType.OLDEST_DELETED) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp,
-                                color = if (selectedSort == TrashSortType.OLDEST_DELETED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = {
-                            onSortSelected(TrashSortType.OLDEST_DELETED)
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(id = R.string.trash_sort_highest),
-                                fontWeight = if (selectedSort == TrashSortType.HIGHEST_AMOUNT) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp,
-                                color = if (selectedSort == TrashSortType.HIGHEST_AMOUNT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = {
-                            onSortSelected(TrashSortType.HIGHEST_AMOUNT)
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(id = R.string.trash_sort_alphabetical),
-                                fontWeight = if (selectedSort == TrashSortType.ALPHABETICAL) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp,
-                                color = if (selectedSort == TrashSortType.ALPHABETICAL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = {
-                            onSortSelected(TrashSortType.ALPHABETICAL)
-                            showMenu = false
+                            onSortSelected(sortType)
+                            showSortMenu = false
                         }
                     )
                 }
             }
         }
 
-        // Smart Auto-Cleanup Compact Popover
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            val selectedLabel = when (autoCleanupPeriod) {
+        // Compact Auto-Cleanup Pill
+        Box {
+            val selectedCleanupLabel = when (autoCleanupPeriod) {
                 "week" -> stringResource(R.string.trash_auto_cleanup_week)
                 "month" -> stringResource(R.string.trash_auto_cleanup_month)
                 "3months" -> stringResource(R.string.trash_auto_cleanup_3months)
@@ -205,36 +191,31 @@ fun TrashFilterToolbar(
 
             Surface(
                 onClick = { showCleanupMenu = true },
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .height(32.dp),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                border = BorderStroke(
-                    0.8.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                )
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.height(30.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.DeleteForever,
+                        imageVector = Icons.Default.AutoDelete,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = stringResource(R.string.trash_auto_cleanup_label, selectedLabel),
-                        fontSize = 11.sp,
+                        text = stringResource(R.string.trash_auto_cleanup_label, selectedCleanupLabel),
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "▼",
-                        fontSize = 8.sp,
+                        text = "▾",
+                        fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
@@ -247,9 +228,9 @@ fun TrashFilterToolbar(
                     .width(160.dp)
                     .background(MaterialTheme.colorScheme.surface)
                     .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                        RoundedCornerShape(10.dp)
+                        0.5.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        RoundedCornerShape(12.dp)
                     )
             ) {
                 val periods = listOf(
@@ -286,7 +267,7 @@ fun TrashFilterToolbar(
                                 }
                             }
                         },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                         onClick = {
                             onAutoCleanupPeriodChanged(periodKey)
                             showCleanupMenu = false

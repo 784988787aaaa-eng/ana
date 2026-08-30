@@ -1,5 +1,20 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * قسم قائمة سجل دفتر الأستاذ (Main Ledger List Section Component)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون العرض الرأسي التمريري الرئيسي (LazyColumn) لدفتر الأستاذ:
+ * 1. يعرض الحالة الفارغة الإرشادية (Empty State) إذا لم توجد أي معاملات مسجلة.
+ * 2. يطبق مؤشر التحميل المرحلي الهادئ (Deferred Skeleton Loading) عند تهيئة الشاشة.
+ * 3. يجمع المعاملات مقسمة ومجمعة شهرياً ويومياً (Month Ledger & Day Ledger).
+ * 4. يتيح طي وتوسيع الشهور بالكامل، وطي وتوسيع بطاقات الأيام (DayCard).
+ * 5. يفصل بين الشهور بخطوط الانتقال الشهرية (MonthTransitionLine).
+ * 6. يدعم وضع التحديد الجماعي للأيام أو المعاملات المفردة بكفاءة تمرير عالية.
+ * =====================================================================================
+ */
+
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,16 +53,9 @@ fun MainLedgerListSection(
     bottomPadding: Dp,
     isDaySelectionMode: Boolean,
     selectedDayKeys: List<String>,
-    totalCash: BigDecimal,
-    isPrivacyMode: Boolean,
-    onTogglePrivacyMode: () -> Unit,
-    currencySymbol: String,
     formatCurrency: (BigDecimal, String) -> String,
     formatDoubleCurrency: (Double, String) -> String,
-    commitments: List<FixedCommitment>,
-    computedCommitments: List<Triple<FixedCommitment, BigDecimal, BigDecimal>>,
-    linkHabayebDebts: Boolean,
-    onLinkHabayebDebtsChange: (Boolean) -> Unit,
+    currencySymbol: String,
     monthlyLedger: List<MonthLedger>,
     isScreenReady: Boolean,
     collapsedMonths: Set<String>,
@@ -64,42 +72,17 @@ fun MainLedgerListSection(
     onTransactionSelectToggle: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // تم اعتماد التوزيع المباشر واستخدام مفاتيح معينة للشهور والأيام للحد من إعادة رسم البطاقات غير المتغيرة أثناء التمرير السريع.
     LazyColumn(
         state = lazyListState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = 0.dp,
+            top = 4.dp,
             bottom = bottomPadding + 110.dp
         ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // Compact Header + Total Cash + Coverage Ratio
-        item(key = "header_total_cash") {
-            MainLedgerHeader(
-                totalCash = totalCash,
-                isPrivacyMode = isPrivacyMode,
-                onTogglePrivacyMode = onTogglePrivacyMode,
-                currencySymbol = currencySymbol,
-                formatCurrency = formatCurrency,
-                commitments = commitments,
-                computedCommitments = computedCommitments,
-                linkHabayebDebts = linkHabayebDebts,
-                onLinkHabayebDebtsChange = onLinkHabayebDebtsChange
-            )
-        }
-
-        // Commitments Summary Cards
-        item(key = "commitments_summary") {
-            CommitmentsSummaryCards(
-                commitments = commitments,
-                computedCommitments = computedCommitments,
-                totalCash = totalCash,
-                currencySymbol = currencySymbol,
-                formatCurrency = formatCurrency
-            )
-        }
-
         // Empty state placeholder
         if (monthlyLedger.isEmpty()) {
             item(key = "empty_state") {
@@ -133,7 +116,7 @@ fun MainLedgerListSection(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(32.dp),
-                        color = EmeraldPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         strokeWidth = 3.dp
                     )
                 }
@@ -167,14 +150,14 @@ fun MainLedgerListSection(
                             Icon(
                                 imageVector = if (isCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                                 contentDescription = null,
-                                tint = EmeraldPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
                                     .size(20.dp)
                                     .padding(end = 4.dp)
                             )
                             Text(
                                 text = if (monthIdx == 0) stringResource(id = R.string.ledger_daily_record) else stringResource(id = R.string.ledger_monthly_record),
-                                color = EmeraldPrimary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )

@@ -63,7 +63,7 @@ fun RestoreWarningDialog(
             ) {
                 Text(
                     text = stringResource(R.string.backup_restore_confirm_btn),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
                 )

@@ -1,32 +1,47 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * بطاقات ملخص الالتزامات والسيولة الصافية (Commitments Summary Cards Component)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون واجهة رسومية يعرض بطاقتين إحصائيتين متجاورتين لإبراز الموقف المالي:
+ * 1. بطاقة "الصافي" (Net Cash): باللون الأخضر المالي، توضح فائض السيولة المتاح بعد تغطية الالتزامات.
+ * 2. بطاقة "باقي الالتزامات" (Remaining Commitments): باللون الأحمر المالي، توضح إجمالي العجز أو المبالغ المتبقية المطلوب توفيرها.
+ * 3. تستخدم مكون AutoScaleText لتقليص حجم الخط تلقائياً عند زيادة خانات الأرقام تفادياً للاقتصاص.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
-import com.example.ui.theme.financialCreditBg
-import com.example.ui.theme.financialCreditBorder
+import com.example.ui.helper.AutoScaleText
 import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtBg
-import com.example.ui.theme.financialDebtBorder
 import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
+/*
+ * =====================================================================================
+ * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
+ * =====================================================================================
+ */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -37,6 +52,19 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
+/*
+ * =====================================================================================
+ * دالة العرض لبطاقات ملخص الالتزامات (CommitmentsSummaryCards Composable)
+ * -------------------------------------------------------------------------------------
+ * [المُدخلات]:
+ * - commitments: قائمة كائنات الالتزامات الثابتة.
+ * - computedCommitments: قائمة الالتزامات المحسوبة (الالتزام، المخصص، المتبقي).
+ * - totalCash: إجمالي السيولة النقدية المتاحة.
+ * - currencySymbol: رمز العملة المعتمد.
+ * - formatCurrency: دالة تنسيق المبالغ المالية.
+ * - modifier: مغير التنسيق والمحاذاة الخارجي.
+ * =====================================================================================
+ */
 @Composable
 fun CommitmentsSummaryCards(
     commitments: List<FixedCommitment>,
@@ -49,6 +77,8 @@ fun CommitmentsSummaryCards(
     if (commitments.isEmpty()) return
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val greenColor = financialCreditColor(isDark)
+    val redColor = financialDebtColor(isDark)
 
     val (totalRemainingCommitments, netAmount) = remember(computedCommitments, totalCash) {
         val remaining = computedCommitments.fold(BigDecimal.ZERO) { acc, triple -> acc.add(triple.third) }
@@ -60,85 +90,102 @@ fun CommitmentsSummaryCards(
         Pair(remaining, net)
     }
 
-    val outlineVarColor = MaterialTheme.colorScheme.outlineVariant
-    val netBg = remember(isDark) { financialCreditBg(isDark) }
-    val netTextColor = remember(isDark) { financialCreditColor(isDark) }
-    val netBorderColor = remember(isDark, outlineVarColor) { if (isDark) financialCreditBorder(isDark).copy(alpha = 0.4f) else outlineVarColor.copy(alpha = 0.3f) }
-
-    val remainingBg = remember(isDark) { financialDebtBg(isDark) }
-    val remainingTextColor = remember(isDark) { financialDebtColor(isDark) }
-    val remainingBorderColor = remember(isDark, outlineVarColor) { if (isDark) financialDebtBorder(isDark).copy(alpha = 0.4f) else outlineVarColor.copy(alpha = 0.3f) }
+    val cardBaseBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Card 1: Net Amount Capsule
-        Box(
+        // البطاقة 1: في اليمين (RTL) -> "الصافي" (بالأخضر)
+        Card(
             modifier = Modifier
                 .weight(1f)
-                .height(38.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(netBg)
-                .border(
-                    BorderStroke(0.8.dp, netBorderColor),
-                    RoundedCornerShape(12.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .defaultMinSize(minHeight = 52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isDark) greenColor.copy(alpha = 0.12f) else cardBaseBg
+            ),
+            border = BorderStroke(
+                1.dp,
+                greenColor.copy(alpha = if (isDark) 0.35f else 0.22f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(horizontal = 4.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "${stringResource(R.string.ledger_net_prefix)} ",
+                    text = stringResource(R.string.ledger_net_prefix).replace(":", "").trim(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = netTextColor
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Text(
+                Spacer(modifier = Modifier.height(2.dp))
+                AutoScaleText(
                     text = formatCurrency(netAmount, currencySymbol).toWesternDigits(),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = netTextColor
+                    baseFontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = greenColor,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
 
-        // Card 2: Remaining Commitments Capsule
-        Box(
+        // البطاقة 2: في اليسار (RTL) -> "باقي الالتزامات" (بالأحمر)
+        Card(
             modifier = Modifier
                 .weight(1f)
-                .height(38.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(remainingBg)
-                .border(
-                    BorderStroke(0.8.dp, remainingBorderColor),
-                    RoundedCornerShape(12.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .defaultMinSize(minHeight = 52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isDark) redColor.copy(alpha = 0.12f) else cardBaseBg
+            ),
+            border = BorderStroke(
+                1.dp,
+                redColor.copy(alpha = if (isDark) 0.35f else 0.22f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(horizontal = 4.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "${stringResource(R.string.ledger_remaining_commitments)} ",
+                    text = stringResource(R.string.ledger_remaining_commitments).replace(":", "").trim(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = remainingTextColor
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Text(
+                Spacer(modifier = Modifier.height(2.dp))
+                AutoScaleText(
                     text = formatCurrency(totalRemainingCommitments, currencySymbol).toWesternDigits(),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = remainingTextColor
+                    baseFontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = redColor,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
     }
 }
+

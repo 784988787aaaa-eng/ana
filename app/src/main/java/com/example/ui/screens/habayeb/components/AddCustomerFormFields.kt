@@ -1,5 +1,17 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة حقول نموذج إضافة وتعديل العميل (Add Customer Form Fields Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على الحقول النصية ومكونات الإدخال التفاعلية لإنشاء وتعديل العميل:
+ * - حقل اسم الحساب/العميل مع كاشف تكرار الأسماء والتنبيه الفوري.
+ * - حقل الرصيد الافتتاحي مع أيقونة تشغيل الآلة الحاسبة ورمز العملة.
+ * - حقل البيان/الوصف مع أيقونة اختيار التاريخ والتقويم.
+ * - حقل رقم الهاتف مع ميزة استيراد جهات الاتصال من دفتر الهاتف.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -24,6 +36,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 
+/*
+ * =====================================================================================
+ * حقول نموذج إضافة العميل (AddCustomerFormFields)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * يعرض هذا المكون الحقول الأربعة الأساسية لنموذج إضافة عميل مع إدارة التركيز والتنقل:
+ * 1. حقل الاسم: مع التحقق من الاسم المكرر وإجراء لوحة المفاتيح للانتقال للمبلغ.
+ * 2. حقل الرصيد الافتتاحي: يدعم الأرقام وأيقونة الآلة الحاسبة ورمز العملة المحدد.
+ * 3. حقل بيان العملية: تفاصيل القيد الافتتاحي مع إمكانية فتح منتقي التاريخ.
+ * 4. حقل الهاتف: يدعم أرقام الهواتف وزر اختيار جهة اتصال من الجهاز، وزر الإتمام.
+ *
+ * [المُدخلات]:
+ * - nameStr / onNameChange: نص الاسم ورد نداء تغييره.
+ * - phoneStr / onPhoneChange: نص الهاتف ورد نداء تغييره.
+ * - notesStr / onNotesChange: نص الملاحظات/البيان ورد نداء تغييره.
+ * - initialAmountStr / onInitialAmountChange: نص الرصيد الافتتاحي ورد نداء تغييره.
+ * - isDuplicateName: هل الاسم المدخل مكرر بالفعل في قاعدة البيانات.
+ * - selectedTransactionCurrency: رمز العملة المحددة.
+ * - activeThemeColor: لون السمة النشطة للحواف والتركيز.
+ * - onCalculatorClick: رد نداء لفتح الآلة الحاسبة المدمجة.
+ * - onCalendarClick: رد نداء لفتح منتقي التاريخ.
+ * - onContactPickerClick: رد نداء لفتح منتقي جهات الاتصال.
+ * - onDone: رد نداء عند الضغط على زر الإتمام في لوحة المفاتيح.
+ * - isDark: هل الوضع المظلم نشط لضبط تباين الحواف غير المركزة.
+ * - focusRequester / ...: مراجع التركيز الخاصة بالحقول للتنقل السلس.
+ * =====================================================================================
+ */
 @Composable
 fun AddCustomerFormFields(
     nameStr: String,
@@ -49,7 +88,7 @@ fun AddCustomerFormFields(
     modifier: Modifier = Modifier
 ) {
     val fieldShape = remember { RoundedCornerShape(8.dp) }
-    val unfocusedBorder = if (isDark) MaterialTheme.colorScheme.outlineVariant else Color.LightGray.copy(alpha = 0.5f)
+    val unfocusedBorder = if (isDark) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = activeThemeColor,
         focusedLabelColor = activeThemeColor,
@@ -181,3 +220,4 @@ fun AddCustomerFormFields(
         )
     }
 }
+

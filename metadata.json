@@ -1,0 +1,8 @@
+{
+  "name": "الدفتر الذكي",
+  "description": "تطبيق الدفتر الذكي لإدارة الحسابات والمالية والميزانية والمستحقات والنسخ الاحتياطي",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

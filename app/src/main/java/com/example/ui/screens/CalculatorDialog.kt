@@ -1,5 +1,15 @@
 package com.example.ui.screens
 
+/*
+ * =====================================================================================
+ * حزمة الآلة الحاسبة المالية المدمجة (Financial Calculator Dialog Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على مربع حوار الآلة الحاسبة التفاعلية المخصصة (CalculatorDialog)،
+ * والمصممة لتسهيل العمليات الحسابية أثناء إدخال المبالغ النقدية والمعاملات اليومية
+ * مع دعم التقييم الفوري للمعادلات والتغذية اللمسية وتكيّف الألوان حسب نوع القيد.
+ * =====================================================================================
+ */
+
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.animation.*
@@ -31,20 +41,52 @@ import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.domain.evaluateSimpleExpression
 
+import java.math.BigDecimal
+
+/*
+ * =====================================================================================
+ * نافذة الآلة الحاسبة المالية (CalculatorDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * حوار منبثق (Dialog) يوفر لوحة أرقام وعمليات حسابية (+, -, ×, ÷) متقدمة:
+ * 1. حساب فوري ومعاينة النتيجة بشكل مباشر تحت التعبير الحسابي.
+ * 2. مؤشر كتابة وامض (Blinking Cursor) وتنسيق عربي من اليمين لليسار.
+ * 3. تكييف الألوان الديناميكي مع نوع المعاملة (أخضر للمقبوضات/الدائن، أحمر للمدفوعات/المدين).
+ * 4. تغذية لمسية حساسة (Haptic Feedback) عند الضغط على كل مفتاح.
+ *
+ * [المُدخلات]:
+ * - onDismiss: رد نداء إغلاق نافذة الحاسبة دون اعتماد القيمة.
+ * - onValueConfirmed: رد نداء تأكيد النتيجة النهائية وتمرير كائن BigDecimal للحقل المالي.
+ * - activeThemeColor: اللون الأساسي النشط للسمة (أخضر أو أحمر أو أزرق).
+ * - activeSubColor: اللون الثانوي للسمة.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CalculatorDialog(
     onDismiss: () -> Unit,
-    onValueConfirmed: (Double) -> Unit,
+    onValueConfirmed: (BigDecimal) -> Unit,
     activeThemeColor: Color? = null,
     activeSubColor: Color? = null
 ) {
+    // التعبير الحسابي الخام المدخل من قبل المستخدم
     var rawExpression by remember { mutableStateOf("") }
     
-    // Fallback to app's primary theme color dynamically
-    val brandPrimary = activeThemeColor ?: MaterialTheme.colorScheme.primary
+    // اللون الأساسي النشط للعلامة التجارية أو السمة
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isIncomeTheme = activeThemeColor == com.example.ui.theme.CreditGreen || activeThemeColor == com.example.ui.theme.SelectionGreen || activeThemeColor == com.example.ui.theme.CreditGreenDark
+    val isExpenseTheme = activeThemeColor == com.example.ui.theme.DebtRed || activeThemeColor == com.example.ui.theme.DebtRedDark
+    val brandPrimary = when {
+        isIncomeTheme -> com.example.ui.theme.financialCreditColor(isDarkTheme)
+        isExpenseTheme -> com.example.ui.theme.financialDebtColor(isDarkTheme)
+        else -> MaterialTheme.colorScheme.primary
+    }
 
-    // Evaluate preview in real-time
+    /*
+     * ---------------------------------------------------------------------------------
+     * تقييم فوري للمعادلة الحسابية في الوقت الفعلي (Real-time Evaluation)
+     * ---------------------------------------------------------------------------------
+     */
     val resultPreview = remember(rawExpression) {
         if (rawExpression.isEmpty()) null
         else evaluateSimpleExpression(rawExpression)
@@ -62,14 +104,20 @@ fun CalculatorDialog(
 
     val haptic = LocalHapticFeedback.current
 
+    /*
+     * إطلاق اهتزاز لمسي خفيف عند الضغط
+     */
     fun performClickFeedback() {
         try {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         } catch (e: Exception) {
-            // Ignore in environment without active haptic device
+            // تجاهل الاستثناء في الأجهزة التي لا تدعم الاهتزاز
         }
     }
 
+    /*
+     * معالجة إدخال الأرقام والنقطة العشرية
+     */
     fun handleDigit(digit: String) {
         performClickFeedback()
         if (rawExpression == "0") {
@@ -79,6 +127,9 @@ fun CalculatorDialog(
         }
     }
 
+    /*
+     * معالجة إدخال العمليات الرياضية (+, -, ×, ÷)
+     */
     fun handleOperator(op: String) {
         performClickFeedback()
         if (rawExpression.isEmpty()) {
@@ -89,17 +140,24 @@ fun CalculatorDialog(
         }
         val lastChar = rawExpression.last()
         if (lastChar in listOf('+', '-', '×', '÷')) {
+            // استبدال العملية السابقة بالعملية الجديدة
             rawExpression = rawExpression.dropLast(1) + op
         } else {
             rawExpression += op
         }
     }
 
+    /*
+     * مسح التعبير الحسابي بالكامل (Clear)
+     */
     fun handleClear() {
         performClickFeedback()
         rawExpression = ""
     }
 
+    /*
+     * حذف آخر خانة مدخلة (Backspace)
+     */
     fun handleBackspace() {
         performClickFeedback()
         if (rawExpression.isNotEmpty()) {
@@ -107,6 +165,9 @@ fun CalculatorDialog(
         }
     }
 
+    /*
+     * تقييم النتيجة وتحديث سطر التعبير الحسابي بالقيمة النهائية (=)
+     */
     fun evaluate() {
         performClickFeedback()
         val result = evaluateSimpleExpression(rawExpression)
@@ -119,50 +180,50 @@ fun CalculatorDialog(
         }
     }
 
+    /*
+     * تأكيد المبلغ وإرجاعه إلى الحقل المالي وإغلاق الحوار (OK)
+     */
     fun confirmAndDismiss() {
         if (!isExpressionValid) return
         performClickFeedback()
         val finalBigDecimal = evaluateSimpleExpression(rawExpression)
         val finalValue = if (finalBigDecimal != null) {
-            finalBigDecimal.toDouble()
+            finalBigDecimal
         } else {
-            rawExpression.toDoubleOrNull() ?: 0.0
+            rawExpression.toBigDecimalOrNull() ?: BigDecimal.ZERO
         }
         onValueConfirmed(finalValue)
     }
 
-    val bgMatColor = MaterialTheme.colorScheme.background
-    val isDark = remember(bgMatColor) { bgMatColor.luminance() < 0.5f }
-    val isIncomeTheme = remember(activeThemeColor) { activeThemeColor == com.example.ui.theme.CreditGreen || activeThemeColor == com.example.ui.theme.SelectionGreen }
-    val isExpenseTheme = remember(activeThemeColor) { activeThemeColor == com.example.ui.theme.DebtRed }
+    /*
+     * ---------------------------------------------------------------------------------
+     * حساب تدرجات الألوان وخلفية الحاسبة بناءً على نمط السمة (إيراد / مصروف)
+     * ---------------------------------------------------------------------------------
+     */
+    val isDark = isDarkTheme
 
     val surfaceVarColor = MaterialTheme.colorScheme.surfaceVariant
-    // Calculate background color with clean theme tokens
     val calcBgColor = remember(isDark, isIncomeTheme, isExpenseTheme, surfaceVarColor) {
-        if (isDark) {
-            when {
-                isIncomeTheme -> com.example.ui.theme.CreditContainerDark
-                isExpenseTheme -> com.example.ui.theme.DebtContainerDark
-                else -> surfaceVarColor
-            }
-        } else {
-            when {
-                isIncomeTheme -> com.example.ui.theme.CreditContainerLight
-                isExpenseTheme -> com.example.ui.theme.DebtContainerLight
-                else -> surfaceVarColor
-            }
+        when {
+            isIncomeTheme -> com.example.ui.theme.financialCreditBg(isDark)
+            isExpenseTheme -> com.example.ui.theme.financialDebtBg(isDark)
+            else -> surfaceVarColor
         }
     }
 
-    // Border color matching the mode
     val calcBorderColor = remember(isIncomeTheme, isExpenseTheme, brandPrimary) {
         when {
-            isIncomeTheme -> com.example.ui.theme.CreditGreen
-            isExpenseTheme -> com.example.ui.theme.DebtRed
+            isIncomeTheme -> com.example.ui.theme.financialCreditColor(isDark)
+            isExpenseTheme -> com.example.ui.theme.financialDebtColor(isDark)
             else -> brandPrimary
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * نافذة الحوار وبطاقة الآلة الحاسبة
+     * ---------------------------------------------------------------------------------
+     */
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(24.dp),
@@ -170,7 +231,7 @@ fun CalculatorDialog(
                 containerColor = calcBgColor
             ),
             border = BorderStroke(2.dp, calcBorderColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // Zero elevation to remove automatic gray overlays
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier
                 .widthIn(max = 360.dp)
                 .fillMaxWidth()
@@ -182,7 +243,7 @@ fun CalculatorDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header of Calculator
+                // ترويسة الحاسبة مع زر الإغلاق
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -207,7 +268,7 @@ fun CalculatorDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Digital Display Screen
+                // الشاشة الرقمية لعرض المعادلة والنتيجة
                 val displayBgColor = if (isDark) {
                     when {
                         isIncomeTheme -> com.example.ui.theme.CreditContainerDark
@@ -219,8 +280,8 @@ fun CalculatorDialog(
                 }
                 
                 val displayBorderColor = when {
-                    isIncomeTheme -> com.example.ui.theme.CreditGreen.copy(alpha = 0.6f)
-                    isExpenseTheme -> com.example.ui.theme.DebtRed.copy(alpha = 0.6f)
+                    isIncomeTheme -> com.example.ui.theme.financialCreditColor(isDark).copy(alpha = 0.6f)
+                    isExpenseTheme -> com.example.ui.theme.financialDebtColor(isDark).copy(alpha = 0.6f)
                     else -> MaterialTheme.colorScheme.outlineVariant
                 }
 
@@ -241,27 +302,27 @@ fun CalculatorDialog(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.End
                     ) {
-                        // Expression Line
+                        // سطر كتابة التعبير الرياضي مع المؤشر الوامض
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.End,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = rawExpression.ifEmpty { "0" },
+                                text = rawExpression.ifEmpty { stringResource(id = R.string.calc_default_zero) },
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (rawExpression.isEmpty()) Color.LightGray else displayTextColor,
+                                color = if (rawExpression.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else displayTextColor,
                                 textAlign = TextAlign.Right,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             
-                            // Theme-matched Cursor Blink
+                            // وميض المؤشر المتناسق مع السمة
                             BlinkingCursor(cursorColor = brandPrimary)
                         }
 
-                        // Preview / Result Line
+                        // سطر المعاينة اللحظية للنتيجة
                         if (resultPreview != null && resultPreview.toPlainString() != rawExpression) {
                             val formattedPreview = if (resultPreview.remainder(java.math.BigDecimal.ONE).compareTo(java.math.BigDecimal.ZERO) == 0) {
                                 resultPreview.toBigInteger().toString()
@@ -293,13 +354,13 @@ fun CalculatorDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Arabic Right-to-Left Layout Keyboard
+                // لوحة المفاتيح بالاتجاه العربي (RTL)
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Row 1: [⌫] [9] [8] [7]
+                        // الصف الأول: [⌫] [9] [8] [7]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -310,7 +371,7 @@ fun CalculatorDialog(
                             CalcButton(text = "7", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("7") }
                         }
 
-                        // Row 2: [×] [6] [5] [4]
+                        // الصف الثاني: [×] [6] [5] [4]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -321,7 +382,7 @@ fun CalculatorDialog(
                             CalcButton(text = "4", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("4") }
                         }
 
-                        // Row 3: [-] [3] [2] [1]
+                        // الصف الثالث: [-] [3] [2] [1]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -332,7 +393,7 @@ fun CalculatorDialog(
                             CalcButton(text = "1", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("1") }
                         }
 
-                        // Row 4: [+] [C] [0] [.]
+                        // الصف الرابع: [+] [C] [0] [.]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -343,7 +404,7 @@ fun CalculatorDialog(
                             CalcButton(text = ".", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit(".") }
                         }
 
-                        // Row 5: [=] [÷] [OK]
+                        // الصف الخامس: [=] [÷] [OK]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -359,6 +420,14 @@ fun CalculatorDialog(
     }
 }
 
+/*
+ * =====================================================================================
+ * زر لوحة الآلة الحاسبة المخصص (CalcButton)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * عنصر زر قابل للنقر مصمم بنسب تباين عالية وارتفاع لمسي مريح مع تلوين وظيفي.
+ * =====================================================================================
+ */
 @Composable
 fun CalcButton(
     text: String,
@@ -373,27 +442,32 @@ fun CalcButton(
     onClick: () -> Unit
 ) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val isIncomeTheme = brandPrimary == com.example.ui.theme.CreditGreen || brandPrimary == com.example.ui.theme.SelectionGreen
-    val isExpenseTheme = brandPrimary == com.example.ui.theme.DebtRed
+    val isIncomeTheme = brandPrimary == com.example.ui.theme.CreditGreen || brandPrimary == com.example.ui.theme.CreditGreenDark || brandPrimary == com.example.ui.theme.SelectionGreen
+    val isExpenseTheme = brandPrimary == com.example.ui.theme.DebtRed || brandPrimary == com.example.ui.theme.DebtRedDark
+    val resolvedBrandPrimary = when {
+        isIncomeTheme -> com.example.ui.theme.financialCreditColor(isDark)
+        isExpenseTheme -> com.example.ui.theme.financialDebtColor(isDark)
+        else -> brandPrimary.takeUnless { it == Color.Unspecified } ?: MaterialTheme.colorScheme.primary
+    }
 
-    // Determine button colors dynamically based on active theme & dark mode
+    // تحديد ألوان الزر ديناميكياً
     val backgroundColor = when {
-        isEquals -> brandPrimary
+        isEquals -> resolvedBrandPrimary
         isBackspace -> {
             if (isDark) {
                 if (isIncomeTheme) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.DebtContainerDark
             } else {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerLight else com.example.ui.theme.DebtContainerLight
+                if (isIncomeTheme) com.example.ui.theme.financialCreditBg(isDark) else com.example.ui.theme.financialDebtBg(isDark)
             }
         }
         isOp || isAction -> {
             if (isDark) {
                 if (isIncomeTheme) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.DebtContainerDark
             } else {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerLight else com.example.ui.theme.DebtContainerLight
+                if (isIncomeTheme) com.example.ui.theme.financialCreditBg(isDark) else com.example.ui.theme.financialDebtBg(isDark)
             }
         }
-        else -> { // Numbers
+        else -> { // الأرقام
             if (isDark) {
                 if (isIncomeTheme) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.DebtContainerDark
             } else {
@@ -403,19 +477,19 @@ fun CalcButton(
     }
 
     val textColor = when {
-        isEquals -> Color.White
+        isEquals -> MaterialTheme.colorScheme.onPrimary
         isBackspace -> {
-            if (isDark) Color.White else brandPrimary
+            if (isDark) MaterialTheme.colorScheme.onSurface else resolvedBrandPrimary
         }
-        isOp || isAction -> brandPrimary
-        else -> { // Numbers
-            if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+        isOp || isAction -> resolvedBrandPrimary
+        else -> { // الأرقام
+            MaterialTheme.colorScheme.onSurface
         }
     }
 
     val buttonBorderColor = when {
-        isIncomeTheme -> com.example.ui.theme.CreditGreen.copy(alpha = 0.4f)
-        isExpenseTheme -> com.example.ui.theme.DebtRed.copy(alpha = 0.4f)
+        isIncomeTheme -> com.example.ui.theme.financialCreditColor(isDark).copy(alpha = 0.4f)
+        isExpenseTheme -> com.example.ui.theme.financialDebtColor(isDark).copy(alpha = 0.4f)
         else -> MaterialTheme.colorScheme.outlineVariant
     }
 
@@ -451,6 +525,14 @@ fun CalcButton(
     }
 }
 
+/*
+ * =====================================================================================
+ * مؤشر الكتابة الوامض (BlinkingCursor)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * عنصر رسومي يحاكي وميض مؤشر الإدخال النصي لتوفير تجربة مستخدم ديناميكية وحية.
+ * =====================================================================================
+ */
 @Composable
 private fun BlinkingCursor(cursorColor: Color) {
     val infiniteTransition = rememberInfiniteTransition(label = "cursor")
@@ -473,3 +555,4 @@ private fun BlinkingCursor(cursorColor: Color) {
         )
     }
 }
+

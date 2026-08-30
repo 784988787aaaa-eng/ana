@@ -1,7 +1,26 @@
+/**
+ * =====================================================================
+ * ملف: SecurityHeaderBanner.kt
+ * الحزمة: com.example.ui.screens.security.components
+ * 
+ * [الوصف والمسؤولية المعمارية]:
+ * يمثل هذا الملف شريط الإشعار العلوي (Header Banner) في شاشة إعدادات الأمان والترخيص.
+ * يقدم هذا المكون ملخصاً بصرياً سريعاً ومباشراً يوضح للمستخدم ما إذا كان نظام
+ * حماية التطبيق بكلمة المرور مفعلاً حالياً أو معطلاً، مع تغيير الأيقونة
+ * ونصوص الحالة والألوان المصاحبة ديناميكياً وفقاً للوضع الأمني الحالي.
+ * 
+ * [التكامل وتجربة المستخدم]:
+ * - يتغير لون وشكل الشارة البصرية بين اللون الأخضر (أيقونة الحساب الموثق VerifiedUser)
+ *   عند التفعيل، واللون الأزرق المحايد (أيقونة درع الأمان Security) عند التعطيل.
+ * - يراعي التوافق الكامل مع الثيمين النهاري والليلي ودعم القراءة باللغة العربية.
+ * =====================================================================
+ */
 package com.example.ui.screens.security.components
 
+// ---------------------------------------------------------------------
+// استيراد أدوات واجهة Jetpack Compose ومكونات Material Design 3
+// ---------------------------------------------------------------------
 import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -23,11 +42,26 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
 
+/**
+ * =====================================================================
+ * [شريط حالة الأمان العلوي - SecurityHeaderBanner]:
+ * 
+ * [الهدف والغرض]:
+ * عرض بطاقة علوية توضح حالة تأمين التطبيق الحالية (مفعل / غير مفعل) مع شارة أيقونة معبرة.
+ * 
+ * [البيانات المستلمة]:
+ * @param isAlreadyPasscodeEnabled قيمة منطقية تحدد ما إذا كان قفل رمز المرور مفعلاً حالياً.
+ * @param modifier مخصصات الأبعاد والمحاذاة للبطاقة.
+ * =====================================================================
+ */
 @Composable
 fun SecurityHeaderBanner(
     isAlreadyPasscodeEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // -----------------------------------------------------------------
+    // بطاقة الحاوية الرئيسية مع إطار خارجي رفيع متناسق
+    // -----------------------------------------------------------------
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
@@ -40,25 +74,29 @@ fun SecurityHeaderBanner(
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
+        // تحديد الألوان الديناميكية للأيقونة وخلفيتها وفقاً لحالة القفل والسمة النشطة
         val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
-        val iconBg = if (isDark) {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.InfoBlueBgDark
+        val iconBg = if (isAlreadyPasscodeEnabled) {
+            MaterialTheme.colorScheme.tertiaryContainer
         } else {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditContainerLight else com.example.ui.theme.InfoBlueBgLight
+            MaterialTheme.colorScheme.secondaryContainer
         }
-        val iconTint = if (isDark) {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditGreenDark else MaterialTheme.colorScheme.primary
+        val iconTint = if (isAlreadyPasscodeEnabled) {
+            MaterialTheme.colorScheme.onTertiaryContainer
         } else {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditGreen else EmeraldPrimary
+            MaterialTheme.colorScheme.onSecondaryContainer
         }
 
+        // -------------------------------------------------------------
+        // توزيع عناصر الشريط: النصوص التوضيحية على اليمين وشارة الأيقونة
+        // -------------------------------------------------------------
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // هندسة محاذاة النص والبدء من اليمين لتناسب القراءة العربية الطبيعية
+            // عمود النصوص: العنوان التلخيصي والشرح المفصل للحالة
             Column(
                 horizontalAlignment = Alignment.Start,
                 modifier = Modifier.weight(1f)
@@ -82,7 +120,7 @@ fun SecurityHeaderBanner(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // شارة الأمان الذكية مستقرة في جهة اليسار بصورة عصرية متزنة
+            // شارة الأمان البصرية الدائرية (VerifiedUser عند التفعيل أو Security عند التعطيل)
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -102,3 +140,4 @@ fun SecurityHeaderBanner(
         }
     }
 }
+

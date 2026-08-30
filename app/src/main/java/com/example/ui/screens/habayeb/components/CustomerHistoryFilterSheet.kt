@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة لوحة تصفية سجل الحركات (Customer History Filter Sheet Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على قائمة سفلية (Bottom Sheet) لتصفية المعاملات المالية للعميل:
+ * - تصفية حسب التاريخ: (الكل، اليوم، هذا الشهر، وفترة مخصصة مع منتقي التواريخ المدمج).
+ * - تصفية حسب نوع الحركة: (الكل، المديونيات فقط "عليه"، السدادات والدفعات فقط "له").
+ * - أزرار تفاعلية رقاقية (Chips) مع دعم السمة النشطة ومحاذاة الشاشات المتجاوبة.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +32,24 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/*
+ * =====================================================================================
+ * لوحة تصفية سجل الحركات (CustomerHistoryFilterSheet)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة سفلية منبثقة تتيح للمستخدم تحديد شروط تصفية الحركات المالية بالتواريخ والأنواع.
+ *
+ * [المُدخلات]:
+ * - dateFilterMode: نمط تصفية التاريخ (0: الكل، 1: اليوم، 2: الشهر، 3: مخصص).
+ * - onDateFilterModeChange: رد نداء عند تغيير نمط تصفية التاريخ.
+ * - customStartDate / customEndDate: التواريخ المخصصة المختارة بالمللي ثانية.
+ * - onCustomStartDateChange / onCustomEndDateChange: ردود نداء تحديث التواريخ المخصصة.
+ * - typeFilterMode: نمط تصفية نوع المعاملة (0: الكل، 1: ديون، 2: دفعات).
+ * - onTypeFilterModeChange: رد نداء عند تغيير نمط تصفية النوع.
+ * - activeThemeColor: لون السمة النشط للرقاقات المحددة.
+ * - onDismissRequest: رد نداء لإغلاق القائمة السفلية.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerHistoryFilterSheet(
@@ -97,6 +126,7 @@ fun CustomerHistoryFilterSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(16.dp)
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -123,7 +153,7 @@ fun CustomerHistoryFilterSheet(
                 dateModes.forEach { (mode, label) ->
                     val isSelected = dateFilterMode == mode
                     val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
-                    val chipText = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -207,7 +237,7 @@ fun CustomerHistoryFilterSheet(
                 typeModes.forEach { (mode, label) ->
                     val isSelected = typeFilterMode == mode
                     val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
-                    val chipText = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         modifier = Modifier
                             .weight(1f)

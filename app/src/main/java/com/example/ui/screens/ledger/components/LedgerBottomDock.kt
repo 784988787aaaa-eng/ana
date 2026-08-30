@@ -1,5 +1,18 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * شريط الإجراءات السفلي لدفتر الأستاذ (Ledger Bottom Dock Component)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * شريط إدخال مالي سفلي عالي الوصولية والتفاعل يثبت أسفل شاشة دفتر الأستاذ:
+ * 1. زر إضافة دخل (Add Income): في الطرف الأيمن (RTL) باللون الأخضر المالي مع اهتزاز تفاعلي.
+ * 2. زر الأهداف والالتزامات (Commitments / Goals Target): زر دائري وسطي بهدف 🎯 لفتح حوار الالتزامات.
+ * 3. زر إضافة منصرف (Add Expense): في الطرف الأيسر (RTL) باللون الأحمر المالي مع أيقونة السلة واهتزاز تفاعلي.
+ * 4. يختفي تلقائياً عند تفعيل وضع التحديد المتعدد لتفريغ المساحة لشريط عمليات الحذف والتحديد.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,7 +27,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
@@ -24,6 +36,10 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
+
+/**
+ * لون الأيقونات والنصوص البيضاء للأزرار المالية البارزة داخل شريط السجل السفلي.
+ */
 
 @Composable
 fun LedgerBottomDock(
@@ -64,16 +80,16 @@ fun LedgerBottomDock(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onAddIncomeClick()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = incomeBg), // Secondary Mint/Green
+                    colors = ButtonDefaults.buttonColors(containerColor = incomeBg, contentColor = MaterialTheme.colorScheme.onTertiary), // Secondary Mint/Green
                     shape = RoundedCornerShape(16.dp),
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(42.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.ledger_add_income), tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.ledger_add_income), tint = MaterialTheme.colorScheme.onTertiary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_income), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.ledger_add_income), color = MaterialTheme.colorScheme.onTertiary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
 
                 // Center Target Button (Goals/Commitments)
@@ -101,16 +117,16 @@ fun LedgerBottomDock(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onAddExpenseClick()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = expenseBg), // Destructive Crimson/Soft Red
+                    colors = ButtonDefaults.buttonColors(containerColor = expenseBg, contentColor = MaterialTheme.colorScheme.onError), // Destructive Crimson/Soft Red
                     shape = RoundedCornerShape(16.dp),
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(42.dp)
                 ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(id = R.string.ledger_add_expense), tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(id = R.string.ledger_add_expense), tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_expense), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.ledger_add_expense), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }

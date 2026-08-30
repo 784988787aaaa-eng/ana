@@ -1,5 +1,16 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * خط فاصل الانتقال بين الشهور (Month Transition Line Component)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * عنصر بصري فاصل يوضع بين الشهور المتتالية في دفتر الأستاذ:
+ * 1. يرسم خطاً منقطاً أنيقاً باستخدام Canvas و DashPathEffect باللون الأخضر المالي.
+ * 2. يضع في المنتصف شارة نصية مع خلفية معتمة تبرز نص "بداية شهر جديد" لتوضيح التسلسل الزمني.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,11 +40,13 @@ fun MonthTransitionLine() {
         contentAlignment = Alignment.Center
     ) {
         val pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+        val lineColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+        val labelColor = MaterialTheme.colorScheme.primary
         Canvas(
             modifier = Modifier.fillMaxWidth(0.8f).matchParentSize()
         ) {
             drawLine(
-                color = EmeraldPrimary.copy(alpha = 0.4f),
+                color = lineColor,
                 start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
                 end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
                 pathEffect = pathEffect,
@@ -42,7 +55,7 @@ fun MonthTransitionLine() {
         }
         Text(
             text = stringResource(id = R.string.ledger_beginning_new_month),
-            color = EmeraldPrimary,
+            color = labelColor,
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp,
             textAlign = TextAlign.Center,

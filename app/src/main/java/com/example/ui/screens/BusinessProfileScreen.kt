@@ -1,5 +1,15 @@
 package com.example.ui.screens
 
+/*
+ * =====================================================================================
+ * حزمة شاشة إدارة الهوية والملف التجاري (Business Profile Screen Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على واجهة إعداد وتخصيص الملف التجاري للمنشأة (Business Profile):
+ * اسم المنشأة، الشعار التجاري، أرقام الهواتف المتعددة، والوصف التسويقي، والتي تظهر
+ * في ترويسات تقارير PDF وكشوفات الحساب والفواتير المطبوعة أو المرسلة للعملاء.
+ * =====================================================================================
+ */
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -74,24 +84,30 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.io.File
 
+/*
+ * =====================================================================================
+ * واجهة الحالة لنوافذ قص ومعالجة الشعار (BusinessProfileDialogState)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * تمثل الحالات المختلفة لمربعات الحوار المنبثقة أثناء اختيار وتعديل صورة الشعار.
+ * =====================================================================================
+ */
 sealed interface BusinessProfileDialogState {
+    // عدم وجود مربع حوار نشط
     object None : BusinessProfileDialogState
+
+    // حالة فتح نافذة قص وتدوير الشعار (مع صورة الـ Bitmap وخيار القص الدائري)
     data class CropLogo(val bitmap: Bitmap, val isCircle: Boolean) : BusinessProfileDialogState
 }
 
-private object ProfileKeys {
-    const val PREFS_MAIN = "business_profile"
-    const val PREFS_ALT = "business_profile_prefs"
-    const val KEY_BIZ_NAME = "biz_name"
-    const val KEY_BIZ_DESC = "biz_desc"
-    const val KEY_BIZ_LOGO_PATH = "biz_logo_path"
-    const val KEY_BIZ_PHONES = "biz_phones"
-    const val KEY_ALT_NAME = "business_name"
-    const val KEY_ALT_SLOGAN = "business_slogan"
-    const val KEY_ALT_LOGO_PATH = "logo_path"
-    const val KEY_ALT_PHONE = "business_phone"
-}
-
+/*
+ * =====================================================================================
+ * شاشة الملف التجاري المستقلة (BusinessProfileScreen)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * شاشة كاملة تحت Scaffold مع شريط علوي وزر رجوع تتيح ضبط كافة تفاصيل المنشأة.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BusinessProfileScreen(
@@ -109,7 +125,7 @@ fun BusinessProfileScreen(
                         text = stringResource(id = R.string.biz_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Right
                     )
@@ -122,7 +138,7 @@ fun BusinessProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.biz_back),
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },
@@ -146,6 +162,15 @@ fun BusinessProfileScreen(
     }
 }
 
+/*
+ * =====================================================================================
+ * نافذة الملف التجاري المنبثقة (BusinessProfileDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نموذج منبثق (Modal Dialog) يعرض نفس نموذج الملف التجاري لإمكانية فتحه من شاشات أخرى
+ * كالإعدادات أو تقارير المشاركة السريعة دون مغادرة السياق الحالي.
+ * =====================================================================================
+ */
 @Composable
 fun BusinessProfileDialog(
     onDismiss: () -> Unit
@@ -173,6 +198,7 @@ fun BusinessProfileDialog(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // شريط ترويسة الحوار مع زر الإغلاق
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -201,6 +227,7 @@ fun BusinessProfileDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // استدعاء النموذج المشترك
                 BusinessProfileForm(
                     isDialog = true,
                     onClose = onDismiss
@@ -210,6 +237,18 @@ fun BusinessProfileDialog(
     }
 }
 
+/*
+ * =====================================================================================
+ * نموذج إدخال وتعديل بيانات المنشأة التجارية (BusinessProfileForm)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * المكون الجوهري الذي يدير:
+ * 1. استرجاع وحفظ البيانات في التفضيلات المشتركة (SharedPreferences) بالتوافقية الكاملة.
+ * 2. التقاط وتغيير الشعار من معرض الصور وقصه وتدويره وحفظه بالتخزين الداخلي للتطبيق.
+ * 3. إضافة وتعديل وحذف أرقام الهواتف المتعددة للمنشأة.
+ * 4. التحقق من صحة المدخلات وإظهار الإشعارات التنبيهية.
+ * =====================================================================================
+ */
 @Composable
 private fun BusinessProfileForm(
     isDialog: Boolean,
@@ -219,9 +258,15 @@ private fun BusinessProfileForm(
     val coroutineScope = rememberCoroutineScope()
     val activeThemeColor = MaterialTheme.colorScheme.primary
 
+    // مراجع التفضيلات المشتركة الرئيسية والبديلة
     val prefs = remember { context.getSharedPreferences(ProfileKeys.PREFS_MAIN, Context.MODE_PRIVATE) }
     val altPrefs = remember { context.getSharedPreferences(ProfileKeys.PREFS_ALT, Context.MODE_PRIVATE) }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * حالات حقول الإدخال المحفوظة للمنشأة
+     * ---------------------------------------------------------------------------------
+     */
     var bizName by remember {
         mutableStateOf(
             prefs.getString(ProfileKeys.KEY_BIZ_NAME, "").orEmpty()
@@ -245,6 +290,9 @@ private fun BusinessProfileForm(
 
     var logoBitmapState by remember { mutableStateOf<Bitmap?>(null) }
 
+    /*
+     * تحميل صورة الشعار من القرص المحلي عند توفر مسار الملف
+     */
     LaunchedEffect(logoPath) {
         if (logoPath.isNotEmpty()) {
             withContext(Dispatchers.IO) {
@@ -263,6 +311,9 @@ private fun BusinessProfileForm(
         }
     }
 
+    /*
+     * تحميل قائمة أرقام الهواتف المخزنة بتنسيق JSON
+     */
     val phoneList = remember { mutableStateListOf<String>() }
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -290,6 +341,9 @@ private fun BusinessProfileForm(
     var pendingImageUri by remember { mutableStateOf<Uri?>(null) }
     var dialogState by remember { mutableStateOf<BusinessProfileDialogState>(BusinessProfileDialogState.None) }
 
+    /*
+     * عقد تشغيل منتقي الصور من الوسائط المرئية (Photo Picker)
+     */
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -316,6 +370,11 @@ private fun BusinessProfileForm(
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * تجميع أقسام النموذج في عمود قابل للتمرير
+     * ---------------------------------------------------------------------------------
+     */
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -334,6 +393,7 @@ private fun BusinessProfileForm(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // 1. قسم إدارة واختيار الشعار
         BusinessProfileLogoSection(
             logoBitmapState = logoBitmapState,
             isDialog = isDialog,
@@ -345,6 +405,7 @@ private fun BusinessProfileForm(
             }
         )
 
+        // 2. قسم اسم المنشأة والوصف الترويجي
         BusinessProfileInfoSection(
             bizName = bizName,
             onBizNameChange = { bizName = it },
@@ -354,6 +415,7 @@ private fun BusinessProfileForm(
             activeThemeColor = activeThemeColor
         )
 
+        // 3. قسم أرقام الهواتف المتعددة
         BusinessProfilePhonesSection(
             phoneList = phoneList,
             onPhoneChange = { index, newVal -> phoneList[index] = newVal },
@@ -365,6 +427,7 @@ private fun BusinessProfileForm(
 
         Spacer(modifier = Modifier.height(4.dp))
 
+        // 4. زر حفظ التغييرات
         Button(
             onClick = {
                 if (bizName.isBlank()) {
@@ -420,6 +483,11 @@ private fun BusinessProfileForm(
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * مربع حوار قص وتدوير وتعديل الشعار (LogoCropDialog)
+     * ---------------------------------------------------------------------------------
+     */
     (dialogState as? BusinessProfileDialogState.CropLogo)?.let { cropState ->
         val density = LocalDensity.current.density
         val bitmapToCrop = cropState.bitmap
@@ -487,3 +555,4 @@ private fun BusinessProfileForm(
         )
     }
 }
+

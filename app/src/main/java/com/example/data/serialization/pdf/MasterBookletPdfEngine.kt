@@ -1,5 +1,29 @@
+/**
+ * =====================================================================
+ * ملف: محرك دفاتر وكشوفات الأستاذ العامة المجمعة (MasterBookletPdfEngine.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الكائن المحرك المتقدم المسؤول عن تجميع وتوليد كتيب الحسابات الماستر
+ * (Comprehensive Master Ledger Booklet) بصيغة PDF لعدة عملاء أو لجميع الحسابات
+ * دفعة واحدة، مع تدفق سلس ومستمر للصفحات، وإدارة ذكية للذاكرة، وحساب دقيق لإجمالي
+ * الصفحات عبر جولتين: تجريبية لحساب المقاسات وفعلية للرسم.
+ * 
+ * [المسؤوليات المعمارية والتقنية]:
+ * 1. المعالجة المجمعة المتدفقة (Chunked Processing & Streaming):
+ *    - تقسيم معالجة العملاء إلى دفعات (Chunks of 50) مع إمكانية إلغاء الكوروتين [ensureActive].
+ * 2. التخزين المؤقت المحلي للعمليات (Local In-Memory Caching):
+ *    - استخدام [txCacheMap] لتفادي الاستعلام المتكرر من قاعدة البيانات بين الجولة التجريبية والفعلية.
+ * 3. إدارة لوحات الرسم والصفحات وسياق الدفتر [BookletDrawingContext]:
+ *    - إنشاء صفحات مقاس A4 ورسم الترويسة والفاصل السفلي لكل صفحة تلقائياً.
+ * 4. إدارة الموارد وتدوير البيتماب (Bitmap Lifecycle Management):
+ *    - ضمان تدوير وتحرير صور الشعارات النقطية لمنع نفاد الذاكرة (OOM) في التقارير الضخمة.
+ */
 package com.example.data.serialization.pdf
 
+// ---------------------------------------------------------------------
+// استيراد حزم أندرويد والرسومات وتوليد PDF وقواعد البيانات والكوروتين
+// ---------------------------------------------------------------------
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
@@ -23,6 +47,10 @@ import java.io.FileOutputStream
 import java.util.Date
 import kotlin.coroutines.coroutineContext
 
+/**
+ * [وعاء بيانات هوية المنشأة للكتيب - BusinessProfileData]:
+ * يضم معلومات المنشأة وشعارها وأبعادها.
+ */
 data class BusinessProfileData(
     val name: String,
     val desc: String,
@@ -33,6 +61,10 @@ data class BusinessProfileData(
     val logoH: Float
 )
 
+/**
+ * [البيانات الوصفية للتقرير المالي - PdfReportMetaData]:
+ * يجمع التواريخ المنسقة والعملة ولون السمة الأساسي.
+ */
 data class PdfReportMetaData(
     val docDateText: String,
     val docTimeText: String,
@@ -40,7 +72,13 @@ data class PdfReportMetaData(
     val primaryColorHex: String
 )
 
+/**
+ * [الكائن الأحادي لمحرك دفتر الحسابات الماستر - MasterBookletPdfEngine]:
+ * يبني كتيبات وكشوفات الحسابات المجمعة لكافة العملاء أو المحدد منهم.
+ */
 object MasterBookletPdfEngine {
+
+    /** وسم السجلات التشخيصية */
     private const val TAG = "MasterBookletPdfEngine"
     private const val PREFS_BUSINESS_PROFILE = "business_profile"
     private const val PREF_BIZ_NAME = "biz_name"
@@ -50,6 +88,19 @@ object MasterBookletPdfEngine {
     private const val DEFAULT_PHONES_JSON = "[]"
     private const val PHONE_DELIMITER = " - "
 
+    /**
+     * [توليد كتيب الحسابات الماستر بصيغة PDF لاتزامياً - generateBookletPdfAsync]:
+     * ينفذ الجولة التجريبية ثم الجولة الحقيقية لرسم كشوفات الحسابات المتتابعة وتحديث شريط التقدم.
+     *
+     * @param context سياق التطبيق.
+     * @param allCustomers قائمة كافة العملاء المسجلين.
+     * @param selectedIds المعرفات المختارة للطباعة إن وجدت.
+     * @param onlySelected ما إذا كان المطلوب طباعة المحدد فقط.
+     * @param currencySymbol رمز العملة الرئيسية.
+     * @param primaryColorHex كود لون السمة الرئيسي.
+     * @param onProgress دالة رد نداء لتحديث مؤشر التقدم (تمت معالجة X من إجمالي Y).
+     * @param onFinished دالة رد نداء عند اكتمال التوليد مع ملف الـ PDF الناتج.
+     */
     suspend fun generateBookletPdfAsync(
         context: Context,
         allCustomers: List<CustomerUiState>,
@@ -60,6 +111,7 @@ object MasterBookletPdfEngine {
         onProgress: (processed: Int, total: Int) -> Unit,
         onFinished: (File?) -> Unit
     ) = withContext(Dispatchers.IO) {
+
         var scaledLogoToRecycle: android.graphics.Bitmap? = null
         var rawBitmapToRecycle: android.graphics.Bitmap? = null
         try {
@@ -125,11 +177,8 @@ object MasterBookletPdfEngine {
                         reportMetaData = reportMetaData
                     )
 
-                    // Render Cover Page
-                    drawCoverAndIndexDryRun(drawingCtx, targetCustomers)
-
-                    // Start detailed ledger pages
-                    drawingCtx.startNewPage()
+                    // Start detailed ledger sheets directly below the business header on Page 1
+                    drawingCtx.currentY = 78f
 
                     // Render detail sections for each customer in chunks
                     val customerChunks = targetCustomers.chunked(50)
@@ -167,11 +216,15 @@ object MasterBookletPdfEngine {
                     reportMetaData = reportMetaData
                 )
 
-                // 1. Cover & Index real pass
-                drawCoverAndIndexReal(drawingCtx, targetCustomers, summary)
-
-                // Start detailed pages
-                drawingCtx.startNewPage()
+                // Draw Business Header on Page 1
+                val canvas = drawingCtx.currentPageCanvas
+                if (canvas != null) {
+                    PdfPageRenderer.drawBusinessHeader(
+                        canvas, drawingCtx.displayedName, drawingCtx.displayedDesc, drawingCtx.phonesStr,
+                        drawingCtx.hasLogo, drawingCtx.scaledLogo, drawingCtx.logoW, drawingCtx.logoH, drawingCtx.docDateText, drawingCtx.docTimeText
+                    )
+                }
+                drawingCtx.currentY = 78f
 
                 // 2. Customers detailed ledger sheets in chunks
                 val customerChunks = targetCustomers.chunked(50)
@@ -352,9 +405,10 @@ object MasterBookletPdfEngine {
             onPageBreakNeeded = { newHeader ->
                 ctx.startNewPage()
                 if (newHeader && !ctx.isDryRun) {
-                    val currentCanvas = ctx.currentPageCanvas!!
-                    PdfPageRenderer.drawSubsequentPageHeader(currentCanvas, customer.name, ctx.primaryColorHex, ctx.context)
-                    PdfPageRenderer.drawTableHeader(currentCanvas, 45f, ctx.context, customer.originalCustomer.initialType)
+                    ctx.currentPageCanvas?.let { currentCanvas ->
+                        PdfPageRenderer.drawSubsequentPageHeader(currentCanvas, customer.name, ctx.primaryColorHex, ctx.context)
+                        PdfPageRenderer.drawTableHeader(currentCanvas, 45f, ctx.context, customer.originalCustomer.initialType)
+                    }
                 }
                 ctx.currentPageCanvas
             }
@@ -362,6 +416,17 @@ object MasterBookletPdfEngine {
     }
 }
 
+/**
+ * [سياق وحالة رسم كتيب الحسابات - BookletDrawingContext]:
+ * يدير حالة الصفحات الحالية ومؤشر الإحداثي الرأسي Y، وأرقام الصفحات، ورسم التذييلات تلقائياً.
+ *
+ * @property context سياق التطبيق.
+ * @property pdfDocument كائن مستند الـ PDF قيد البناء.
+ * @property isDryRun هل الجولة الحالية جولة تجريبية افتراضية لحساب عدد الصفحات فقط.
+ * @property totalPagesInDryRun إجمالي الصفحات المحسوبة من الجولة السابقة.
+ * @property businessProfile بيانات ومعلومات وهوية المنشأة.
+ * @property reportMetaData البيانات الوصفية للتقرير.
+ */
 class BookletDrawingContext(
     val context: Context,
     val pdfDocument: PdfDocument,

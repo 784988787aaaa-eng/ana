@@ -1,7 +1,18 @@
 package com.example.ui.screens.cloud.components
 
-import androidx.compose.material3.MaterialTheme
+/*
+ * =====================================================================================
+ * حزمة نوافذ حوارات النسخ الاحتياطي السحابي (Cloud Backup Dialogs Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على مجموعة النوافذ المنبثقة التفاعلية لإدارة السحابة (Google Drive):
+ * - مؤشر التقدم الدائري للعمليات الجارية (CloudOngoingActionDialog).
+ * - حوار تأكيد استعادة نسخة احتياطية محددة (CloudRestoreConfirmDialog).
+ * - حوار تأكيد حذف نسخة احتياطية مفردة (CloudDeleteConfirmDialog).
+ * - حوار تأكيد الحذف المتعدد لعدة نسخ احتياطية (CloudMultiDeleteConfirmDialog).
+ * =====================================================================================
+ */
 
+import androidx.compose.material3.MaterialTheme
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -20,9 +31,18 @@ import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.data.CloudBackupFile
 import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.BackupSyncViewModel
 
+/*
+ * =====================================================================================
+ * نافذة العمليات السحابية الجارية (CloudOngoingActionDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة تقدم غير قابلة للإلغاء تظهر أثناء الرفع أو التنزيل أو الحذف لمنع تداخل العمليات:
+ * 1. مؤشر تقدم دائري متحرك بلون مميز.
+ * 2. نص توضيحي يصف طبيعة العملية السحابية الحالية.
+ * =====================================================================================
+ */
 @Composable
 fun CloudOngoingActionDialog(ongoingActionMessage: String) {
     Dialog(onDismissRequest = {}) {
@@ -36,7 +56,7 @@ fun CloudOngoingActionDialog(ongoingActionMessage: String) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator(color = EmeraldPrimary, modifier = Modifier.size(40.dp))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
                 Text(
                     text = ongoingActionMessage,
                     fontSize = 13.sp,
@@ -48,6 +68,16 @@ fun CloudOngoingActionDialog(ongoingActionMessage: String) {
     }
 }
 
+/*
+ * =====================================================================================
+ * حوار تأكيد استعادة النسخة السحابية (CloudRestoreConfirmDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة تحذيرية لتأكيد استبدال واسترجاع قاعدة البيانات من Google Drive:
+ * 1. إظهار اسم وتاريخ النسخة المحددة للتحذير من استبدال البيانات الحالية.
+ * 2. تنفيذ التنزيل والاستعادة عبر ViewModel مع إشعار بنتيجة العملية عبر Toast.
+ * =====================================================================================
+ */
 @Composable
 fun CloudRestoreConfirmDialog(
     context: Context,
@@ -69,7 +99,7 @@ fun CloudRestoreConfirmDialog(
         title = {
             Text(
                 text = stringResource(R.string.cloud_restore_confirm_title),
-                color = SoftRed,
+                color = MaterialTheme.colorScheme.error,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Right,
@@ -101,12 +131,12 @@ fun CloudRestoreConfirmDialog(
                     }
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
                     text = stringResource(R.string.cloud_btn_restore_confirm),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -124,6 +154,16 @@ fun CloudRestoreConfirmDialog(
     )
 }
 
+/*
+ * =====================================================================================
+ * حوار تأكيد حذف نسخة احتياطية مفردة (CloudDeleteConfirmDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة تحذيرية لتأكيد حذف ملف نسخة احتياطية من التخزين السحابي Google Drive:
+ * 1. عرض اسم الملف المستهدف.
+ * 2. تنفيذ الحذف عبر المعرف (ID) وتحديث القائمة وإشعار المستخدم.
+ * =====================================================================================
+ */
 @Composable
 fun CloudDeleteConfirmDialog(
     context: Context,
@@ -180,7 +220,7 @@ fun CloudDeleteConfirmDialog(
             ) {
                 Text(
                     text = stringResource(R.string.cloud_btn_delete_confirm),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -198,6 +238,16 @@ fun CloudDeleteConfirmDialog(
     )
 }
 
+/*
+ * =====================================================================================
+ * حوار تأكيد الحذف المتعدد للنسخ السحابية (CloudMultiDeleteConfirmDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة لتأكيد الحذف الجماعي لمجموعة من النسخ السحابية المحددة:
+ * 1. عرض عدد العناصر المحددة للحذف.
+ * 2. تنفيذ الحذف المتوازي السريع عبر السحابة وتحديث واجهة المستخدم.
+ * =====================================================================================
+ */
 @Composable
 fun CloudMultiDeleteConfirmDialog(
     context: Context,
@@ -251,7 +301,7 @@ fun CloudMultiDeleteConfirmDialog(
             ) {
                 Text(
                     text = stringResource(R.string.cloud_btn_multi_delete_confirm),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -268,3 +318,4 @@ fun CloudMultiDeleteConfirmDialog(
         }
     )
 }
+

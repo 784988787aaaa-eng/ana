@@ -1,12 +1,36 @@
 package com.example.ui.screens.habayeb.utils
 
+/*
+ * =====================================================================================
+ * مُساعد ومحرك أسعار صرف العملات (Exchange Rate Engine & Helper)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * إدارة مصفوفة أسعار صرف العملات الأجنبية وقواعد التحويل المالي بدقة محاسبية صارمة:
+ * 1. العملة الواحدة المتطابقة (Same Currency) تملك دائماً معامل تحويل حتمي يساوي 1 (BigDecimal.ONE).
+ * 2. رفض أي سعر صرف سالب أو يساوي صفراً لضمان سلامة الحسابات المالية.
+ * 3. الحفاظ التام على الدقة المحاسبية (Scale 4) باستخدام RoundingMode.HALF_EVEN لمنع التشويه التراكمي.
+ * 4. إدارة مصفوفة أزواج الصرف الثنائية (Bidirectional Currency Matrix) لضمان اتساق الحسابات عبر جميع الشاشات.
+ * 5. قراءة وكتابة وتحديث كائن JSON المخزن في التفضيلات لأسعار الصرف المتعددة.
+ * =====================================================================================
+ */
+
 import com.example.domain.model.CurrencyPair
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+/*
+ * =====================================================================================
+ * كائن محرك أسعار الصرف (ExchangeRateHelper Object)
+ * -------------------------------------------------------------------------------------
+ * يوفر العمليات الحسابية والتحويلات لمصفوفة أسعار الصرف.
+ * =====================================================================================
+ */
 object ExchangeRateHelper {
     
+    /*
+     * الحصول على كائن زوج العملات مع سعر الصرف الحالي بدقة BigDecimal
+     */
     fun getCurrencyPair(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): CurrencyPair {
         val rate = getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
         return CurrencyPair(
@@ -16,10 +40,17 @@ object ExchangeRateHelper {
         )
     }
 
+    /*
+     * حفظ وتحديث زوج العملات وإرجاع سلسلة JSON المحدثة
+     */
     fun setCurrencyPair(jsonStr: String, pair: CurrencyPair): String {
         return setRate(jsonStr, pair.baseCurrency, pair.targetCurrency, pair.safeRate)
     }
 
+    /*
+     * استخراج سعر الصرف بين عملتين بدقة BigDecimal (4 خانات عشرية)
+     * يبحث عن السعر المباشر، أو السعر المعكوس، أو يرجع 1.0000 كقيمة افتراضية
+     */
     fun getRateBigDecimal(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): BigDecimal {
         val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
@@ -32,7 +63,7 @@ object ExchangeRateHelper {
                     val rawVal = baseObj.opt(foreignNorm)
                     val r = when (rawVal) {
                         is Number -> BigDecimal(rawVal.toString())
-                        is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal) else BigDecimal.ZERO
+                        is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal.trim()) else BigDecimal.ZERO
                         else -> BigDecimal.ZERO
                     }
                     if (r.compareTo(BigDecimal.ZERO) > 0) return r.setScale(4, RoundingMode.HALF_EVEN)
@@ -44,22 +75,28 @@ object ExchangeRateHelper {
                     val rawVal = foreignObj.opt(baseNorm)
                     val invR = when (rawVal) {
                         is Number -> BigDecimal(rawVal.toString())
-                        is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal) else BigDecimal.ZERO
+                        is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal.trim()) else BigDecimal.ZERO
                         else -> BigDecimal.ZERO
                     }
                     if (invR.compareTo(BigDecimal.ZERO) > 0) return invR.setScale(4, RoundingMode.HALF_EVEN)
                 }
             }
             BigDecimal.ONE.setScale(4, RoundingMode.HALF_EVEN)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             BigDecimal.ONE.setScale(4, RoundingMode.HALF_EVEN)
         }
     }
 
+    /*
+     * استخراج سعر الصرف كقيمة Double
+     */
     fun getRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Double {
         return getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol).toDouble()
     }
 
+    /*
+     * التحقق من وجود سعر صرف مسجل ومعرف بين عملتين
+     */
     fun hasRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Boolean {
         val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
@@ -81,19 +118,24 @@ object ExchangeRateHelper {
                 }
             }
             false
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
 
+    /*
+     * تعيين وتحديث سعر الصرف بين عملتين بدقة BigDecimal وإكمال المصفوفة الثنائية
+     */
     fun setRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String, rate: BigDecimal): String {
         val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
         if (baseNorm == foreignNorm) return jsonStr
+        if (rate.compareTo(BigDecimal.ZERO) <= 0) return jsonStr
+
         val updatedJson = try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
             
-            // 1. Set direct rate for the base currency object
+            // 1. تثبيت سعر الصرف المباشر للعملة الأساسية
             val baseObj = if (root.has(baseNorm) && root.get(baseNorm) is JSONObject) {
                 root.getJSONObject(baseNorm)
             } else {
@@ -103,28 +145,33 @@ object ExchangeRateHelper {
             baseObj.put(foreignNorm, rateBD.toDouble())
             root.put(baseNorm, baseObj)
             
-            // 2. Set identical rate for the foreign currency object to maintain bidirectional pair linkage
-            if (rateBD.compareTo(BigDecimal.ZERO) > 0) {
-                val foreignObj = if (root.has(foreignNorm) && root.get(foreignNorm) is JSONObject) {
-                    root.getJSONObject(foreignNorm)
-                } else {
-                    JSONObject()
-                }
-                foreignObj.put(baseNorm, rateBD.toDouble())
-                root.put(foreignNorm, foreignObj)
+            // 2. مزامنة الزوج المقابل لضمان ثنائية الاتجاه
+            val foreignObj = if (root.has(foreignNorm) && root.get(foreignNorm) is JSONObject) {
+                root.getJSONObject(foreignNorm)
+            } else {
+                JSONObject()
             }
+            foreignObj.put(baseNorm, rateBD.toDouble())
+            root.put(foreignNorm, foreignObj)
             
             root.toString()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             jsonStr
         }
         return completeMatrix(updatedJson)
     }
 
+    /*
+     * تعيين سعر الصرف بقيمة Double
+     */
     fun setRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String, rate: Double): String {
+        if (rate <= 0.0) return jsonStr
         return setRate(jsonStr, baseCurrencySymbol, foreignCurrencySymbol, BigDecimal.valueOf(rate))
     }
 
+    /*
+     * استكمال وضبط مصفوفة التناظر الكاملة لأسعار الصرف لكافة العملات
+     */
     fun completeMatrix(jsonStr: String): String {
         try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
@@ -146,8 +193,8 @@ object ExchangeRateHelper {
             
             val rates = mutableMapOf<String, MutableMap<String, BigDecimal>>()
             for (src in symbols) {
-                rates[src] = mutableMapOf()
-                rates[src]!![src] = BigDecimal.ONE
+                val map = rates.getOrPut(src) { mutableMapOf() }
+                map[src] = BigDecimal.ONE
             }
             
             for (src in symbols) {
@@ -158,27 +205,27 @@ object ExchangeRateHelper {
                             val rawVal = obj.opt(dst)
                             val r = when (rawVal) {
                                 is Number -> BigDecimal(rawVal.toString())
-                                is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal) else BigDecimal.ZERO
+                                is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal.trim()) else BigDecimal.ZERO
                                 else -> BigDecimal.ZERO
                             }
                             if (r.compareTo(BigDecimal.ZERO) > 0) {
-                                rates[src]!![dst] = r.setScale(4, RoundingMode.HALF_EVEN)
+                                rates.getOrPut(src) { mutableMapOf() }[dst] = r.setScale(4, RoundingMode.HALF_EVEN)
                             }
                         }
                     }
                 }
             }
             
-            // Synchronize direct pair symmetry ONLY for explicit user-entered pairs
+            // مزامنة التناظر للثنائيات المدخلة فقط
             for (src in symbols) {
                 for (dst in symbols) {
                     if (src != dst) {
                         val direct = rates[src]?.get(dst)
                         val inverse = rates[dst]?.get(src)
                         if (direct != null && direct.compareTo(BigDecimal.ZERO) > 0 && (inverse == null || inverse.compareTo(BigDecimal.ZERO) <= 0)) {
-                            rates[dst]!![src] = direct
+                            rates.getOrPut(dst) { mutableMapOf() }[src] = direct
                         } else if (inverse != null && inverse.compareTo(BigDecimal.ZERO) > 0 && (direct == null || direct.compareTo(BigDecimal.ZERO) <= 0)) {
-                            rates[src]!![dst] = inverse
+                            rates.getOrPut(src) { mutableMapOf() }[dst] = inverse
                         }
                     }
                 }
@@ -195,14 +242,19 @@ object ExchangeRateHelper {
                 root.put(src, obj)
             }
             return root.toString()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return jsonStr
         }
     }
 
+    /*
+     * ترحيل أسعار الصرف عند تغيير العملة الأساسية
+     */
     fun migrateRates(jsonStr: String, oldBase: String, newBase: String): String {
         return jsonStr
     }
 }
+
+
 
 

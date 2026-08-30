@@ -1,8 +1,35 @@
+/**
+ * =====================================================================
+ * ملف: المستودع المالي المركزي الموحد (FinanceRepository.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا المستودع القلب النابض لطبقة البيانات (Central Data Layer Repository) في التطبيق،
+ * حيث يعمل كنقطة وصول مركزية وواجهة موحدة (Unified Facade) لجميع كائنات الوصول للبيانات (DAOs)،
+ * ويقوم بتنسيق وحماية العمليات المحاسبية، وتطبيق معايير الدقة المصرفية الصارمة.
+ * 
+ * [المسؤوليات المعمارية وقواعد الحسابات المالية]:
+ * 1. الدقة الحسابية المصرفية الموحدة (Banker's Precision & Rounding):
+ *    - ضبط دقة الأرقام المالية على 4 خانات عشرية [FINANCIAL_SCALE] مع التقريب المصرفي [RoundingMode.HALF_EVEN]
+ *      لمنع أي تشويه أو تآكل في أجزاء السنت والهللة.
+ * 2. الحماية وتأمين الخيوط (Thread Safety):
+ *    - حصر كافة عمليات الكتابة والقراءة الثقيلة والاستعلامات على خيوط الإدخال والإخراج [Dispatchers.IO].
+ * 3. التحديث التفاعلي للواجهة (Reactive Flow Streams):
+ *    - تصدير تدفقات [Flow] لكافة الجداول والكيانات المالية لضمان تحديث واجهات Compose لحظياً بمجرد حدوث أي تعديل.
+ * 4. إدارة سلة المهملات والحذف الناعم الآمن (Soft Delete Subsystem):
+ *    - تفويض تجميع وتغليف السجلات المحذوفة بصيغة JSON إلى [TrashJsonSerializer] وحفظها في [DeletedItemEntity].
+ * 5. تفويض الخدمات المتخصصة (Separation of Concerns):
+ *    - تفويض عمليات الاستعادة ومسح البيانات إلى [FinanceRestoreService].
+ *    - تفويض التراخيص والفترة التجريبية إلى [TrialManager].
+ *    - تفويض التفضيلات المشفرة إلى [PreferenceManager].
+ */
 package com.example.data.repository
 
+// ---------------------------------------------------------------------
+// استيراد حزم سياق أندرويد ووسائط التخزين والترقيم وصفحات Paging وقاعدة البيانات Room
+// ---------------------------------------------------------------------
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.paging.PagingSource
 import androidx.room.withTransaction
 import com.example.data.local.AppDatabase
@@ -13,41 +40,58 @@ import com.example.data.local.entities.FixedCommitment
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.local.entities.TransactionDb
-import com.example.data.serialization.MzdBackupSerializer
 import com.example.domain.model.TransactionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.io.File
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.UUID
 
-class FinanceRepository(internal val database: AppDatabase, private val context: Context) {
+/** اسم مستعار لنتيجة الاستعادة لسهولة الاستخدام */
+typealias RestoreResult = FinanceRestoreResult
 
+/**
+ * [فئة المستودع المالي المركزي - FinanceRepository]:
+ * تدير وتنسق كافة العمليات المالية المحاسبية والتدفقات التفاعلية وسلة المهملات.
+ *
+ * @param database كائن قاعدة البيانات المركزية [AppDatabase].
+ * @param context سياق التطبيق للوصول للموارد والترجمات.
+ * @param preferenceManager مدير التفضيلات المشفرة والتخزين المزدوج.
+ * @param trialManager مدير التراخيص والفترة التجريبية.
+ * @param restoreService خدمة إعادة بناء واستعادة قواعد البيانات.
+ */
+class FinanceRepository(
+    internal val database: AppDatabase,
+    private val context: Context,
+    private val preferenceManager: PreferenceManager = PreferenceManager(context),
+    private val trialManager: TrialManager = TrialManager(context),
+    private val restoreService: FinanceRestoreService = FinanceRestoreService(database, context, preferenceManager)
+) {
+
+    /**
+     * [الكائن المرافق للثوابت والمقاييس المالية]:
+     */
     companion object {
-        private const val PREFS_MIZAN_SEC = "mizan_sec_prefs"
-        private const val PREFS_MIZAN_FINANCE = "mizan_finance_prefs"
-        private const val PREF_CAT_LINK_PREFIX = "CAT_LINK_"
-        private const val PREF_KEY_PINNED_PREFIX = "KEY_PINNED_IN_"
-        private const val PREF_CATEGORY_ORDER_LIST_KEY = "CATEGORY_ORDER_LIST_KEY"
-        private const val PREF_CLOSED_CUSTOM_NAME_KEY = "CLOSED_CUSTOM_NAME_KEY"
-
-        private const val JSON_PINNED_CUSTOMERS = "pinned_customer_ids_by_category"
-        private const val JSON_CATEGORY_ORDER_LIST = "category_order_list"
-        private const val JSON_CLOSED_CUSTOM_NAME = "closed_custom_name"
-        private const val JSON_MIZAN_AL_DAR_DB = "mizan_al_dar_db"
-        private const val JSON_HABAYEB_DEBTS_DB = "habayeb_debts_db"
-
+        /** أسماء الجداول وحزم الحذف لسلة المهملات */
         private const val TABLE_TRANSACTIONS = "transactions"
         private const val TABLE_FIXED_COMMITMENTS = "fixed_commitments"
         private const val TABLE_HABAYEB_CUSTOMERS = "habayeb_customers"
         private const val TABLE_HABAYEB_TRANSACTIONS = "habayeb_transactions"
         private const val BUNDLE_HABAYEB = "habayeb_bundle"
         private const val BUNDLE_DAR = "dar_bundle"
+
+        /** عدد الخانات العشرية المعيارية للعمليات المحاسبية */
+        const val FINANCIAL_SCALE = 4
+        /** نمط التقريب المصرفي المعتمد في التطبيق */
+        val FINANCIAL_ROUNDING: RoundingMode = RoundingMode.HALF_EVEN
     }
 
+    // -----------------------------------------------------------------
+    // مراجع كائنات الوصول للبيانات (DAOs) المستخرجة من قاعدة البيانات
+    // -----------------------------------------------------------------
     private val settingsDao = database.settingsDao()
     private val commitmentDao = database.commitmentDao()
     private val transactionDao = database.transactionDao()
@@ -55,65 +99,178 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
     private val trashDao = database.trashDao()
     private val habayebDao = database.habayebDao()
 
+    /** مدير مسارات النسخ الاحتياطي */
     private val backupDirectoryManager = BackupDirectoryManager(context)
-    private val licenseAndTrialManager = LicenseAndTrialManager(context)
 
+    /** أسماء الأنظمة الفرعية للتمييز في سلة المهملات */
     private val sourceDar: String by lazy { context.getString(com.example.R.string.source_system_dar) }
     private val sourceHabayeb: String by lazy { context.getString(com.example.R.string.source_system_habayeb) }
 
-    private fun getSecurityPreferences(): SharedPreferences =
-        context.getSharedPreferences(PREFS_MIZAN_SEC, Context.MODE_PRIVATE)
+    // -----------------------------------------------------------------
+    // دوال التفضيلات والتخزين الأمني
+    // -----------------------------------------------------------------
 
-    private fun writeDualPreference(action: (SharedPreferences.Editor, SharedPreferences.Editor) -> Unit) {
-        val sharedPrefs = getSecurityPreferences()
-        val financePrefs = context.getSharedPreferences(PREFS_MIZAN_FINANCE, Context.MODE_PRIVATE)
-        val sharedEdit = sharedPrefs.edit()
-        val financeEdit = financePrefs.edit()
-        action(sharedEdit, financeEdit)
-        sharedEdit.apply()
-        financeEdit.apply()
+    /** جلب كائن التفضيلات الأمنية المشفرة */
+    fun getSecurityPreferences(): SharedPreferences = preferenceManager.getSecurityPreferences()
+
+    /** تنفيذ تعديل مزدوج على التفضيلات العامة والمشفرة */
+    fun writeDualPreference(action: (SharedPreferences.Editor, SharedPreferences.Editor) -> Unit) {
+        preferenceManager.writeDualPreference(action)
     }
 
-    // --- Flow Exposures ---
+    // -----------------------------------------------------------------
+    // التدفقات التفاعلية اللحظية (Reactive Data Streams / Flows)
+    // -----------------------------------------------------------------
+
+    /** تدفق إعدادات التطبيق والعملة الرئيسية */
     val settingsFlow: Flow<AppSettings?> = settingsDao.getSettingsFlow()
+
+    /** تدفق قائمة الالتزامات والأقساط الثابتة */
     val commitmentsFlow: Flow<List<FixedCommitment>> = commitmentDao.getAllCommitmentsFlow()
+
+    /** تدفق قيود دفتر اليومية العام */
     val transactionsFlow: Flow<List<TransactionDb>> = transactionDao.getAllTransactionsFlow()
+
+    /** تدفق التصنيفات المخصصة للعمليات */
     val customCategoriesFlow: Flow<List<CustomCategory>> = customCategoryDao.getAllCustomCategoriesFlow()
+
+    /** تدفق عناصر وسجلات سلة المهملات */
     val deletedItemsFlow: Flow<List<DeletedItemEntity>> = trashDao.getAllDeletedItemsFlow()
+
+    /** تدفق قائمة عملاء وحسابات دفتر ديون الحبايب */
     val habayebCustomersFlow: Flow<List<HabayebCustomer>> = habayebDao.getAllCustomersFlow()
+
+    /** تدفق كافة قيود ومعاملات دفتر ديون الحبايب */
     val habayebTransactionsFlow: Flow<List<HabayebTransaction>> = habayebDao.getAllTransactionsFlow()
 
+    /** استرجاع تدفق معاملات عميل معين */
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>> = 
         habayebDao.getTransactionsForCustomerFlow(customerId)
 
+    /** مصدر Paging 3 للمعاملات العامة دون تحميل القائمة كاملة. */
+    fun getTransactionsPagingSource(): PagingSource<Int, TransactionDb> =
+        transactionDao.getTransactionsPagingSource()
+
+    /** بحث مجزأ عبر SQL بدلاً من تصفية جميع المعاملات في الذاكرة. */
+    fun searchTransactionsPagingSource(query: String): PagingSource<Int, TransactionDb> =
+        transactionDao.searchTransactionsPagingSource(query)
+
+    /** استرجاع مصدر التقسيم والصفحات (PagingSource) لمعاملات العميل */
     fun getTransactionsPagingSourceForCustomer(customerId: String): PagingSource<Int, HabayebTransaction> =
         habayebDao.getTransactionsPagingSourceForCustomer(customerId)
 
+    /** استرجاع تدفق المعاملات المسجلة بالعملات الأجنبية */
     fun getForeignTransactionsFlow(): Flow<List<HabayebTransaction>> = habayebDao.getForeignTransactionsFlow()
-    fun getTransactionsForCustomerWithLimitFlow(customerId: String, limit: Int): Flow<List<HabayebTransaction>> = habayebDao.getTransactionsForCustomerWithLimitFlow(customerId, limit)
+
+    /** استرجاع تدفق معاملات العميل بعدد أقصى محدد */
+    fun getTransactionsForCustomerWithLimitFlow(customerId: String, limit: Int): Flow<List<HabayebTransaction>> = 
+        habayebDao.getTransactionsForCustomerWithLimitFlow(customerId, limit)
+
+    /** استرجاع تدفق إجمالي عدد معاملات الحبايب */
     fun getHabayebTransactionsCountFlow(): Flow<Int> = habayebDao.getHabayebTransactionsCountFlow()
+
+    /** استرجاع تدفق صافي السيولة النقدية لدفتر اليومية */
     fun getTotalCashFlow(): Flow<BigDecimal> = transactionDao.getTotalCashFlow()
+
+    /** استرجاع تدفق إجمالي عدد قيود دفتر اليومية */
     fun getTransactionsCountFlow(): Flow<Int> = transactionDao.getTransactionsCountFlow()
 
-    // --- Settings & Commitments Operations ---
-    suspend fun getSettingsDirect(): AppSettings? = settingsDao.getSettingsDirect()
-    suspend fun saveSettings(settings: AppSettings) = settingsDao.insertOrUpdateSettings(settings)
+    // -----------------------------------------------------------------
+    // عمليات الإعدادات والالتزامات الثابتة (Settings & Commitments)
+    // -----------------------------------------------------------------
 
-    suspend fun saveCommitment(commitment: FixedCommitment) = commitmentDao.insertCommitment(commitment)
-    suspend fun updateCommitments(commitments: List<FixedCommitment>) = commitmentDao.updateCommitments(commitments)
-    suspend fun deleteCommitment(name: String) = commitmentDao.deleteCommitment(name)
-    suspend fun clearCommitments() = commitmentDao.clearAllCommitments()
+    /** جلب الإعدادات الحالية مباشرة وبشكل معلق */
+    suspend fun getSettingsDirect(): AppSettings? = withContext(Dispatchers.IO) {
+        settingsDao.getSettingsDirect()
+    }
 
-    suspend fun getTransactionById(id: String): TransactionDb? = transactionDao.getTransactionById(id)
-    suspend fun saveTransaction(transaction: TransactionDb) = transactionDao.insertTransaction(transaction)
-    suspend fun deleteTransaction(transaction: TransactionDb) = transactionDao.deleteTransaction(transaction)
-    suspend fun deleteTransactionById(id: String) = transactionDao.deleteTransactionById(id)
-    suspend fun clearTransactions() = transactionDao.clearAllTransactions()
+    /** حفظ أو تحديث إعدادات التطبيق */
+    suspend fun saveSettings(settings: AppSettings) = withContext(Dispatchers.IO) {
+        settingsDao.insertOrUpdateSettings(settings)
+    }
 
-    suspend fun saveCustomCategory(category: CustomCategory) = customCategoryDao.insertCategory(category)
-    suspend fun deleteCustomCategory(category: CustomCategory) = customCategoryDao.deleteCategory(category)
-    suspend fun clearCustomCategories() = customCategoryDao.clearAllCustomCategories()
+    /** حفظ التزام مالي جديد مع توحيد دقة المبالغ */
+    suspend fun saveCommitment(commitment: FixedCommitment) = withContext(Dispatchers.IO) {
+        val normalized = commitment.copy(
+            targetAmount = commitment.targetAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            currentProgress = commitment.currentProgress.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING)
+        )
+        commitmentDao.insertCommitment(normalized)
+    }
 
+    /** تحديث قائمة الالتزامات مع تطبيع دقة كافة المبالغ */
+    suspend fun updateCommitments(commitments: List<FixedCommitment>) = withContext(Dispatchers.IO) {
+        val normalizedList = commitments.map { fc ->
+            fc.copy(
+                targetAmount = fc.targetAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+                currentProgress = fc.currentProgress.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING)
+            )
+        }
+        commitmentDao.updateCommitments(normalizedList)
+    }
+
+    /** حذف التزام مالي بالاسم */
+    suspend fun deleteCommitment(name: String) = withContext(Dispatchers.IO) {
+        commitmentDao.deleteCommitment(name)
+    }
+
+    /** مسح كافة الالتزامات المالية */
+    suspend fun clearCommitments() = withContext(Dispatchers.IO) {
+        commitmentDao.clearAllCommitments()
+    }
+
+    // -----------------------------------------------------------------
+    // عمليات قيود دفتر اليومية العام (Main Transactions Operations)
+    // -----------------------------------------------------------------
+
+    /** البحث عن قيد يومية بالمعرف */
+    suspend fun getTransactionById(id: String): TransactionDb? = withContext(Dispatchers.IO) {
+        transactionDao.getTransactionById(id)
+    }
+
+    /** حفظ قيد مالي في اليومية مع تطبيع الدقة العشرية */
+    suspend fun saveTransaction(transaction: TransactionDb) = withContext(Dispatchers.IO) {
+        val normalized = transaction.copy(
+            amount = transaction.amount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING)
+        )
+        transactionDao.insertTransaction(normalized)
+    }
+
+    /** حذف قيد يومية ممرر */
+    suspend fun deleteTransaction(transaction: TransactionDb) = withContext(Dispatchers.IO) {
+        transactionDao.deleteTransaction(transaction)
+    }
+
+    /** حذف قيد يومية بالمعرف */
+    suspend fun deleteTransactionById(id: String) = withContext(Dispatchers.IO) {
+        transactionDao.deleteTransactionById(id)
+    }
+
+    /** مسح كافة قيود دفتر اليومية */
+    suspend fun clearTransactions() = withContext(Dispatchers.IO) {
+        transactionDao.clearAllTransactions()
+    }
+
+    // -----------------------------------------------------------------
+    // عمليات التصنيفات المخصصة (Custom Categories Operations)
+    // -----------------------------------------------------------------
+
+    /** حفظ تصنيف مخصص جديد */
+    suspend fun saveCustomCategory(category: CustomCategory) = withContext(Dispatchers.IO) {
+        customCategoryDao.insertCategory(category)
+    }
+
+    /** حذف تصنيف مخصص */
+    suspend fun deleteCustomCategory(category: CustomCategory) = withContext(Dispatchers.IO) {
+        customCategoryDao.deleteCategory(category)
+    }
+
+    /** مسح كافة التصنيفات المخصصة */
+    suspend fun clearCustomCategories() = withContext(Dispatchers.IO) {
+        customCategoryDao.clearAllCustomCategories()
+    }
+
+    /** تحديث ترتيب عرض التصنيفات في شريط التصفية */
     suspend fun updateCustomCategoriesOrder(orderedNames: List<String>) = withContext(Dispatchers.IO) {
         val currentCategories = customCategoryDao.getAllCustomCategoriesFlow().first()
         val orderMap = orderedNames.withIndex().associate { it.value to it.index }
@@ -125,49 +282,166 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         customCategoryDao.updateCategories(updatedCategories)
     }
 
-    suspend fun getPagedTransactionsDirect(limit: Int, offset: Int): List<TransactionDb> = transactionDao.getPagedTransactionsDirect(limit, offset)
-    suspend fun getExpensesSumForPeriod(startTimestamp: Long, endTimestamp: Long): BigDecimal = transactionDao.getExpensesSumForPeriod(startTimestamp, endTimestamp)
-    suspend fun getTransactionsCountDirect(): Int = transactionDao.getTransactionsCountDirect()
+    /** استرجاع قيود اليومية مقسمة صفحات مباشرة */
+    suspend fun getPagedTransactionsDirect(limit: Int, offset: Int): List<TransactionDb> = withContext(Dispatchers.IO) {
+        transactionDao.getPagedTransactionsDirect(limit, offset)
+    }
 
-    // --- Habayeb & Ledger Operations ---
-    suspend fun insertCustomer(customer: HabayebCustomer) = habayebDao.insertCustomer(customer)
-    suspend fun updateCustomer(customer: HabayebCustomer) = database.withTransaction {
-        val oldCustomer = habayebDao.getCustomerByIdDirect(customer.id)
-        habayebDao.updateCustomer(customer)
-        if (oldCustomer != null && oldCustomer.initialType != customer.initialType) {
-            when (customer.initialType) {
-                TransactionType.OWED_BY_THEM.value -> habayebDao.adaptTransactionsToOwedByThem(customer.id)
-                TransactionType.OWED_TO_THEM.value -> habayebDao.adaptTransactionsToOwedToThem(customer.id)
+    /** حساب إجمالي المصروفات لفترة زمنية محددة */
+    suspend fun getExpensesSumForPeriod(startTimestamp: Long, endTimestamp: Long): BigDecimal = withContext(Dispatchers.IO) {
+        transactionDao.getExpensesSumForPeriod(startTimestamp, endTimestamp)
+    }
+
+    /** جلب العدد الفعلي لقيود اليومية مباشرة */
+    suspend fun getTransactionsCountDirect(): Int = withContext(Dispatchers.IO) {
+        transactionDao.getTransactionsCountDirect()
+    }
+
+    // -----------------------------------------------------------------
+    // عمليات دفتر ديون الحبايب والعملاء (Habayeb & Customers Operations)
+    // -----------------------------------------------------------------
+
+    /** إدراج عميل جديد في دفتر الحبايب */
+    suspend fun insertCustomer(customer: HabayebCustomer) = withContext(Dispatchers.IO) {
+        habayebDao.insertCustomer(customer)
+    }
+
+    /** تحديث بيانات العميل ومطابقة اتجاه المعاملات تلقائياً عند تغيير نوع الحساب المبدئي */
+    suspend fun updateCustomer(customer: HabayebCustomer) = withContext(Dispatchers.IO) {
+        database.withTransaction {
+            val oldCustomer = habayebDao.getCustomerByIdDirect(customer.id)
+            habayebDao.updateCustomer(customer)
+            if (oldCustomer != null && oldCustomer.initialType != customer.initialType) {
+                when (customer.initialType) {
+                    TransactionType.OWED_BY_THEM.value -> habayebDao.adaptTransactionsToOwedByThem(customer.id)
+                    TransactionType.OWED_TO_THEM.value -> habayebDao.adaptTransactionsToOwedToThem(customer.id)
+                }
             }
         }
     }
-    suspend fun insertCustomerWithOpeningTransaction(customer: HabayebCustomer, transaction: HabayebTransaction?) = 
-        habayebDao.insertCustomerWithOpeningTransaction(customer, transaction)
-    suspend fun deleteCustomerAndTransactions(customerId: String) = habayebDao.deleteCustomerAndTransactions(customerId)
-    suspend fun updateCustomerName(id: String, newName: String) = habayebDao.updateCustomerName(id, newName)
-    suspend fun insertHabayebTransaction(transaction: HabayebTransaction) = habayebDao.insertTransaction(transaction)
-    suspend fun deleteHabayebTransaction(transaction: HabayebTransaction) = habayebDao.deleteTransaction(transaction)
-    suspend fun deleteHabayebTransactionById(id: String) = habayebDao.deleteTransactionById(id)
-    suspend fun getHabayebTransactionById(id: String): HabayebTransaction? = habayebDao.getTransactionById(id)
-    suspend fun getCustomerByIdDirect(id: String): HabayebCustomer? = habayebDao.getCustomerByIdDirect(id)
-    suspend fun getAllCustomersDirect(): List<HabayebCustomer> = habayebDao.getAllCustomersDirect()
-    suspend fun getAllTransactionsDirect(): List<HabayebTransaction> = habayebDao.getAllTransactionsDirect()
-    suspend fun getTransactionsForCustomerDirect(customerId: String): List<HabayebTransaction> = habayebDao.getTransactionsForCustomerDirect(customerId)
-    suspend fun clearAllCustomers() = habayebDao.clearAllCustomers()
-    suspend fun clearAllTransactions() = habayebDao.clearAllTransactions()
-    suspend fun getTransactionsForCustomerPaged(customerId: String, limit: Int, offset: Int): List<HabayebTransaction> = habayebDao.getTransactionsForCustomerPaged(customerId, limit, offset)
-    suspend fun getHabayebTransactionsCountDirect(): Int = habayebDao.getHabayebTransactionsCountDirect()
 
+    /** إدراج عميل جديد مع رصيده الافتتاحي بشكل متزامن وذري */
+    suspend fun insertCustomerWithOpeningTransaction(customer: HabayebCustomer, transaction: HabayebTransaction?) = withContext(Dispatchers.IO) {
+        val normalizedTx = transaction?.copy(
+            amount = transaction.amount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            foreignAmount = transaction.foreignAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            exchangeRate = transaction.exchangeRate.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            equivalentAmount = transaction.equivalentAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING)
+        )
+        habayebDao.insertCustomerWithOpeningTransaction(customer, normalizedTx)
+    }
+
+    /** حذف العميل وجميع معاملاته المرتبطة دفعة واحدة */
+    suspend fun deleteCustomerAndTransactions(customerId: String) = withContext(Dispatchers.IO) {
+        habayebDao.deleteCustomerAndTransactions(customerId)
+    }
+
+    /** تعديل اسم العميل */
+    suspend fun updateCustomerName(id: String, newName: String) = withContext(Dispatchers.IO) {
+        habayebDao.updateCustomerName(id, newName)
+    }
+
+    /** إدراج معاملة مالية في كشف حساب العميل مع تطبيع كافة الحقول النقدية */
+    suspend fun insertHabayebTransaction(transaction: HabayebTransaction) = withContext(Dispatchers.IO) {
+        val normalized = transaction.copy(
+            amount = transaction.amount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            foreignAmount = transaction.foreignAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            exchangeRate = transaction.exchangeRate.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
+            equivalentAmount = transaction.equivalentAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING)
+        )
+        habayebDao.insertTransaction(normalized)
+    }
+
+    /** حذف قيد معاملة عميل */
+    suspend fun deleteHabayebTransaction(transaction: HabayebTransaction) = withContext(Dispatchers.IO) {
+        habayebDao.deleteTransaction(transaction)
+    }
+
+    /** حذف قيد معاملة عميل بالمعرف */
+    suspend fun deleteHabayebTransactionById(id: String) = withContext(Dispatchers.IO) {
+        habayebDao.deleteTransactionById(id)
+    }
+
+    /** البحث عن قيد معاملة عميل بالمعرف */
+    suspend fun getHabayebTransactionById(id: String): HabayebTransaction? = withContext(Dispatchers.IO) {
+        habayebDao.getTransactionById(id)
+    }
+
+    /** جلب بيانات العميل المباشرة بالمعرف */
+    suspend fun getCustomerByIdDirect(id: String): HabayebCustomer? = withContext(Dispatchers.IO) {
+        habayebDao.getCustomerByIdDirect(id)
+    }
+
+    /** استرجاع قائمة كافة العملاء مباشرة */
+    suspend fun getAllCustomersDirect(): List<HabayebCustomer> = withContext(Dispatchers.IO) {
+        habayebDao.getAllCustomersDirect()
+    }
+
+    /** استرجاع قائمة كافة معاملات الحبايب مباشرة */
+    suspend fun getAllTransactionsDirect(): List<HabayebTransaction> = withContext(Dispatchers.IO) {
+        habayebDao.getAllTransactionsDirect()
+    }
+
+    /** استرجاع كافة معاملات عميل معين مباشرة */
+    suspend fun getTransactionsForCustomerDirect(customerId: String): List<HabayebTransaction> = withContext(Dispatchers.IO) {
+        habayebDao.getTransactionsForCustomerDirect(customerId)
+    }
+
+    /** مسح كافة العملاء */
+    suspend fun clearAllCustomers() = withContext(Dispatchers.IO) {
+        habayebDao.clearAllCustomers()
+    }
+
+    /** مسح كافة معاملات الحبايب */
+    suspend fun clearAllTransactions() = withContext(Dispatchers.IO) {
+        habayebDao.clearAllTransactions()
+    }
+
+    /** استرجاع معاملات العميل مقسمة صفحات مباشرة */
+    suspend fun getTransactionsForCustomerPaged(customerId: String, limit: Int, offset: Int): List<HabayebTransaction> = withContext(Dispatchers.IO) {
+        habayebDao.getTransactionsForCustomerPaged(customerId, limit, offset)
+    }
+
+    /** استرجاع العدد الإجمالي لمعاملات الحبايب مباشرة */
+    suspend fun getHabayebTransactionsCountDirect(): Int = withContext(Dispatchers.IO) {
+        habayebDao.getHabayebTransactionsCountDirect()
+    }
+
+    /** حساب العدد الحقيقي الكلي لجميع معاملات التطبيق (يومية + حبايب) لفحص التراخيص */
     suspend fun getRealTotalTransactionsCount(): Int = withContext(Dispatchers.IO) {
         getTransactionsCountDirect() + getHabayebTransactionsCountDirect()
     }
 
-    // --- Trash & Soft Delete Delegation ---
-    suspend fun saveDeletedItem(item: DeletedItemEntity) = trashDao.insertDeletedItem(item)
-    suspend fun removeDeletedItem(item: DeletedItemEntity) = trashDao.deleteItem(item)
-    suspend fun removeDeletedItemById(id: String) = trashDao.deleteItemById(id)
-    suspend fun clearDeletedItems() = trashDao.clearAllDeletedItems()
+    // -----------------------------------------------------------------
+    // عمليات الحذف المؤقت وسلة المهملات (Trash & Soft Delete)
+    // -----------------------------------------------------------------
 
+    /** استرجاع كافة عناصر سلة المهملات مباشرة */
+    suspend fun getAllDeletedItemsDirect(): List<DeletedItemEntity> = withContext(Dispatchers.IO) {
+        trashDao.getAllDeletedItemsDirect()
+    }
+
+    /** حفظ عنصر جديد في سلة المهملات */
+    suspend fun saveDeletedItem(item: DeletedItemEntity) = withContext(Dispatchers.IO) {
+        trashDao.insertDeletedItem(item)
+    }
+
+    /** حذف عنصر نهائياً من سلة المهملات */
+    suspend fun removeDeletedItem(item: DeletedItemEntity) = withContext(Dispatchers.IO) {
+        trashDao.deleteItem(item)
+    }
+
+    /** حذف عنصر نهائياً بالمعرف من سلة المهملات */
+    suspend fun removeDeletedItemById(id: String) = withContext(Dispatchers.IO) {
+        trashDao.deleteItemById(id)
+    }
+
+    /** إفراغ سلة المهملات بالكامل */
+    suspend fun clearDeletedItems() = withContext(Dispatchers.IO) {
+        trashDao.clearAllDeletedItems()
+    }
+
+    /** نقل التزام مالي إلى سلة المهملات بعد تحويله إلى JSON */
     suspend fun softDeleteCommitmentToTrash(fc: FixedCommitment) = withContext(Dispatchers.IO) {
         val jsonData = TrashJsonSerializer.serializeCommitment(fc)
         val trashItem = DeletedItemEntity(
@@ -179,6 +453,7 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         saveDeletedItem(trashItem)
     }
 
+    /** نقل حزمة عميل كاملة مع كافة معاملاته إلى سلة المهملات ككتلة ذرية واحدة */
     suspend fun softDeleteHabayebBundleToTrash(customer: HabayebCustomer, transactions: List<HabayebTransaction>) = withContext(Dispatchers.IO) {
         val sharedPrefs = getSecurityPreferences()
         val jsonData = TrashJsonSerializer.serializeHabayebBundle(customer, transactions, sharedPrefs)
@@ -191,6 +466,7 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         saveDeletedItem(trashItem)
     }
 
+    /** نقل بطاقة عميل إلى سلة المهملات */
     suspend fun softDeleteHabayebCustomerToTrash(customer: HabayebCustomer) = withContext(Dispatchers.IO) {
         val jsonData = TrashJsonSerializer.serializeHabayebCustomer(customer)
         val trashItem = DeletedItemEntity(
@@ -202,6 +478,7 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         saveDeletedItem(trashItem)
     }
 
+    /** نقل قيد يومية إلى سلة المهملات */
     suspend fun softDeleteTransactionToTrash(tx: TransactionDb) = withContext(Dispatchers.IO) {
         val jsonData = TrashJsonSerializer.serializeTransaction(tx)
         val trashItem = DeletedItemEntity(
@@ -213,6 +490,7 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         saveDeletedItem(trashItem)
     }
 
+    /** نقل حزمة قيود يومية متعددة إلى سلة المهملات بحزمة مجمعة */
     suspend fun softDeleteTransactionBundleToTrash(transactions: List<TransactionDb>, title: String) = withContext(Dispatchers.IO) {
         val jsonData = TrashJsonSerializer.serializeTransactionBundle(transactions, title)
         val id = "dar_bundle_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
@@ -225,6 +503,7 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         saveDeletedItem(trashItem)
     }
 
+    /** نقل معاملة عميل فردية إلى سلة المهملات */
     suspend fun softDeleteHabayebTransactionToTrash(tx: HabayebTransaction) = withContext(Dispatchers.IO) {
         val jsonData = TrashJsonSerializer.serializeHabayebTransaction(tx)
         val trashItem = DeletedItemEntity(
@@ -236,152 +515,50 @@ class FinanceRepository(internal val database: AppDatabase, private val context:
         saveDeletedItem(trashItem)
     }
 
-    // --- Licensing & File Management Delegation ---
-    fun isAppActivated(): Boolean = licenseAndTrialManager.isAppActivated()
+    // -----------------------------------------------------------------
+    // تفويض التراخيص وإدارة مجلدات النسخ الاحتياطي (Licensing & Files)
+    // -----------------------------------------------------------------
 
+    /** التحقق من حالة تفعيل التطبيق الدائم */
+    fun isAppActivated(): Boolean = trialManager.isAppActivated()
+
+    /** التحقق من انتهاء الفترة التجريبية استناداً لعدد المعاملات الكلي */
     suspend fun isTrialExpiredDirect(): Boolean = withContext(Dispatchers.IO) {
         val totalCount = getRealTotalTransactionsCount()
-        licenseAndTrialManager.isTrialExpiredDirect(totalCount)
+        trialManager.isTrialExpiredDirect(totalCount)
     }
 
+    /** جلب المسار الأساسي لمجلدات النسخ الاحتياطي */
     fun getBaseBackupDirectory(): File = backupDirectoryManager.getBaseBackupDirectory()
 
+    /** جلب مجلد النسخ الاحتياطي الشهري النشط */
     fun getBackupDirectory(): File = backupDirectoryManager.getBackupDirectory()
 
+    /** البحث العودي عن كافة ملفات النسخ `.mzd` داخل المجلد */
     fun getAllMzdFilesRecursively(rootDir: File): List<File> = backupDirectoryManager.getAllMzdFilesRecursively(rootDir)
 
-    // --- Transactional Master Restore ---
+    // -----------------------------------------------------------------
+    // الاستعادة الشاملة واسترجاع المحذوفات (Master Restore & Undo)
+    // -----------------------------------------------------------------
+
+    /** مسح وتفريغ كافة بيانات التطبيق المالية */
     suspend fun deleteAllData(): Unit = withContext(Dispatchers.IO) {
-        try {
-            database.withTransaction {
-                transactionDao.clearAllTransactions()
-                commitmentDao.clearAllCommitments()
-                customCategoryDao.clearAllCustomCategories()
-                trashDao.clearAllDeletedItems()
-                habayebDao.clearAllCustomers()
-                habayebDao.clearAllTransactions()
-                settingsDao.insertOrUpdateSettings(AppSettings(isFirstLaunch = false))
-            }
-        } catch (e: Exception) {
-            Log.e("FinanceRepository", "Error inside deleteAllData: ${e.message}", e)
-            throw e
-        }
+        restoreService.deleteAllData()
     }
 
-    suspend fun executeMasterRestore(rawJsonString: String): RestoreResult = withContext(Dispatchers.IO) {
-        val root = JSONObject(rawJsonString)
-        val currentLocalSettings = getSettingsDirect() ?: AppSettings()
-        
-        val data = MzdBackupSerializer.importBackupFromJson(rawJsonString, context)
-        val restoredSettingsUnmerged = data.first
-        val restoredSettings = restoredSettingsUnmerged.copy(
-            themeMode = currentLocalSettings.themeMode,
-            doubleCheckExit = currentLocalSettings.doubleCheckExit,
-            isPasscodeEnabled = currentLocalSettings.isPasscodeEnabled,
-            passcodeHash = currentLocalSettings.passcodeHash,
-            recoveryPhraseHash = currentLocalSettings.recoveryPhraseHash,
-            recoveryHint = currentLocalSettings.recoveryHint,
-            tempPart = currentLocalSettings.tempPart,
-            permPart = currentLocalSettings.permPart,
-            unifiedDeviceId = currentLocalSettings.unifiedDeviceId,
-            isFirstLaunch = currentLocalSettings.isFirstLaunch,
-            isAutoBackupEnabled = currentLocalSettings.isAutoBackupEnabled,
-            isCloudSyncEnabled = currentLocalSettings.isCloudSyncEnabled
-        )
-        val restoredCommitments = data.second
-        val restoredTransactions = data.third
-        val customCategories = MzdBackupSerializer.parseCustomCategories(root)
-        val deletedItems = MzdBackupSerializer.parseDeletedItems(root)
-        val restoredCustomerData = MzdBackupSerializer.parseHabayebCustomers(root)
-        val habayebTransactions = MzdBackupSerializer.parseHabayebTransactions(root, restoredSettings.currencySymbol)
-
-        database.withTransaction {
-            clearTransactions()
-            clearCommitments()
-            clearCustomCategories()
-            clearDeletedItems()
-
-            saveSettings(restoredSettings)
-            for (fc in restoredCommitments) {
-                saveCommitment(fc)
-            }
-            for (tx in restoredTransactions) {
-                saveTransaction(tx)
-            }
-
-            // Restore Custom Categories
-            for (cat in customCategories) {
-                saveCustomCategory(cat)
-            }
-
-            // Restore pin status and settings in dual SharedPreferences
-            writeDualPreference { sharedEdit, financeEdit ->
-                if (root.has(JSON_PINNED_CUSTOMERS) && !root.isNull(JSON_PINNED_CUSTOMERS)) {
-                    val pinnedObj = root.optJSONObject(JSON_PINNED_CUSTOMERS)
-                    if (pinnedObj != null) {
-                        val keys = pinnedObj.keys()
-                        while (keys.hasNext()) {
-                            val catKey = keys.next()
-                            val arr = pinnedObj.getJSONArray(catKey)
-                            val set = mutableSetOf<String>()
-                            for (i in 0 until arr.length()) {
-                                set.add(arr.getString(i))
-                            }
-                            val prefKey = "$PREF_KEY_PINNED_PREFIX$catKey"
-                            sharedEdit.putStringSet(prefKey, set)
-                            financeEdit.putStringSet(prefKey, set)
-                        }
-                    }
-                }
-
-                if (root.has(JSON_CATEGORY_ORDER_LIST) && !root.isNull(JSON_CATEGORY_ORDER_LIST)) {
-                    val catOrder = root.getString(JSON_CATEGORY_ORDER_LIST)
-                    sharedEdit.putString(PREF_CATEGORY_ORDER_LIST_KEY, catOrder)
-                    financeEdit.putString(PREF_CATEGORY_ORDER_LIST_KEY, catOrder)
-                }
-                if (root.has(JSON_CLOSED_CUSTOM_NAME) && !root.isNull(JSON_CLOSED_CUSTOM_NAME)) {
-                    val closedCustomName = root.getString(JSON_CLOSED_CUSTOM_NAME)
-                    sharedEdit.putString(PREF_CLOSED_CUSTOM_NAME_KEY, closedCustomName)
-                    financeEdit.putString(PREF_CLOSED_CUSTOM_NAME_KEY, closedCustomName)
-                }
-            }
-
-            // Restore Deleted Items
-            for (item in deletedItems) {
-                saveDeletedItem(item)
-            }
-
-            clearAllCustomers()
-            clearAllTransactions()
-
-            // Restore Habayeb Customers
-            for (custData in restoredCustomerData) {
-                insertCustomer(custData.customer)
-                custData.categoryLink?.let { catLink ->
-                    writeDualPreference { sharedEdit, financeEdit ->
-                        sharedEdit.putString("$PREF_CAT_LINK_PREFIX${custData.customer.id}", catLink)
-                        financeEdit.putString("$PREF_CAT_LINK_PREFIX${custData.customer.id}", catLink)
-                    }
-                }
-            }
-
-            // Restore Habayeb Transactions
-            for (tx in habayebTransactions) {
-                insertHabayebTransaction(tx)
-            }
-        }
-
-        val isLegacy = root.has(JSON_MIZAN_AL_DAR_DB) || root.has(JSON_HABAYEB_DEBTS_DB)
-        RestoreResult(restoredSettings, isLegacy)
+    /** تنفيذ الاستعادة الذرية الشاملة لقاعدة البيانات من نص JSON */
+    suspend fun executeMasterRestore(rawJsonString: String): FinanceRestoreResult = withContext(Dispatchers.IO) {
+        restoreService.executeMasterRestore(rawJsonString)
     }
 
+    /** استرجاع عنصر محذوف من سلة المهملات إلى جدوله الأصلي */
     suspend fun restoreDeletedItem(item: DeletedItemEntity) = withContext(Dispatchers.IO) {
         trashDao.restoreDeletedItem(item)
     }
 
+    /** استرجاع قيد فردي من داخل حزمة قيود محذوفة في سلة المهملات */
     suspend fun restoreSingleTransactionFromBundle(itemId: String, txId: String) = withContext(Dispatchers.IO) {
         trashDao.restoreSingleTransactionFromBundle(itemId, txId)
     }
 }
 
-data class RestoreResult(val settings: AppSettings, val isLegacy: Boolean)

@@ -1,5 +1,32 @@
+/**
+ * =====================================================================
+ * ملف: مدير الأمان والتخزين المشفر المركزي للتطبيق (AppSecurityManager.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الملف الحصن الأمني المركزي لإدارة البيانات الحساسة وتخزينها محلياً
+ * بأعلى معايير التشفير العتادي [Hardware-Backed Security].
+ * يقوم بتأمين مفاتيح التفعيل، والتراخيص، ومعرفات الأجهزة، وحالة قفل التطبيق
+ * وقياسات الأمان الحيوية (البصمة والوجه) عبر مستودع التفضيلات المشفر
+ * [EncryptedSharedPreferences] المدعوم بمفاتيح أندرويد الرئيسية [MasterKeys].
+ * 
+ * [المسؤوليات المعمارية والتقنية للملف]:
+ * 1. التخزين المشفر المتقدم (Cryptographic Storage):
+ *    - استخدام معيار تشفير المفاتيح AES-256-SIV وتشفير القيم AES-256-GCM.
+ * 2. الترحيل الآمن للتفضيلات القديمة (Transparent Migration):
+ *    - نقل أية بيانات قديمة مخزنة في تفضيلات غير مشفرة إلى المستودع المشفر تلقائياً.
+ * 3. آلية التراجع الآمن عند فشل العتاد (Fail-Safe Fallback):
+ *    - التراجع للتفضيلات الخاصة القياسية في حال عدم توفر شريحة الأمان العتادية (Keystore)
+ *      لضمان استمرار عمل التطبيق دون انهيار.
+ * 4. إدارة تراخيص وتفعيل النسخة المميزة (License & Premium Management):
+ *    - حفظ وقراءة كود التفعيل والبريد الإلكتروني وحالة التفعيل المخبأة محلياً.
+ * 5. إدارة إعدادات الحماية الحيوية ورمز المرور السريع (Biometrics & Passcode Settings).
+ */
 package com.example.domain
 
+// ---------------------------------------------------------------------
+// استيراد حزم سياق أندرويد، التفضيلات، السجلات، ومكتبات التشفير الأمنية
+// ---------------------------------------------------------------------
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
@@ -7,32 +34,52 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 
 /**
- * AppSecurityManager - Centralized Cryptographic Storage & Session Guard
- *
- * Implements hardware-backed EncryptedSharedPreferences (AES-256-GCM / AES-256-SIV)
- * with transparent migration from legacy stores and fail-safe fallback to standard
- * preferences if Keystore hardware is unavailable.
+ * [فئة مدير أمان التطبيق - AppSecurityManager]:
+ * فئة أحادية النمط (Singleton) مسؤولة عن إدارة التفضيلات المشفرة وحالة التراخيص والأمان.
+ * 
+ * @param context سياق التطبيق العام لتهيئة التفضيلات ومفاتيح التشفير.
  */
 class AppSecurityManager private constructor(context: Context) {
 
+    /** سياق التطبيق الشامل لمنع تسرب الذاكرة المرتبط بالأنشطة */
     private val appContext: Context = context.applicationContext
 
+    /**
+     * مستودع التفضيلات المشفر المحمي بمفاتيح عتادية [MasterKeys].
+     * يتم تهيئته عند أول طلب عبر خاصية التهيئة الكسولة (Lazy Initialization).
+     */
     private val securePrefs: SharedPreferences by lazy {
         initEncryptedPreferences()
     }
 
+    /**
+     * مستودع التفضيلات القديم (الاحتياطي) المستخدم للتراجع والترحيل.
+     */
     private val legacyPrefs: SharedPreferences by lazy {
         appContext.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
     }
 
+    /**
+     * كتلة التهيئة الأولية:
+     * تنفذ تلقائياً عند بناء كائن الأمان لترحيل أية بيانات قديمة إلى المستودع المشفر.
+     */
     init {
         migrateLegacyPreferencesIfNeeded()
     }
 
+    /**
+     * [تهيئة مستودع التفضيلات المشفر - initEncryptedPreferences]:
+     * يقوم بتوليد أو جلب المفتاح الرئيسي من Android Keystore ثم ينشئ كائن
+     * [EncryptedSharedPreferences]. وفي حال حدوث استثناء عتادي يتم التراجع للمستودع القديم.
+     *
+     * @return كائن [SharedPreferences] مشفر أو احتياطي.
+     */
     private fun initEncryptedPreferences(): SharedPreferences {
         return try {
+            // توليد أو جلب المفتاح الرئيسي المعتمد على خوارزمية AES-256 GCM
             val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 
+            // بناء التفضيلات المشفرة بمخطط SIV للمفاتيح و GCM للقيم
             EncryptedSharedPreferences.create(
                 ENCRYPTED_PREFS_NAME,
                 masterKeyAlias,
@@ -41,11 +88,17 @@ class AppSecurityManager private constructor(context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (t: Throwable) {
+            // توثيق التحذير في السجلات عند فشل التهيئة العتادية والتراجع للمستودع القديم
             Log.w(TAG, "EncryptedSharedPreferences initialization failed; falling back to legacy protected store: ${t.message}")
             legacyPrefs
         }
     }
 
+    /**
+     * [ترحيل البيانات القديمة - migrateLegacyPreferencesIfNeeded]:
+     * يفحص إذا كانت هناك بيانات مخزنة في التفضيلات القديمة غير المشفرة،
+     * ويقوم بنسخها بالكامل إلى التفضيلات المشفرة لضمان عدم فقدان بيانات المستخدم السابقة.
+     */
     private fun migrateLegacyPreferencesIfNeeded() {
         try {
             if (legacyPrefs.all.isNotEmpty()) {
@@ -53,6 +106,7 @@ class AppSecurityManager private constructor(context: Context) {
                 if (targetPrefs != null) {
                     val editor = targetPrefs.edit()
                     for ((key, value) in legacyPrefs.all) {
+                        // ترحيل القيمة فقط إذا لم تكن موجودة بالفعل في المستودع المشفر
                         if (!targetPrefs.contains(key)) {
                             when (value) {
                                 is String -> editor.putString(key, value)
@@ -75,12 +129,26 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
-    // --- LICENSE & ACTIVATION MANAGEMENT ---
+    // =========================================================================
+    // قسم: إدارة التراخيص والتفعيل (LICENSE & ACTIVATION MANAGEMENT)
+    // =========================================================================
 
+    /**
+     * [جلب كود التفعيل المخزن - getActivationCode]:
+     * يقرأ كود التفعيل من المستودع المشفر مع التراجع للاحتياطي.
+     *
+     * @return كود التفعيل أو نص فارغ إن لم يكن مفعلاً.
+     */
     fun getActivationCode(): String {
         return securePrefs.getString(PREF_M_ACT_CODE, "") ?: legacyPrefs.getString(PREF_M_ACT_CODE, "") ?: ""
     }
 
+    /**
+     * [حفظ كود التفعيل - setActivationCode]:
+     * يقوم بتنظيف وتوحيد حالة الأحرف لكود التفعيل وتخزينه في المستودعات بأمان.
+     *
+     * @param code كود التفعيل المدخل.
+     */
     fun setActivationCode(code: String) {
         val clean = code.trim().uppercase()
         securePrefs.edit().putString(PREF_M_ACT_CODE, clean).apply()
@@ -89,10 +157,18 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [جلب البريد الإلكتروني المفعل - getActivatedEmail]:
+     * يقرأ البريد الإلكتروني المرتبط بالترخيص من المستودع المشفر.
+     */
     fun getActivatedEmail(): String {
         return securePrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: legacyPrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: ""
     }
 
+    /**
+     * [حفظ البريد الإلكتروني المفعل - setActivatedEmail]:
+     * يحفظ البريد الإلكتروني المرتبط بالترخيص بعد تنظيفه وتحويله لأحرف صغيرة.
+     */
     fun setActivatedEmail(email: String) {
         val clean = email.trim().lowercase()
         securePrefs.edit().putString(PREF_M_ACTIVATED_EMAIL, clean).apply()
@@ -101,14 +177,32 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [فحص حالة التفعيل المخبأة محلياً - isActivatedCached]:
+     * يتحقق مما إذا كانت النسخة مفعلة مسبقاً ومسجلة في التفضيلات المحلية.
+     *
+     * @return true إذا كان الترخيص مفعلاً محلياً.
+     */
     fun isActivatedCached(): Boolean {
         return securePrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false) || legacyPrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false)
     }
 
+    /**
+     * [جلب معرف الجهاز المخبأ للترخيص - getCachedDeviceId]:
+     * يعيد بصمة الجهاز التي تم ربط التفعيل بها.
+     */
     fun getCachedDeviceId(): String {
         return securePrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: legacyPrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: ""
     }
 
+    /**
+     * [حفظ بيانات التفعيل المؤقتة - setCachedActivation]:
+     * يخزن حالة التفعيل والنسخة المميزة وبصمة الجهاز والكود لتمكين التحقق السريع دون اتصال.
+     *
+     * @param isActivated حالة التفعيل (مفعل أم لا).
+     * @param deviceId بصمة الجهاز الحالية.
+     * @param code كود التفعيل المعتمد.
+     */
     fun setCachedActivation(isActivated: Boolean, deviceId: String = "", code: String = "") {
         val editor = securePrefs.edit()
             .putBoolean(PREF_IS_ACTIVATED_CACHED, isActivated)
@@ -132,6 +226,10 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [مسح بيانات التفعيل والترخيص - clearActivationData]:
+     * يقوم بإلغاء التفعيل وحذف كافة المفاتيح والبريد وحالة النسخة المميزة بالكامل.
+     */
     fun clearActivationData() {
         securePrefs.edit()
             .remove(PREF_M_ACTIVATED_EMAIL)
@@ -154,12 +252,20 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [جلب معرف الجهاز الموحد - getUnifiedDeviceId]:
+     * يقرأ البصمة العتادية الموحدة للجهاز.
+     */
     fun getUnifiedDeviceId(): String {
         val deviceId = securePrefs.getString(PREF_UNIFIED_DEVICE_ID, "") ?: ""
         if (deviceId.isNotBlank()) return deviceId
         return legacyPrefs.getString(PREF_UNIFIED_DEVICE_ID, "") ?: ""
     }
 
+    /**
+     * [حفظ معرف الجهاز الموحد - setUnifiedDeviceId]:
+     * يخزن البصمة العتادية للجهاز في التفضيلات المشفرة.
+     */
     fun setUnifiedDeviceId(deviceId: String) {
         securePrefs.edit().putString(PREF_UNIFIED_DEVICE_ID, deviceId).apply()
         if (securePrefs !== legacyPrefs) {
@@ -167,12 +273,22 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
-    // --- SECURITY & BIOMETRIC SETTINGS ---
+    // =========================================================================
+    // قسم: إعدادات الأمان والحماية الحيوية (SECURITY & BIOMETRIC SETTINGS)
+    // =========================================================================
 
+    /**
+     * [التحقق من تفعيل رمز المرور السريع - isFastPasscodeEnabled]:
+     * يفحص ما إذا كان المستخدم قد فعل قفل التطبيق برمز PIN.
+     */
     fun isFastPasscodeEnabled(): Boolean {
         return securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false) || legacyPrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
     }
 
+    /**
+     * [ضبط تفعيل رمز المرور السريع - setFastPasscodeEnabled]:
+     * تفعيل أو تعطيل قفل التطبيق برمز PIN.
+     */
     fun setFastPasscodeEnabled(enabled: Boolean) {
         securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply()
         if (securePrefs !== legacyPrefs) {
@@ -180,11 +296,19 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [التحقق من تفعيل المصادقة الحيوية - isBiometricEnabled]:
+     * يفحص إمكانية فتح التطبيق بالبصمة أو التعرف على الوجه (مفعلة افتراضياً عند تفعيل الرمز).
+     */
     fun isBiometricEnabled(): Boolean {
-        // Default enabled when passcode is on
+        // مفعل افتراضياً عندما يكون قفل رمز المرور مفعل
         return securePrefs.getBoolean(PREF_BIOMETRIC_ENABLED, true)
     }
 
+    /**
+     * [ضبط تفعيل المصادقة الحيوية - setBiometricEnabled]:
+     * حفظ خيار تفعيل أو إلغاء البصمة/الوجه لفتح التطبيق.
+     */
     fun setBiometricEnabled(enabled: Boolean) {
         securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply()
         if (securePrefs !== legacyPrefs) {
@@ -192,8 +316,14 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
-    // --- LISTENER REGISTRATION ---
+    // =========================================================================
+    // قسم: تسجيل مستمعي تغيير التفضيلات (LISTENER REGISTRATION)
+    // =========================================================================
 
+    /**
+     * [تسجيل مستمع لمراقبة تغييرات التفضيلات - registerListener]:
+     * يسمح لطبقات الواجهة والخدمات بمراقبة التغييرات الأمنية لحظياً.
+     */
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         securePrefs.registerOnSharedPreferenceChangeListener(listener)
         if (securePrefs !== legacyPrefs) {
@@ -201,6 +331,10 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [إلغاء تسجيل مستمع تغيير التفضيلات - unregisterListener]:
+     * إزالة المستمع لمنع تسرب الذاكرة عند انتهاء دورة حياة المكون.
+     */
     fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         securePrefs.unregisterOnSharedPreferenceChangeListener(listener)
         if (securePrefs !== legacyPrefs) {
@@ -208,11 +342,18 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    // =========================================================================
+    // قسم: الكائن المرافق والثوابت والنمط الأحادي (COMPANION OBJECT)
+    // =========================================================================
     companion object {
+        /** وسم السجلات التشخيصية للأمان */
         private const val TAG = "AppSecurityManager"
+        /** اسم ملف التفضيلات المشفرة */
         private const val ENCRYPTED_PREFS_NAME = "mizan_encrypted_sec_prefs"
+        /** اسم ملف التفضيلات القديم */
         private const val LEGACY_PREFS_NAME = "mizan_sec_prefs"
 
+        /** مفاتيح التفضيلات الثابتة */
         const val PREF_M_ACT_CODE = "m_act_code"
         const val PREF_M_ACTIVATED_EMAIL = "m_activated_email"
         const val PREF_IS_ACTIVATED_CACHED = "is_activated_cached"
@@ -224,9 +365,17 @@ class AppSecurityManager private constructor(context: Context) {
         const val PREF_FAST_PASSCODE_ENABLED = "fast_passcode_enabled"
         const val PREF_BIOMETRIC_ENABLED = "biometric_enabled"
 
+        /** النسخة الأحادية الحية من مدير الأمان في الذاكرة */
         @Volatile
         private var INSTANCE: AppSecurityManager? = null
 
+        /**
+         * [جلب النسخة الأحادية لمدير الأمان - getInstance]:
+         * نمط القفل المزدوج المتقلب (Double-Checked Locking) لضمان أمان الخيوط المتعددة.
+         *
+         * @param context سياق التطبيق.
+         * @return كائن [AppSecurityManager] الموحد للتطبيق.
+         */
         fun getInstance(context: Context): AppSecurityManager {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: AppSecurityManager(context).also { INSTANCE = it }
@@ -234,3 +383,4 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 }
+

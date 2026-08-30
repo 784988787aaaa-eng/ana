@@ -1,5 +1,14 @@
 package com.example.ui.components
 
+/*
+ * =====================================================================================
+ * حزمة المكونات وموجه شاشات التطبيق (Main Application Navigation & Content Host)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الحزمة على حاوية المحتوى الرئيسي وموجه الشاشات الأساسي الذي يدير التنقل
+ * الحركي والانتقالات البصرية بين مختلف شاشات التطبيق.
+ * =====================================================================================
+ */
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -26,6 +35,26 @@ import com.example.ui.viewmodel.HabayebFinanceViewModel
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 import com.example.ui.viewmodel.BackupSyncViewModel
 
+/*
+ * =====================================================================================
+ * المكون الرئيسي: حاوية المحتوى والانتقالات الحركية (MainAppContent)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * الحاوية المركزية المسؤولة عن تبديل وعرض شاشات التطبيق الرئيسية والفرعية:
+ * 1. استضافة الشاشة النشطة حالياً (Current Screen) استناداً إلى حالة التنقل.
+ * 2. توفير انتقالات حركية سلسة وسريعة الاستجابة (Custom Spring Animations):
+ *    - انزلاق عمودي وتكبير للشاشات الفرعية (الإعدادات، سلة المهملات، الملف التعريفي، الأمان).
+ *    - انزلاق أفقي للشاشات المتوازية (شاشة الحبايب وشاشة دفتر اليومية).
+ * 3. تمرير نماذج العرض (ViewModels) وحالة القائمة الجانبية وشريط البحث إلى الشاشة النشطة.
+ *
+ * [البيانات والمُدخلات]:
+ * - currentScreen: مسار الشاشة الحالية المراد عرضها (Enum Screen).
+ * - viewModel & habayebViewModel & securityViewModel & backupSyncViewModel: نماذج إدارة البيانات.
+ * - settings: إعدادات التطبيق العامة.
+ * - contentPadding: الهوامش المتروكة لأشرطة النظام العلوية والسفلية.
+ * - onNavigate & onMenuClick & onExit: أحداث التنقل والتحكم.
+ * =====================================================================================
+ */
 @Composable
 fun MainAppContent(
     currentScreen: Screen,
@@ -48,8 +77,26 @@ fun MainAppContent(
     onHistoryOverlayActiveChanged: (Boolean) -> Unit = {},
     isHistorySearchActive: Boolean = false,
     onHistorySearchActiveChanged: (Boolean) -> Unit = {},
+    onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    /*
+     * ---------------------------------------------------------------------------------
+     * تذكر حالة وسلوك القائمة الجانبية (Drawer State Holder)
+     * ---------------------------------------------------------------------------------
+     */
+    val drawerStateHolder = rememberMainAppContentState(
+        isDrawerOpen = isDrawerOpen,
+        onMenuClick = onMenuClick
+    )
+
+    /*
+     * ---------------------------------------------------------------------------------
+     * إعداد محركات الحركات الفيزيائية (Spring Animation Specs)
+     * ---------------------------------------------------------------------------------
+     * تخصيص مواصفات النابض الفيزيائي (Stiffness & Damping) لإنتاج حركة طبيعية مريحة للعين.
+     * ---------------------------------------------------------------------------------
+     */
     Box(modifier = modifier.fillMaxSize()) {
         val premiumSpring = remember {
             spring<Float>(
@@ -64,6 +111,13 @@ fun MainAppContent(
             )
         }
 
+        /*
+         * -----------------------------------------------------------------------------
+         * الانتقال المتحرك بين الشاشات (Animated Content Host)
+         * -----------------------------------------------------------------------------
+         * يقوم بفحص نوع الشاشة الحالية والسابقة لتحديد اتجاه الحركة (عمودي أم أفقي).
+         * -----------------------------------------------------------------------------
+         */
         AnimatedContent(
             targetState = currentScreen,
             transitionSpec = {
@@ -71,7 +125,7 @@ fun MainAppContent(
                 val isTargetSub = targetState == Screen.SETTINGS || targetState == Screen.TRASH || targetState == Screen.BUSINESS_PROFILE || targetState == Screen.SECURITY
 
                 if (isTargetSub && !isInitialSub) {
-                    // Entering sub-screen: Slide UP from bottom + Fade in + Scale in
+                    // الدخول إلى شاشة فرعية: انزلاق للأعلى من الأسفل مع ظهور تدريجي وتكبير خفيف
                     val slideIn = slideInVertically(animationSpec = premiumOffsetSpring) { it } +
                             fadeIn(animationSpec = premiumSpring) +
                             scaleIn(initialScale = 0.95f, animationSpec = premiumSpring)
@@ -79,7 +133,7 @@ fun MainAppContent(
                             scaleOut(targetScale = 0.95f, animationSpec = premiumSpring)
                     slideIn togetherWith slideOut
                 } else if (isInitialSub && !isTargetSub) {
-                    // Exiting sub-screen: Slide DOWN to bottom + Fade out + Scale out
+                    // الخروج من شاشة فرعية: انزلاق للأسفل مع اختفاء تدريجي وتصغير خفيف
                     val slideIn = fadeIn(animationSpec = premiumSpring) +
                             scaleIn(initialScale = 0.95f, animationSpec = premiumSpring)
                     val slideOut = slideOutVertically(animationSpec = premiumOffsetSpring) { it } +
@@ -87,7 +141,7 @@ fun MainAppContent(
                             scaleOut(targetScale = 0.95f, animationSpec = premiumSpring)
                     slideIn togetherWith slideOut
                 } else {
-                    // Lateral or sub-to-sub: Horizontal slide
+                    // التنقل الأفقي المتبادل بين الشاشات الرئيسية
                     val isForward = targetState.ordinal > initialState.ordinal
                     val slideIn = if (isForward) {
                         slideInHorizontally(animationSpec = premiumOffsetSpring) { width -> width } +
@@ -112,15 +166,20 @@ fun MainAppContent(
             },
             label = "ScreenSwitch"
         ) { screen ->
+            /*
+             * -------------------------------------------------------------------------
+             * توجيه وعرض الشاشة المطلوبة وتمرير المعاملات (Screen Routing Branching)
+             * -------------------------------------------------------------------------
+             */
             when (screen) {
                 Screen.HABAYEB -> {
                     HabayebScreen(
                         viewModel = habayebViewModel,
                         securityViewModel = securityViewModel,
-                        onMenuClick = onMenuClick,
+                        onMenuClick = { drawerStateHolder.handleMenuClick() },
                         onClose = onExit,
                         contentPadding = contentPadding,
-                        isDrawerOpen = isDrawerOpen,
+                        isDrawerOpen = drawerStateHolder.isDrawerOpen,
                         onHeaderDoubleClick = onHeaderDoubleClick,
                         isFloatingSearchActive = isFloatingSearchActive,
                         onFloatingSearchActiveChanged = onFloatingSearchActiveChanged,
@@ -129,7 +188,8 @@ fun MainAppContent(
                         isHistoryOverlayActive = isHistoryOverlayActive,
                         onHistoryOverlayActiveChanged = onHistoryOverlayActiveChanged,
                         isHistorySearchActive = isHistorySearchActive,
-                        onHistorySearchActiveChanged = onHistorySearchActiveChanged
+                        onHistorySearchActiveChanged = onHistorySearchActiveChanged,
+                        onFabOverlayChanged = onFabOverlayChanged
                     )
                 }
                 Screen.LEDGER -> {
@@ -139,8 +199,8 @@ fun MainAppContent(
                         securityViewModel = securityViewModel,
                         settings = settings,
                         onBackIntercept = {},
-                        onMenuClick = onMenuClick,
-                        isDrawerOpen = isDrawerOpen,
+                        onMenuClick = { drawerStateHolder.handleMenuClick() },
+                        isDrawerOpen = drawerStateHolder.isDrawerOpen,
                         isFloatingSearchActive = isFloatingSearchActive,
                         onFloatingSearchActiveChanged = onFloatingSearchActiveChanged,
                         isSearchActive = isSearchActive,
@@ -184,3 +244,4 @@ fun MainAppContent(
         }
     }
 }
+

@@ -1,5 +1,16 @@
 package com.example.ui.screens.business
 
+/*
+ * =====================================================================================
+ * حزمة قسم شعار المنشأة والنشاط التجاري (Business Profile Logo Section Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على المكون البصري الخاص باختيار ومعاينة وحذف شعار المنشأة:
+ * - التقاط واختيار الصور من معرض صور الجهاز عبر (PickVisualMedia).
+ * - عرض الشعار بشكل دائري مقتص (Cropped Circle) مع أزرار التعديل والحذف المتراكبة.
+ * - دعم العرض المستقل أو داخل نافذة حوار منبثقة.
+ * =====================================================================================
+ */
+
 import android.graphics.Bitmap
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
@@ -41,6 +52,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 
+/*
+ * =====================================================================================
+ * قسم إدارة شعار المنشأة التجاري (BusinessProfileLogoSection)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * بطاقة تفاعلية مخصصة لاختيار وتعديل وحذف الشعار البصري للمؤسسة لطباعته في الفواتير والتقارير:
+ * 1. إطار دائري لمعاينة صورة الشعار أو إظهار أيقونة الإضافة عند عدم وجود شعار.
+ * 2. تراكب أيقونة التعديل لفتح منتقي وسائط النظام (Photo Picker).
+ * 3. تراكب أيقونة الحذف لإزالة الشعار الحالي وإعادة التعيين للشكل الافتراضي.
+ *
+ * [المُدخلات]:
+ * - logoBitmapState: صورة الشعار المحملة حالياً (Bitmap) أو null إذا لم يتوفر شعار.
+ * - isDialog: هل المكون معروض داخل حوار لضبط الارتفاع البصري.
+ * - activeThemeColor: لون السِمة المخصص النشط لتلوين الإطار والأيقونات.
+ * - galleryLauncher: مشغل منتقي الصور من معرض النظام.
+ * - onDeleteLogo: رد نداء حذف الشعار الحالي.
+ * =====================================================================================
+ */
 @Composable
 fun BusinessProfileLogoSection(
     logoBitmapState: Bitmap?,
@@ -69,6 +98,7 @@ fun BusinessProfileLogoSection(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
+            // إطار عرض وتعديل الشعار الدائري
             Box(
                 modifier = Modifier
                     .size(70.dp)
@@ -99,7 +129,7 @@ fun BusinessProfileLogoSection(
                     )
                 }
 
-                // Edit Overlay Icon
+                // أيقونة التعديل المتراكبة في الأسفل
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.BottomEnd
@@ -115,13 +145,13 @@ fun BusinessProfileLogoSection(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(id = R.string.biz_edit),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(12.dp)
                         )
                     }
                 }
 
-                // Delete Overlay Icon
+                // أيقونة الحذف المتراكبة في حال وجود شعار
                 if (logoBitmapState != null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -131,15 +161,15 @@ fun BusinessProfileLogoSection(
                             modifier = Modifier
                                 .padding(2.dp)
                                 .size(22.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.error)
-                                .clickable { onDeleteLogo() },
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                            .clickable { onDeleteLogo() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = stringResource(id = R.string.desc_remove_logo),
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(12.dp)
                             )
                         }
@@ -149,3 +179,4 @@ fun BusinessProfileLogoSection(
         }
     }
 }
+

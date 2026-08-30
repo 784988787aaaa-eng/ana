@@ -50,7 +50,7 @@ fun TrashCustomerHistoryOverlay(
     val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
     val creditColor = financialCreditColor(isDark)
     val debtColor = financialDebtColor(isDark)
-    val avatarColor = remember(parsedData.titleText) { getInitialColor(parsedData.titleText) }
+    val avatarColor = remember(parsedData.titleText, isDark) { getInitialColor(parsedData.titleText, isDark) }
     val firstLetter = remember(parsedData.titleText) {
         parsedData.titleText.trim().firstOrNull()?.toString()?.uppercase() ?: "؟"
     }
@@ -135,14 +135,14 @@ fun TrashCustomerHistoryOverlay(
                                 imageVector = Icons.Default.RestoreFromTrash,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
-                                tint = Color.White
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = stringResource(id = R.string.trash_action_restore_btn),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
 

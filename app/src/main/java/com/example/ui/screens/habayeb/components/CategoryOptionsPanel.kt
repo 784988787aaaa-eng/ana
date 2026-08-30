@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة لوحة خيارات التصنيفات المالية (Category Options Panel Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على شريط الأدوات السريع لإدارة تصنيفات العملاء:
+ * - إعادة الترتيب وإزاحة التصنيف لليمين أو اليسار ضمن شريط التبويبات.
+ * - إعادة تسمية التصنيف (سواء كان مخصصاً أو تصنيف الحسابات المغلقة النظامي).
+ * - حذف التصنيف المخصص مع إيقونات دائرية تفاعلية مدعومة باهتزازات لمسية خفيفة.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +34,29 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.CustomCategory
 
+/*
+ * =====================================================================================
+ * لوحة خيارات التصنيف (CategoryOptionsPanel)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * بطاقة أفقية مدمجة تظهر عند الضغط المطول أو طلب إدارة تصنيف معين:
+ * 1. عرض اسم التصنيف الحالي.
+ * 2. أزرار نقل الترتيب يميناً ويساراً لتغيير موقع التبويب في الواجهة.
+ * 3. زر تعديل الاسم عبر نافذة `MicroRenameCategoryDialog`.
+ * 4. زر حذف التصنيف (يظهر فقط للتصنيفات المخصصة ولا يظهر للتصنيفات النظامية مثل CLOSED).
+ * 5. زر إغلاق لوحة الخيارات.
+ *
+ * [المُدخلات]:
+ * - categoryKey: المفتاح التعريفي للتصنيف.
+ * - closedCategoryName: الاسم المخصص لتصنيف الحسابات المغلقة.
+ * - customCategories: قائمة التصنيفات المخصصة المحفوظة.
+ * - activeThemeColor: لون السمة النشط للمؤشرات والنوافذ.
+ * - onDismiss: رد نداء لإغلاق اللوحة.
+ * - onRename / onRenameClosed: ردود نداء تعديل اسم التصنيف.
+ * - onDelete: رد نداء حذف التصنيف المخصص.
+ * - onMoveLeft / onMoveRight: ردود نداء تغيير ترتيب التصنيف.
+ * =====================================================================================
+ */
 @Composable
 fun CategoryOptionsPanel(
     categoryKey: String,
@@ -82,7 +116,7 @@ fun CategoryOptionsPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Move Right (Icon > moves category physically to the RIGHT)
+                // نقل لليمين (Move Right)
                 OptionCircularIconButton(
                     onClick = { onMoveRight(categoryKey) },
                     icon = Icons.Default.KeyboardArrowRight,
@@ -90,7 +124,7 @@ fun CategoryOptionsPanel(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Move Left (Icon < moves category physically to the LEFT)
+                // نقل لليسار (Move Left)
                 OptionCircularIconButton(
                     onClick = { onMoveLeft(categoryKey) },
                     icon = Icons.Default.KeyboardArrowLeft,
@@ -98,7 +132,7 @@ fun CategoryOptionsPanel(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Edit Name
+                // تعديل الاسم (Edit Name)
                 var showRenameDialog by remember { mutableStateOf(false) }
                 OptionCircularIconButton(
                     onClick = { showRenameDialog = true },
@@ -127,7 +161,7 @@ fun CategoryOptionsPanel(
                 }
 
                 if (!isSystem && customCat != null) {
-                    // Delete Category
+                    // حذف التصنيف (Delete Category)
                     OptionCircularIconButton(
                         onClick = { onDelete(customCat) },
                         icon = Icons.Default.Delete,
@@ -137,7 +171,7 @@ fun CategoryOptionsPanel(
                     )
                 }
 
-                // Close Options
+                // إغلاق الخيارات (Close Options)
                 OptionCircularIconButton(
                     onClick = onDismiss,
                     icon = Icons.Default.Close,
@@ -149,6 +183,14 @@ fun CategoryOptionsPanel(
     }
 }
 
+/*
+ * =====================================================================================
+ * زر الأيقونة الدائري المخصص للخيارات (OptionCircularIconButton)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون زر أيقونة دائري مصغر مع تأثير اهتزازي لطيف مناسب لأشرطة الأدوات السريعة.
+ * =====================================================================================
+ */
 @Composable
 private fun OptionCircularIconButton(
     onClick: () -> Unit,
@@ -157,8 +199,12 @@ private fun OptionCircularIconButton(
     tint: Color,
     backgroundColor: Color = MaterialTheme.colorScheme.surface
 ) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     IconButton(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
         modifier = Modifier
             .size(24.dp)
             .background(backgroundColor, CircleShape)
@@ -171,3 +217,4 @@ private fun OptionCircularIconButton(
         )
     }
 }
+

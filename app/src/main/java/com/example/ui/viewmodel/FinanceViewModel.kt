@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.local.NavigationPreferences
-import com.example.data.local.TrashDao
 import com.example.data.local.entities.AppSettings
 import com.example.data.local.entities.CustomCategory
 import com.example.data.local.entities.DeletedItemEntity
@@ -16,6 +15,7 @@ import com.example.data.local.entities.TransactionDb
 import com.example.data.repository.FinanceRepository
 import com.example.domain.DateUtils
 import com.example.domain.StringUtils
+import com.example.domain.model.SaveTransactionResult
 import com.example.domain.model.TransactionType
 import com.example.ui.state.MainLedgerUiState
 import kotlinx.coroutines.Dispatchers
@@ -32,34 +32,23 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.util.Calendar
 import java.util.UUID
 
-sealed class UiEvent {
-    data class ShowToast(val messageRes: Int, val isLong: Boolean = false) : UiEvent()
-    object ShowActivationDialog : UiEvent()
-}
+import com.example.ui.viewmodel.ledger.DayLedger
+import com.example.ui.viewmodel.ledger.MonthLedger
+import com.example.ui.viewmodel.ledger.TrashRestoreHandler
 
-// Ledger Presentation models
-data class MonthLedger(
-    val monthKey: String,
-    val monthName: String,
-    val forwardedBalance: BigDecimal,
-    val netAmount: BigDecimal,
-    val finalBalance: BigDecimal,
-    val days: List<DayLedger>
-)
+typealias MonthLedger = com.example.ui.viewmodel.ledger.MonthLedger
+typealias DayLedger = com.example.ui.viewmodel.ledger.DayLedger
 
-data class DayLedger(
-    val dayNumber: Int,
-    val dayOfWeek: String,
-    val fullDate: String,
-    val netAmount: BigDecimal,
-    val transactions: List<TransactionDb>
-)
-
+/**
+ * نموذج العرض المالي الرئيسي (FinanceViewModel)
+ * مسؤول عن تنسيق حالة الواجهة (UI Orchestration) وربط تفاعلات المستخدم مع المستودع المالي
+ * دون تخزين منطق محاسبي أو التعامل المباشر مع طبقة التخزين.
+ */
 class FinanceViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
@@ -67,13 +56,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         private const val KEY_TRASH_AUTO_CLEANUP_PERIOD = "trash_auto_cleanup_period"
         private const val CLEANUP_PERIOD_NEVER = "never"
         private const val TRANSACTION_TYPE_EXPENSE = "EXPENSE"
-        private const val PREFS_MIZAN_SEC = "mizan_sec_prefs"
-        private const val TABLE_HABAYEB_BUNDLE = "habayeb_bundle"
         private const val PREFIX_HABAYEB = "habayeb_"
     }
 
     private val repository: FinanceRepository
-    private val trashDao: TrashDao
 
     private val _autoCleanupPeriod = MutableStateFlow(CLEANUP_PERIOD_NEVER)
     val autoCleanupPeriod: StateFlow<String> = _autoCleanupPeriod.asStateFlow()
@@ -82,15 +68,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     val uiEventFlow = _uiEventChannel.receiveAsFlow()
 
     private fun sendUiEvent(event: UiEvent) {
-        viewModelScope.launch {
-            _uiEventChannel.send(event)
-        }
+        _uiEventChannel.trySend(event)
     }
 
     init {
         val database = AppDatabase.getDatabase(application)
         repository = FinanceRepository(database, application)
-        trashDao = database.trashDao()
         val trashPrefs = application.getSharedPreferences(PREFS_TRASH, Context.MODE_PRIVATE)
         _autoCleanupPeriod.value = trashPrefs.getString(KEY_TRASH_AUTO_CLEANUP_PERIOD, CLEANUP_PERIOD_NEVER) ?: CLEANUP_PERIOD_NEVER
     }
@@ -188,10 +171,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     val dailyExpenseComparisonState: StateFlow<Pair<BigDecimal, BigDecimal>> = transactionsState
         .map { txList ->
-            val todayKey = DateUtils.formatDateFull(System.currentTimeMillis() / 1000)
-            val cal = Calendar.getInstance()
-            cal.add(Calendar.DAY_OF_YEAR, -1)
-            val yesterdayKey = DateUtils.formatDateFull(cal.timeInMillis / 1000)
+            val nowSec = System.currentTimeMillis() / 1000
+            val todayKey = DateUtils.formatDateFull(nowSec)
+            val yesterdayKey = DateUtils.formatDateFull(nowSec - 86400L)
 
             var todayExpenses = BigDecimal.ZERO
             var yesterdayExpenses = BigDecimal.ZERO
@@ -219,7 +201,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     ) { txList, totalCash, query ->
         MainLedgerUiState(
             transactions = txList,
-            totalCash = totalCash.toDouble(),
+            totalCash = totalCash,
             isSearching = query.isNotBlank(),
             isLoading = false
         )
@@ -241,23 +223,49 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addTransaction(type: String, category: String, amount: Double, description: String, timestamp: Long = System.currentTimeMillis() / 1000, presetId: String? = null) {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (repository.isTrialExpiredDirect()) {
-                sendUiEvent(UiEvent.ShowToast(R.string.licensing_dialog_desc, true))
-                sendUiEvent(UiEvent.ShowActivationDialog)
-                return@launch
-            }
+    suspend fun addTransaction(
+        type: String,
+        category: String,
+        amount: BigDecimal,
+        description: String,
+        timestamp: Long = System.currentTimeMillis() / 1000,
+        presetId: String? = null
+    ): SaveTransactionResult = withContext(Dispatchers.IO) {
+        if (repository.isTrialExpiredDirect()) {
+            sendUiEvent(UiEvent.ShowToast(R.string.licensing_trial_expired_toast, true))
+            sendUiEvent(UiEvent.ShowActivationDialog)
+            return@withContext SaveTransactionResult.TrialExpired
+        }
+        try {
             val id = presetId ?: "tx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}"
             val tx = TransactionDb(
                 id = id,
                 timestamp = timestamp,
                 type = type,
                 category = category,
-                amount = BigDecimal(amount.toString()),
+                amount = amount,
                 description = description
             )
             repository.saveTransaction(tx)
+            com.example.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+            SaveTransactionResult.Success(id)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
+            SaveTransactionResult.Error(e.message)
+        }
+    }
+
+    fun addTransactionAsync(
+        type: String,
+        category: String,
+        amount: BigDecimal,
+        description: String,
+        timestamp: Long = System.currentTimeMillis() / 1000,
+        presetId: String? = null
+    ) {
+        viewModelScope.launch {
+            addTransaction(type, category, amount, description, timestamp, presetId)
         }
     }
 
@@ -281,40 +289,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private fun restorePrefsForDeletedItem(item: DeletedItemEntity) {
-        try {
-            if (item.originalTableName == TABLE_HABAYEB_BUNDLE) {
-                val root = org.json.JSONObject(item.jsonData)
-                val custData = root.getJSONObject("customer")
-                val cId = custData.getString("id")
-                val sharedPrefs = getApplication<Application>().getSharedPreferences(PREFS_MIZAN_SEC, Context.MODE_PRIVATE)
-
-                if (custData.has("categoryLink")) {
-                    val catLink = custData.getString("categoryLink")
-                    sharedPrefs.edit().putString("CAT_LINK_$cId", catLink).apply()
-                }
-
-                if (custData.has("pinnedCategories")) {
-                    val pinnedCats = custData.getJSONArray("pinnedCategories")
-                    for (i in 0 until pinnedCats.length()) {
-                        val catKey = pinnedCats.getString(i)
-                        val key = "KEY_PINNED_IN_$catKey"
-                        val existingSet = sharedPrefs.getStringSet(key, emptySet()) ?: emptySet()
-                        val newSet = existingSet.toMutableSet().apply { add(cId) }
-                        sharedPrefs.edit().putStringSet(key, newSet).apply()
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     fun restoreMultipleItems(items: List<DeletedItemEntity>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val context = getApplication<Application>()
                 items.forEach { repository.restoreDeletedItem(it) }
-                items.forEach { restorePrefsForDeletedItem(it) }
+                items.forEach { TrashRestoreHandler.restorePrefsForDeletedItem(context, it) }
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -326,8 +306,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun restoreDeletedItem(item: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val context = getApplication<Application>()
                 repository.restoreDeletedItem(item)
-                restorePrefsForDeletedItem(item)
+                TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -339,8 +320,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun restoreSingleTransactionFromBundle(itemId: String, txId: String, item: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val context = getApplication<Application>()
                 repository.restoreSingleTransactionFromBundle(itemId, txId)
-                restorePrefsForDeletedItem(item)
+                TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -365,10 +347,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     val ageInMillis = com.example.TrashCleanupWorker.getPeriodDurationMillis(period)
                     if (ageInMillis > 0L) {
                         val thresholdTime = System.currentTimeMillis() - ageInMillis
-                        val items = trashDao.getAllDeletedItemsDirect()
+                        val items = repository.getAllDeletedItemsDirect()
                         val expiredItems = items.filter { it.deletedAt < thresholdTime }
                         expiredItems.forEach { item ->
-                            trashDao.deleteItem(item)
+                            repository.removeDeletedItem(item)
                         }
                     }
                 } catch (e: Exception) {
@@ -382,12 +364,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val systemHabayeb = getApplication<Application>().getString(R.string.source_system_habayeb)
-                val allItems = trashDao.getAllDeletedItemsDirect()
+                val allItems = repository.getAllDeletedItemsDirect()
                 val nonHabayebItems = allItems.filter {
                     it.sourceSystem != systemHabayeb && !it.originalTableName.startsWith(PREFIX_HABAYEB)
                 }
                 nonHabayebItems.forEach {
-                    trashDao.deleteItem(it)
+                    repository.removeDeletedItem(it)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -399,12 +381,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val systemHabayeb = getApplication<Application>().getString(R.string.source_system_habayeb)
-                val allItems = trashDao.getAllDeletedItemsDirect()
+                val allItems = repository.getAllDeletedItemsDirect()
                 val habayebItems = allItems.filter {
                     it.sourceSystem == systemHabayeb || it.originalTableName.startsWith(PREFIX_HABAYEB)
                 }
                 habayebItems.forEach {
-                    trashDao.deleteItem(it)
+                    repository.removeDeletedItem(it)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -478,10 +460,6 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_save_failed))
             }
         }
-    }
-
-    fun saveCommitment(name: String, targetAmount: Double, currentProgress: Double) {
-        saveCommitment(name, BigDecimal(targetAmount.toString()), BigDecimal(currentProgress.toString()))
     }
 
     fun updateCommitmentDirectly(commitment: FixedCommitment) {

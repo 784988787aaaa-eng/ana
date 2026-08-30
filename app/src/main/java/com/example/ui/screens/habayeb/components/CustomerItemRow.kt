@@ -1,11 +1,19 @@
 package com.example.ui.screens.habayeb.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+/*
+ * =====================================================================================
+ * حزمة صف عنصر العميل المالي (Customer Item Row Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على بطاقة عرض العميل في القائمة الرئيسية:
+ * 1. زر إضافة حركة سريعة (+) / علامة الاختيار عند التحديد.
+ * 2. اسم العميل الكامل بخط عريض، مع تاريخ آخر حركة، وشارة النقد الأجنبي عند وجود عملات أجنبية.
+ * 3. ملخص المديونية الصافي، اتجاه الرصيد (له / عليه / مصفّى)، ومؤشر التثبيت (📌).
+ * =====================================================================================
+ */
+
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,16 +27,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,14 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
-import com.example.ui.theme.Slate800
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,12 +59,34 @@ import com.example.R
 import com.example.domain.model.TransactionType
 import com.example.ui.helper.AutoScaleText
 import com.example.ui.helper.HabayebMathHelper
-import com.example.ui.helper.getInitialColor
 import com.example.ui.screens.habayeb.utils.HabayebDateFormatter
 import com.example.ui.state.CustomerUiState
+import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+/*
+ * =====================================================================================
+ * صف عنصر العميل المالي (CustomerItemRow)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * بطاقة تفاعلية تعرض تفاصيل العميل المالية، مع دعم النقر لفتح الكشف، والنقر المطول للتحديد.
+ *
+ * [المُدخلات]:
+ * - customer: كائن حالة العميل للواجهة (CustomerUiState).
+ * - isSelected: هل العميل محدد حالياً بالتحديد الجماعي.
+ * - activeThemeColor / activeSubColor: ألوان السمة النشطة.
+ * - isPinned: هل الحساب مثبت في أعلى القائمة.
+ * - isHighlighted: هل الحساب مميز بصرياً.
+ * - haptic: مشغل الاهتزاز التفاعلي عند النقر المطول.
+ * - onCustomerClick: رد نداء عند النقر العادي لفتح كشف الحساب.
+ * - onCustomerLongClick: رد نداء عند النقر المطول لفتح قائمة الخيارات أو التحديد.
+ * - onQuickAdd: رد نداء عند النقر على زر الإضافة السريعة (+).
+ * - currentActiveCategory: معرف التصنيف النشط الحالي.
+ * - onRemoveFromCategory: رد نداء اختياري لإزالة العميل من التصنيف.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CustomerItemRow(
@@ -83,108 +111,178 @@ fun CustomerItemRow(
     val nonZeroForeign = remember(customer.foreignDebts) {
         customer.foreignDebts.filter { entry ->
             entry.value.setScale(4, RoundingMode.HALF_EVEN)
-                       .compareTo(BigDecimal.ZERO) != 0
+                .compareTo(BigDecimal.ZERO) != 0
         }
     }
-    val verticalPadding = 6.dp
+    val hasNonZeroForeign = nonZeroForeign.isNotEmpty()
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-    val targetContainerColor = when {
-        isSelected -> activeThemeColor.copy(alpha = if (isDark) 0.24f else 0.14f)
-        isHighlighted -> activeThemeColor.copy(alpha = if (isDark) 0.08f else 0.04f)
+    val containerColor = when {
+        isSelected -> if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+        isHighlighted -> if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
         else -> MaterialTheme.colorScheme.surface
     }
-    val animatedContainerColor by animateColorAsState(
-        targetValue = targetContainerColor,
-        animationSpec = tween(durationMillis = 200),
-        label = "customerCardBg"
-    )
 
-    val targetBorderWidth = if (isSelected) 1.5.dp else if (isHighlighted) 0.5.dp else 0.dp
-    val animatedBorderWidth by animateDpAsState(
-        targetValue = targetBorderWidth,
-        animationSpec = tween(durationMillis = 200),
-        label = "customerBorderWidth"
-    )
-
-    val targetBorderColor = if (isSelected) {
-        activeThemeColor
-    } else if (isHighlighted) {
-        activeThemeColor.copy(alpha = 0.25f)
-    } else {
-        Color.Transparent
+    val cardBorder = when {
+        isSelected -> BorderStroke(1.5.dp, activeThemeColor)
+        isHighlighted -> BorderStroke(1.5.dp, activeThemeColor)
+        else -> BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     }
-    val animatedBorderColor by animateColorAsState(
-        targetValue = targetBorderColor,
-        animationSpec = tween(durationMillis = 200),
-        label = "customerBorderColor"
-    )
+
+    val onCardClick = remember(customer, onCustomerClick) {
+        { onCustomerClick(customer) }
+    }
+    val onCardLongClick = remember(customer.id, haptic, onCustomerLongClick) {
+        {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onCustomerLongClick(customer.id)
+        }
+    }
 
     Card(
-        shape = RoundedCornerShape(18.dp),
-        border = if (animatedBorderWidth > 0.dp) {
-            androidx.compose.foundation.BorderStroke(animatedBorderWidth, animatedBorderColor)
-        } else null,
-        colors = CardDefaults.cardColors(containerColor = animatedContainerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 1.dp else 3.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = cardBorder,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted || isSelected) 3.dp else 1.dp),
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { onCustomerClick(customer) },
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onCustomerLongClick(customer.id)
-                }
+                onClick = onCardClick,
+                onLongClick = onCardLongClick
             )
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 4.5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 1. Right: Quick Add Action Button (+) / Selection Check (40dp circle)
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = verticalPadding, horizontal = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        CustomerAvatarWithBadge(
-                            customerName = customer.name,
-                            isSelected = isSelected,
-                            activeThemeColor = activeThemeColor,
-                            onQuickAdd = { onQuickAdd(customer) }
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) activeThemeColor
+                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
                         )
-
-                        CustomerInfoSection(
-                            customerName = customer.name,
-                            isSelected = isSelected,
-                            activeThemeColor = activeThemeColor,
-                            hasNonZeroForeign = nonZeroForeign.isNotEmpty(),
-                            formattedDate = formattedDate,
-                            textSecondaryColor = textSecondaryColor,
-                            currentActiveCategory = currentActiveCategory,
-                            onRemoveFromCategory = onRemoveFromCategory,
-                            modifier = Modifier.weight(1f)
+                        .clickable { onQuickAdd(customer) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(21.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = stringResource(id = R.string.habayeb_add_tx_button_clean),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(21.dp)
                         )
                     }
-
-                    CustomerDebtSummarySection(
-                        customer = customer,
-                        textSecondaryColor = textSecondaryColor,
-                        modifier = Modifier.padding(start = 6.dp)
-                    )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // 2. Middle (Weight 1f): Prominent Full Name (15.5sp SemiBold), Date (11sp) & Sleek Foreign Badge
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Line 1: Prominent Full Customer Name
+                    Text(
+                        text = customer.name,
+                        fontSize = 15.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Line 2: Date/Time (11sp) + Sleek Foreign Cash Micro-Tag
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = formattedDate,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = textSecondaryColor,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+
+                        if (hasNonZeroForeign) {
+                            val badgeBg = if (isDark) {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                            }
+                            val badgeTextColor = if (isDark) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            }
+                            val badgeBorder = BorderStroke(
+                                width = 0.5.dp,
+                                color = badgeTextColor.copy(alpha = 0.3f)
+                            )
+
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = badgeBg,
+                                border = badgeBorder,
+                                modifier = Modifier
+                                    .height(18.dp)
+                                    .wrapContentWidth()
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 5.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.currency_foreign_cash),
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = badgeTextColor,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // 3. Left: Balance Amount & Currency, Debt Status
+                CustomerDebtSummarySection(
+                    customer = customer,
+                    textSecondaryColor = textSecondaryColor,
+                    modifier = Modifier.wrapContentWidth()
+                )
             }
 
+            // Pinned indicator badge
             if (isPinned) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(top = 4.dp, start = 8.dp)
+                        .padding(top = 3.dp, start = 6.dp)
                 ) {
                     Text(
                         text = "📌",
@@ -200,224 +298,12 @@ fun CustomerItemRow(
 }
 
 @Composable
-private fun CustomerAvatarWithBadge(
-    customerName: String,
-    isSelected: Boolean,
-    activeThemeColor: Color,
-    onQuickAdd: () -> Unit
-) {
-    val firstLetter = remember(customerName) {
-        customerName.trim().firstOrNull()?.toString()?.uppercase() ?: "؟"
-    }
-    val avatarColor = remember(customerName) { getInitialColor(customerName) }
-
-    Box(
-        modifier = Modifier
-            .size(38.dp)
-            .clickable { onQuickAdd() },
-        contentAlignment = Alignment.Center
-    ) {
-        if (isSelected) {
-            // Selected Check Circle Avatar (Prominent & High-Contrast)
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(activeThemeColor)
-                    .border(1.5.dp, Color.White, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        } else {
-            // Main Avatar circle in the center
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(avatarColor.copy(alpha = 0.12f))
-                    .border(0.5.dp, avatarColor, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = firstLetter,
-                    color = avatarColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // Floating Badge in the bottom-end corner
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .align(Alignment.BottomEnd)
-                    .background(activeThemeColor, CircleShape)
-                    .border(1.dp, Color.White, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(id = R.string.habayeb_add_tx_button_clean),
-                    tint = Color.White,
-                    modifier = Modifier.size(8.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CustomerInfoSection(
-    customerName: String,
-    isSelected: Boolean,
-    activeThemeColor: Color,
-    hasNonZeroForeign: Boolean,
-    formattedDate: String,
-    textSecondaryColor: Color,
-    currentActiveCategory: String?,
-    onRemoveFromCategory: (() -> Unit)?,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.Start
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 5.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(activeThemeColor)
-                        .padding(horizontal = 4.dp, vertical = 1.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(id = R.string.ledger_done_btn),
-                        tint = Color.White,
-                        modifier = Modifier.size(11.dp)
-                    )
-                }
-            }
-            Text(
-                text = customerName,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
-            )
-            if (hasNonZeroForeign) {
-                Spacer(modifier = Modifier.width(6.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(activeThemeColor.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
-                        .border(0.5.dp, activeThemeColor.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(activeThemeColor, CircleShape)
-                        )
-                        Text(
-                            text = stringResource(id = R.string.currency_foreign_cash),
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeThemeColor
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(1.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = stringResource(id = R.string.habayeb_last_modified, formattedDate),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Normal,
-                color = textSecondaryColor
-            )
-
-            if (currentActiveCategory != null) {
-                val categoryEmoji = remember(currentActiveCategory) {
-                    com.example.domain.extractEmoji(currentActiveCategory, "🏷️")
-                }
-                val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-                val categoryBgColor = remember(categoryEmoji, isDarkTheme) {
-                    com.example.domain.getEmojiBgColor(categoryEmoji, isDarkTheme)
-                }
-                val categoryTextColor = if (isDarkTheme) Color.White else Slate800
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .widthIn(max = 105.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(categoryBgColor, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = "$categoryEmoji $currentActiveCategory",
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = categoryTextColor,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    if (onRemoveFromCategory != null) {
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .clickable { onRemoveFromCategory() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = null,
-                                tint = categoryTextColor.copy(alpha = 0.7f),
-                                modifier = Modifier.size(6.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun CustomerDebtSummarySection(
     customer: CustomerUiState,
     textSecondaryColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val netDebtVal = customer.displayNetDebt
-    val netDebtDecimal = remember(netDebtVal) {
-        HabayebMathHelper.toBigDecimal(netDebtVal)
-    }
+    val netDebtDecimal = customer.displayNetDebt
     val isZero = remember(netDebtDecimal) { netDebtDecimal.compareTo(BigDecimal.ZERO) == 0 }
     val isPositive = remember(netDebtDecimal) { netDebtDecimal.compareTo(BigDecimal.ZERO) > 0 }
     val isNegative = remember(netDebtDecimal) { netDebtDecimal.compareTo(BigDecimal.ZERO) < 0 }
@@ -466,7 +352,7 @@ private fun CustomerDebtSummarySection(
         if (!isZero) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(1.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 if (isOwedByThem != null) {
                     Text(
@@ -474,36 +360,42 @@ private fun CustomerDebtSummarySection(
                         color = debtColor,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(end = 2.dp)
+                        modifier = Modifier.padding(end = 1.dp)
                     )
                 }
                 AutoScaleText(
                     text = "${HabayebMathHelper.formatSmart(netDebtDecimal.abs())} $itemCurrencySymbol",
-                    baseFontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
+                    baseFontSize = 15.5.sp,
+                    fontWeight = FontWeight.Bold,
                     color = debtColor
                 )
             }
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = resolvedStatusText,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Normal,
-                color = textSecondaryColor
+                color = textSecondaryColor.copy(alpha = 0.85f),
+                maxLines = 1,
+                softWrap = false
             )
         } else {
             Text(
                 text = stringResource(id = R.string.habayeb_status_balanced_short),
-                fontSize = 13.sp,
+                fontSize = 15.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = textSecondaryColor
+                color = textSecondaryColor,
+                maxLines = 1,
+                softWrap = false
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = stringResource(id = R.string.habayeb_status_balanced),
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Normal,
-                color = textSecondaryColor
+                color = textSecondaryColor.copy(alpha = 0.85f),
+                maxLines = 1,
+                softWrap = false
             )
         }
     }

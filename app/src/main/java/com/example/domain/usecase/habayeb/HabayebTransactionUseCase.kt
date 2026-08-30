@@ -1,13 +1,39 @@
+/**
+ * =====================================================================
+ * ملف: حالة استخدام معاملات الحبايب (HabayebTransactionUseCase.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الكائن وسيط الأعمال المركزي (Business Domain Use Case) لإدارة وحفظ
+ * معاملات ديون العملاء (قسم الحبايب)، وإجراء عمليات الصرف وإعادة تقييم العملات الأجنبية،
+ * ومعالجة الحذف الفردي والجماعي مع الحفظ في سلة المحذوفات والاهتزاز اللمسي.
+ * 
+ * [المسؤوليات المعمارية والتقنية للملف]:
+ * 1. حفظ وإنشاء العملاء والمعاملات الافتتاحية (Customer & Opening Transaction Creation):
+ *    - ربط العميل بالرصيد الافتتاحي وتصنيفه، والتحقق من صلاحية الفترة التجريبية وتفعيل التطبيق.
+ * 2. المعاملات متعددة العملات وأسعار الصرف (Multi-Currency Transactions & Conversions):
+ *    - تسجيل حركات بالعملات الأجنبية، وحساب المبالغ المعادلة بدقة، وتحديث سعر الصرف للحركات الفردية.
+ * 3. إعادة التقييم الشامل للعملات التاريخية (Historical Transaction Revaluation):
+ *    - تعديل أسعار صرف العملات الأجنبية وتحديث المعاملات المرتبطة ضمن معاملة ذرية [withTransaction].
+ * 4. الحذف الآمن والحفظ في سلة المحذوفات (Soft Delete & Trash Preservation):
+ *    - ترحيل الحسابات والمعاملات المحذوفة إلى سلة المحذوفات كحزم (Bundles) قابلة للاسترجاع.
+ */
 package com.example.domain.usecase.habayeb
 
+// ---------------------------------------------------------------------
+// استيراد حزم أندرويد الأساسية، وكيانات قاعدة البيانات، ومستودع العمليات
+// ---------------------------------------------------------------------
 import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.room.withTransaction
+import com.example.data.local.AppDatabase
 import com.example.data.local.entities.AppSettings
 import com.example.data.local.entities.DatabaseDefaults
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.repository.FinanceRepository
+import com.example.domain.model.SaveTransactionResult
 import com.example.ui.helper.VibrationHelper
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import com.example.ui.viewmodel.FinanceConstants
@@ -16,46 +42,72 @@ import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.util.UUID
 
-import androidx.room.withTransaction
-import com.example.data.local.AppDatabase
-
+/**
+ * [فئة حالة استخدام معاملات الحبايب - HabayebTransactionUseCase]:
+ * @property application سياق التطبيق العام للاهتزازات وقاعدة البيانات.
+ * @property repository مستودع البيانات المالية لتنفيذ الاستعلامات.
+ * @property sharedPrefs التفضيلات المشتركة لتخزين روابط التصنيفات.
+ */
 class HabayebTransactionUseCase(
     private val application: Application,
     private val repository: FinanceRepository,
     private val sharedPrefs: SharedPreferences
 ) {
+    /**
+     * الثوابت والمعرفات المساعدة لتوليد المعرفات الفريدة.
+     */
     companion object {
         private const val TAG = "HabayebTxUseCase"
         private const val FALLBACK_NONE = "NONE"
+
+        /** توليد معرف فريد للمعاملة يبدأ بـ dtx_ */
         private fun generateTxId(): String = "dtx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
     }
 
+    /**
+     * [حفظ عميل جديد مع رصيد افتتاحي - saveHabayebCustomer]:
+     * يتحقق من الترخيص، ويحفظ العميل والمعاملة في قاعدة البيانات، ويربط التصنيف المختار.
+     *
+     * @param customer بيانات العميل الجديد.
+     * @param transaction المعاملة الافتتاحية إن وجدت.
+     * @param selectedCategoryFilter التصنيف المختار للعميل.
+     * @param onActivationRequired رد نداء عند انتهاء النسخة التجريبية والحاجة للتفعيل.
+     * @param onCategoryUpdated رد نداء عند تحديث التصنيف.
+     */
     suspend fun saveHabayebCustomer(
         customer: HabayebCustomer,
         transaction: HabayebTransaction?,
         selectedCategoryFilter: String?,
         onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
-    ) = withContext(Dispatchers.IO) {
+    ): SaveTransactionResult = withContext(Dispatchers.IO) {
         if (transaction != null && transaction.amount > BigDecimal.ZERO && repository.isTrialExpiredDirect()) {
             onActivationRequired()
-            return@withContext
+            return@withContext SaveTransactionResult.TrialExpired
         }
         try {
             repository.insertCustomerWithOpeningTransaction(customer, transaction)
 
             if (selectedCategoryFilter != null && selectedCategoryFilter != FinanceConstants.CATEGORY_CLOSED) {
-                sharedPrefs.edit().putString("${HabayebCategoryManager.PREFIX_CAT_LINK}${customer.id}", selectedCategoryFilter).apply()
+                val prefs = sharedPrefs
+                if (prefs != null) {
+                    prefs.edit().putString("${HabayebCategoryManager.PREFIX_CAT_LINK}${customer.id}", selectedCategoryFilter).apply()
+                }
                 onCategoryUpdated()
             }
 
             VibrationHelper.triggerSuccessVibration(application)
+            SaveTransactionResult.Success(customer.id)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Error saving customer", e)
+            SaveTransactionResult.Error(e.message)
         }
     }
 
+    /**
+     * [واجهة موسعة لحفظ العميل مع المعاملة متعددة العملات]:
+     */
     suspend fun saveHabayebCustomer(
         customer: HabayebCustomer,
         initialAmount: BigDecimal,
@@ -72,7 +124,7 @@ class HabayebTransactionUseCase(
         settings: AppSettings,
         onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
-    ) {
+    ): SaveTransactionResult {
         val transaction = if (initialAmount > BigDecimal.ZERO) {
             HabayebTransaction(
                 id = generateTxId(),
@@ -91,7 +143,7 @@ class HabayebTransactionUseCase(
             )
         } else null
 
-        saveHabayebCustomer(
+        return saveHabayebCustomer(
             customer = customer,
             transaction = transaction,
             selectedCategoryFilter = selectedCategoryFilter,
@@ -100,23 +152,32 @@ class HabayebTransactionUseCase(
         )
     }
 
+    /**
+     * [إضافة معاملة جديدة للعميل - addHabayebTransaction]:
+     * يفحص الترخيص ويسجل المعاملة ويفعل الاهتزاز اللمسي للنجاح.
+     */
     suspend fun addHabayebTransaction(
         transaction: HabayebTransaction,
         onActivationRequired: () -> Unit
-    ) = withContext(Dispatchers.IO) {
+    ): SaveTransactionResult = withContext(Dispatchers.IO) {
         if (repository.isTrialExpiredDirect()) {
             onActivationRequired()
-            return@withContext
+            return@withContext SaveTransactionResult.TrialExpired
         }
         try {
             repository.insertHabayebTransaction(transaction)
             VibrationHelper.triggerSuccessVibration(application)
+            SaveTransactionResult.Success(transaction.id)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Error adding transaction", e)
+            SaveTransactionResult.Error(e.message)
         }
     }
 
+    /**
+     * [إضافة أو تعديل معاملة بتفاصيل دقيقة ومتعددة العملات]:
+     */
     suspend fun addHabayebTransaction(
         customerId: String,
         type: String,
@@ -133,7 +194,7 @@ class HabayebTransactionUseCase(
         equivalentAmount: BigDecimal = BigDecimal.ZERO,
         baseCurrencySymbol: String,
         onActivationRequired: () -> Unit
-    ) {
+    ): SaveTransactionResult {
         val txId = editingTxId ?: generateTxId()
         val candidateLinkedId = if (linkedMainTxId != null) {
             linkedMainTxId
@@ -162,9 +223,13 @@ class HabayebTransactionUseCase(
             equivalentAmount = equivalentAmount,
             baseCurrencyCode = baseCurrencySymbol
         )
-        addHabayebTransaction(transaction, onActivationRequired)
+        return addHabayebTransaction(transaction, onActivationRequired)
     }
 
+    /**
+     * [تحديث سعر الصرف لمعاملة أجنبية محددة - updateTransactionExchangeRate]:
+     * يعيد احتساب القيمة المعادلة ويحدث المعاملة الرئيسية المرتبطة داخل عملية ذرية.
+     */
     suspend fun updateTransactionExchangeRate(
         txId: String,
         newRate: BigDecimal,
@@ -230,6 +295,10 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [إعادة التقييم الشامل للمعاملات التاريخية لعملة معينة - revalueHistoricalTransactions]:
+     * يمر على كافة المعاملات السابقة لعملة محددة ويعيد احتساب قيمتها وفق سعر الصرف الجديد.
+     */
     suspend fun revalueHistoricalTransactions(
         baseCurrencyCode: String,
         targetCurrencyCode: String,
@@ -285,6 +354,9 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [تحديث اسم العميل - updateCustomerName]:
+     */
     suspend fun updateCustomerName(customerId: String, newName: String) = withContext(Dispatchers.IO) {
         try {
             repository.updateCustomerName(customerId, newName)
@@ -294,6 +366,9 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [تحديث بيانات العميل بالكامل - updateCustomer]:
+     */
     suspend fun updateCustomer(customer: HabayebCustomer) = withContext(Dispatchers.IO) {
         try {
             repository.updateCustomer(customer)
@@ -303,6 +378,9 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [حذف عميل فردي مع ترحيل بياناته لسلة المحذوفات - deleteCustomer]:
+     */
     suspend fun deleteCustomer(customerId: String) = withContext(Dispatchers.IO) {
         try {
             val customer = repository.getCustomerByIdDirect(customerId)
@@ -319,6 +397,9 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [حذف مجموعة عملاء دفعة واحدة مع سلة المحذوفات - deleteMultipleCustomers]:
+     */
     suspend fun deleteMultipleCustomers(customerIds: List<String>) = withContext(Dispatchers.IO) {
         try {
             val db = AppDatabase.getDatabase(application)
@@ -341,6 +422,10 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [حذف معاملة فردية - deleteTransaction]:
+     * ينقل المعاملة لسلة المحذوفات ويحذف الحركة المرتبطة بها في المعاملات الرئيسية.
+     */
     suspend fun deleteTransaction(txId: String, isEdit: Boolean = false) = withContext(Dispatchers.IO) {
         try {
             val tx = repository.getHabayebTransactionById(txId)
@@ -360,6 +445,9 @@ class HabayebTransactionUseCase(
         }
     }
 
+    /**
+     * [حذف مجموعة معاملات دفعة واحدة - deleteMultipleTransactions]:
+     */
     suspend fun deleteMultipleTransactions(txIds: List<String>) = withContext(Dispatchers.IO) {
         try {
             val db = AppDatabase.getDatabase(application)
@@ -382,3 +470,4 @@ class HabayebTransactionUseCase(
         }
     }
 }
+

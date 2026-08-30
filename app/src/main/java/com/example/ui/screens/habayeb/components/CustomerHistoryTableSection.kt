@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة قسم جدول حركات العميل (Customer History Table Section Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على قسم عرض قائمة وسجل حركات العميل:
+ * - إدارة القائمة الكسولة (LazyColumn) لعرض الحركات بكفاءة عالية.
+ * - التعامل مع حالات القائمة الفارغة أو عدم وجود نتائج مطابقة للبحث.
+ * - ربط الحركات الفردية بمكون الصف (CustomerTransactionRow) مع دعم التسلسل، التكرار الدوري، والتحديد المتعدد.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -21,6 +32,31 @@ import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import java.math.BigDecimal
 
+/*
+ * =====================================================================================
+ * قسم جدول حركات العميل (CustomerHistoryTableSection)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون منظم يعرض الحركات المالية المصفاة داخل جدول أو قائمة منظمة.
+ *
+ * [المُدخلات]:
+ * - displayedTxs: قائمة الحركات المعروضة بعد تطبيق التصفية والبحث.
+ * - listState: حالة التمرير للقائمة الكسولة.
+ * - txSearchQuery: نص استعلام البحث الحالي.
+ * - activeCustomer: بيانات العميل النشط.
+ * - isDark: هل النمط الليلي مفعل.
+ * - currencySymbol: رمز العملة الأساسية.
+ * - runningBalances: خريطة الأرصدة التراكمية لكل حركة.
+ * - activeRecurringTxIds: مجموعة المعرفات للحركات المتكررة دورياً.
+ * - txSequenceNumbers: تسلسل أرقام الحركات.
+ * - selectedTxIds: قائمة الحركات المحددة في وضع التحديد المتعدد.
+ * - isTxMultiSelectActive: مؤشر تفعيل التحديد المتعدد.
+ * - activeThemeColor: لون السمة النشط.
+ * - contentPadding: هوامش التباعد الخاصة بالشاشة.
+ * - onSelectToggle / onLongClick / onOptionsClick / onScheduleClick / onExchangeRateClick: ردود نداء التفاعل مع كل حركة.
+ * - modifier: مغير التنسيق الخارجي.
+ * =====================================================================================
+ */
 @Composable
 fun CustomerHistoryTableSection(
     displayedTxs: List<HabayebTransaction>,
@@ -43,46 +79,13 @@ fun CustomerHistoryTableSection(
     onExchangeRateClick: (HabayebTransaction) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        // TABLE GRID COLUMN HEADER STRIP
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(id = R.string.habayeb_col_date),
-                modifier = Modifier.weight(1.2f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(id = R.string.habayeb_col_details),
-                modifier = Modifier.weight(1.8f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(id = R.string.habayeb_col_amount),
-                modifier = Modifier.weight(1.2f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
-
-        // HIGH-DENSITY HIGH-FIDELITY TRANSACTION LIST
+    Box(modifier = modifier) {
+        // HIGH-DENSITY HIGH-FIDELITY TRANSACTION LIST DIRECTLY BELOW BALANCE CARDS
         if (displayedTxs.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                    .fillMaxSize()
+                    .padding(top = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -94,12 +97,10 @@ fun CustomerHistoryTableSection(
         } else {
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Top,
                 contentPadding = PaddingValues(
-                    top = 2.dp,
+                    top = 4.dp,
                     bottom = contentPadding.calculateBottomPadding() + 80.dp
                 )
             ) {
@@ -130,7 +131,7 @@ fun CustomerHistoryTableSection(
                         onOptionsClick = onOptionsClick,
                         onScheduleClick = onScheduleClick,
                         onExchangeRateClick = onExchangeRateClick,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

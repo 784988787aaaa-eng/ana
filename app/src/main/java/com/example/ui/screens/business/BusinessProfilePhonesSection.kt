@@ -1,5 +1,16 @@
 package com.example.ui.screens.business
 
+/*
+ * =====================================================================================
+ * حزمة قسم أرقام هواتف المنشأة (Business Profile Phones Section Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على المكون البصري الخاص بإدخال وإدارة أرقام هواتف النشاط التجاري:
+ * - دعم إضافة حتى 3 أرقام هواتف (رئيسي وإضافي).
+ * - تنسيق حقول الأرقام مع قيود الإدخال والتحقق ونقل التركيز.
+ * - أزرار إضافة وحذف الأرقام الثانوية بسلاسة.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +48,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 
+/*
+ * =====================================================================================
+ * قسم إدارة أرقام هواتف المنشأة (BusinessProfilePhonesSection)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * بطاقة إدخال ديناميكية لإدارة أرقام التواصل الخاصة بالنشاط التجاري للظهور على الترويسات والتقارير:
+ * 1. إدارة قائمة الهواتف مع تمييز الهاتف الرئيسي عن الهواتف الثانوية.
+ * 2. زر إضافة هاتف جديد يظهر في الحقل الأخير بحد أقصى 3 أرقام.
+ * 3. أزرار حذف للأرقام الإضافية (لا يمكن حذف الهاتف الرئيسي رقم 0).
+ *
+ * [المُدخلات]:
+ * - phoneList: قائمة أرقام الهواتف الحالية.
+ * - onPhoneChange: رد نداء عند تعديل رقم محدد حسب الفهرس (Index).
+ * - onRemovePhone: رد نداء عند حذف رقم إضافي.
+ * - onAddPhone: رد نداء عند إضافة حقل هاتف جديد.
+ * - isDialog: هل المكون معروض داخل حوار لضبط الارتفاع البصري.
+ * - activeThemeColor: لون السِمة المخصص النشط لتلوين الحدود والأزرار.
+ * =====================================================================================
+ */
 @Composable
 fun BusinessProfilePhonesSection(
     phoneList: List<String>,
@@ -80,6 +110,7 @@ fun BusinessProfilePhonesSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // حقل إدخال رقم الهاتف مع لوحة مفاتيح الأرقام
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { newVal -> if (newVal.length <= 16) onPhoneChange(index, newVal) },
@@ -98,6 +129,7 @@ fun BusinessProfilePhonesSection(
                         textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
                     )
 
+                    // زر حذف الرقم (متاح فقط للأرقام الثانوية)
                     if (index > 0) {
                         IconButton(
                             onClick = { onRemovePhone(index) },
@@ -110,6 +142,7 @@ fun BusinessProfilePhonesSection(
                         }
                     }
 
+                    // زر إضافة رقم هاتف جديد (يظهر حتى بلوغ 3 هواتف كحد أقصى)
                     if (index == phoneList.lastIndex && phoneList.size < 3) {
                         IconButton(
                             onClick = { onAddPhone() },
@@ -126,3 +159,4 @@ fun BusinessProfilePhonesSection(
         }
     }
 }
+

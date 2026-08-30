@@ -25,6 +25,10 @@ import kotlinx.coroutines.launch
 
 class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val TAG = "SecurityAndLicenseVM"
+    }
+
     private val repository: FinanceRepository
     private val securityManager: AppSecurityManager = AppSecurityManager.getInstance(application)
     private val licenseAndTrialManager: LicenseAndTrialManager = LicenseAndTrialManager(application)
@@ -89,11 +93,6 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             GoogleAuthSessionManager.currentEmail.collect { email ->
                 if (email != null) {
                     checkFirebaseLicenseStatus()
-                } else {
-                    val activatedEmail = securityManager.getActivatedEmail()
-                    if (activatedEmail.isNotBlank()) {
-                        clearLocalActivationData()
-                    }
                 }
                 _activationTrigger.value += 1
             }
@@ -101,41 +100,22 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun checkFirebaseLicenseStatus() {
+        val activatedEmail = securityManager.getActivatedEmail()
         val googleEmail = GoogleAuthSessionManager.currentEmail.value
-        if (googleEmail != null) {
+        val emailToCheck = if (activatedEmail.isNotBlank()) activatedEmail else (googleEmail ?: "")
+
+        if (emailToCheck.isNotBlank()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
-                    val result = FirebaseLicenseManager.verifyAndActivateEmail(getApplication(), googleEmail, deviceId)
-                    if (result is LicenseCheckResult.Success) {
-                        saveEmailActivationLocally(result.email, result.deviceId)
-                    } else {
-                        val localEmail = securityManager.getActivatedEmail()
-                        if (localEmail.isNotBlank() && localEmail.trim().lowercase() == googleEmail.trim().lowercase()) {
-                            securityManager.clearActivationData()
-                        }
-                    }
+                    FirebaseLicenseManager.syncAndVerifyLocalEmailLicense(getApplication())
                 } catch (t: Throwable) {
-                    Log.e("SecurityAndLicenseVM", "Error checking Firebase license status", t)
+                    Log.w(TAG, "Offline or error syncing license safely: ${t.message}")
                 } finally {
                     _activationTrigger.value += 1
                 }
             }
         } else {
-            val localEmail = securityManager.getActivatedEmail()
-            if (localEmail.isNotBlank()) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        FirebaseLicenseManager.syncAndVerifyLocalEmailLicense(getApplication())
-                    } catch (t: Throwable) {
-                        Log.e("SecurityAndLicenseVM", "Error verifying local email license", t)
-                    } finally {
-                        _activationTrigger.value += 1
-                    }
-                }
-            } else {
-                _activationTrigger.value += 1
-            }
+            _activationTrigger.value += 1
         }
     }
 
@@ -144,6 +124,12 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     val showActivationRequired = MutableStateFlow(false)
+    fun triggerActivationRequired() {
+        showActivationRequired.value = true
+    }
+    fun resetActivationRequired() {
+        showActivationRequired.value = false
+    }
 
     val isPrivacyModeEnabled = MutableStateFlow(true)
     fun togglePrivacyMode() {
@@ -180,12 +166,33 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             }
             isValid
         } catch (t: Throwable) {
-            Log.e("SecurityAndLicenseVM", "Error activating license code", t)
+            Log.e(TAG, "Error activating license code", t)
+            false
+        }
+    }
+
+    fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            if (cm != null) {
+                val activeNetwork = cm.activeNetwork ?: return false
+                val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
+                capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } else false
+        } catch (e: Exception) {
             false
         }
     }
 
     fun activateWithFirebaseEmail(email: String, onResult: (LicenseCheckResult) -> Unit) {
+        if (!isNetworkAvailable()) {
+            onResult(
+                LicenseCheckResult.Error(
+                    getApplication<Application>().getString(R.string.licensing_error_no_internet)
+                )
+            )
+            return
+        }
         val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
         viewModelScope.launch {
             _isLicenseLoading.value = true
@@ -196,53 +203,10 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
                 }
                 onResult(result)
             } catch (t: Throwable) {
-                Log.e("SecurityAndLicenseVM", "Error activating with Firebase email", t)
+                Log.e(TAG, "Error activating with Firebase email", t)
                 onResult(
                     LicenseCheckResult.Error(
-                        getApplication<Application>().getString(R.string.licensing_error_connection)
-                    )
-                )
-            } finally {
-                _isLicenseLoading.value = false
-            }
-        }
-    }
-
-    fun sendTransferOtp(email: String, onResult: (LicenseCheckResult) -> Unit) {
-        val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
-        viewModelScope.launch {
-            _isLicenseLoading.value = true
-            try {
-                val result = FirebaseLicenseManager.sendTransferOtp(getApplication(), email, deviceId)
-                onResult(result)
-            } catch (t: Throwable) {
-                Log.e("SecurityAndLicenseVM", "Error sending transfer OTP", t)
-                onResult(
-                    LicenseCheckResult.Error(
-                        getApplication<Application>().getString(R.string.licensing_error_otp_send_failed)
-                    )
-                )
-            } finally {
-                _isLicenseLoading.value = false
-            }
-        }
-    }
-
-    fun verifyOtpAndTransfer(email: String, otpInput: String, onResult: (LicenseCheckResult) -> Unit) {
-        val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
-        viewModelScope.launch {
-            _isLicenseLoading.value = true
-            try {
-                val result = FirebaseLicenseManager.verifyOtpAndTransfer(getApplication(), email, otpInput, deviceId)
-                if (result is LicenseCheckResult.Success) {
-                    saveEmailActivationLocally(result.email, result.deviceId)
-                }
-                onResult(result)
-            } catch (t: Throwable) {
-                Log.e("SecurityAndLicenseVM", "Error verifying OTP", t)
-                onResult(
-                    LicenseCheckResult.Error(
-                        getApplication<Application>().getString(R.string.licensing_error_otp_verify_failed)
+                        getApplication<Application>().getString(R.string.licensing_error_no_internet)
                     )
                 )
             } finally {
@@ -265,7 +229,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
                     clearLocalActivationData()
                 }
             } catch (t: Throwable) {
-                Log.e("SecurityAndLicenseVM", "Error unlinking current device", t)
+                Log.e(TAG, "Error unlinking current device", t)
                 clearLocalActivationData()
                 success = true
             } finally {
@@ -280,7 +244,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             licenseAndTrialManager.clearLocalActivation()
             _activationTrigger.value += 1
         } catch (t: Throwable) {
-            Log.e("SecurityAndLicenseVM", "Error clearing local activation data", t)
+            Log.e(TAG, "Error clearing local activation data", t)
         }
     }
 
@@ -296,6 +260,10 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         mainCount + habayebCount
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
+    val isTrialExpiredState: StateFlow<Boolean> = combine(isActivatedState, totalTransactionsCount) { isActivated, totalCount ->
+        !isActivated && totalCount >= LicenseManager.SECURE_LIMIT_VAL
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     fun isTrialExpired(): Boolean {
         val count = totalTransactionsCount.value
         return licenseAndTrialManager.isTrialExpiredDirect(count)
@@ -307,7 +275,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             try {
                 repository.saveSettings(settings)
             } catch (t: Throwable) {
-                Log.e("SecurityAndLicenseVM", "Error saving settings", t)
+                Log.e(TAG, "Error saving settings", t)
             }
         }
     }
@@ -323,7 +291,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             (settings.passcodeHash != null && DatabaseSecurityGuard.secureEqual(hashed, settings.passcodeHash)) ||
                     (settings.recoveryPhraseHash != null && DatabaseSecurityGuard.secureEqual(hashed, settings.recoveryPhraseHash))
         } catch (t: Throwable) {
-            Log.e("SecurityAndLicenseVM", "Error verifying credentials", t)
+            Log.e(TAG, "Error verifying credentials", t)
             false
         } finally {
             HashUtils.wipeCharArray(inputChars)
@@ -336,7 +304,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             stopRealtimeMonitoring()
             securityManager.unregisterListener(preferenceListener)
         } catch (t: Throwable) {
-            Log.e("SecurityAndLicenseVM", "Error unregistering listener", t)
+            Log.e(TAG, "Error unregistering listener", t)
         }
     }
 }

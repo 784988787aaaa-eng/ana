@@ -1,6 +1,19 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة نافذة إعداد وضبط سعر الصرف (Exchange Rate Setup Dialog Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على نافذة ومكونات إدخال وتأكيد سعر الصرف للعملات الأجنبية:
+ * 1. حقل إدخال رقمي لسعر الصرف مع تنظيف الأرقام ودعم الفاصلة العشرية.
+ * 2. مربع اختيار إلزامي لتأكيد سعر الصرف من قبل المستخدم لتجنب أخطاء التحويل المالي العرضية.
+ * 3. التحقق من صحة القيمة المدخلة وأزرار الإلغاء والحفظ.
+ * 4. إدارة لوحة المفاتيح والتركيز التلقائي داخل حوار الـ Compose Dialog.
+ * =====================================================================================
+ */
+
 import android.widget.Toast
+import java.math.BigDecimal
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -70,13 +83,29 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 
+/*
+ * =====================================================================================
+ * محتوى إعداد سعر الصرف (ExchangeRateSetupContent)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * واجهة تفاعلية تحتوي على حقل إدخال سعر الصرف، مربع التحقق، وأزرار الحفظ والإلغاء.
+ *
+ * [المُدخلات]:
+ * - selectedCurrency: رمز العملة المحددة للتحويل.
+ * - initialRateStr: قيمة سعر الصرف المبدئية كنص.
+ * - activeThemeColor: لون السمة النشط للحدود والأزرار.
+ * - onDismiss: رد نداء عند إلغاء أو إغلاق النافذة.
+ * - onConfirm: رد نداء عند تأكيد وحفظ سعر الصرف الجديد (BigDecimal).
+ * - modifier: مغير التنسيق الخارجي.
+ * =====================================================================================
+ */
 @Composable
 fun ExchangeRateSetupContent(
     selectedCurrency: String,
     initialRateStr: String,
     activeThemeColor: Color,
     onDismiss: () -> Unit,
-    onConfirm: (Double) -> Unit,
+    onConfirm: (BigDecimal) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -253,7 +282,7 @@ fun ExchangeRateSetupContent(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(10.dp)
                         )
                     }
@@ -302,14 +331,14 @@ fun ExchangeRateSetupContent(
 
                 Button(
                     onClick = {
-                        val doubleRate = rateStr.trim().toDoubleOrNull()
-                        if (doubleRate == null || doubleRate <= 0.0) {
+                        val rateBD = try { BigDecimal(rateStr.trim()) } catch (_: Exception) { null }
+                        if (rateBD == null || rateBD.compareTo(BigDecimal.ZERO) <= 0) {
                             Toast.makeText(context, validRateToastStr, Toast.LENGTH_SHORT).show()
                         } else if (!isChecked) {
                             showUncheckedError = true
                             Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
                         } else {
-                            onConfirm(doubleRate)
+                            onConfirm(rateBD)
                         }
                     },
                     modifier = Modifier
@@ -319,7 +348,7 @@ fun ExchangeRateSetupContent(
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = statusColor,
-                        contentColor = Color.White
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text(stringResource(id = R.string.habayeb_save), fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -335,7 +364,7 @@ fun ExchangeRateSetupDialog(
     initialRateStr: String,
     activeThemeColor: Color,
     onDismiss: () -> Unit,
-    onConfirm: (Double) -> Unit
+    onConfirm: (BigDecimal) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,

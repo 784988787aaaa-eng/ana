@@ -1,5 +1,17 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة محدد العملة ونوع الحساب للعميل (Add Customer Type & Currency Selector Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على مكونات التفاعل المالي الخاصة بنموذج إنشاء العميل:
+ * - شريط أزرار اختيار العملة الشهيرة (ريال يمني، دولار، ريال سعودي) مع مؤشرات دائرية.
+ * - قسم سعر الصرف والتحويل مع شارات تنبيه لحالة وجود السعر أو الحاجة لضبطه فورياً.
+ * - أزرار التبديل الثنائي لنوع الحساب (له / عليه) مع تلوين ديناميكي وردود فعل لمسية (Haptic).
+ * - زر الحفظ والتأكيد المالي النهائي مع إدارة حالة التعطيل أثناء الحفظ.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
@@ -45,6 +58,29 @@ import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
+/*
+ * =====================================================================================
+ * محدد العملة والنوع وزر الحفظ للعميل (AddCustomerTypeAndCurrencySelector)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * يعرض خيارات العملة، سعر الصرف، التبديل بين (له/عليه)، وزر حفظ العميل:
+ * 1. العملات: عرض العملات الشائعة والاختيار بينها بنقرة سريعة وتأثير اهتزازي.
+ * 2. التحويل والصرف: يظهر فقط عند اختلاف عملة القيد عن العملة الافتراضية للتطبيق.
+ * 3. نوع الحساب: يتيح التبديل بين "له" (دائن/أخضر) و "عليه" (مدين/أحمر).
+ * 4. زر الحفظ: مدمج في نفس الصف مع محدد النوع لاستغلال المساحة بكفاءة.
+ *
+ * [المُدخلات]:
+ * - currencySymbol: العملة الافتراضية للنظام.
+ * - selectedTransactionCurrency: العملة المحددة للقيد.
+ * - onCurrencySelected: رد نداء عند اختيار عملة جديدة.
+ * - applyExchangeRate / onApplyExchangeRateChange: تفعيل تحويل العملة وتغييره.
+ * - initialType / onTypeSelected: نوع القيد الافتتاحي (له/عليه) ورد نداء تحديده.
+ * - isSavingCustomer / onSaveClick: حالة الحفظ ورد نداء الضغط على حفظ.
+ * - activeThemeColor: لون السمة الديناميكي.
+ * - isDark: نمط المظهر المظلم.
+ * - exchangeRatesJson / onRequestRateSetup: بيانات أسعار الصرف واستدعاء شاشة ضبط السعر.
+ * =====================================================================================
+ */
 @Composable
 fun AddCustomerTypeAndCurrencySelector(
     currencySymbol: String,
@@ -106,6 +142,7 @@ fun AddCustomerTypeAndCurrencySelector(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
+                        .weight(1f, fill = false)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable {
                             if (selectedTransactionCurrency != sym) {
@@ -119,7 +156,10 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = label,
                         fontSize = 10.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) currentTypeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isSelected) currentTypeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Box(
@@ -183,7 +223,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(10.dp)
                             )
                         }
@@ -219,10 +259,10 @@ fun AddCustomerTypeAndCurrencySelector(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(activeThemeColor.copy(alpha = 0.06f))
                                 .border(BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.2f)), RoundedCornerShape(6.dp))
-                                .clickable {
-                                    onRequestRateSetup(currentRate.toString())
-                                }
-                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                            .clickable {
+                                onRequestRateSetup(currentRate.toString())
+                            }
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -245,10 +285,10 @@ fun AddCustomerTypeAndCurrencySelector(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(MaterialTheme.colorScheme.errorContainer)
                                 .border(BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)), RoundedCornerShape(6.dp))
-                                .clickable {
-                                    onRequestRateSetup("")
-                                }
-                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                            .clickable {
+                                onRequestRateSetup("")
+                            }
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -301,7 +341,10 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = stringResource(id = R.string.habayeb_owed),
                         fontSize = 10.sp,
                         fontWeight = if (isOwedByThem) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isOwedByThem) debtRed else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isOwedByThem) debtRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.width(3.dp))
                     Box(
@@ -338,7 +381,10 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = stringResource(id = R.string.habayeb_to_them),
                         fontSize = 10.sp,
                         fontWeight = if (isOwedToThem) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isOwedToThem) creditGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isOwedToThem) creditGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.width(3.dp))
                     Box(
@@ -366,7 +412,7 @@ fun AddCustomerTypeAndCurrencySelector(
                 onClick = onSaveClick,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = activeThemeColor,
-                    contentColor = Color.White
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 shape = RoundedCornerShape(8.dp),
@@ -378,9 +424,13 @@ fun AddCustomerTypeAndCurrencySelector(
                 Text(
                     text = stringResource(id = R.string.btn_save),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
     }
 }
+

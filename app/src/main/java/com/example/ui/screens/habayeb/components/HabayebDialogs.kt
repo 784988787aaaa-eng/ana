@@ -1,5 +1,15 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة نوافذ إدارة عملاء الحبايب (Habayeb Dialogs Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على دوال Compose وسيطة تربط بين واجهات الحوارات ونموذج العرض (ViewModel):
+ * 1. نافذة تأكيد الحذف (DeleteConfirmDialog): معالجة حذف عميل فردي أو مجموعة عملاء محددين جماعياً.
+ * 2. نافذة تعديل بيانات العميل (EditCustomerDialog): تعديل الاسم ورقم الهاتف مع التحقق من عدم التكرار.
+ * =====================================================================================
+ */
+
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,6 +21,20 @@ import com.example.R
 import com.example.data.local.entities.HabayebCustomer
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 
+/*
+ * =====================================================================================
+ * نافذة تأكيد حذف العملاء (DeleteConfirmDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون وسيط يربط حوار تأكيد الحذف بنموذج العرض لحذف العملاء المحدد فردياً أو جماعياً.
+ *
+ * [المُدخلات]:
+ * - selectedCustomerIds: قائمة معرفات العملاء المطلوب حذفهم.
+ * - viewModel: نموذج العرض المالي الخاص بالحبايب.
+ * - onDismiss: رد نداء عند إغلاق أو إلغاء الحوار.
+ * - onSuccessBulkDelete: رد نداء ينفذ بعد اكتمال الحذف بنجاح.
+ * =====================================================================================
+ */
 @Composable
 fun DeleteConfirmDialog(
     selectedCustomerIds: List<String>,
@@ -43,7 +67,8 @@ fun EditCustomerDialog(
     customer: HabayebCustomer,
     viewModel: HabayebFinanceViewModel,
     activeThemeColor: Color,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onCustomerUpdated: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val existingCustomers by viewModel.habayebCustomersState.collectAsStateWithLifecycle()
@@ -61,6 +86,7 @@ fun EditCustomerDialog(
                     )
                 )
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_update_success), Toast.LENGTH_SHORT).show()
+                onCustomerUpdated()
             }
             onDismiss()
         },

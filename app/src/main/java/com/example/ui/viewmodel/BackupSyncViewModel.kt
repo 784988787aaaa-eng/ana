@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import android.util.Log
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
@@ -9,9 +10,10 @@ import com.example.data.CloudSyncState
 import com.example.data.GoogleDriveSyncHelper
 import com.example.data.local.AppDatabase
 import com.example.data.local.entities.AppSettings
-import com.example.data.serialization.BackupPayloadSerializer
-import com.example.data.serialization.MzdBackupSerializer
 import com.example.data.repository.FinanceRepository
+import com.example.ui.viewmodel.backup.BackupPayloadBuilder
+import com.example.ui.viewmodel.backup.BackupSearchMatcher
+import com.example.ui.viewmodel.backup.OAuthCodeParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -22,6 +24,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private const val TAG = "BackupSyncViewModel"
 
 class BackupSyncViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -42,35 +46,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         _searchQuery.value = query
     }
 
-    private fun matchesFlexibleQuery(filename: String, query: String): Boolean {
-        val cleanQuery = query.trim()
-        if (cleanQuery.isEmpty()) return true
-
-        // 1. Direct contains check
-        if (filename.contains(cleanQuery, ignoreCase = true)) return true
-
-        // 2. Token-based matching
-        val queryTokens = cleanQuery.split(Regex("[^a-zA-Z0-9]")).filter { it.isNotEmpty() }
-        val fileTokens = filename.split(Regex("[^a-zA-Z0-9]")).filter { it.isNotEmpty() }
-
-        if (queryTokens.isEmpty()) return true
-
-        // All query tokens must match at least one file token
-        return queryTokens.all { qToken ->
-            fileTokens.any { fToken ->
-                // Match as string contains/prefix
-                if (fToken.contains(qToken, ignoreCase = true)) return@any true
-
-                // Match as numbers
-                val qNum = qToken.toIntOrNull()
-                val fNum = fToken.toIntOrNull()
-                if (qNum != null && fNum != null && qNum == fNum) return@any true
-
-                false
-            }
-        }
-    }
-
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     val filteredCloudBackups: StateFlow<List<CloudBackupFile>> = combine(
         _cloudBackupsList,
@@ -80,7 +55,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
             backups
         } else {
             backups.filter { backup ->
-                matchesFlexibleQuery(backup.name, query)
+                BackupSearchMatcher.matchesFlexibleQuery(backup.name, query)
             }
         }
     }
@@ -127,6 +102,10 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         googleDriveSyncHelper.saveClientCredentialsOverride(clientId, clientSecret)
     }
 
+    fun updateCloudSyncState(state: CloudSyncState) {
+        googleDriveSyncHelper.updateSyncState(state)
+    }
+
     fun handleGoogleOAuthCode(code: String, email: String? = null, redirectUri: String = "", onComplete: ((Boolean) -> Unit)? = null) {
         viewModelScope.launch {
             val success = googleDriveSyncHelper.handleAuthorizationCode(code, email, redirectUri)
@@ -139,26 +118,8 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun handleRawOAuthCodeOrUrl(input: String, email: String? = null, redirectUri: String = "", onComplete: ((Boolean) -> Unit)? = null) {
-        val trimmed = input.trim()
-        if (trimmed.isEmpty()) return
-        val finalCode = if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.contains("code=")) {
-            var extracted = ""
-            try {
-                val parsedUri = android.net.Uri.parse(trimmed)
-                extracted = parsedUri.getQueryParameter("code") ?: ""
-            } catch (e: Exception) {}
-            if (extracted.isEmpty()) {
-                val idx = trimmed.indexOf("code=")
-                if (idx != -1) {
-                    val start = idx + 5
-                    val end = trimmed.indexOf("&", start).let { if (it == -1) trimmed.length else it }
-                    extracted = trimmed.substring(start, end)
-                }
-            }
-            extracted.takeIf { it.isNotEmpty() } ?: trimmed
-        } else {
-            trimmed
-        }
+        val finalCode = OAuthCodeParser.extractCodeFromInput(input)
+        if (finalCode.isEmpty()) return
         handleGoogleOAuthCode(finalCode, email, redirectUri, onComplete)
     }
 
@@ -181,28 +142,18 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                 _cloudBackupsList.value = list
                 _isFetchingCloudBackups.value = false
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Error fetching cloud backups list", e)
                 _isFetchingCloudBackups.value = false
             }
         }
     }
 
     private val backupPrefs by lazy {
-        getApplication<Application>().getSharedPreferences("mizan_backup_prefs", Context.MODE_PRIVATE)
+        getApplication<Application>().getSharedPreferences(FinanceConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
     }
 
     private suspend fun buildBackupJson(isMzd: Boolean, context: Context = getApplication()): String {
-        val currentSettings = repository.settingsFlow.first() ?: AppSettings()
-        val commitments = repository.commitmentsFlow.first()
-        val transactions = repository.transactionsFlow.first()
-        val habayebCusts = repository.getAllCustomersDirect()
-        val habayebTxs = repository.getAllTransactionsDirect()
-        val deletedItems = repository.deletedItemsFlow.first()
-        return if (isMzd) {
-            MzdBackupSerializer.exportBackupToJson(currentSettings, commitments, transactions, habayebCusts, habayebTxs, deletedItems, context)
-        } else {
-            BackupPayloadSerializer.exportBackupToJson(currentSettings, commitments, transactions, habayebCusts, habayebTxs, deletedItems, context)
-        }
+        return BackupPayloadBuilder.buildBackupJson(repository, isMzd, context)
     }
 
     // استخراج بيانات قاعدة البيانات لتصديرها كـ JSON
@@ -210,20 +161,20 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val jsonStr = buildBackupJson(isMzd = false)
-                launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     onComplete(jsonStr)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Error generating clipboard backup JSON", e)
             }
         }
     }
 
     // عمليات الرفع المباشر والنسخ السحابي والمحلي
     fun uploadBackupToGoogleDrive(onComplete: (Boolean) -> Unit) {
-        val sdfName = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US)
+        val sdfName = SimpleDateFormat(FinanceConstants.BACKUP_DATE_FORMAT, Locale.US)
         val dateStr = sdfName.format(Date())
-        val newFileName = "Mzd_$dateStr.mzd"
+        val newFileName = "${FinanceConstants.BACKUP_CLOUD_FILE_PREFIX}$dateStr${FinanceConstants.BACKUP_FILE_EXTENSION}"
         uploadBackupToGoogleDriveWithFilename(newFileName, onComplete)
     }
 
@@ -245,14 +196,14 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     val success = googleDriveSyncHelper.uploadBackupToDriveWithFilename(filename, jsonStr)
                     if (success) {
                         com.example.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
-                        backupPrefs.edit().putLong("last_successful_backup_timestamp", System.currentTimeMillis()).apply()
+                        backupPrefs.edit().putLong(FinanceConstants.KEY_LAST_SUCCESSFUL_BACKUP, System.currentTimeMillis()).apply()
                         fetchCloudBackupsList()
                     }
                     launch(Dispatchers.Main) {
                         onComplete(success)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in uploadBackupToGoogleDriveWithFilename", e)
                     launch(Dispatchers.Main) {
                         onComplete(false)
                     }
@@ -279,13 +230,13 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     val success = googleDriveSyncHelper.uploadBackupToDrive(jsonStr)
                     if (success) {
                         com.example.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
-                        backupPrefs.edit().putLong("last_successful_backup_timestamp", System.currentTimeMillis()).apply()
+                        backupPrefs.edit().putLong(FinanceConstants.KEY_LAST_SUCCESSFUL_BACKUP, System.currentTimeMillis()).apply()
                     }
                     launch(Dispatchers.Main) {
                         onComplete?.invoke(success)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in backupToGoogleDriveDirect", e)
                     launch(Dispatchers.Main) {
                         onComplete?.invoke(false)
                     }
@@ -321,7 +272,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in restoreFromGoogleDriveDirect", e)
                     launch(Dispatchers.Main) {
                         onComplete(false)
                     }
@@ -357,7 +308,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in restoreFromGoogleDriveById", e)
                     launch(Dispatchers.Main) {
                         onComplete(false)
                     }
@@ -378,7 +329,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                         onComplete(success)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in deleteCloudBackupById", e)
                     launch(Dispatchers.Main) {
                         onComplete(false)
                     }
@@ -405,7 +356,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                         onComplete(allSuccess)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in deleteMultipleCloudBackupsByIds", e)
                     launch(Dispatchers.Main) {
                         onComplete(false)
                     }
@@ -420,15 +371,15 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                 try {
                     val jsonStr = buildBackupJson(isMzd = false, context = context)
                     val dir = getBackupDirectory()
-                    val sdfName = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US)
+                    val sdfName = SimpleDateFormat(FinanceConstants.BACKUP_DATE_FORMAT, Locale.US)
                     val dateStr = sdfName.format(Date())
-                    val fileName = "Mizan_$dateStr.mzd"
+                    val fileName = "${FinanceConstants.BACKUP_FILE_PREFIX}$dateStr${FinanceConstants.BACKUP_FILE_EXTENSION}"
                     val file = File(dir, fileName)
                     file.writeText(jsonStr)
 
                     if (file.exists() && file.length() > 0) {
                         com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
-                        backupPrefs.edit().putLong("last_successful_backup_timestamp", System.currentTimeMillis()).apply()
+                        backupPrefs.edit().putLong(FinanceConstants.KEY_LAST_SUCCESSFUL_BACKUP, System.currentTimeMillis()).apply()
                         refreshLocalBackups()
                         launch(Dispatchers.Main) {
                             onComplete(file)
@@ -437,7 +388,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                         throw java.io.IOException("File verification failed.")
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error in createLocalBackup", e)
                     launch(Dispatchers.Main) {
                         onComplete(null)
                     }
@@ -460,14 +411,14 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
             try {
                 val jsonStr = buildBackupJson(isMzd = false)
                 val dir = getBackupDirectory()
-                val file = File(dir, "Mizan_Silent_Backup.mzd")
+                val file = File(dir, FinanceConstants.BACKUP_SILENT_FILE_NAME)
                 file.writeText(jsonStr)
                 if (file.exists() && file.length() > 0) {
                     lastSilentBackupTime = currentTime
                     refreshLocalBackups()
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Error in triggerSilentLocalBackup", e)
             } finally {
                 backupRestoreMutex.unlock()
             }
@@ -495,20 +446,20 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
 
                     val successMessageRes = if (result.isLegacy) com.example.R.string.toast_restore_legacy_migrated else com.example.R.string.cloud_toast_restore_success
 
-                    launch(Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                         android.widget.Toast.makeText(context, successMessageRes, android.widget.Toast.LENGTH_SHORT).show()
                         onComplete(true, result.settings)
                     }
                 } catch (e: org.json.JSONException) {
-                    e.printStackTrace()
-                    launch(Dispatchers.Main) {
+                    Log.e(TAG, "JSON Schema mismatch during executeMasterRestore", e)
+                    withContext(Dispatchers.Main) {
                         android.widget.Toast.makeText(context, com.example.R.string.backup_schema_mismatch, android.widget.Toast.LENGTH_LONG).show()
                         onComplete(false, null)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
-                    launch(Dispatchers.Main) {
+                    Log.e(TAG, "General failure during executeMasterRestore", e)
+                    withContext(Dispatchers.Main) {
                         android.widget.Toast.makeText(context, com.example.R.string.cloud_toast_restore_failed, android.widget.Toast.LENGTH_LONG).show()
                         onComplete(false, null)
                     }
@@ -538,7 +489,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Error in restoreFromLocalFile", e)
                 launch(Dispatchers.Main) {
                     onComplete(false, null)
                 }

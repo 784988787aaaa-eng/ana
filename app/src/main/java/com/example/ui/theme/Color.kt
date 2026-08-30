@@ -8,50 +8,51 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // Mizan Al-Dar Color Palette - Styled with the premium Violet & Neon Cyan "الدفتر الذكي" Palette
-val EmeraldPrimary = Color(0xFF4B36A2)      // Premium Glowing Violet/Purple (#4B36A2)
-val EmeraldLight = Color(0xFF8C7CFF)        // Lighter Purple/Lavender for beautiful gradients (#8C7CFF)
-val CoralAccent = Color(0xFF00B2FE)         // Neon Cyan / Electric Blue Accent (#00B2FE)
+val EmeraldPrimary = Color(0xFF5B46B8)      // Premium violet tuned to the app icon, with reduced blue intensity
+val EmeraldLight = Color(0xFF8F82E6)        // Soft lavender companion for accessible gradients
+val CoralAccent = Color(0xFF247E9D)         // Filtered cyan-blue accent: calmer and less visually aggressive
 
-val EmeraldDark = Color(0xFF4B36A2)         // Rich Glowing Violet/Purple directly in dark mode
-val CoralDark = Color(0xFF00B2FE)           // Rich Glowing Neon Cyan directly in dark mode
-val IvoryBackground = Color(0xFFF0F3FC)     // Soft modern lavender-tinted background (Eye safe)
+// Dark-mode accents intentionally use lower luminance and lower saturation to avoid neon/glow fatigue.
+val EmeraldDark = Color(0xFF6F63B4)      // Quiet violet aligned with the app icon without neon intensity
+val CoralDark = Color(0xFF4B8290)        // Muted cyan-teal companion for dark mode
+val IvoryBackground = Color(0xFFF8F7FB)     // Solid high-contrast background (#F8F9FA)
 
-val SoftRed = Color(0xFFDC2626)            // Vibrant Deep Red (Expense / Debt)
-val SoftGreen = Color(0xFF059669)          // Rich Emerald Green (Income / Owed)
+// Financial semantic colors - High Contrast Display Tokens
+val SoftRed = Color(0xFFD32F2F)            // Debt (لنا / مدين) - Vivid Solid Red Light (#D32F2F)
+val SoftGreen = Color(0xFF2E7D32)          // Credit (علينا / دائن) - Deep Emerald Green Light (#2E7D32)
 
-// Financial semantic colors
-val CreditGreen = SoftGreen
-val DebtRed = SoftRed
-val CreditGreenDark = Color(0xFF34D399)
-val DebtRedDark = Color(0xFFFF5252)
+val CreditGreen = Color(0xFF2E7D32)        // Credit Green Light (#2E7D32)
+val DebtRed = Color(0xFFD32F2F)            // Debt Red Light (#D32F2F)
+val CreditGreenDark = Color(0xFF4E9C68)    // Muted financial green for dark mode
+val DebtRedDark = Color(0xFFD06B74)        // Muted financial red for dark mode
 
-// Financial Card / Container backgrounds and borders
-val CreditContainerLight = Color(0xFFE8F5E9)
-val CreditContainerDark = Color(0xFF14241B)
-val CreditBorderLight = Color(0xFF81C784)
-val CreditBorderDark = Color(0xFF2E7D32)
+// Financial Card / Container backgrounds (Solid Safe Colors for replacement & low-contrast screens)
+val CreditContainerLight = Color(0xFFF0FDF4) // خلفية بطاقة "علينا" الخضراء في الوضع النهاري (#F0FDF4)
+val CreditContainerDark = Color(0xFF16281E)  // خلفية بطاقة "علينا" الخضراء في الوضع الليلي (#16281E)
+val CreditBorderLight = Color(0xFFA7F3D0)
+val CreditBorderDark = Color(0xFF1B4D2E)
 
-val DebtContainerLight = Color(0xFFFFEBEE)
-val DebtContainerDark = Color(0xFF2D1A1A)
-val DebtBorderLight = Color(0xFFE57373)
-val DebtBorderDark = Color(0xFFC62828)
+val DebtContainerLight = Color(0xFFFDF2F2)   // خلفية بطاقة "لنا" الحمراء في الوضع النهاري (#FDF2F2)
+val DebtContainerDark = Color(0xFF2C1A1D)    // خلفية بطاقة "لنا" الحمراء في الوضع الليلي (#2C1A1D)
+val DebtBorderLight = Color(0xFFFECDD3)
+val DebtBorderDark = Color(0xFF531A21)
 
 // Selection colors
 val SelectionGreen = Color(0xFF10B981)
 val SelectionGreenContainerLight = Color(0xFFE6F4EA)
 val SelectionGreenContainerDark = Color(0xFF152D1F)
 
-val DarkBackground = Color(0xFF0C0B14)     // Rich Premium Deep Indigo-Black
-val DarkSurface = Color(0xFF161525)        // Rich Deep Violet-Charcoal Card surface
-val LightSurface = Color(0xFFFFFFFF)       // Clean white card surface
+val DarkBackground = Color(0xFF0E0D15)     // Deep violet-black background to reduce visual glare
+val DarkSurface = Color(0xFF171522)        // Elevated violet-charcoal surface
+val LightSurface = Color(0xFFFFFFFF)       // Clean light surface
 
-val TextPrimaryDark = Color(0xFFF1F0F7)     // Bright Crisp White for deep indigo contrast
-val TextSecondaryDark = Color(0xFF9E9BAC)   // Soft purple-slate secondary text
-val TextPrimaryLight = Color(0xFF1E1A3E)    // Deep indigo-slate primary text
-val TextSecondaryLight = Color(0xFF5C58A5)  // Muted purple-slate secondary text
+val TextPrimaryDark = Color(0xFFE9E6EE)     // Soft near-white for comfortable dark-mode reading
+val TextSecondaryDark = Color(0xFFA8A3B0)   // Calm secondary text for dark mode
+val TextPrimaryLight = Color(0xFF211D2B)    // Deep dark crisp primary text light
+val TextSecondaryLight = Color(0xFF5F586B)  // Clear legible secondary text light
 
-val BorderDark = Color(0xFF24223B)          // Elegant Indigo-Slate Border
-val BorderLight = Color(0xFFE2E8F0)         // Light border
+val BorderDark = Color(0xFF312C3A)          // Quiet, low-glare dark border
+val BorderLight = Color(0xFFE1DDE9)         // Clean light border
 
 // Modern Pre-allocated Static Gradients (Zero-allocation during recomposition)
 val PrimaryGradient = Brush.linearGradient(
@@ -59,11 +60,11 @@ val PrimaryGradient = Brush.linearGradient(
 )
 
 val CoralGradient = Brush.linearGradient(
-    colors = listOf(CoralAccent, Color(0xFF0284C7))
+    colors = listOf(CoralAccent, Color(0xFF1D607B))
 )
 
 val IncomeGradientLight = Brush.linearGradient(
-    colors = listOf(Color(0xFFF3FAF5), LightSurface)
+    colors = listOf(Color(0xFFF0FDF4), LightSurface)
 )
 
 val IncomeGradientDark = Brush.linearGradient(
@@ -71,7 +72,7 @@ val IncomeGradientDark = Brush.linearGradient(
 )
 
 val ExpenseGradientLight = Brush.linearGradient(
-    colors = listOf(Color(0xFFFFF7F7), LightSurface)
+    colors = listOf(Color(0xFFFDF2F2), LightSurface)
 )
 
 val ExpenseGradientDark = Brush.linearGradient(
@@ -87,19 +88,19 @@ val SelectedItemGradientDark = Brush.linearGradient(
 )
 
 val NeonGreenCyanGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFF00E676), Color(0xFF00B0FF))
+    colors = listOf(Color(0xFF32B77E), Color(0xFF2B9FC2))
 )
 
 val VioletHeroGradient = Brush.linearGradient(
-    colors = listOf(Color(0xFF4B36A2), Color(0xFF7C3AED), Color(0xFF8C7CFF))
+    colors = listOf(EmeraldPrimary, Color(0xFF7258C9), EmeraldLight)
 )
 
 val HeaderCardGradientDark = Brush.linearGradient(
-    colors = listOf(Color(0xFF1E1B4B), Color(0xFF161525))
+    colors = listOf(DarkSurface, Color(0xFF1D1A25))
 )
 
 val HeaderCardGradientLight = Brush.linearGradient(
-    colors = listOf(Color(0xFFF5F3FF), Color(0xFFFFFFFF))
+    colors = listOf(LightSurface, IvoryBackground)
 )
 
 val GoldLicenseGradient = Brush.linearGradient(
@@ -112,16 +113,16 @@ val WarningGradient = Brush.linearGradient(
 
 val SplashSweepGradient = Brush.sweepGradient(
     colorStops = arrayOf(
-        0.0f to Color(0xFF2563EB),
-        0.5f to Color(0xFF10B981),
-        1.0f to Color(0xFF2563EB)
+        0.0f to EmeraldPrimary,
+        0.5f to CoralAccent,
+        1.0f to EmeraldPrimary
     )
 )
 
 val SplashRadialGlow = Brush.radialGradient(
     colors = listOf(
-        Color(0xFF2563EB).copy(alpha = 0.22f),
-        Color(0xFF10B981).copy(alpha = 0.15f),
+        EmeraldPrimary.copy(alpha = 0.20f),
+        CoralAccent.copy(alpha = 0.13f),
         Color.Transparent
     )
 )
@@ -129,19 +130,23 @@ val SplashRadialGlow = Brush.radialGradient(
 // Specific Functional Palette Colors
 val WhatsAppGreen = Color(0xFF128C7E)
 val WhatsAppLightGreen = Color(0xFF25D366)
+val WhatsAppDarkGreen = Color(0xFF3D805C)
 val WarningAmber = Color(0xFFF59E0B)
+val WarningAmberDark = Color(0xFFC9953D)
 val WarningAmberBg = Color(0xFFFFF8E1)
+val WarningAmberBgDark = Color(0xFF332A1A)
 val WarningAmberBorder = Color(0xFFFFB300)
+val WarningAmberBorderDark = Color(0xFF70582B)
 val WarningDarkRedText = Color(0xFFB71C1C)
-val WarningOrangeButton = Color(0xFFE65100)
+val WarningOrangeButton = Color(0xFFB96F36)
 val LicenseGreenBg = Color(0xFFE8F5E9)
 val LicenseGreenText = Color(0xFF2E7D32)
 val LicenseBadgeGreenText = Color(0xFF1B5E20)
-val InfoBlue = Color(0xFF3B82F6)
-val InfoBlueBgLight = Color(0xFFEFF6FF)
-val InfoBlueBgDark = Color(0xFF1E293B)
-val InfoBlueTextLight = Color(0xFF1D4ED8)
-val InfoBlueTextDark = Color(0xFF60A5FA)
+val InfoBlue = Color(0xFF2F83A1)
+val InfoBlueBgLight = Color(0xFFEAF5F7)
+val InfoBlueBgDark = Color(0xFF1B2D34)
+val InfoBlueTextLight = Color(0xFF1D607B)
+val InfoBlueTextDark = Color(0xFF68A8B7)
 
 // Slate & UI Accents
 val Slate50 = Color(0xFFF8FAFC)
@@ -156,62 +161,62 @@ val Slate800 = Color(0xFF1E293B)
 val Slate900 = Color(0xFF0F172A)
 
 // Status & Action tokens
-val NeonGreen = Color(0xFF00E676)
-val NeonCyan = Color(0xFF00B0FF)
-val IndigoAccent = Color(0xFF6366F1)
-val PurpleAccent = Color(0xFF8B5CF6)
-val SoftLavender = Color(0xFFC4B5FD)
+val NeonGreen = Color(0xFF32A978)
+val NeonCyan = Color(0xFF247E9D)
+val IndigoAccent = Color(0xFF5F579E)
+val PurpleAccent = Color(0xFF775CCB)
+val SoftLavender = Color(0xFFA79DD0)
 val WarningRed = Color(0xFFE53935)
-val WarningRedBorder = Color(0xFFB91C1C)
+val WarningRedBorder = Color(0xFF9E5B63)
 val WarningRedBorderLight = Color(0xFFD93025)
-val LightRedTint = Color(0xFFFF8A80)
+val LightRedTint = Color(0xFFD99AA0)
 
 // Alert Gold (Yellow/Amber badge tokens)
 val AlertGoldBgDark = Color(0xFF451A03)
 val AlertGoldBorderDark = Color(0xFF92400E)
-val AlertGoldTextDark = Color(0xFFFBBF24)
+val AlertGoldTextDark = Color(0xFFD8AA4B)
 val AlertGoldTextLight = Color(0xFFB45309)
 
 // Success Green badge tokens
 val SuccessGreenBgDark = Color(0xFF064E3B)
 val SuccessGreenBgLight = Color(0xFFE6F4EA)
-val SuccessGreenBorderDark = Color(0xFF10B981)
+val SuccessGreenBorderDark = Color(0xFF3D8558)
 val SuccessGreenBorderLight = Color(0xFF137333)
 val MutedTextDark = Color(0xFF9AA0A6)
 val MutedTextLight = Color(0xFF5F6368)
-val DarkNeutralTrack = Color(0xFF2D2D2D)
+val DarkNeutralTrack = Color(0xFF27242D)
 val LightNeutralTrack = Color(0xFFEEEEEE)
 
-// Chip Filter Color Tokens
-val ChipRedBgDarkSelected = Color(0xFF3F1015)
-val ChipRedBgDarkUnselected = Color(0xFF220D10)
-val ChipRedBgLightSelected = Color(0xFFFFE4E6)
-val ChipRedBgLightUnselected = Color(0xFFFFF5F5)
+// Chip Filter Color Tokens (Solid High-Contrast Safe Values)
+val ChipRedBgDarkSelected = Color(0xFF3B2025)
+val ChipRedBgDarkUnselected = Color(0xFF2C1A1D)
+val ChipRedBgLightSelected = Color(0xFFFCE8E8)
+val ChipRedBgLightUnselected = Color(0xFFFDF2F2)
 
-val ChipRedBorderDarkSelected = Color(0xFFEF4444)
+val ChipRedBorderDarkSelected = DebtRedDark
 val ChipRedBorderDarkUnselected = Color(0xFF531A21)
-val ChipRedBorderLightSelected = Color(0xFFE11D48)
+val ChipRedBorderLightSelected = Color(0xFFD32F2F)
 val ChipRedBorderLightUnselected = Color(0xFFFECDD3)
 
-val ChipRedTextDark = Color(0xFFF87171)
-val ChipRedTextLight = Color(0xFFE11D48)
-val ChipRedHeaderDark = Color(0xFFFCA5A5)
-val ChipRedHeaderLight = Color(0xFF9F1239)
+val ChipRedTextDark = DebtRedDark
+val ChipRedTextLight = Color(0xFFD32F2F)
+val ChipRedHeaderDark = Color(0xFFD99AA0)
+val ChipRedHeaderLight = Color(0xFFB71C1C)
 
-val ChipGreenBgDarkSelected = Color(0xFF064E3B)
-val ChipGreenBgDarkUnselected = Color(0xFF0A221A)
-val ChipGreenBgLightSelected = Color(0xFFDCFCE7)
+val ChipGreenBgDarkSelected = Color(0xFF1D3528)
+val ChipGreenBgDarkUnselected = Color(0xFF16281E)
+val ChipGreenBgLightSelected = Color(0xFFE6F9ED)
 val ChipGreenBgLightUnselected = Color(0xFFF0FDF4)
 
-val ChipGreenBorderDarkSelected = Color(0xFF10B981)
-val ChipGreenBorderDarkUnselected = Color(0xFF134E3A)
-val ChipGreenBorderLightSelected = Color(0xFF10B981)
+val ChipGreenBorderDarkSelected = CreditGreenDark
+val ChipGreenBorderDarkUnselected = Color(0xFF1B4D2E)
+val ChipGreenBorderLightSelected = Color(0xFF2E7D32)
 val ChipGreenBorderLightUnselected = Color(0xFFA7F3D0)
 
-val ChipGreenTextDark = Color(0xFF34D399)
-val ChipGreenTextLight = Color(0xFF059669)
-val ChipGreenHeaderDark = Color(0xFF86EFAC)
-val ChipGreenHeaderLight = Color(0xFF065F46)
+val ChipGreenTextDark = CreditGreenDark
+val ChipGreenTextLight = Color(0xFF2E7D32)
+val ChipGreenHeaderDark = Color(0xFFA7D4B6)
+val ChipGreenHeaderLight = Color(0xFF1B5E20)
 
 // Financial Semantic Color Resolvers
 fun financialCreditColor(isDark: Boolean): Color = if (isDark) CreditGreenDark else CreditGreen
@@ -220,6 +225,12 @@ fun financialCreditBg(isDark: Boolean): Color = if (isDark) CreditContainerDark 
 fun financialDebtBg(isDark: Boolean): Color = if (isDark) DebtContainerDark else DebtContainerLight
 fun financialCreditBorder(isDark: Boolean): Color = if (isDark) CreditBorderDark else CreditBorderLight
 fun financialDebtBorder(isDark: Boolean): Color = if (isDark) DebtBorderDark else DebtBorderLight
+
+fun whatsappColor(isDark: Boolean): Color = if (isDark) WhatsAppDarkGreen else WhatsAppLightGreen
+fun warningColor(isDark: Boolean): Color = if (isDark) WarningAmberDark else WarningAmber
+fun warningBg(isDark: Boolean): Color = if (isDark) WarningAmberBgDark else WarningAmberBg
+fun warningBorder(isDark: Boolean): Color = if (isDark) WarningAmberBorderDark else WarningAmberBorder
+fun shareSecondaryColor(isDark: Boolean): Color = if (isDark) IndigoAccent else IndigoAccent
 
 // Category Palette Tokens for Domain Utils
 object CategoryPalette {
@@ -233,10 +244,10 @@ object CategoryPalette {
     val RED_SOFT_LIGHT = Color(0xFFFEE2E2)
     val YELLOW_DARK = Color(0xFF3F3701)
     val YELLOW_LIGHT = Color(0xFFFEF9C3)
-    val BLUE_SOFT_DARK = Color(0xFF172554)
-    val BLUE_SOFT_LIGHT = Color(0xFFDBEAFE)
-    val SKY_DARK = Color(0xFF0C4A6E)
-    val SKY_LIGHT = Color(0xFFE0F2FE)
+    val BLUE_SOFT_DARK = Color(0xFF173039)
+    val BLUE_SOFT_LIGHT = Color(0xFFDCEFF3)
+    val SKY_DARK = Color(0xFF0E4250)
+    val SKY_LIGHT = Color(0xFFE3F4F7)
     val PURPLE_DARK = Color(0xFF3B0764)
     val PURPLE_LIGHT = Color(0xFFF3E8FF)
     val EMERALD_SOFT_DARK = Color(0xFF064E3B)
@@ -253,5 +264,12 @@ val AvatarPastelPalette = listOf(
     Color(0xFF86EFAC), Color(0xFF93C5FD), Color(0xFFC4B5FD),
     Color(0xFFF472B6), Color(0xFF2DD4BF)
 )
+
+val AvatarDarkPalette = listOf(
+    Color(0xFF7F3D4A), Color(0xFF7A4D2A), Color(0xFF6B5D1A),
+    Color(0xFF2F6B45), Color(0xFF315A7A), Color(0xFF55407A),
+    Color(0xFF7A315B), Color(0xFF236D66)
+)
+
 
 

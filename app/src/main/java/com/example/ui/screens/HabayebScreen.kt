@@ -1,15 +1,26 @@
 package com.example.ui.screens
 
+/*
+ * =====================================================================================
+ * حزمة شاشة الحبايب والعملاء (Habayeb Customers & Ledger Screen Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على المنسق الرئيسي لواجهة الحبايب (العملاء والحسابات المدينة والدائنة)،
+ * وتدير الفلترة والتصنيفات، البحث، التحديد المتعدد، كشف الحساب التفصيلي، وإدارة الحوارات.
+ * =====================================================================================
+ */
+
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -48,54 +56,55 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.local.entities.CustomCategory
 import com.example.data.local.entities.HabayebCustomer
-import com.example.data.local.entities.HabayebTransaction
 import com.example.domain.model.TransactionType
-import com.example.ui.screens.habayeb.components.AddCustomerPopup
-import com.example.ui.screens.habayeb.components.AddTransactionPopup
-import com.example.ui.screens.habayeb.components.CustomerContextBottomSheet
+import com.example.ui.screens.habayeb.HabayebDialogHost
+import com.example.ui.screens.habayeb.HabayebDialogState
+import com.example.ui.screens.habayeb.HabayebFabHost
 import com.example.ui.screens.habayeb.components.CustomerHistoryOverlay
 import com.example.ui.screens.habayeb.components.CustomerMultiSelectFloatingBar
-import com.example.ui.screens.habayeb.components.DeleteConfirmDialog
-import com.example.ui.screens.habayeb.components.EditCustomerDialog
-import com.example.ui.screens.habayeb.components.HabayebBulkAssignDialog
-import com.example.ui.screens.habayeb.components.HabayebFab
-import com.example.ui.screens.habayeb.components.HabayebFilterTabs
 import com.example.ui.screens.habayeb.components.HabayebFilterToolbar
-import com.example.ui.screens.habayeb.components.HabayebHeaderTopBar
+import com.example.ui.screens.habayeb.components.HabayebFinanceHeader
 import com.example.ui.screens.habayeb.components.HabayebListSection
-import com.example.ui.screens.habayeb.components.MicroAddCategoryDialog
-import com.example.ui.screens.ledger.components.DeviceActivationDialog
 import com.example.ui.state.CustomerUiState
 import com.example.ui.viewmodel.HabayebFinanceViewModel
+import com.example.ui.viewmodel.HabayebUiEvent
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-sealed interface HabayebDialogState {
-    object None : HabayebDialogState
-    object AddCustomer : HabayebDialogState
-    data class AddTransaction(
-        val customer: HabayebCustomer,
-        val defaultType: String = TransactionType.OWED_BY_THEM.value,
-        val editingTx: HabayebTransaction? = null
-    ) : HabayebDialogState
-    data class EditCustomer(val customer: HabayebCustomer) : HabayebDialogState
-    object DeleteConfirm : HabayebDialogState
-    object AddCategory : HabayebDialogState
-    object BulkAssignCategory : HabayebDialogState
-    data class ContextMenu(val customer: CustomerUiState) : HabayebDialogState
-    object DeviceActivation : HabayebDialogState
-}
+/*
+ * إعادة تصدير حالة الحوارات (HabayebDialogState) لتجنب انقطاع التوافقية
+ */
+typealias HabayebDialogState = HabayebDialogState
 
+/*
+ * =====================================================================================
+ * شاشة الحبايب وإدارة الحسابات (HabayebScreen)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * المنسق المعماري الشامل لواجهة الحبايب ودفتر الأستاذ للعملاء:
+ * 1. ترويسة مالية تلخص إجمالي ما لنا (له) وما علينا (عليه) مع دعم وضع الخصوصية.
+ * 2. شريط أدوات الفلترة والترتيب وتخصيص وإعادة ترتيب التصنيفات المخصصة.
+ * 3. قائمة حسابات مرنة تدعم التثبيت والتمييز البصري والإضافة السريعة والتحديد المتعدد.
+ * 4. طبقة تراكبية (Overlay) لكشف الحساب التاريخي مع رسوم حركية سلسة.
+ * 5. إدارة موحدة لكافة النوافذ المنبثقة من خلال (HabayebDialogHost).
+ *
+ * [المُدخلات]:
+ * - viewModel: نموذج بيانات الإدارة المالية للحبايب والعملاء.
+ * - securityViewModel: نموذج بيانات الأمان والترخيص ووضع الخصوصية.
+ * - onMenuClick: فتح القائمة الجانبية للتطبيق.
+ * - onClose: إغلاق الشاشة أو الرجوع.
+ * - contentPadding: هوامش التباعد الداخلية من نظام التشغيل.
+ * - isDrawerOpen: حالة فتح القائمة الجانبية لمنع اعتراض زر الرجوع.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HabayebScreen(
@@ -113,7 +122,8 @@ fun HabayebScreen(
     isHistoryOverlayActive: Boolean = false,
     onHistoryOverlayActiveChanged: (Boolean) -> Unit = {},
     isHistorySearchActive: Boolean = false,
-    onHistorySearchActiveChanged: (Boolean) -> Unit = {}
+    onHistorySearchActiveChanged: (Boolean) -> Unit = {},
+    onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -123,51 +133,26 @@ fun HabayebScreen(
     val activeSubColor = MaterialTheme.colorScheme.primaryContainer
     val surfaceBackgroundColor = MaterialTheme.colorScheme.background
 
-    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val isDark = remember(viewModel.settingsState.value.themeMode, systemDark) {
-        when (viewModel.settingsState.value.themeMode) {
+    /*
+     * ---------------------------------------------------------------------------------
+     * جمع تدفقات الحالة من نماذج البيانات (State Ingestion)
+     * ---------------------------------------------------------------------------------
+     */
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settingsState by viewModel.settingsState.collectAsStateWithLifecycle()
+    val isPrivacyMode by securityViewModel.isPrivacyModeEnabled.collectAsStateWithLifecycle()
+
+    val systemDark = isSystemInDarkTheme()
+    val isDark = remember(settingsState.themeMode, systemDark) {
+        when (settingsState.themeMode) {
             1 -> false
             2 -> true
             else -> systemDark
         }
     }
+    val currencySymbol = settingsState.currencySymbol
 
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (context as? Activity)?.window
-            window?.let { w ->
-                w.statusBarColor = android.graphics.Color.TRANSPARENT
-                w.navigationBarColor = android.graphics.Color.TRANSPARENT
-                val insetsController = WindowCompat.getInsetsController(w, view)
-                insetsController.isAppearanceLightStatusBars = false
-                insetsController.isAppearanceLightNavigationBars = !isDark
-            }
-        }
-    }
-
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val currencySymbol = viewModel.settingsState.collectAsStateWithLifecycle().value.currencySymbol
-    val isPrivacyModeState = securityViewModel.isPrivacyModeEnabled.collectAsStateWithLifecycle()
-
-    val searchQuery = uiState.searchQuery
-    val selectedFilterTab = uiState.selectedFilterTab
-    val financialSortMode = uiState.financialSortMode
-    val historicalSortMode = uiState.historicalSortMode
-    val filteredCustomers by remember { derivedStateOf { uiState.filteredCustomers } }
-    val selectedCategory = uiState.selectedCategory
-    val customCategories by remember { derivedStateOf { uiState.customCategories } }
-    val orderedCategories by remember { derivedStateOf { uiState.orderedCategories } }
-    val categoryCounts by remember { derivedStateOf { uiState.categoryCounts } }
-    val closedCategoryName = uiState.closedCategoryName
-    val activeCustomersCount by remember {
-        derivedStateOf {
-            uiState.customers.count { it.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) != 0 }
-        }
-    }
-    val pinnedCustomerIds by remember { derivedStateOf { uiState.pinnedCustomerIds } }
-
+    // حالات التحديد المتعدد للحسابات والمعاملات
     val selectedCustomerIds = remember { mutableStateListOf<String>() }
     var isMultiSelectActive by remember { mutableStateOf(false) }
     var isHistoryTxMultiSelectActive by remember { mutableStateOf(false) }
@@ -176,8 +161,8 @@ fun HabayebScreen(
         viewModel.updateSelectedCustomerIds(selectedCustomerIds.toList())
     }
 
+    // إدارة الحوار المنبثق النشط والعميل المفتوح كشف حسابه
     var activeDialogState by remember { mutableStateOf<HabayebDialogState>(HabayebDialogState.None) }
-
     var activeCustomerForHistory by remember { mutableStateOf<HabayebCustomer?>(null) }
     var stableCustomer by remember { mutableStateOf<HabayebCustomer?>(null) }
 
@@ -193,8 +178,8 @@ fun HabayebScreen(
         onHistoryOverlayActiveChanged(activeCustomerForHistory != null)
     }
 
+    // التحقق من طلب تفعيل النسخة المرخصة
     val showActivationRequired by viewModel.showActivationRequired.collectAsStateWithLifecycle()
-
     LaunchedEffect(showActivationRequired) {
         if (showActivationRequired) {
             activeDialogState = HabayebDialogState.DeviceActivation
@@ -202,63 +187,84 @@ fun HabayebScreen(
         }
     }
 
-    val listState = rememberLazyListState()
+    // حالة تمرير القائمة مع إعادة التعيين عند تغير الفلاتر
+    val listState = remember(uiState.selectedCategory, uiState.selectedFilterTab, uiState.financialSortMode, uiState.historicalSortMode) {
+        LazyListState(0, 0)
+    }
     var highlightedCustomerId by remember { mutableStateOf<String?>(null) }
+    var pendingTargetAccountId by remember { mutableStateOf<String?>(null) }
+    var pendingTargetToken by remember { mutableStateOf(0L) }
 
+    val coroutineScope = rememberCoroutineScope()
+
+    /*
+     * الانتقال الفوري والتمرير التلقائي إلى حساب محدد
+     */
+    val jumpToAccount: (String) -> Unit = remember(coroutineScope, listState) {
+        { accountId ->
+            highlightedCustomerId = accountId
+            pendingTargetAccountId = accountId
+            pendingTargetToken = System.currentTimeMillis()
+            if (isSearchActive) {
+                viewModel.updateSearchQuery("")
+                onSearchActiveChanged(false)
+            }
+            coroutineScope.launch {
+                listState.scrollToItem(0, 0)
+            }
+        }
+    }
+
+    // إزالة التمييز البصري للحساب بعد فترة وجيزة
     LaunchedEffect(highlightedCustomerId) {
         if (highlightedCustomerId != null) {
-            kotlinx.coroutines.delay(350)
+            delay(1800)
             highlightedCustomerId = null
         }
     }
 
-    var pendingTargetAccountId by remember { mutableStateOf<String?>(null) }
-
-    // Scroll to top instantly when tab, category, sorting, or search query changes, avoiding redundant jumps
-    LaunchedEffect(selectedFilterTab, selectedCategory, financialSortMode, historicalSortMode, searchQuery) {
-        if (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0) {
+    // التمرير لأعلى القائمة عند بدء كتابة نص بحث
+    LaunchedEffect(uiState.searchQuery) {
+        if (uiState.searchQuery.isNotEmpty() && (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0)) {
             listState.scrollToItem(0, 0)
         }
     }
 
-    // Handle scroll-to-account event when adding or modifying a customer / transaction
+    // الاستماع لأحداث واجهة المستخدم من الـ ViewModel
     LaunchedEffect(Unit) {
         viewModel.uiEventFlow.collect { event ->
             when (event) {
-                is com.example.ui.viewmodel.HabayebUiEvent.ScrollToAccount -> {
-                    highlightedCustomerId = event.accountId
-                    pendingTargetAccountId = event.accountId
-                    if (isSearchActive) {
-                        viewModel.updateSearchQuery("")
-                        onSearchActiveChanged(false)
-                    }
-                }
-                is com.example.ui.viewmodel.HabayebUiEvent.ResetScrollToTop -> {
-                    listState.scrollToItem(0, 0)
-                }
+                is HabayebUiEvent.ScrollToAccount -> jumpToAccount(event.accountId)
+                is HabayebUiEvent.ResetScrollToTop -> listState.scrollToItem(0, 0)
             }
         }
     }
 
-    // As soon as filteredCustomers contains the target account, scroll to it immediately and accurately
-    LaunchedEffect(filteredCustomers, pendingTargetAccountId) {
+    // التمرير للحساب المستهدف عند جهوزية القائمة
+    LaunchedEffect(uiState.filteredCustomers, pendingTargetToken) {
         val targetId = pendingTargetAccountId
         if (targetId != null) {
-            val targetIdx = filteredCustomers.indexOfFirst { it.id == targetId }
+            val targetIdx = uiState.filteredCustomers.indexOfFirst { it.id == targetId }
             if (targetIdx >= 0) {
-                if (targetIdx == 0 || kotlin.math.abs(listState.firstVisibleItemIndex - targetIdx) > 5) {
-                    listState.scrollToItem(targetIdx, 0)
-                } else {
-                    listState.animateScrollToItem(targetIdx, 0)
-                }
-                pendingTargetAccountId = null
+                listState.scrollToItem(targetIdx, 0)
             }
         }
     }
 
-    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(pendingTargetToken) {
+        if (pendingTargetToken > 0L) {
+            delay(2000)
+            pendingTargetAccountId = null
+        }
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * معالجة زر الرجوع الفيزيائي حسب الأولوية والتسلسل الهرمي
+     * ---------------------------------------------------------------------------------
+     */
     BackHandler(enabled = !isDrawerOpen) {
         if (activeDialogState !is HabayebDialogState.None) {
             activeDialogState = HabayebDialogState.None
@@ -270,15 +276,18 @@ fun HabayebScreen(
             onSearchActiveChanged(false)
         } else if (activeCustomerForHistory != null) {
             activeCustomerForHistory = null
-        } else if (selectedCategory != null) {
+        } else if (uiState.selectedCategory != null) {
             viewModel.updateSelectedCategoryFilter(null)
-        } else if (selectedFilterTab != 0) {
+        } else if (uiState.selectedFilterTab != 0) {
             viewModel.updateSelectedFilterTab(0)
         } else {
             onClose()
         }
     }
 
+    /*
+     * معالجة النقر على بطاقة العميل
+     */
     val onCustomerClickRemembered = remember(isMultiSelectActive) {
         { customer: CustomerUiState ->
             if (isMultiSelectActive) {
@@ -295,18 +304,24 @@ fun HabayebScreen(
         }
     }
 
-    val onCustomerLongClickRemembered = remember(isMultiSelectActive, filteredCustomers) {
+    /*
+     * معالجة النقر المطول على بطاقة العميل (بدء التحديد أو فتح قائمة السياق)
+     */
+    val onCustomerLongClickRemembered = remember(isMultiSelectActive, uiState.filteredCustomers) {
         { customerId: String ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             if (isMultiSelectActive) {
                 if (!selectedCustomerIds.contains(customerId)) selectedCustomerIds.add(customerId)
             } else {
-                val cust = filteredCustomers.find { it.id == customerId }
+                val cust = uiState.filteredCustomers.find { it.id == customerId }
                 if (cust != null) activeDialogState = HabayebDialogState.ContextMenu(cust)
             }
         }
     }
 
+    /*
+     * معالجة الإضافة السريعة لمعاملة جديدة على حساب العميل
+     */
     val onQuickAddRemembered = remember {
         { customer: CustomerUiState ->
             val defaultType = if (customer.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) >= 0) {
@@ -325,6 +340,11 @@ fun HabayebScreen(
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * بناء الهيكل البصري للشاشة بالاتجاه العربي (RTL)
+     * ---------------------------------------------------------------------------------
+     */
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(
             modifier = Modifier
@@ -338,52 +358,39 @@ fun HabayebScreen(
                         .fillMaxWidth()
                         .background(surfaceBackgroundColor)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(elevation = 4.dp, shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp), clip = false)
-                            .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-                            .background(activeThemeColor)
-                    ) {
-                        HabayebHeaderTopBar(
-                            isSearchActive = isSearchActive,
-                            onSearchActiveChanged = onSearchActiveChanged,
-                            searchQuery = searchQuery,
-                            onSearchQueryChanged = viewModel::updateSearchQuery,
-                            onMenuClick = onMenuClick,
-                            haptic = haptic,
-                            netDebt = uiState.totalOwedByThem.subtract(uiState.totalOwedToThem),
-                            isPrivacyMode = isPrivacyModeState.value,
-                            onTogglePrivacy = securityViewModel::togglePrivacyMode,
-                            currencySymbol = currencySymbol,
-                            onHeaderDoubleClick = onHeaderDoubleClick,
-                            isFloatingActive = isFloatingSearchActive,
-                            onToggleFloatingClick = { onFloatingSearchActiveChanged(!isFloatingSearchActive) }
-                        )
-                    }
+                    // الترويسة المالية، أزرار البحث، ووضع الخصوصية
+                    HabayebFinanceHeader(
+                        isSearchActive = isSearchActive,
+                        onSearchActiveChanged = onSearchActiveChanged,
+                        searchQuery = uiState.searchQuery,
+                        onSearchQueryChanged = viewModel::updateSearchQuery,
+                        onMenuClick = onMenuClick,
+                        haptic = haptic,
+                        totalOwedByThem = uiState.totalOwedByThem,
+                        totalOwedToThem = uiState.totalOwedToThem,
+                        selectedFilterTab = uiState.selectedFilterTab,
+                        onFilterTabSelected = viewModel::updateSelectedFilterTab,
+                        isPrivacyMode = isPrivacyMode,
+                        onTogglePrivacy = securityViewModel::togglePrivacyMode,
+                        currencySymbol = currencySymbol,
+                        onHeaderDoubleClick = onHeaderDoubleClick,
+                        isFloatingActive = isFloatingSearchActive,
+                        onToggleFloatingClick = { onFloatingSearchActiveChanged(!isFloatingSearchActive) },
+                        activeThemeColor = activeThemeColor
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    HabayebFilterTabs(
-                        selectedFilterTab = selectedFilterTab,
-                        onFilterTabSelected = viewModel::updateSelectedFilterTab,
-                        totalOwedByThem = uiState.totalOwedByThem,
-                        totalOwedToThem = uiState.totalOwedToThem,
-                        currencySymbol = currencySymbol,
-                        isPrivacyMode = isPrivacyModeState.value
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
+                    // شريط أدوات الفلترة والترتيب وإدارة التصنيفات
                     HabayebFilterToolbar(
-                        selectedCategory = selectedCategory,
-                        customCategories = customCategories,
-                        orderedCategories = orderedCategories,
-                        categoryCounts = categoryCounts,
-                        activeCustomersCount = activeCustomersCount,
-                        financialSortMode = financialSortMode,
+                        selectedCategory = uiState.selectedCategory,
+                        customCategories = uiState.customCategories,
+                        orderedCategories = uiState.orderedCategories,
+                        categoryCounts = uiState.categoryCounts,
+                        activeCustomersCount = uiState.activeCustomersCount,
+                        financialSortMode = uiState.financialSortMode,
                         onFinancialSortModeChanged = viewModel::updateFinancialSortMode,
-                        historicalSortMode = historicalSortMode,
+                        historicalSortMode = uiState.historicalSortMode,
                         onHistoricalSortModeChanged = viewModel::updateHistoricalSortMode,
                         activeThemeColor = activeThemeColor,
                         activeSubColor = activeSubColor,
@@ -396,19 +403,20 @@ fun HabayebScreen(
                         onMoveCategoryLeft = viewModel::moveCategoryLeft,
                         onMoveCategoryRight = viewModel::moveCategoryRight,
                         onReorderCategories = viewModel::reorderCategories,
-                        closedCategoryName = closedCategoryName,
+                        closedCategoryName = uiState.closedCategoryName,
                         onRenameClosedCategory = viewModel::renameClosedCategory
                     )
                 }
 
+                // قسم قائمة الحسابات والعملاء
                 HabayebListSection(
                     listState = listState,
-                    filteredCustomers = filteredCustomers,
-                    selectedFilterTab = selectedFilterTab,
-                    selectedCategory = selectedCategory,
+                    filteredCustomers = uiState.filteredCustomers,
+                    selectedFilterTab = uiState.selectedFilterTab,
+                    selectedCategory = uiState.selectedCategory,
                     selectedCustomerIds = selectedCustomerIds,
-                    isPrivacyMode = isPrivacyModeState.value,
-                    pinnedCustomerIds = pinnedCustomerIds,
+                    isPrivacyMode = isPrivacyMode,
+                    pinnedCustomerIds = uiState.pinnedCustomerIds,
                     isMultiSelectActive = isMultiSelectActive,
                     activeThemeColor = activeThemeColor,
                     activeSubColor = activeSubColor,
@@ -424,26 +432,23 @@ fun HabayebScreen(
                 )
             }
 
-            if (!isMultiSelectActive && !isHistoryTxMultiSelectActive) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .zIndex(12f)
-                ) {
-                    HabayebFab(
-                        targetCustomer = if (activeCustomerForHistory != null) (stableCustomer ?: activeCustomerForHistory) else null,
-                        contentPadding = contentPadding,
-                        primaryColor = activeThemeColor,
-                        containerColor = activeSubColor,
-                        haptic = haptic,
-                        onAddCustomerClick = { activeDialogState = HabayebDialogState.AddCustomer },
-                        onAddTransactionForCustomer = { c ->
-                            activeDialogState = HabayebDialogState.AddTransaction(c)
-                        }
-                    )
-                }
-            }
+            // الأزرار العائمة لإضافة عميل أو إضافة معاملة
+            HabayebFabHost(
+                targetCustomer = if (activeCustomerForHistory != null) (stableCustomer ?: activeCustomerForHistory) else null,
+                contentPadding = contentPadding,
+                activeThemeColor = activeThemeColor,
+                activeSubColor = activeSubColor,
+                haptic = haptic,
+                isMultiSelectActive = isMultiSelectActive,
+                isHistoryTxMultiSelectActive = isHistoryTxMultiSelectActive,
+                onAddCustomerClick = { activeDialogState = HabayebDialogState.AddCustomer },
+                onAddTransactionForCustomer = { c ->
+                    activeDialogState = HabayebDialogState.AddTransaction(c)
+                },
+                onFabOverlayChanged = onFabOverlayChanged
+            )
 
+            // شريط الإجراءات العائم للتحديد المتعدد (حذف جماعي أو تعيين تصنيف)
             if (isMultiSelectActive && selectedCustomerIds.isNotEmpty()) {
                 Box(
                     modifier = Modifier
@@ -460,13 +465,11 @@ fun HabayebScreen(
                 }
             }
 
-            val overlaySpring = spring<Float>(dampingRatio = 0.85f, stiffness = 380f)
-            val overlayOffsetSpring = spring<IntOffset>(dampingRatio = 0.85f, stiffness = 380f)
-
+            // طبقة تراكبية لعرض كشف الحساب التفصيلي للعميل المختار
             AnimatedVisibility(
                 visible = activeCustomerForHistory != null,
-                enter = slideInVertically(animationSpec = overlayOffsetSpring, initialOffsetY = { it }) + fadeIn(animationSpec = overlaySpring),
-                exit = slideOutVertically(animationSpec = overlayOffsetSpring, targetOffsetY = { it }) + fadeOut(animationSpec = overlaySpring),
+                enter = slideInHorizontally(initialOffsetX = { -it / 4 }, animationSpec = tween(160, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(140)),
+                exit = slideOutHorizontally(targetOffsetX = { -it / 4 }, animationSpec = tween(140, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(120)),
                 modifier = Modifier.zIndex(10f)
             ) {
                 stableCustomer?.let { customer ->
@@ -485,21 +488,22 @@ fun HabayebScreen(
                 }
             }
 
+            // مضيف كافة النوافذ والحوارات المنبثقة
             HabayebDialogHost(
                 activeDialogState = activeDialogState,
                 viewModel = viewModel,
                 securityViewModel = securityViewModel,
                 activeThemeColor = activeThemeColor,
                 activeSubColor = activeSubColor,
-                selectedCategory = selectedCategory,
-                customCategories = customCategories,
+                selectedCategory = uiState.selectedCategory,
+                customCategories = uiState.customCategories,
                 selectedCustomerIds = selectedCustomerIds,
                 onMultiSelectActiveChanged = { isMultiSelectActive = it },
                 listState = listState,
                 coroutineScope = coroutineScope,
                 isSearchActive = isSearchActive,
                 onSearchActiveChanged = onSearchActiveChanged,
-                onHighlightCustomer = { highlightedCustomerId = it },
+                onJumpToAccount = jumpToAccount,
                 onDismissDialog = { activeDialogState = HabayebDialogState.None },
                 onOpenEditCustomer = { customer ->
                     activeDialogState = HabayebDialogState.EditCustomer(customer)
@@ -517,151 +521,3 @@ fun HabayebScreen(
     }
 }
 
-@Composable
-private fun HabayebDialogHost(
-    activeDialogState: HabayebDialogState,
-    viewModel: HabayebFinanceViewModel,
-    securityViewModel: SecurityAndLicenseViewModel,
-    activeThemeColor: Color,
-    activeSubColor: Color,
-    selectedCategory: String?,
-    customCategories: List<CustomCategory>,
-    selectedCustomerIds: MutableList<String>,
-    onMultiSelectActiveChanged: (Boolean) -> Unit,
-    listState: LazyListState,
-    coroutineScope: CoroutineScope,
-    isSearchActive: Boolean,
-    onSearchActiveChanged: (Boolean) -> Unit,
-    onHighlightCustomer: (String) -> Unit,
-    onDismissDialog: () -> Unit,
-    onOpenEditCustomer: (HabayebCustomer) -> Unit,
-    onOpenDeleteConfirm: () -> Unit
-) {
-    when (val dialogState = activeDialogState) {
-        is HabayebDialogState.None -> {}
-        is HabayebDialogState.AddCustomer -> {
-            AddCustomerPopup(
-                viewModel = viewModel,
-                onDismiss = onDismissDialog,
-                onCustomerAdded = { newCustomerId ->
-                    onHighlightCustomer(newCustomerId)
-                    if (isSearchActive) {
-                        viewModel.updateSearchQuery("")
-                        onSearchActiveChanged(false)
-                    }
-                    onDismissDialog()
-                },
-                activeThemeColor = activeThemeColor,
-                activeSubColor = activeSubColor
-            )
-        }
-        is HabayebDialogState.AddTransaction -> {
-            AddTransactionPopup(
-                customer = dialogState.customer,
-                viewModel = viewModel,
-                initialSelectedType = dialogState.defaultType,
-                editingTransaction = dialogState.editingTx,
-                onDismiss = onDismissDialog,
-                onTransactionSaved = {
-                    onHighlightCustomer(dialogState.customer.id)
-                    onDismissDialog()
-                },
-                activeThemeColor = activeThemeColor,
-                activeSubColor = activeSubColor
-            )
-        }
-        is HabayebDialogState.EditCustomer -> {
-            EditCustomerDialog(
-                customer = dialogState.customer,
-                viewModel = viewModel,
-                activeThemeColor = activeThemeColor,
-                onDismiss = onDismissDialog
-            )
-        }
-        is HabayebDialogState.DeleteConfirm -> {
-            DeleteConfirmDialog(
-                selectedCustomerIds = selectedCustomerIds.toList(),
-                viewModel = viewModel,
-                onDismiss = onDismissDialog,
-                onSuccessBulkDelete = {
-                    selectedCustomerIds.clear()
-                    onMultiSelectActiveChanged(false)
-                    onDismissDialog()
-                }
-            )
-        }
-        is HabayebDialogState.AddCategory -> {
-            MicroAddCategoryDialog(
-                activeThemeColor = activeThemeColor,
-                onDismiss = onDismissDialog,
-                onSave = { categoryName ->
-                    viewModel.saveCustomCategory(categoryName)
-                    onDismissDialog()
-                }
-            )
-        }
-        is HabayebDialogState.BulkAssignCategory -> {
-            HabayebBulkAssignDialog(
-                customCategories = customCategories,
-                onDismiss = onDismissDialog,
-                onAssign = { categoryName ->
-                    viewModel.assignCategoryToCustomers(selectedCustomerIds.toList(), categoryName)
-                    onMultiSelectActiveChanged(false)
-                    selectedCustomerIds.clear()
-                    onDismissDialog()
-                }
-            )
-        }
-        is HabayebDialogState.ContextMenu -> {
-            val pinnedSet by viewModel.pinnedCustomerIds.collectAsStateWithLifecycle()
-            val isPinned = pinnedSet.contains(dialogState.customer.id)
-
-            CustomerContextBottomSheet(
-                customer = dialogState.customer,
-                customCategories = customCategories,
-                isPinned = isPinned,
-                activeThemeColor = activeThemeColor,
-                onDismiss = onDismissDialog,
-                onTogglePin = {
-                    val targetId = dialogState.customer.id
-                    val wasPinned = isPinned
-                    viewModel.togglePinCustomer(targetId)
-                    if (wasPinned) {
-                        coroutineScope.launch {
-                            listState.scrollToItem(0, 0)
-                        }
-                    }
-                },
-                onAssignCategory = { category ->
-                    viewModel.assignCategoryToCustomers(listOf(dialogState.customer.id), category)
-                },
-                onEnableMultiSelect = {
-                    onMultiSelectActiveChanged(true)
-                    selectedCustomerIds.add(dialogState.customer.id)
-                    onDismissDialog()
-                },
-                onDelete = {
-                    selectedCustomerIds.clear()
-                    selectedCustomerIds.add(dialogState.customer.id)
-                    onOpenDeleteConfirm()
-                },
-                onEditClick = {
-                    onOpenEditCustomer(dialogState.customer.originalCustomer)
-                },
-                onUpdateCustomerType = { newType ->
-                    viewModel.updateHabayebCustomer(dialogState.customer.originalCustomer.copy(initialType = newType))
-                },
-                currentActiveCategory = selectedCategory
-            )
-        }
-        is HabayebDialogState.DeviceActivation -> {
-            val deviceId by securityViewModel.deviceIdState.collectAsStateWithLifecycle()
-            DeviceActivationDialog(
-                deviceId = deviceId,
-                viewModel = securityViewModel,
-                onDismiss = onDismissDialog,
-                isAutoTriggered = true
-            )
-        }
-    }
-}

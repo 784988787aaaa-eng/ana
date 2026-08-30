@@ -1,10 +1,24 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة مساعد حفظ بيانات العميل (Add Customer Save Helper Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على كائن المعالجة والحفظ المحاسبي الآمن لبيانات العميل والرصيد الافتتاحي:
+ * - التحقق من صحة واكتمال المدخلات (الاسم، عدم التكرار، إيجابية المبلغ، وتحديد نوع الحساب).
+ * - معالجة العملات الأجنبية وأسعار الصرف وتحويل الرصيد بدقة مالية متناهية (BigDecimal).
+ * - توليد المعرفات الفريدة (UUID) المستقلة عن أسماء العملاء لضمان سلامة العلاقات وقواعد البيانات.
+ * - حماية الترخيص وفحص انتهاء الفترة التجريبية وتفويض الحفظ إلى قاعدة البيانات المحلية عبر ViewModel.
+ * =====================================================================================
+ */
+
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.viewModelScope
 import com.example.R
 import com.example.data.local.entities.HabayebCustomer
+import com.example.domain.model.SaveTransactionResult
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.example.ui.viewmodel.HabayebFinanceViewModel
@@ -15,6 +29,20 @@ import java.math.BigDecimal
 import java.util.Calendar
 import java.util.UUID
 
+/*
+ * =====================================================================================
+ * نموذج بيانات نموذج إضافة العميل (AddCustomerFormData)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * كائن بيانات تجميعي يحمل كافة قيم النموذج من واجهة المستخدم لتمريرها بشكل منظم لمعالج الحفظ:
+ * - nameStr / phoneStr / notesStr / initialAmountStr: نصوص الحقول الأربعة.
+ * - initialType: نوع الحساب الافتتاحي (له/عليه).
+ * - selectedTransactionCurrency / currencySymbol: العملة المختارة والعملة الافتراضية.
+ * - applyExchangeRate / settingsRate: إعدادات تحويل العملة وسعر الصرف.
+ * - selectedCalendar: تاريخ ووقت العملية المسجل.
+ * - isDuplicateName: مؤشر التحقق من تكرار الاسم.
+ * =====================================================================================
+ */
 data class AddCustomerFormData(
     val nameStr: String,
     val phoneStr: String,
@@ -29,6 +57,18 @@ data class AddCustomerFormData(
     val isDuplicateName: Boolean
 )
 
+/*
+ * =====================================================================================
+ * كائن مساعد حفظ بيانات العميل (AddCustomerSaveHelper)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * ينفذ دورة التحقق والحفظ المحاسبية الكاملة:
+ * 1. التحقق من الحقول الإلزامية ومنع تكرار الأسماء وتأكيد إيجابية المبلغ.
+ * 2. التحقق من وجود سعر صرف فعال عند اختيار عملة أجنبية مع تفعيل التحويل.
+ * 3. فحص صلاحية ترخيص التطبيق.
+ * 4. إنشاء كيان العميل والقيد الافتتاحي وتخزينهما بأمان عبر Coroutines.
+ * =====================================================================================
+ */
 object AddCustomerSaveHelper {
     fun handleSave(
         context: Context,
@@ -51,6 +91,7 @@ object AddCustomerSaveHelper {
         val settingsRate = formData.settingsRate
         val isDuplicateName = formData.isDuplicateName
 
+        // التحقق من الاسم وعدم التكرار والنوع
         if (nameStr.trim().isBlank()) {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_enter_name), Toast.LENGTH_SHORT).show()
             return
@@ -74,6 +115,7 @@ object AddCustomerSaveHelper {
             return
         }
 
+        // فحص العملات الأجنبية وسعر الصرف
         val isForeignSelected = selectedTransactionCurrency != currencySymbol
         if (isForeignSelected && applyExchangeRate) {
             val settings = viewModel.settingsState.value
@@ -94,7 +136,9 @@ object AddCustomerSaveHelper {
                 if (viewModel.isTrialExpiredDirect()) {
                     withContext(Dispatchers.Main) {
                         onIsSavingChange(false)
+                        Toast.makeText(context, context.getString(R.string.licensing_trial_expired_toast), Toast.LENGTH_LONG).show()
                         viewModel.triggerActivationRequired()
+                        onDismiss()
                     }
                 } else {
                     val newCustomer = HabayebCustomer(
@@ -118,7 +162,7 @@ object AddCustomerSaveHelper {
                     val finalAmountBd = if (isForeignSelected && applyExchangeRate) finalEquivalentAmountBd else actualInitialAmountBd
                     val finalDetails = if (notesStr.trim().isBlank()) context.getString(R.string.habayeb_opening_balance_default_desc) else notesStr.trim()
 
-                    viewModel.saveHabayebCustomer(
+                    val result = viewModel.saveHabayebCustomer(
                         customer = newCustomer,
                         initialAmount = finalAmountBd,
                         initialType = currentType,
@@ -133,13 +177,26 @@ object AddCustomerSaveHelper {
                     )
 
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, context.getString(R.string.habayeb_toast_save_success), Toast.LENGTH_SHORT).show()
-                        onSuccess(newCustomerId)
-                        onDismiss()
+                        onIsSavingChange(false)
+                        when (result) {
+                            is SaveTransactionResult.Success -> {
+                                Toast.makeText(context, context.getString(R.string.habayeb_toast_save_success), Toast.LENGTH_SHORT).show()
+                                onSuccess(newCustomerId)
+                                onDismiss()
+                            }
+                            is SaveTransactionResult.TrialExpired -> {
+                                Toast.makeText(context, context.getString(R.string.licensing_trial_expired_toast), Toast.LENGTH_LONG).show()
+                                viewModel.triggerActivationRequired()
+                                onDismiss()
+                            }
+                            is SaveTransactionResult.Error -> {
+                                Toast.makeText(context, context.getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("AddCustomerSaveHelper", "Failed to save customer safely", e)
                 withContext(Dispatchers.Main) {
                     onIsSavingChange(false)
                 }
@@ -147,3 +204,4 @@ object AddCustomerSaveHelper {
         }
     }
 }
+

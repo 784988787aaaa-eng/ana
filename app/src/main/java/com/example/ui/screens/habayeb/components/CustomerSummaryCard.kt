@@ -1,15 +1,21 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة بطاقة ملخص أرصدة العميل (Customer Summary Card Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على مكونات عرض وتصفية أرصدة العميل حسب العملات:
+ * 1. مكون تحجيم النص التلقائي (AutoSizeText) لتجنب اقتطاع أو تشويه الأرقام الكبيرة.
+ * 2. بطاقة الرصيد المضغوطة (BalanceCompactChip) لعرض مديونية كل عملة بلون وتسمية واضحة (له / عليه / مصفّى).
+ * 3. بطاقة ملخص العميل الشاملة (CustomerSummaryCard) التي تتيح التمرير الأفقي بين العملات المختلفة والتصفية بالنقر عليها.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +49,16 @@ import com.example.ui.theme.ChipRedHeaderLight
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 
+import com.example.domain.model.TransactionType
+
+/*
+ * =====================================================================================
+ * نص متغير الحجم تلقائياً (AutoSizeText)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون نصي يقوم بتقليص حجم الخط تلقائياً عند حدوث تجاوز للنطاق المتاح لمنع اقتطاع المبالغ.
+ * =====================================================================================
+ */
 @Composable
 fun AutoSizeText(
     text: String,
@@ -89,19 +105,23 @@ fun BalanceCompactChip(
     currencyCode: String,
     isSelected: Boolean,
     onSelect: () -> Unit,
+    initialType: String = TransactionType.OWED_BY_THEM.value,
     modifier: Modifier = Modifier
 ) {
     val clearedStr = stringResource(id = R.string.status_account_cleared)
     val remainingOnHimStr = stringResource(id = R.string.status_remaining_on_him)
     val remainingForHimStr = stringResource(id = R.string.status_remaining_for_him)
+    val remainingWithHimStr = stringResource(id = R.string.status_remaining_with_him)
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val surfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     val outlineColor = MaterialTheme.colorScheme.outline
 
-    val chipState = remember(amount, currencyCode, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, surfaceVariantColor, outlineColor) {
+    val chipState = remember(amount, currencyCode, initialType, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, remainingWithHimStr, surfaceVariantColor, outlineColor) {
         val cmp = amount.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO)
         val isZero = cmp == 0
+        val isPositive = cmp > 0
+        val isNegative = cmp < 0
 
         val redColor = financialDebtColor(isDark)
         val redHeaderColor = if (isDark) ChipRedHeaderDark else ChipRedHeaderLight
@@ -110,9 +130,24 @@ fun BalanceCompactChip(
 
         val (chipColor, headerTextColor, stateLabel) = when {
             isZero -> Triple(outlineColor, outlineColor, clearedStr)
-            cmp > 0 -> Triple(redColor, redHeaderColor, remainingOnHimStr)
-            cmp < 0 -> Triple(greenColor, greenHeaderColor, remainingForHimStr)
-            else -> Triple(surfaceVariantColor, surfaceVariantColor, clearedStr)
+            initialType == TransactionType.OWED_TO_THEM.value -> {
+                if (isNegative) {
+                    Triple(greenColor, greenHeaderColor, remainingForHimStr)
+                } else if (isPositive) {
+                    Triple(redColor, redHeaderColor, remainingWithHimStr)
+                } else {
+                    Triple(outlineColor, outlineColor, clearedStr)
+                }
+            }
+            else -> {
+                if (isPositive) {
+                    Triple(redColor, redHeaderColor, remainingOnHimStr)
+                } else if (isNegative) {
+                    Triple(greenColor, greenHeaderColor, remainingForHimStr)
+                } else {
+                    Triple(outlineColor, outlineColor, clearedStr)
+                }
+            }
         }
 
         val bdAmount = amount.abs()
@@ -129,34 +164,34 @@ fun BalanceCompactChip(
     val targetBorderColor = if (isSelected) targetChipColor else targetChipColor.copy(alpha = 0.45f)
     val borderWidth = if (isSelected) 1.5.dp else 1.dp
 
-    val animBgColor by androidx.compose.animation.animateColorAsState(targetValue = targetBgColor, animationSpec = androidx.compose.animation.core.tween(220), label = "compactChipBg")
-    val animBorderColor by androidx.compose.animation.animateColorAsState(targetValue = targetBorderColor, animationSpec = androidx.compose.animation.core.tween(220), label = "compactChipBorder")
-    val animHeaderTextColor by androidx.compose.animation.animateColorAsState(targetValue = targetHeaderTextColor, animationSpec = androidx.compose.animation.core.tween(220), label = "compactChipHeader")
-    val animChipColor by androidx.compose.animation.animateColorAsState(targetValue = targetChipColor, animationSpec = androidx.compose.animation.core.tween(220), label = "compactChipMain")
-
     Column(
         modifier = modifier
+            .defaultMinSize(minHeight = 52.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(animBgColor)
-            .border(borderWidth, animBorderColor, RoundedCornerShape(10.dp))
+            .background(targetBgColor)
+            .border(borderWidth, targetBorderColor, RoundedCornerShape(10.dp))
             .clickable(onClick = onSelect)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = stateLabel,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = animHeaderTextColor,
-            textAlign = TextAlign.Center
+            color = targetHeaderTextColor,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(2.dp))
         AutoSizeText(
             text = formattedAmountStr,
-            fontSize = 15.sp,
+            fontSize = 14.5.sp,
             fontWeight = FontWeight.Black,
-            color = animChipColor,
-            textAlign = TextAlign.Center
+            color = targetChipColor,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
@@ -167,6 +202,7 @@ fun BalanceCompactChip(
     currencyCode: String,
     isSelected: Boolean,
     onSelect: () -> Unit,
+    initialType: String = TransactionType.OWED_BY_THEM.value,
     modifier: Modifier = Modifier
 ) {
     BalanceCompactChip(
@@ -174,6 +210,7 @@ fun BalanceCompactChip(
         currencyCode = currencyCode,
         isSelected = isSelected,
         onSelect = onSelect,
+        initialType = initialType,
         modifier = modifier
     )
 }
@@ -181,8 +218,9 @@ fun BalanceCompactChip(
 @Composable
 fun CustomerSummaryCard(
     currencySymbol: String,
-    netDebtMap: Map<String, Double> = emptyMap(),
+    netDebtMap: Map<String, BigDecimal> = emptyMap(),
     netDebtBDMap: Map<String, BigDecimal> = emptyMap(),
+    initialType: String = TransactionType.OWED_BY_THEM.value,
     selectedCurrencyFilter: String? = null,
     onCurrencyFilterSelected: (String?) -> Unit = {}
 ) {
@@ -190,7 +228,7 @@ fun CustomerSummaryCard(
         if (netDebtBDMap.isNotEmpty()) {
             netDebtBDMap
         } else {
-            netDebtMap.mapValues { BigDecimal.valueOf(it.value) }
+            netDebtMap
         }
     }
 
@@ -237,6 +275,7 @@ fun CustomerSummaryCard(
                             onCurrencyFilterSelected(curr)
                         }
                     },
+                    initialType = initialType,
                     modifier = chipModifier
                 )
             }

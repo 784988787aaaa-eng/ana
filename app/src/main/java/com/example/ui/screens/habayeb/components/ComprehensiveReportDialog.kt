@@ -1,5 +1,17 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة نافذة التقرير المالي الشامل (Comprehensive Report Dialog Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على نافذة عرض وتصدير التقارير المالية المجمعة:
+ * - تجميع إحصائيات المديونيات والمستحقات لكافة العملاء أو العملاء المحددين فقط.
+ * - دعم تفصيل العملات الأجنبية وحساب صافي المركز المالي الإجمالي.
+ * - تصدير التقرير العام السريع كملف PDF للمشاركة الفورية.
+ * - توليد دفتر الأستاذ الشامل (Master Booklet PDF) مع مؤشر تقدم بياني وخيار الإلغاء.
+ * =====================================================================================
+ */
+
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +72,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
+/*
+ * =====================================================================================
+ * نافذة الحوار للتقرير الشامل (ComprehensiveReportDialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة حوارية لعرض ملخص مالي مجمع وتوليد تقارير PDF بصيغتين:
+ * 1. تقرير عام ملخص: كشف مختصر لجميع الحسابات أو الحسابات المحددة.
+ * 2. دفتر أستاذ تفصيلي: ملف PDF شامل لجميع حركات العملاء صفحات متتالية مع شريط تقدم.
+ *
+ * [المُدخلات]:
+ * - customers: قائمة واجهة المستخدم الخاصة بالعملاء والحسابات المالية.
+ * - currencySymbol: رمز العملة الأساسية للتطبيق.
+ * - activeThemeColor: لون السمة النشط للعناصر البصرية والأزرار.
+ * - onDismiss: رد نداء لإغلاق النافذة.
+ * - modifier: مغير التنسيق لتخصيص الحجم والتخطيط.
+ * - selectedCustomerIds: قائمة معرفات العملاء المحددين للتقرير (أو فارغة لتضمين الجميع).
+ * =====================================================================================
+ */
 @Composable
 fun ComprehensiveReportDialog(
     customers: List<CustomerUiState>,
@@ -162,9 +192,9 @@ fun ComprehensiveReportDialog(
                     }
 
                     val netPrimaryColor = if (netPrimary.compareTo(BigDecimal.ZERO) > 0) {
-                        if (isDark) com.example.ui.theme.SoftGreen else MaterialTheme.colorScheme.primary
+                        if (isDark) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                     } else if (netPrimary.compareTo(BigDecimal.ZERO) < 0) {
-                        if (isDark) com.example.ui.theme.SoftRed else MaterialTheme.colorScheme.error
+                        if (isDark) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error
                     } else {
                         textSecondary
                     }

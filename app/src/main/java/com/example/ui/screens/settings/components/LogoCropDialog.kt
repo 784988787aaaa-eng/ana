@@ -161,7 +161,7 @@ fun LogoCropDialog(
                         onClick = { onCropShapeChange(false) },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (!cropShapeIsCircle) activeThemeColor else MaterialTheme.colorScheme.outlineVariant,
-                            contentColor = if (!cropShapeIsCircle) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (!cropShapeIsCircle) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
@@ -173,7 +173,7 @@ fun LogoCropDialog(
                         onClick = { onCropShapeChange(true) },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (cropShapeIsCircle) activeThemeColor else MaterialTheme.colorScheme.outlineVariant,
-                            contentColor = if (cropShapeIsCircle) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (cropShapeIsCircle) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)

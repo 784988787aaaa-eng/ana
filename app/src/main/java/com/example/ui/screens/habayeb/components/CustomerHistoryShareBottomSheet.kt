@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة لوحة مشاركة وتصدير كشف حساب العميل (Customer History Share Bottom Sheet Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على واجهة المشاركة والتصدير الشاملة لكشف حساب العميل:
+ * 1. بطاقة معلومات العميل وحالته المالية الصافية (دائن / مدين / خالص).
+ * 2. تصدير التقارير بصيغة PDF وتنسيق Excel (CSV) مع خيارات (المشاركة المباشرة عبر واتساب، نافذة المشاركة العامة للنظام، والحفظ في التنزيلات).
+ * 3. إرسال إشعارات نصية فورية سريعة عبر WhatsApp أو SMS.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -12,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,9 +42,29 @@ import com.example.ui.theme.CreditContainerLight
 import com.example.ui.theme.CreditGreen
 import com.example.ui.theme.DebtContainerLight
 import com.example.ui.theme.DebtRed
-import com.example.ui.theme.IndigoAccent
-import com.example.ui.theme.WhatsAppGreen
+import com.example.ui.theme.whatsappColor
+import com.example.ui.theme.shareSecondaryColor
 
+/*
+ * =====================================================================================
+ * لوحة مشاركة كشف حساب العميل (CustomerHistoryShareBottomSheet)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة سفلية تقدم خيارات تصدير ومشاركة متعددة الوسائط (PDF, CSV, رسائل نصية).
+ *
+ * [المُدخلات]:
+ * - showShareSheet: مؤشر تحديد ظهور القائمة السفلية.
+ * - activeCustomer: كائن العميل النشط.
+ * - allCustomerTxs: قائمة جميع حركات ومعاملات العميل.
+ * - currencySymbol: رمز العملة الأساسية.
+ * - exchangeRatesJson: بيانات أسعار الصرف المخزنة بصيغة JSON.
+ * - netDebt: صافي الرصيد المالي للعميل.
+ * - activeThemeColor: لون السمة النشط للعناصر البصرية.
+ * - onDismissRequest: رد نداء عند إغلاق اللوحة السفلية.
+ * - onPdfExportStart: رد نداء عند بدء عملية التصدير لإظهار مؤشر تقدم.
+ * - onPdfExportFinish: رد نداء عند انتهاء عملية التصدير.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerHistoryShareBottomSheet(
@@ -41,7 +73,7 @@ fun CustomerHistoryShareBottomSheet(
     allCustomerTxs: List<HabayebTransaction>,
     currencySymbol: String,
     exchangeRatesJson: String,
-    netDebt: Double,
+    netDebt: java.math.BigDecimal,
     activeThemeColor: Color,
     onDismissRequest: () -> Unit,
     onPdfExportStart: () -> Unit,
@@ -52,6 +84,13 @@ fun CustomerHistoryShareBottomSheet(
     val context = LocalContext.current
     val appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val debtShareBg = if (isDark) com.example.ui.theme.DebtContainerDark else com.example.ui.theme.DebtContainerLight
+    val creditShareBg = if (isDark) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.CreditContainerLight
+    val debtShareColor = if (isDark) com.example.ui.theme.DebtRedDark else com.example.ui.theme.DebtRed
+    val creditShareColor = if (isDark) com.example.ui.theme.CreditGreenDark else com.example.ui.theme.CreditGreen
+    val whatsappShareColor = whatsappColor(isDark)
+    val smsShareColor = shareSecondaryColor(isDark)
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -127,15 +166,15 @@ fun CustomerHistoryShareBottomSheet(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        val absVal = kotlin.math.abs(netDebt)
+                        val absVal = netDebt.abs()
                         val statusText = when {
-                            netDebt > 0.0 -> stringResource(id = R.string.habayeb_owed)
-                            netDebt < 0.0 -> stringResource(id = R.string.habayeb_to_them)
+                            netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> stringResource(id = R.string.habayeb_owed)
+                            netDebt.compareTo(java.math.BigDecimal.ZERO) < 0 -> stringResource(id = R.string.habayeb_to_them)
                             else -> stringResource(id = R.string.habayeb_balanced)
                         }
                         val statusColor = when {
-                            netDebt > 0.0 -> DebtRed
-                            netDebt < 0.0 -> CreditGreen
+                            netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> debtShareColor
+                            netDebt.compareTo(java.math.BigDecimal.ZERO) < 0 -> creditShareColor
                             else -> MaterialTheme.colorScheme.outline
                         }
 
@@ -167,8 +206,8 @@ fun CustomerHistoryShareBottomSheet(
             // PDF Option Row
             FileShareOptionRow(
                 icon = Icons.Default.PictureAsPdf,
-                iconTint = DebtRed,
-                iconBgColor = DebtContainerLight,
+                iconTint = debtShareColor,
+                iconBgColor = debtShareBg,
                 title = stringResource(id = R.string.share_pdf_title),
                 description = stringResource(id = R.string.share_pdf_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -216,8 +255,8 @@ fun CustomerHistoryShareBottomSheet(
             // Excel (CSV) Option Row
             FileShareOptionRow(
                 icon = Icons.Default.GridOn,
-                iconTint = CreditGreen,
-                iconBgColor = CreditContainerLight,
+                iconTint = creditShareColor,
+                iconBgColor = creditShareBg,
                 title = stringResource(id = R.string.share_csv_title),
                 description = stringResource(id = R.string.share_csv_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -290,8 +329,8 @@ fun CustomerHistoryShareBottomSheet(
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = WhatsAppGreen,
-                        contentColor = Color.White
+                        containerColor = whatsappShareColor,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)
@@ -317,8 +356,8 @@ fun CustomerHistoryShareBottomSheet(
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = IndigoAccent,
-                        contentColor = Color.White
+                        containerColor = smsShareColor,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)
@@ -352,6 +391,9 @@ private fun FileShareOptionRow(
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit
 ) {
+    val isDark = MaterialTheme.colorScheme.background.red < 0.5f
+    val whatsappShareColor = whatsappColor(isDark)
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -406,8 +448,8 @@ private fun FileShareOptionRow(
                     onClick = onWhatsAppDirectClick,
                     enabled = isPhoneAvailable,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = if (isPhoneAvailable) WhatsAppGreen.copy(alpha = 0.1f) else Color.Transparent,
-                        contentColor = WhatsAppGreen
+                        containerColor = if (isPhoneAvailable) whatsappShareColor.copy(alpha = 0.1f) else Color.Transparent,
+                        contentColor = whatsappShareColor
                     ),
                     modifier = Modifier.size(36.dp)
                 ) {

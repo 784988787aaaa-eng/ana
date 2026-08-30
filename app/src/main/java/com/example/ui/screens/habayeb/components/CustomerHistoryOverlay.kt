@@ -1,5 +1,18 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة طبقة كشف حساب وسجل حركات العميل (Customer History Overlay Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على الشاشة الحوارية الشاملة لعرض كشف حساب تفصيلي للعميل:
+ * - تجميع وحساب الأرصدة التراكمية، ومؤشرات الرصيد الصافي بعملات متعددة.
+ * - شريط علوي تفاعلي للبحث، والتصفية، وتعديل الاسم، وحذف الحساب، والمشاركة.
+ * - بطاقة الملخص المالي السريع وأزرار التصفية الفورية حسب العملات المختلفة.
+ * - جدول الحركات التفصيلي مع دعم التحديد الجماعي، والتكرار التلقائي، وتعديل سعر الصرف.
+ * - لوحة تصدير ومشاركة كشف الحساب كـ PDF أو عبر تطبيقات المراسلة.
+ * =====================================================================================
+ */
+
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -44,6 +57,25 @@ import com.example.ui.screens.habayeb.utils.HabayebRecurringManager
 import com.example.ui.screens.habayeb.utils.rememberFilteredCustomerTransactions
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 
+/*
+ * =====================================================================================
+ * شاشة كشف حساب العميل التفاعلية (CustomerHistoryOverlay)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * شاشة متكاملة لعرض وتحليل وإدارة كافة المعاملات المالية المرتبطة بعميل معين.
+ *
+ * [المُدخلات]:
+ * - customer: بيانات العميل المطلوب عرض كشف حسابه.
+ * - viewModel: نموذج العرض لإدارة العمليات المالية والبيانات.
+ * - onDismiss: رد نداء عند إغلاق الشاشة والرجوع.
+ * - activeThemeColor / activeSubColor: ألوان السمة النشطة.
+ * - currencySymbol: رمز العملة الأساسية.
+ * - contentPadding: هوامش التباعد الخاصة بالشاشات والحواف.
+ * - isSearchActive: هل شريط البحث مفعل حالياً.
+ * - onSearchActiveChanged: رد نداء عند تغير حالة البحث.
+ * - onTxMultiSelectActiveChanged: رد نداء عند تغير حالة التحديد الجماعي للحركات.
+ * =====================================================================================
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerHistoryOverlay(
@@ -63,9 +95,13 @@ fun CustomerHistoryOverlay(
     val customers by viewModel.habayebCustomersState.collectAsStateWithLifecycle()
     val activeCustomer = customers.find { it.id == customer.id } ?: customer
 
+    val initialTxs = remember(activeCustomer.id) {
+        viewModel.getInitialTransactionsForCustomer(activeCustomer.id)
+    }
+
     val transactions by remember(activeCustomer.id) {
         viewModel.getTransactionsForCustomerFlow(activeCustomer.id)
-    }.collectAsStateWithLifecycle(initialValue = emptyList())
+    }.collectAsStateWithLifecycle(initialValue = initialTxs)
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -105,17 +141,6 @@ fun CustomerHistoryOverlay(
         currencySymbol = currencySymbol,
         exchangeRatesJson = settings.exchangeRatesJson
     )
-
-    val latestTxId = remember(displayedTxs) { displayedTxs.firstOrNull()?.id }
-    LaunchedEffect(latestTxId) {
-        if (latestTxId != null) {
-            if (listState.firstVisibleItemIndex > 12) {
-                listState.scrollToItem(0)
-            } else {
-                listState.animateScrollToItem(0)
-            }
-        }
-    }
 
     val calcResult = remember(allCustomerTxs, currencySymbol, settings.exchangeRatesJson) {
         CustomerHistoryCalculator.calculate(allCustomerTxs, currencySymbol, settings.exchangeRatesJson)
@@ -163,6 +188,33 @@ fun CustomerHistoryOverlay(
         }
     }
 
+    LaunchedEffect(activeCustomer.id) {
+        viewModel.uiEventFlow.collect { event ->
+            when (event) {
+                is com.example.ui.viewmodel.HabayebUiEvent.ScrollToAccount -> {
+                    if (event.accountId == activeCustomer.id) {
+                        listState.scrollToItem(0, 0)
+                    }
+                }
+                is com.example.ui.viewmodel.HabayebUiEvent.ResetScrollToTop -> {
+                    listState.scrollToItem(0, 0)
+                }
+            }
+        }
+    }
+
+    val newestTxId = displayedTxs.firstOrNull()?.id
+    var previousNewestTxId by remember(activeCustomer.id) { mutableStateOf(newestTxId) }
+    var previousTxCount by remember(activeCustomer.id) { mutableStateOf(displayedTxs.size) }
+
+    LaunchedEffect(newestTxId, displayedTxs.size) {
+        if (displayedTxs.size > previousTxCount || (newestTxId != null && newestTxId != previousNewestTxId)) {
+            listState.scrollToItem(0, 0)
+        }
+        previousTxCount = displayedTxs.size
+        previousNewestTxId = newestTxId
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(
             modifier = Modifier
@@ -203,6 +255,7 @@ fun CustomerHistoryOverlay(
                                 currencySymbol = currencySymbol,
                                 netDebtMap = calcResult.netDebtMap,
                                 netDebtBDMap = calcResult.netDebtBigDecimalMap,
+                                initialType = activeCustomer.initialType,
                                 selectedCurrencyFilter = selectedCurrencyFilter,
                                 onCurrencyFilterSelected = { selectedCurrencyFilter = it }
                             )

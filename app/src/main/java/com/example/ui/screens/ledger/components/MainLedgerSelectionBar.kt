@@ -1,5 +1,17 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * شريط التحديد السفلي العائم لدفتر الأستاذ (Main Ledger Selection Bar Component)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * شريط إجراءات سفلي عائم يظهر بحركة انزلاقية انسيابية عند تفعيل وضع التحديد:
+ * 1. زر إلغاء التحديد والخروج من وضع الاختيار (Close Icon).
+ * 2. عداد العناصر المحددة (سواء كانت أياماً أو معاملات مفردة) مع إمكانية النقر لتحديد الكل.
+ * 3. زر الحذف الجماعي المميز بلون الحاوية التحذيرية (Error Container) مع اهتزاز لمسي.
+ * =====================================================================================
+ */
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -56,7 +68,7 @@ fun MainLedgerSelectionBar(
         Row(
             modifier = Modifier
                 .padding(horizontal = 20.dp)
-                .shadow(16.dp, RoundedCornerShape(30.dp), spotColor = Color.Black.copy(alpha = 0.1f))
+                .shadow(16.dp, RoundedCornerShape(30.dp), spotColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.1f))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(30.dp))
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(30.dp))
                 .padding(horizontal = 8.dp, vertical = 6.dp),
@@ -102,7 +114,7 @@ fun MainLedgerSelectionBar(
                     Icon(
                         imageVector = if (isSelectAllChecked) Icons.Default.Check else Icons.Default.List,
                         contentDescription = stringResource(id = R.string.ledger_select_all),
-                        tint = if (isSelectAllChecked) EmeraldPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isSelectAllChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))

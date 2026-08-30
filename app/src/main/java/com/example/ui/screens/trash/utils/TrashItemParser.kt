@@ -1,5 +1,6 @@
 package com.example.ui.screens.trash.utils
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import com.example.data.local.entities.DeletedItemEntity
 import com.example.data.local.entities.FixedCommitment
@@ -14,6 +15,15 @@ import java.math.BigDecimal
 import java.util.Locale
 import org.json.JSONObject
 
+/**
+ * محلل ومحوّل عناصر سلة المحذوفات (Trash Item Parser & Deserializer)
+ *
+ * المسؤوليات المعمارية:
+ * 1. فك تشفير حزم المحذوفات JSON (Bundles) واستخراج الكيانات المالية (Customers, Transactions, Commitments).
+ * 2. الحفاظ الصارم على الدقة المالية (BigDecimal) ومنع تسرب أو تشويه أرقام المبالغ أو أسعار الصرف.
+ * 3. صياغة نماذج العرض المستقلة وغير القابلة للتغيير (@Immutable ParsedTrashData) لدعم أداء التمرير العالي في سلة المهملات.
+ */
+@androidx.compose.runtime.Immutable
 data class ParsedBundleTransaction(
     val id: String,
     val type: String,
@@ -27,6 +37,7 @@ data class ParsedBundleTransaction(
     val exchangeRateText: String
 )
 
+@androidx.compose.runtime.Immutable
 data class TrashStrings(
     val systemHabayeb: String,
     val unknownText: String,
@@ -46,6 +57,7 @@ data class TrashStrings(
     val exchangeRateLabelText: String
 )
 
+@androidx.compose.runtime.Immutable
 data class ParsedTrashData(
     val name: String,
     val amount: BigDecimal,
@@ -62,8 +74,17 @@ data class ParsedTrashData(
     val isForeign: Boolean = false,
     val isRateCalculated: Boolean = false,
     val exchangeRateVal: String = "",
-    val currencyBreakdown: Map<String, BigDecimal> = emptyMap()
+    val currencyBreakdown: Map<String, BigDecimal> = emptyMap(),
+    val customerName: String = "",
+    val customerPhone: String = "",
+    val txOriginalDate: String = "",
+    val txTypeDisplay: String = "",
+    val rawDescription: String = "",
+    val equivalentAmountText: String = "",
+    val baseCurrencyCode: String = ""
 )
+
+private const val TAG = "TrashItemParser"
 
 object TrashItemParser {
 
@@ -80,11 +101,15 @@ object TrashItemParser {
                 return BigDecimal(valueStr.trim())
             } catch (_: Exception) {}
         }
-        val doubleVal = obj.optDouble(key, 0.0)
-        return try {
-            BigDecimal.valueOf(doubleVal)
-        } catch (_: Exception) {
-            BigDecimal(fallback)
+        val rawVal = obj.optString(key, "")
+        return if (rawVal.isNotBlank() && rawVal != "null") {
+            try {
+                BigDecimal(rawVal.trim())
+            } catch (_: Exception) {
+                BigDecimal.ZERO
+            }
+        } else {
+            BigDecimal.ZERO
         }
     }
 
@@ -171,6 +196,13 @@ object TrashItemParser {
         var isRateCalculatedVal = false
         var exchangeRateVal = ""
         val currencyBreakdownVal = mutableMapOf<String, BigDecimal>()
+        var customerNameVal = ""
+        var customerPhoneVal = ""
+        var txOriginalDateVal = ""
+        var txTypeDisplayVal = ""
+        var rawDescriptionVal = ""
+        var equivalentAmountTextVal = ""
+        var baseCurrencyCodeVal = ""
 
         try {
             val jsonObj = JSONObject(item.jsonData)
@@ -181,10 +213,19 @@ object TrashItemParser {
                     val foundCustomer = customersList.find { it.id == customerId }
                     val resolvedName = foundCustomer?.name ?: ""
                     phoneVal = foundCustomer?.phone ?: ""
+                    customerNameVal = resolvedName
+                    customerPhoneVal = phoneVal
+
+                    val origTimestamp = jsonObj.optLong("timestamp", 0L)
+                    if (origTimestamp > 0) {
+                        val millis = if (origTimestamp < 10000000000L) origTimestamp * 1000 else origTimestamp
+                        txOriginalDateVal = HabayebDateFormatter.formatFullDateTime(millis)
+                    }
 
                     val desc = jsonObj.optString("description", "").trim()
                     val notes = jsonObj.optString("notes", "").trim()
                     val rawText = desc.ifEmpty { notes }
+                    rawDescriptionVal = rawText
                     val cleanText = stripCurrencyTag(rawText)
                     titleText = cleanText.ifEmpty { strings.noNotesText }
                     name = if (resolvedName.isNotEmpty()) "$resolvedName - $titleText" else titleText
@@ -204,6 +245,7 @@ object TrashItemParser {
                         "PAYMENT_TO_THEM" -> strings.paymentToThemText
                         else -> type
                     }
+                    txTypeDisplayVal = typeAr
 
                     val displayName = if (resolvedName.isNotEmpty()) resolvedName else strings.unknownText
                     subText = try {
@@ -227,13 +269,15 @@ object TrashItemParser {
                             val equivalentValDec = HabayebMathHelper.toBigDecimal(equivalentValStr)
                             val baseCurrencyRaw = jsonObj.optString("base_currency_code", "DEFAULT")
                             val baseCurrencyCode = if (baseCurrencyRaw == "DEFAULT" || baseCurrencyRaw.isBlank()) currencySymbol else baseCurrencyRaw
+                            baseCurrencyCodeVal = baseCurrencyCode
                             val rateStr = jsonObj.optString("exchange_rate", "1.0")
                             val rateDec = HabayebMathHelper.toBigDecimal(rateStr)
                             exchangeRateVal = HabayebMathHelper.formatSmart(rateDec)
+                            equivalentAmountTextVal = "${HabayebMathHelper.formatSmart(equivalentValDec)} $baseCurrencyCode"
                             exchangeInfoText = String.format(
                                 Locale.getDefault(),
                                 strings.equivalentInfoTemplate,
-                                "${HabayebMathHelper.formatSmart(equivalentValDec)} $baseCurrencyCode",
+                                equivalentAmountTextVal,
                                 exchangeRateVal
                             )
                             val signedEq = if (isNegative) equivalentValDec.negate() else equivalentValDec
@@ -419,7 +463,7 @@ object TrashItemParser {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(TAG, "Failed to parse trash item: ${e.message}", e)
         }
 
         val cleanSearchableText = searchTokens.filter { it.isNotBlank() }.joinToString(" ")
@@ -440,7 +484,14 @@ object TrashItemParser {
             isForeign = isForeignVal,
             isRateCalculated = isRateCalculatedVal,
             exchangeRateVal = exchangeRateVal,
-            currencyBreakdown = currencyBreakdownVal
+            currencyBreakdown = currencyBreakdownVal,
+            customerName = customerNameVal,
+            customerPhone = customerPhoneVal,
+            txOriginalDate = txOriginalDateVal,
+            txTypeDisplay = txTypeDisplayVal,
+            rawDescription = rawDescriptionVal,
+            equivalentAmountText = equivalentAmountTextVal,
+            baseCurrencyCode = baseCurrencyCodeVal
         )
     }
 }

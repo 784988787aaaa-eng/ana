@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة قسم قائمة حسابات الحبايب (Habayeb List Section Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على القائمة التمريرية الرئيسية (LazyColumn) لعرض حسابات العملاء:
+ * 1. شريط تمرير سريع ومرئي مخصص (Custom Visual Scrollbar) مع حسابات القياس التناسبي الديناميكي.
+ * 2. واجهة الحالة الفارغة التفاعلية (Empty State Placeholder) عند عدم وجود نتائج تطابق التصفية.
+ * 3. رندرة عناصر صفوف العملاء (CustomerItemRow) مع دعم التثبيت، التمييز اللوني، والتحديد المتعدد.
+ * =====================================================================================
+ */
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -65,6 +76,8 @@ fun HabayebListSection(
 
     val catKey = selectedCategory ?: "all"
 
+    // تم تكوين القائمة الممتدة (LazyColumn) باستخدام مفاتيح فريدة (keys) وتحديد أنواع العناصر (contentType)
+    // لضمان إعادة استخدام العناصر أثناء التمرير الممتد وتفادي الإعادة المفاجئة للبناء مع القوائم الكبيرة.
     LazyColumn(
         state = listState,
         modifier = modifier
@@ -89,7 +102,7 @@ fun HabayebListSection(
                     )
                 }
             },
-        contentPadding = PaddingValues(top = 8.dp, bottom = 95.dp)
+        contentPadding = PaddingValues(top = 2.dp, bottom = 72.dp)
     ) {
         if (filteredCustomers.isEmpty()) {
             item(key = "empty_state_${catKey}_$selectedFilterTab") {
@@ -126,7 +139,6 @@ fun HabayebListSection(
                 val isHighlighted = customer.id == highlightedCustomerId
                 val isSelected = selectedCustomerIds.contains(customer.id)
                 RenderCustomerRowItem(
-                    modifier = Modifier.animateItem(),
                     customer = customer,
                     isPinned = isPinned,
                     isHighlighted = isHighlighted,
@@ -166,7 +178,7 @@ private fun RenderCustomerRowItem(
     }
 
     Box(
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 1.5.dp)
     ) {
         CustomerItemRow(
             isPinned = isPinned,

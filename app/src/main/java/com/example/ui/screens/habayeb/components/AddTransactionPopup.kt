@@ -1,5 +1,17 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة نافذة إضافة وتعديل المعاملة المالية (Add/Edit Transaction Popup Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على الحاوية التفاعلية الكاملة لتسجيل حركة مالية جديدة أو تعديل حركة قائمة:
+ * - إدارة نموذج الإدخال الكامل (المبلغ، البيان، التاريخ المخصص، العملة، وسعر الصرف).
+ * - التحقق من صحة المدخلات المالية، التحويل الآلي بين العملات الأجنبية والمحلية.
+ * - دعم التنقل السلس عبر Crossfade بين نموذج المعاملة وشاشة ضبط سعر الصرف.
+ * - أزرار العمليات المزدوجة (قيد/سداد) المتكيفة ديناميكياً مع طبيعة حساب العميل (له/عليه).
+ * =====================================================================================
+ */
+
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
@@ -26,6 +38,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import com.example.domain.model.SaveTransactionResult
+import kotlinx.coroutines.launch
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import androidx.compose.ui.text.TextRange
@@ -46,6 +60,34 @@ import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import java.math.BigDecimal
 
+/**
+ * قيمة افتراضية فارغة مخصصة لحالات حقول الإدخال والوصف ومعدلات التحويل داخل هذا المكون فقط.
+ */
+private const val INITIAL_EMPTY_TEXT = ""
+
+/*
+ * =====================================================================================
+ * نافذة الحوار المنبثقة لإضافة وتعديل المعاملة (AddTransactionPopup)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة حوارية شاملة تتيح للمستخدم إضافة أو تعديل معاملة مالية مرتبطة بعميل محدد.
+ * تتولى النافذة ما يلي:
+ * 1. تهيئة الحقول من بيانات المعاملة السابقة في حال التعديل أو تجهيز قيم افتراضية جديدة.
+ * 2. دعم فتح نوافذ فرعية مثل منتقي التاريخ والوقت المخصص (CustomDateTimePickerDialog) والآلة الحاسبة (CalculatorDialog).
+ * 3. التحقق المالي وتطبيق أسعار الصرف وتحويل العملات عبر `ExchangeRateHelper` و `CurrencyConfig`.
+ * 4. حفظ المعاملة عبر `HabayebFinanceViewModel` وتقديم تغذية راجعة للمستخدم عبر Toast وإغلاق النافذة.
+ *
+ * [المُدخلات]:
+ * - customer: كائن العميل المستهدف بالمعاملة.
+ * - viewModel: نموذج العرض المالي لتنفيذ عمليات الحفظ والتحديث.
+ * - initialSelectedType: النوع الافتراضي المحدد للمعاملة.
+ * - editingTransaction: المعاملة الحالية قيد التعديل (أو null في حالة الإضافة الجديدة).
+ * - onDismiss: رد نداء لإغلاق النافذة المنبثقة.
+ * - onTransactionSaved: رد نداء عند نجاح حفظ المعاملة.
+ * - activeThemeColor: لون السمة الأساسي للواجهة.
+ * - activeSubColor: لون السمة الفرعي للواجهة.
+ * =====================================================================================
+ */
 @Composable
 fun AddTransactionPopup(
     customer: HabayebCustomer,
@@ -62,7 +104,7 @@ fun AddTransactionPopup(
 
     val customersUiState by viewModel.customersUiState.collectAsStateWithLifecycle()
     val customerState = customersUiState.customers.find { it.id == customer.id }
-    val netDebt = customerState?.netDebt ?: 0.0
+    val netDebt = customerState?.netDebt ?: java.math.BigDecimal.ZERO
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val currencySymbol = settings.currencySymbol
@@ -71,7 +113,7 @@ fun AddTransactionPopup(
         if (editingTransaction != null) {
             CurrencyConfig.parseTransactionCurrency(editingTransaction.description, currencySymbol)
         } else {
-            Pair(currencySymbol, "")
+            Pair(currencySymbol, INITIAL_EMPTY_TEXT)
         }
     }
 
@@ -97,10 +139,10 @@ fun AddTransactionPopup(
         editingTransaction?.let {
             val fa = it.foreignAmount
             if (fa.scale() <= 0 || fa.stripTrailingZeros().scale() <= 0) fa.toBigInteger().toString() else fa.toPlainString()
-        } ?: ""
+        } ?: INITIAL_EMPTY_TEXT
     }
     val initialDescText = remember(editingTransaction) {
-        if (editingTransaction != null) initialCurrencyAndDesc.second else ""
+        if (editingTransaction != null) initialCurrencyAndDesc.second else INITIAL_EMPTY_TEXT
     }
 
     var amountTfv by remember(editingTransaction) {
@@ -153,7 +195,7 @@ fun AddTransactionPopup(
     var showCalculator by rememberSaveable { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     var showRateSetupOverlay by rememberSaveable { mutableStateOf(false) }
-    var tempRateStr by rememberSaveable { mutableStateOf("") }
+    var tempRateStr by rememberSaveable { mutableStateOf(INITIAL_EMPTY_TEXT) }
 
     val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
     val debtRedColor = financialDebtColor(isDark)
@@ -171,7 +213,7 @@ fun AddTransactionPopup(
             val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
 
             if (isForeignSelected && applyExchangeRate && (!hasStoredRate || currentRateVal == 1.0)) {
-                tempRateStr = ""
+                tempRateStr = INITIAL_EMPTY_TEXT
                 showRateSetupOverlay = true
                 isSaving = false
             } else if (amountBd.compareTo(BigDecimal.ZERO) <= 0 && descStr.trim().isBlank()) {
@@ -181,7 +223,6 @@ fun AddTransactionPopup(
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
                 isSaving = false
             } else {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
                     CurrencyConfig.convertAmountBigDecimal(amountBd, currencySymbol, selectedTransactionCurrency, effectiveRateBd)
                 } else {
@@ -192,26 +233,38 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
-                // Instant UI Dismissal & Instant Toast Feedback
-                Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
-                onTransactionSaved()
-                onDismiss()
-
-                // Execute save and licensing check asynchronously in the background
-                viewModel.addHabayebTransaction(
-                    customerId = customer.id,
-                    type = finalActionType,
-                    amount = saveAmountBd,
-                    desc = saveDescStr,
-                    timestamp = saveTimestamp,
-                    editingTxId = saveEditingTxId,
-                    isForeign = isForeignSelected,
-                    currencyCode = selectedTransactionCurrency,
-                    foreignAmount = amountBd,
-                    exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
-                    isRateCalculated = isForeignSelected && applyExchangeRate,
-                    equivalentAmount = finalEquivalentAmountBd
-                )
+                scope.launch {
+                    val result = viewModel.addHabayebTransaction(
+                        customerId = customer.id,
+                        type = finalActionType,
+                        amount = saveAmountBd,
+                        desc = saveDescStr,
+                        timestamp = saveTimestamp,
+                        editingTxId = saveEditingTxId,
+                        isForeign = isForeignSelected,
+                        currencyCode = selectedTransactionCurrency,
+                        foreignAmount = amountBd,
+                        exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
+                        isRateCalculated = isForeignSelected && applyExchangeRate,
+                        equivalentAmount = finalEquivalentAmountBd
+                    )
+                    isSaving = false
+                    when (result) {
+                        is SaveTransactionResult.Success -> {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
+                            onTransactionSaved()
+                            onDismiss()
+                        }
+                        is SaveTransactionResult.TrialExpired -> {
+                            Toast.makeText(context, context.getString(R.string.licensing_trial_expired_toast), Toast.LENGTH_LONG).show()
+                            onDismiss()
+                        }
+                        is SaveTransactionResult.Error -> {
+                            Toast.makeText(context, result.message ?: context.getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
         }
     }
@@ -366,23 +419,23 @@ fun AddTransactionPopup(
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = Color.White),
+                                    colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = MaterialTheme.colorScheme.onError),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
                                 ) {
                                     Text(
-                                        text = stringResource(id = R.string.btn_new_debt),
+                                        text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = MaterialTheme.colorScheme.onError
                                     )
                                 }
 
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = Color.White),
+                                    colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = MaterialTheme.colorScheme.onTertiary),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -391,7 +444,7 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = MaterialTheme.colorScheme.onTertiary
                                     )
                                 }
                             }
@@ -406,7 +459,11 @@ fun AddTransactionPopup(
         CalculatorDialog(
             onDismiss = { showCalculator = false },
             onValueConfirmed = { value ->
-                val calcStr = value.toInt().toString()
+                val calcStr = if (value.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
+                    value.toBigInteger().toString()
+                } else {
+                    value.stripTrailingZeros().toPlainString()
+                }
                 amountTfv = TextFieldValue(text = calcStr, selection = TextRange(calcStr.length))
                 showCalculator = false
             },

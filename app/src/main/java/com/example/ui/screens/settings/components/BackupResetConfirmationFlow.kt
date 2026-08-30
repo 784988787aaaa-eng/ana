@@ -10,10 +10,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.SoftRed
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.example.ui.viewmodel.BackupSyncViewModel
+
 
 @Composable
 fun BackupResetConfirmationFlow(
@@ -32,7 +32,7 @@ fun BackupResetConfirmationFlow(
             title = {
                 Text(
                     text = stringResource(R.string.backup_reset1_title),
-                    color = SoftRed,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -49,12 +49,12 @@ fun BackupResetConfirmationFlow(
             confirmButton = {
                 Button(
                     onClick = { currentStep = 2 },
-                    colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.backup_reset_confirm_btn),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onError,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
@@ -78,7 +78,7 @@ fun BackupResetConfirmationFlow(
             title = {
                 Text(
                     text = stringResource(R.string.backup_reset2_title),
-                    color = SoftRed,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -99,12 +99,12 @@ fun BackupResetConfirmationFlow(
                         Toast.makeText(context, context.getString(R.string.backup_toast_reset_success), Toast.LENGTH_LONG).show()
                         onSuccessReset()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.backup_reset_final_btn),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onError,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )

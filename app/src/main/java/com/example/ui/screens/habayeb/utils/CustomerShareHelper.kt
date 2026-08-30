@@ -1,5 +1,18 @@
 package com.example.ui.screens.habayeb.utils
 
+/*
+ * =====================================================================================
+ * مُساعد مشاركة كشوفات وإشعارات العملاء (Customer Statement & Transaction Share Helper)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * ملف مخصص لإدارة وصياغة ومشاركة كافة الرسائل النصية وكشوف الحسابات وإشعارات المعاملات:
+ * 1. صياغة وتنسيق رسائل المطالبات وكشوف الحسابات بطريقة مهنية واضحة مع إبراز العملات وأسعار الصرف.
+ * 2. دعم التوافقية العالية لمشاركة الرسائل عبر مختلف أجهزة ومصنعي Android (SMS Intents & System Choosers).
+ * 3. دعم الإرسال المباشر عبر واتساب العادي وواتساب للأعمال (WhatsApp Business) سواء للنصوص أو ملفات PDF عبر FileProvider.
+ * 4. عزل منطق المشاركة النصية خارج مكونات واجهة المستخدم (Jetpack Compose) لتحقيق فصل تام للمسؤوليات.
+ * =====================================================================================
+ */
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -8,8 +21,21 @@ import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.ui.helper.formatCurrency
 
+/*
+ * =====================================================================================
+ * كائن مساعد المشاركة (CustomerShareHelper Object)
+ * -------------------------------------------------------------------------------------
+ * يوفر دوال بناء النصوص وإطلاق نوايا المشاركة (Intents).
+ * =====================================================================================
+ */
 object CustomerShareHelper {
 
+    /*
+     * إرسال رسالة SMS بموثوقية تامة عبر تجربة 3 طرق متتالية لضمان التوافق مع كافة مصنعي أجهزة أندرويد
+     * Method 1: ACTION_SENDTO مع smsto:
+     * Method 2: ACTION_VIEW مع sms:
+     * Method 3: موجه المشاركة العام للنظام (System Intent Chooser)
+     */
     private fun sendSmsReliably(context: Context, rawPhone: String, body: String, fallbackChooserTitleId: Int) {
         val cleanPhone = rawPhone.replace(" ", "")
             .replace("-", "")
@@ -18,9 +44,8 @@ object CustomerShareHelper {
             .replace("[", "")
             .replace("]", "")
         
-        // Try multiple methods sequentially to support 100% of Android OEMs (Samsung, Xiaomi, Huawei, Pixel, etc.)
         try {
-            // Method 1: ACTION_SENDTO with smsto: scheme (standard Android)
+            // الطريقة الأولى: ACTION_SENDTO مع smsto:
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse(if (cleanPhone.isBlank()) "smsto:" else "smsto:$cleanPhone")
                 putExtra("sms_body", body)
@@ -30,7 +55,7 @@ object CustomerShareHelper {
             context.startActivity(intent)
         } catch (e1: Exception) {
             try {
-                // Method 2: ACTION_VIEW with sms: scheme (fallback for some devices)
+                // الطريقة الثانية: ACTION_VIEW مع sms: كبديل لبعض الأجهزة
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(if (cleanPhone.isBlank()) "sms:" else "sms:$cleanPhone")
                     putExtra("sms_body", body)
@@ -39,7 +64,7 @@ object CustomerShareHelper {
                 }
                 context.startActivity(intent)
             } catch (e2: Exception) {
-                // Method 3: System Intent Chooser
+                // الطريقة الثالثة: فتح موجه النظام العام للاختيار
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, body)
@@ -50,9 +75,7 @@ object CustomerShareHelper {
     }
 
     /**
-     * Resolves smart, precise transaction title based on account direction.
-     * For "حساب له" (OWED_TO_THEM) -> payment is "تسديد"
-     * For "حساب عليه" (OWED_BY_THEM) -> payment is "استلام"
+     * تحديد المسمى النصي الدقيق لنوع المعاملة بناءً على اتجاه الحساب.
      */
     fun resolveTxTypeTitle(context: Context, txType: String, isAccountOwedToThem: Boolean): String {
         return when (txType) {
@@ -64,15 +87,18 @@ object CustomerShareHelper {
         }
     }
 
+    /*
+     * بناء نص إشعار معاملة مفردة للمشاركة عبر SMS أو WhatsApp
+     */
     fun buildSingleTxShareBody(
         context: Context,
         tx: HabayebTransaction,
         customer: HabayebCustomer,
-        netDebt: Double,
+        netDebt: java.math.BigDecimal,
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ): String {
-        // 1. Header Line
+        // 1. سطر عنوان المعاملة التوضيحي
         val header = when (tx.type) {
             "OWED_BY_THEM" -> context.getString(R.string.msg_header_debt_against)
             "PAYMENT_BY_THEM" -> context.getString(R.string.msg_header_payment_against)
@@ -83,7 +109,7 @@ object CustomerShareHelper {
 
         val bullet = context.getString(R.string.msg_bullet)
 
-        // 2. Main Transaction Amount Line
+        // 2. سطر مبلغ المعاملة وسعر الصرف إن وجد
         val isExchangeTx = tx.isForeign && tx.isRateCalculated
         val amountLine = if (isExchangeTx) {
             val foreignSymbol = if (tx.currencyCode != "DEFAULT" && tx.currencyCode.isNotBlank()) tx.currencyCode else ""
@@ -108,14 +134,14 @@ object CustomerShareHelper {
         lines.add(header)
         lines.add(amountLine)
 
-        // 3. Note / Statement Line (only if present)
+        // 3. سطر الملاحظات والبيان إن وجد
         val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
         if (cleanDetails.isNotBlank()) {
             val statementPrefix = context.getString(R.string.msg_statement_prefix)
             lines.add("$statementPrefix $cleanDetails")
         }
 
-        // 4. Cumulative Foreign Balances (only for unconverted foreign transactions)
+        // 4. أرصدة العملات الأجنبية غير المحولة إن وجدت
         if (allCustomerTxs.isNotEmpty()) {
             val foreignMap = mutableMapOf<String, java.math.BigDecimal>()
             for (t in allCustomerTxs) {
@@ -148,33 +174,34 @@ object CustomerShareHelper {
             }
         }
 
-        // 5. Total Local Balance Line
-        val totalPrefix = if (netDebt > 0.0) {
+        // 5. سطر إجمالي الرصيد بالعملة المحلية
+        val totalPrefix = if (netDebt.compareTo(java.math.BigDecimal.ZERO) > 0) {
             context.getString(R.string.msg_total_against)
-        } else if (netDebt < 0.0) {
+        } else if (netDebt.compareTo(java.math.BigDecimal.ZERO) < 0) {
             context.getString(R.string.msg_total_for)
         } else {
             context.getString(R.string.msg_total_against)
         }
-        val formattedNetDebt = com.example.ui.helper.HabayebMathHelper.formatSmart(
-            com.example.ui.helper.HabayebMathHelper.toBigDecimal(kotlin.math.abs(netDebt))
-        )
+        val formattedNetDebt = com.example.ui.helper.HabayebMathHelper.formatSmart(netDebt.abs())
         lines.add("$totalPrefix $formattedNetDebt $currencySymbol")
 
         return lines.joinToString("\n")
     }
 
+    /*
+     * بناء نص كشف حساب شامل للعميل
+     */
     fun buildStatementShareBody(
         context: Context,
         customer: HabayebCustomer,
-        netDebt: Double,
+        netDebt: java.math.BigDecimal,
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ): String {
         val debtStatus = when {
-            netDebt > 0.0 -> context.getString(R.string.habayeb_statement_status_owed_by_them, formatCurrency(kotlin.math.abs(netDebt), currencySymbol))
-            netDebt < 0.0 -> context.getString(R.string.habayeb_statement_status_owed_to_them, formatCurrency(kotlin.math.abs(netDebt), currencySymbol))
-            else -> context.getString(R.string.habayeb_statement_status_balanced_new, formatCurrency(0.0, currencySymbol))
+            netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> context.getString(R.string.habayeb_statement_status_owed_by_them, formatCurrency(netDebt.abs(), currencySymbol))
+            netDebt.compareTo(java.math.BigDecimal.ZERO) < 0 -> context.getString(R.string.habayeb_statement_status_owed_to_them, formatCurrency(netDebt.abs(), currencySymbol))
+            else -> context.getString(R.string.habayeb_statement_status_balanced_new, formatCurrency(java.math.BigDecimal.ZERO, currencySymbol))
         }
         val title = context.getString(R.string.habayeb_statement_header, customer.name)
         val footer = context.getString(R.string.habayeb_statement_footer)
@@ -217,10 +244,13 @@ object CustomerShareHelper {
         return "$title• $debtStatus\n$foreignText$footer"
     }
 
+    /*
+     * إرسال كشف الحساب عبر الرسائل القصيرة SMS
+     */
     fun triggerSmsStatement(
         context: Context,
         customer: HabayebCustomer,
-        debt: Double,
+        debt: java.math.BigDecimal,
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ) {
@@ -228,10 +258,13 @@ object CustomerShareHelper {
         sendSmsReliably(context, customer.phone, body, R.string.habayeb_statement_send)
     }
 
+    /*
+     * إرسال كشف الحساب عبر واتساب
+     */
     fun triggerWhatsAppStatement(
         context: Context,
         customer: HabayebCustomer,
-        debt: Double,
+        debt: java.math.BigDecimal,
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ) {
@@ -249,11 +282,14 @@ object CustomerShareHelper {
         }
     }
 
+    /*
+     * إرسال إشعار معاملة مفردة عبر الرسائل القصيرة SMS
+     */
     fun triggerSingleTxSms(
         context: Context,
         tx: HabayebTransaction,
         customer: HabayebCustomer,
-        netDebt: Double,
+        netDebt: java.math.BigDecimal,
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ) {
@@ -261,11 +297,14 @@ object CustomerShareHelper {
         sendSmsReliably(context, customer.phone, body, R.string.habayeb_tx_send_notice)
     }
 
+    /*
+     * إرسال إشعار معاملة مفردة عبر واتساب
+     */
     fun triggerSingleTxWhatsApp(
         context: Context,
         tx: HabayebTransaction,
         customer: HabayebCustomer,
-        netDebt: Double,
+        netDebt: java.math.BigDecimal,
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ) {
@@ -283,6 +322,9 @@ object CustomerShareHelper {
         }
     }
 
+    /*
+     * مشاركة ملف مباشر (مثل PDF كشف الحساب) عبر واتساب لجهة الاتصال المحددة
+     */
     fun triggerWhatsAppDirectFile(
         context: Context,
         customer: HabayebCustomer,
@@ -320,3 +362,4 @@ object CustomerShareHelper {
         }
     }
 }
+

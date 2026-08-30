@@ -1,26 +1,57 @@
 package com.example.ui.helper
 
+/*
+ * =====================================================================================
+ * حزمة إدارة حفظ الملفات محلياً (Local Storage & File Saver Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على دوال تصدير وحفظ التقارير وكشوفات الحساب وقواعد البيانات الاحتياطية
+ * في مجلد التنزيلات العام للجهاز (Public Downloads Directory) وفق أحدث معايير أندرويد الأمنية.
+ * =====================================================================================
+ */
+
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import com.example.R
 import java.io.File
 
+/*
+ * =====================================================================================
+ * كائن مساعد حفظ الملفات في مجلد التنزيلات العام (LocalFileSaver)
+ * -------------------------------------------------------------------------------------
+ * [المسؤوليات والمعايير الأمنية]:
+ * 1. التوافق التام مع التخزين المحدود (Scoped Storage):
+ *    استخدام واجهة MediaStore على إصدارات Android 10+ (API 29+) بدون الحاجة لطلب أذونات
+ *    التخزين الخطرة (WRITE_EXTERNAL_STORAGE).
+ * 2. التحكم في حالة الملف المعلق (IS_PENDING):
+ *    تعيين الراية `IS_PENDING = 1` أثناء الكتابة لمنع التطبيقات الأخرى أو النظام من قراءة
+ *    الملف قبل اكتمال نسخه بالكامل، ثم تعديلها إلى `0` فور إتمام النسخ.
+ * 3. المعالجة التراجعية للإصدارات القديمة (Backward Compatibility):
+ *    استخدام الدليل العام المباشر لنظام Android 9 فما دون.
+ * 4. إدارة الموارد الآمنة: فتح وإغلاق تدفقات القراءة والكتابة داخل كتل `use` لضمان تحريرها دائماً.
+ * =====================================================================================
+ */
 object LocalFileSaver {
+    // وسم السجلات لتتبع العمليات
+    private const val TAG = "LocalFileSaver"
 
-    /**
-     * Saves a cached file to the device's public Downloads directory.
-     * Uses MediaStore API on Android 10+ (API 29+) to avoid requiring runtime storage permissions.
-     * Uses standard file copy on Android 9 and below.
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة حفظ الملف في مجلد التنزيلات العام (saveFileToPublicDownloads)
+     * ---------------------------------------------------------------------------------
+     * [المُدخلات]:
+     * - context: سياق التطبيق للوصول إلى ContentResolver.
+     * - cachedFile: الملف المؤقت الموجود في الذاكرة المؤقتة للتطبيق (cacheDir).
+     * - mimeType: نوع الوسائط للملف (مثل "application/pdf" أو "text/csv").
+     * - displayName: الاسم الظاهر للملف عند حفظه (مثل "كشف_حساب_محمد.pdf").
      *
-     * @param context Android context
-     * @param cachedFile The temporary file in cacheDir
-     * @param mimeType MIME type of the file (e.g. "application/pdf", "text/csv")
-     * @param displayName Desired file name (e.g. "statement_John_123.pdf")
-     * @return Boolean indicating success
+     * [المُخرجات]:
+     * - Boolean: قيمة منطقية تعبر عن نجاح أو فشل عملية الحفظ.
+     * ---------------------------------------------------------------------------------
      */
     fun saveFileToPublicDownloads(
         context: Context,
@@ -34,6 +65,11 @@ object LocalFileSaver {
         return try {
             val resolver = context.contentResolver
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                /*
+                 * ---------------------------------------------------------------------
+                 * الحفظ عبر MediaStore لنظام Android 10+ (API 29+)
+                 * ---------------------------------------------------------------------
+                 */
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -41,7 +77,7 @@ object LocalFileSaver {
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
-                // Query existing file with the same name to overwrite or resolve uniqueness
+                // إدراج سجل جديد في جدول التنزيلات الخارجي
                 val collectionUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
                 val uri = resolver.insert(collectionUri, contentValues)
 
@@ -53,6 +89,7 @@ object LocalFileSaver {
                             }
                         }
                     }
+                    // إلغاء راية الانتظار للإشارة إلى اكتمال كتابة الملف بنجاح
                     contentValues.clear()
                     contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                     resolver.update(uri, contentValues, null, null)
@@ -61,7 +98,11 @@ object LocalFileSaver {
                     false
                 }
             } else {
-                // Fallback for Android 9 and below (requires WRITE_EXTERNAL_STORAGE permission, which is declared)
+                /*
+                 * ---------------------------------------------------------------------
+                 * الحفظ المباشر في الدليل العام لنظام Android 9 فما دون
+                 * ---------------------------------------------------------------------
+                 */
                 val targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 if (!targetDir.exists()) {
                     targetDir.mkdirs()
@@ -75,13 +116,17 @@ object LocalFileSaver {
                 true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to save file to public downloads", e)
             false
         }
     }
 
-    /**
-     * Helper to show toast messages upon saving.
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة مساعدة لحفظ الملف وعرض رسالة تنبيهية للمستخدم (saveAndShowToast)
+     * ---------------------------------------------------------------------------------
+     * تنفذ الحفظ وتُظهر إشعاراً مرئياً منبثقاً (Toast) يوضح نجاح أو فشل العملية وموقع الحفظ.
+     * ---------------------------------------------------------------------------------
      */
     fun saveAndShowToast(
         context: Context,
@@ -105,3 +150,4 @@ object LocalFileSaver {
         }
     }
 }
+

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.CloudSyncState
-import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.BackupSyncViewModel
 import com.example.ui.screens.CloudBackupsBottomSheet
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -49,39 +48,9 @@ fun CloudBackupSection(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 3. الخيار الثالث: التمرير السحابي اليدوي
-        QuadBackupItem(
-            title = stringResource(R.string.settings_backup_gdrive_title),
-            description = stringResource(R.string.settings_backup_gdrive_desc),
-            accentColor = MaterialTheme.colorScheme.tertiary,
-            icon = { Icon(Icons.Default.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp)) }
-        ) {
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-                Button(
-                    onClick = {
-                        val sdfName = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US)
-                        val dateStr = sdfName.format(Date())
-                        safExportLauncher.launch("Mzd_$dateStr.mzd")
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(40.dp)
-                ) {
-                    Text(stringResource(R.string.settings_backup_gdrive_btn), fontSize = 11.sp, color = MaterialTheme.colorScheme.onTertiary, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.settings_backup_gdrive_note),
-                    fontSize = 9.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Right
-                )
-            }
-        }
-
-        // 4. الخيار الرابع: المزامنة السحابية المباشرة (Unified GoogleDriveSyncCard)
+        // 1. المزامنة السحابية المباشرة (Google Drive Direct Sync)
         GoogleDriveSyncCard(
             googleSyncState = googleCloudSyncState,
             storedEmail = backupSyncViewModel.googleDriveSyncHelper.getStoredEmail(),
@@ -151,6 +120,14 @@ fun CloudBackupSection(
     if (showCloudBackupsSheet) {
         CloudBackupsBottomSheet(
             viewModel = backupSyncViewModel,
+            onConnectClick = {
+                showCloudBackupsSheet = false
+                try {
+                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                } catch (e: Exception) {
+                    Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
+                }
+            },
             onDismiss = { showCloudBackupsSheet = false }
         )
     }

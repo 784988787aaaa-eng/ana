@@ -1,5 +1,29 @@
+/**
+ * =====================================================================
+ * ملف: مكون رسم الصفحات والترويسات والتذييلات في PDF (PdfPageRenderer.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الكائن العمود الفقري لتنسيق صفحات PDF في التطبيق، حيث يحتوي
+ * على آليات رسم ترويسة المنشأة الرسمية (مع الشعار ومعلومات الاتصال والتاريخ)،
+ * وترويسات الجداول (Table Headers)، وتذييل الصفحات مع أرقام الصفحات (Footers)،
+ * وترويسات الصفحات الفرعية المتتابعة، وبناء ورقة كشف حساب العميل الكاملة [drawCustomerStatementSheet].
+ * 
+ * [المسؤوليات المعمارية والتقنية]:
+ * 1. تنسيق التواريخ والأوقات باللغة العربية (Locale-Aware Formatting):
+ *    - دوال منسقة متزامنة [formatDayAr], [formatDateEn], [formatTimeAr].
+ * 2. الضبط الديناميكي لحجم الخطوط (Adaptive Font Sizing):
+ *    - تصغير حجم الخط آلياً عند زيادة طول اسم المنشأة أو شعارها اللفظي لمنع تجاوز الهوامش.
+ * 3. إدارة فواصل الصفحات الذكية (Pagination & Page Breaks):
+ *    - حساب الارتفاع المستهلك مع تنبيه رد النداء [onPageBreakNeeded] لنقل الرسام للصفحة التالية وإعادة رسم الترويسات.
+ * 4. تجميع كشوفات الحسابات وتدفق المعاملات والصفوف الختامية:
+ *    - دمج شريط تعريف العميل، جدول المعاملات، صف الإجماليات، وشريط الصافي النهائي.
+ */
 package com.example.data.serialization.pdf
 
+// ---------------------------------------------------------------------
+// استيراد حزم سياق أندرويد والرسومات وتنسيق التواريخ والنصوص والكيانات
+// ---------------------------------------------------------------------
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -16,6 +40,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * [وعاء بيانات ترويسة المنشأة في تقارير PDF - PdfBusinessHeaderData]:
+ * يجمع البيانات النصية والبصرية وتواريخ التقرير المنسقة.
+ */
 data class PdfBusinessHeaderData(
     val displayedName: String,
     val displayedDesc: String,
@@ -28,6 +56,10 @@ data class PdfBusinessHeaderData(
     val docTimeText: String
 )
 
+/**
+ * [الكائن الأحادي لرسم وتخطيط صفحات PDF - PdfPageRenderer]:
+ * يقدم وظائف رسم الترويسات وتخطيط الجداول وتذييلات الصفحات.
+ */
 object PdfPageRenderer {
 
     private val dayFormatAr = SimpleDateFormat("EEEE", Locale("ar"))
@@ -107,15 +139,22 @@ object PdfPageRenderer {
         style = Paint.Style.STROKE
     }
 
+    /** تنسيق اسم اليوم باللغة العربية */
     @Synchronized
     fun formatDayAr(date: Date): String = dayFormatAr.format(date)
 
+    /** تنسيق التاريخ الميلادي بصيغة yyyy/MM/dd */
     @Synchronized
     fun formatDateEn(date: Date): String = dateFormatEn.format(date)
 
+    /** تنسيق الوقت بالساعة والدقيقة صباحاً/مساءً بالعربية */
     @Synchronized
     fun formatTimeAr(date: Date): String = timeFormatAr.format(date)
 
+    /**
+     * [رسم ترويسة جدول كشف الحساب - drawTableHeader]:
+     * يرسم رؤوس الأعمدة الستة لكشف حساب العميل وفق طبيعة حسابه (لنا أو علينا).
+     */
     fun drawTableHeader(canvas: Canvas, y: Float, context: Context, initialType: String = TransactionType.OWED_BY_THEM.value) {
         canvas.drawRect(25f, y, 570f, y + 25f, paintHeaderBg)
         canvas.drawLine(25f, y, 570f, y, paintHeaderBorder)
@@ -140,6 +179,10 @@ object PdfPageRenderer {
         drawArabicText(canvas, context.getString(R.string.pdf_col_remaining), 25f, y + 6f, 75, paintHeaderText, Layout.Alignment.ALIGN_CENTER)
     }
 
+    /**
+     * [رسم ترويسة مصغرة للصفحات اللاحقة - drawSubsequentPageHeader]:
+     * يضع شريطاً رفيعاً باسم العميل في أعلى الصفحات الإضافية من كشف حسابه.
+     */
     fun drawSubsequentPageHeader(canvas: Canvas, customerName: String, primaryColorHex: String, context: Context) {
         paintMiniHeader.color = Color.parseColor(primaryColorHex)
         val miniHeaderText = context.getString(R.string.pdf_mini_header_text, customerName)
@@ -147,6 +190,10 @@ object PdfPageRenderer {
         canvas.drawLine(25f, 28f, 570f, 28f, paintMiniLine)
     }
 
+    /**
+     * [رسم تذييل الصفحة - drawFooter]:
+     * يضع رقم الصفحة وإجمالي الصفحات مع عبارة التوثيق المعتمد أسفل الصفحة.
+     */
     fun drawFooter(canvas: Canvas, pageNum: Int, totalPages: Int, primaryColorHex: String, context: Context) {
         val footerTextLeft = context.getString(R.string.pdf_footer_page, pageNum, totalPages)
         val footerTextRight = context.getString(R.string.pdf_footer_certified)
@@ -155,6 +202,9 @@ object PdfPageRenderer {
         drawArabicText(canvas, footerTextRight, 200f, 815f, 370, paintFooterText, Layout.Alignment.ALIGN_NORMAL)
     }
 
+    /**
+     * [رسم ترويسة المنشأة الكاملة - drawBusinessHeader]:
+     */
     fun drawBusinessHeader(canvas: Canvas, headerData: PdfBusinessHeaderData) {
         drawBusinessHeader(
             canvas = canvas,
@@ -170,6 +220,10 @@ object PdfPageRenderer {
         )
     }
 
+    /**
+     * [رسم ترويسة المنشأة بالمعاملات المباشرة - drawBusinessHeader]:
+     * يرسم اسم المنشأة والوصف وأرقام الهواتف على اليمين، والشعار بالوسط، والتاريخ والوقت على اليسار.
+     */
     fun drawBusinessHeader(
         canvas: Canvas,
         displayedName: String,
@@ -224,6 +278,9 @@ object PdfPageRenderer {
         canvas.drawLine(25f, 68f, 570f, 68f, paintDivider)
     }
 
+    /**
+     * [رسم ترويسة جدول كشف كافة العملاء - drawAllCustomersTableHeader]:
+     */
     fun drawAllCustomersTableHeader(canvas: Canvas, y: Float, context: Context) {
         canvas.drawRect(25f, y, 570f, y + 26f, paintHeaderBg)
 
@@ -272,6 +329,10 @@ object PdfPageRenderer {
         currencySymbol: String
     ) = PdfRowRenderer.drawComprehensiveSummaryCard(canvas, context, primaryColorHex, summary, totalItems, currencySymbol)
 
+    /**
+     * [رسم ورقة كشف حساب العميل التفصيلية - drawCustomerStatementSheet]:
+     * يرسم شريط العميل، جدول المعاملات، الإجماليات، وشريط الصافي، مع تدوير الصفحات تلقائياً عند الامتلاء.
+     */
     fun drawCustomerStatementSheet(
         canvas: Canvas?,
         context: Context,
@@ -454,3 +515,4 @@ object PdfPageRenderer {
         return workingY
     }
 }
+

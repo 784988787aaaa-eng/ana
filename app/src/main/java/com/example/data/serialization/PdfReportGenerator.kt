@@ -1,5 +1,30 @@
+/**
+ * =====================================================================
+ * ملف: محرك ومنسق تقارير PDF المالية (PdfReportGenerator.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الكائن المحرك التنفيذي الأساسي لرسم وتوليد مستندات PDF الاحترافية
+ * المعتمدة على لوحة رسم أندرويد الأصلية [android.graphics.pdf.PdfDocument].
+ * يقوم بحساب المسافات وقياس النصوص العربية وتوزيع السجلات على صفحات متعددة (Pagination)
+ * وفق المقاس العالمي A4 (595x842 نقطة)، مع معالجة ذكية للترويسة التجارية وشعار المنشأة
+ * وخاتمة الصفحات والتقارير الشاملة لكافة العملاء.
+ * 
+ * [المسؤوليات المعمارية والتقنية]:
+ * 1. الجولة التجريبية الاستباقية (Dry Run Pass):
+ *    - محاكاة رسم الجداول لحساب العدد الدقيق للصفحات الإجمالية قبل الرسم الفعلي (مثال: صفحة 1 من 3).
+ * 2. معالجة النصوص والاتجاه العربي الأصيل (RTL):
+ *    - التوافق مع [StaticLayout] لرسم النصوص العربية والوصف المالي دون تقطيع أو تشويه.
+ * 3. التدوير الذكي للموارد والتنظيف:
+ *    - إدارة وتفريغ صور الشعارات والبيتماب [recycleBitmapsSafely] لمنع تسريب الذاكرة (Memory Leaks).
+ * 4. إدارة قنوات التصدير والإرسال:
+ *    - دعم المشاركة عبر النظام، الحفظ المباشر بذاكرة الجهاز، والإرسال الفوري عبر تطبيق واتساب.
+ */
 package com.example.data.serialization
 
+// ---------------------------------------------------------------------
+// استيراد حزم سياق أندرويد والرسومات والطباعة ووثائق PDF والكيانات وتزامن كوتلن
+// ---------------------------------------------------------------------
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -14,8 +39,12 @@ import androidx.core.content.FileProvider
 import com.example.R
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
+import com.example.data.serialization.pdf.BusinessHeaderData
+import com.example.data.serialization.pdf.BusinessProfileLoader
+import com.example.data.serialization.pdf.PdfAction
 import com.example.data.serialization.pdf.PdfColors
 import com.example.data.serialization.pdf.PdfDrawingUtils
+import com.example.data.serialization.pdf.PdfIntentLauncher
 import com.example.data.serialization.pdf.PdfPageRenderer
 import com.example.data.serialization.pdf.PdfReportCalculator
 import com.example.data.serialization.pdf.PdfRowRenderer
@@ -24,111 +53,36 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Date
 
-enum class PdfAction {
-    SHARE,
-    VIEW,
-    SAVE_LOCAL,
-    WHATSAPP_DIRECT;
+typealias PdfAction = PdfAction
+typealias BusinessHeaderData = BusinessHeaderData
+typealias BusinessProfileLoader = BusinessProfileLoader
 
-    companion object {
-        fun from(action: String): PdfAction {
-            return values().find { it.name.equals(action, ignoreCase = true) } ?: SHARE
-        }
-    }
-}
-
-data class BusinessHeaderData(
-    val displayedName: String,
-    val displayedDesc: String,
-    val phonesStr: String,
-    val hasLogo: Boolean,
-    val logoW: Float,
-    val logoH: Float,
-    val scaledLogo: Bitmap?,
-    val rawBitmap: Bitmap?
-)
-
-object BusinessProfileLoader {
-    private const val TAG = "BusinessProfileLoader"
-    private const val PREF_BUSINESS_PROFILE = "business_profile"
-    private const val PREF_BUSINESS_PROFILE_ALT = "business_profile_prefs"
-    private const val KEY_BIZ_NAME = "biz_name"
-    private const val KEY_BIZ_DESC = "biz_desc"
-    private const val KEY_BIZ_LOGO_PATH = "biz_logo_path"
-    private const val KEY_BIZ_PHONES = "biz_phones"
-    private const val KEY_ALT_NAME = "business_name"
-    private const val KEY_ALT_SLOGAN = "business_slogan"
-    private const val KEY_ALT_LOGO_PATH = "logo_path"
-    private const val KEY_ALT_PHONE = "business_phone"
-
-    fun load(context: Context): BusinessHeaderData {
-        val prefs = context.getSharedPreferences(PREF_BUSINESS_PROFILE, Context.MODE_PRIVATE)
-        val altPrefs = context.getSharedPreferences(PREF_BUSINESS_PROFILE_ALT, Context.MODE_PRIVATE)
-
-        var bizName = prefs.getString(KEY_BIZ_NAME, "")?.trim().orEmpty()
-        if (bizName.isBlank()) {
-            bizName = altPrefs.getString(KEY_ALT_NAME, "")?.trim().orEmpty()
-        }
-
-        var bizDesc = prefs.getString(KEY_BIZ_DESC, "")?.trim().orEmpty()
-        if (bizDesc.isBlank()) {
-            bizDesc = altPrefs.getString(KEY_ALT_SLOGAN, "")?.trim().orEmpty()
-        }
-
-        var bizLogoPath = prefs.getString(KEY_BIZ_LOGO_PATH, "")?.trim().orEmpty()
-        if (bizLogoPath.isBlank()) {
-            bizLogoPath = altPrefs.getString(KEY_ALT_LOGO_PATH, "")?.trim().orEmpty()
-        }
-
-        val bizPhones = mutableListOf<String>()
-        try {
-            val phonesJson = prefs.getString(KEY_BIZ_PHONES, "[]") ?: "[]"
-            val jsonArray = JSONArray(phonesJson)
-            for (i in 0 until jsonArray.length()) {
-                val p = jsonArray.getString(i).trim()
-                if (p.isNotBlank()) bizPhones.add(p)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error reading business phones", e)
-        }
-
-        if (bizPhones.isEmpty()) {
-            val altPhone = altPrefs.getString(KEY_ALT_PHONE, "")?.trim().orEmpty()
-            if (altPhone.isNotBlank()) {
-                bizPhones.add(altPhone)
-            }
-        }
-
-        val displayedName = if (bizName.isNotBlank()) bizName else context.getString(R.string.app_name)
-        val displayedDesc = if (bizDesc.isNotBlank()) bizDesc else context.getString(R.string.pdf_default_desc)
-
-        val logoResult = PdfDrawingUtils.loadAndScaleLogo(context, bizLogoPath)
-        val phonesToDraw = if (bizPhones.isNotEmpty()) bizPhones else listOf(context.getString(R.string.pdf_certified_identity))
-        val phonesStr = if (bizPhones.isNotEmpty()) context.getString(R.string.pdf_phone_prefix) + " " + phonesToDraw.joinToString(" - ") else phonesToDraw.joinToString(" - ")
-
-        return BusinessHeaderData(
-            displayedName = displayedName,
-            displayedDesc = displayedDesc,
-            phonesStr = phonesStr,
-            hasLogo = logoResult.hasLogo,
-            logoW = logoResult.width,
-            logoH = logoResult.height,
-            scaledLogo = logoResult.bitmap,
-            rawBitmap = logoResult.rawBitmapToRecycle
-        )
-    }
-}
-
+/**
+ * [الكائن الأحادي لمحرك تقارير PDF - PdfReportGenerator]:
+ * يوفر واجهات توليد وتصدير كشوف الحسابات الفردية والتقارير الشاملة بصيغة PDF.
+ */
 object PdfReportGenerator {
-    private const val TAG = "PdfReportGenerator"
-    private const val MIME_TYPE_PDF = "application/pdf"
-    private const val FILE_PROVIDER_SUFFIX = ".fileprovider"
 
+    /** وسم السجلات التشخيصية */
+    private const val TAG = "PdfReportGenerator"
+    /** نوع الوسائط المعياري لمستندات PDF */
+    private const val MIME_TYPE_PDF = "application/pdf"
+
+    /**
+     * [التوليد الداخلي لكشف حساب العميل الفردي - generatePdfFileInternal]:
+     * يبني مستند PDF متعدد الصفحات يتضمن ترويسة العمل وكشف حركة الحساب والخاتمة.
+     *
+     * @param context سياق التطبيق.
+     * @param customer بيانات العميل المستهدف.
+     * @param transactions قائمة معاملات العميل.
+     * @param currencySymbol رمز العملة الرئيسية.
+     * @param primaryColorHex لون السمة التنسيقي.
+     * @return ملف الـ PDF المؤقت المنشأ، أو null عند الفشل.
+     */
     private fun generatePdfFileInternal(
         context: Context,
         customer: HabayebCustomer,
@@ -144,7 +98,7 @@ object PdfReportGenerator {
             originalCustomer = customer
         )
 
-        // 1. Dry Run to calculate EXACT total pages based on dynamic StaticLayout heights
+        // 1. الجولة التجريبية (Dry Run) لحساب إجمالي عدد الصفحات بدقة متناهية
         var totalPages = 1
         var dryPageCount = 1
         PdfPageRenderer.drawCustomerStatementSheet(
@@ -197,7 +151,7 @@ object PdfReportGenerator {
             }
             PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, 74f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
-            // Table Header starting at Y = 98f
+            // بدء رسم جدول المعاملات
             PdfPageRenderer.drawCustomerStatementSheet(
                 canvas = canvas,
                 context = context,
@@ -241,10 +195,14 @@ object PdfReportGenerator {
             null
         } finally {
             pdfDocument.close()
-            recycleBitmapsSafely(header.rawBitmap, header.scaledLogo)
+            PdfIntentLauncher.recycleBitmapsSafely(header.rawBitmap, header.scaledLogo)
         }
     }
 
+    /**
+     * [التوليد الداخلي لتقرير كافة العملاء الشامل - generateAllCustomersPdfFileInternal]:
+     * يبني وثيقة PDF تحوي بطاقة ملخص الأرصدة الكلية وجدول كافة العملاء وأرصدتهم.
+     */
     private fun generateAllCustomersPdfFileInternal(
         context: Context,
         customers: List<CustomerUiState>,
@@ -254,10 +212,10 @@ object PdfReportGenerator {
         val summary = PdfReportCalculator.calculateComprehensiveReport(customers)
         val totalItems = customers.size
 
-        // 1. Dry Run to calculate EXACT total pages based on dynamic customer summary row heights
+        // 1. الجولة التجريبية لحساب إجمالي عدد الصفحات
         var totalPages = 1
         run {
-            var dryY = 276f
+            var dryY = 186f
             var dryPages = 1
             for (c in customers) {
                 val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
@@ -300,11 +258,11 @@ object PdfReportGenerator {
 
             val paintTitle = Paint().apply {
                 color = Color.parseColor(PdfColors.TEXT_DARK)
-                textSize = 16f
+                textSize = 14f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }
-            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_title), 25f, 126f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_title), 25f, 74f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
             PdfRowRenderer.drawComprehensiveSummaryCard(
                 canvas = canvas,
@@ -312,12 +270,13 @@ object PdfReportGenerator {
                 primaryColorHex = primaryColorHex,
                 summary = summary,
                 totalItems = totalItems,
-                currencySymbol = currencySymbol
+                currencySymbol = currencySymbol,
+                startY = 94f
             )
 
-            PdfPageRenderer.drawAllCustomersTableHeader(canvas, 246f, context)
+            PdfPageRenderer.drawAllCustomersTableHeader(canvas, 156f, context)
 
-            var currentY = 276f
+            var currentY = 186f
 
             for ((index, c) in customers.withIndex()) {
                 val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
@@ -373,62 +332,26 @@ object PdfReportGenerator {
             null
         } finally {
             pdfDocument.close()
-            recycleBitmapsSafely(header.rawBitmap, header.scaledLogo)
+            PdfIntentLauncher.recycleBitmapsSafely(header.rawBitmap, header.scaledLogo)
         }
     }
 
-    private fun recycleBitmapsSafely(rawBitmap: Bitmap?, scaledLogo: Bitmap?) {
-        try {
-            if (rawBitmap != null && !rawBitmap.isRecycled) {
-                if (scaledLogo != null && scaledLogo != rawBitmap && !scaledLogo.isRecycled) {
-                    scaledLogo.recycle()
-                }
-                rawBitmap.recycle()
-            } else if (scaledLogo != null && !scaledLogo.isRecycled) {
-                scaledLogo.recycle()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error recycling bitmaps", e)
-        }
-    }
-
+    /**
+     * [إطلاق نية المشاركة أو العرض - triggerShareOrViewIntent]:
+     * يفوض الإطلاق إلى [PdfIntentLauncher].
+     */
     fun triggerShareOrViewIntent(context: Context, file: File?, action: PdfAction) {
-        if (file == null) {
-            Toast.makeText(context, context.getString(R.string.habayeb_toast_pdf_export_failed, context.getString(R.string.csv_error_creating_file)), Toast.LENGTH_LONG).show()
-            return
-        }
-        try {
-            val authority = "${context.packageName}$FILE_PROVIDER_SUFFIX"
-            val uri = FileProvider.getUriForFile(context, authority, file)
-
-            when (action) {
-                PdfAction.SHARE -> {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = MIME_TYPE_PDF
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.pdf_chooser_title)))
-                }
-                PdfAction.VIEW -> {
-                    val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, MIME_TYPE_PDF)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(viewIntent)
-                }
-                else -> {}
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, context.getString(R.string.habayeb_toast_pdf_export_failed, e.message ?: ""), Toast.LENGTH_LONG).show()
-        }
+        PdfIntentLauncher.triggerShareOrViewIntent(context, file, action)
     }
 
+    /** إطلاق نية المشاركة بنص الإجراء */
     fun triggerShareOrViewIntent(context: Context, file: File?, action: String) {
-        triggerShareOrViewIntent(context, file, PdfAction.from(action))
+        PdfIntentLauncher.triggerShareOrViewIntent(context, file, PdfAction.from(action))
     }
 
+    /**
+     * [توليد ومعالجة تقرير العميل بنطاق كوروتين ممرر - generateAndHandleCustomerPdfReport]:
+     */
     fun generateAndHandleCustomerPdfReport(
         context: Context,
         scope: CoroutineScope,
@@ -441,6 +364,9 @@ object PdfReportGenerator {
         generateAndHandleCustomerPdfReportAsync(context, scope, customer, transactions, currencySymbol, PdfAction.from(action), primaryColorHex)
     }
 
+    /**
+     * [توليد ومعالجة تقرير العميل بنطاق رئيسي افتراضي - generateAndHandleCustomerPdfReport]:
+     */
     fun generateAndHandleCustomerPdfReport(
         context: Context,
         customer: HabayebCustomer,
@@ -460,6 +386,10 @@ object PdfReportGenerator {
         )
     }
 
+    /**
+     * [توليد ومعالجة تقرير العميل اللاتزامني الأساسي - generateAndHandleCustomerPdfReportAsync]:
+     * يبني ملف الـ PDF ثم يوجهه للمشاركة، أو الحفظ المحلي، أو الإرسال المباشر عبر واتساب.
+     */
     fun generateAndHandleCustomerPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -510,6 +440,9 @@ object PdfReportGenerator {
         }
     }
 
+    /**
+     * [توليد ومعالجة تقرير العميل اللاتزامني بنص الإجراء - generateAndHandleCustomerPdfReportAsync]:
+     */
     fun generateAndHandleCustomerPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -525,6 +458,10 @@ object PdfReportGenerator {
         )
     }
 
+    /**
+     * [توليد ومعالجة تقرير كافة العملاء اللاتزامني - generateAndHandleAllCustomersPdfReportAsync]:
+     * يبني تقرير PDF شامل يضم جميع العملاء وأرصدتهم الإجمالية.
+     */
     fun generateAndHandleAllCustomersPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -550,6 +487,9 @@ object PdfReportGenerator {
         }
     }
 
+    /**
+     * [توليد ومعالجة تقرير كافة العملاء بنص الإجراء - generateAndHandleAllCustomersPdfReportAsync]:
+     */
     fun generateAndHandleAllCustomersPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -564,4 +504,5 @@ object PdfReportGenerator {
         )
     }
 }
+
 

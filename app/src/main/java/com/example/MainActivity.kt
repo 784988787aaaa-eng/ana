@@ -1,5 +1,25 @@
+/**
+ * =====================================================================
+ * ملف: النشاط الرئيسي للتطبيق (MainActivity.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الملف النشاط الأحادي الأساسي للتطبيق (Single Activity Architecture)
+ * المبني بالكامل باستخدام Jetpack Compose. يتحكم في:
+ * 1. تهيئة شاشة البداية (Splash Screen) وإبقائها معروضة ريثما تكتمل قراءة الإعدادات.
+ * 2. تفعيل التصميم الممتد حتى حواف الشاشة (Edge-to-Edge).
+ * 3. جدولة وتشغيل العمال الخلفيين للنسخ والتذكير (Workers).
+ * 4. إدارة قفل التطبيق برمز المرور (App Lock & Security Verification).
+ * 5. إدارة نافذة الترحيب التفاعلية (Onboarding) وطلب الأذونات في الوقت المناسب.
+ * 6. تطبيق اتجاه الواجهة العربي الشامل من اليمين إلى اليسار (RTL Layout Direction).
+ * 7. تطبيق السمة المرئية (الوضع الفاتح / الداكن / النظام) بسلاسة وفورية.
+ * 8. إنشاء نسخة احتياطية محلية صامتة عند مغادرة التطبيق (onStop).
+ */
 package com.example
 
+// ---------------------------------------------------------------------
+// استيراد حزم أندرويد و Jetpack Compose ونماذج العرض (ViewModels) وإدارة الحالة
+// ---------------------------------------------------------------------
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -12,12 +32,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.components.WelcomeOnboardingDialog
-import android.content.pm.PackageManager
-import java.security.MessageDigest
 import com.example.ui.main.MainAppLayout
 import com.example.ui.screens.AppLockScreen
 import com.example.ui.theme.AppTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import com.example.ui.viewmodel.BackupSyncViewModel
@@ -27,40 +46,55 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 
+/**
+ * [فئة النشاط الرئيسي - MainActivity]:
+ * ترث من `FragmentActivity` لدعم دوال التوافق والمصادقة الحيوية ونظام Compose.
+ */
 class MainActivity : FragmentActivity() {
     private lateinit var backupSyncViewModel: BackupSyncViewModel
 
+    /**
+     * [دالة دورة الحياة - onCreate]:
+     * تهيئ شاشة البداية، ونماذج العرض، وتبني شجرة واجهات Compose.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
+        // تثبيت شاشة البداية الرسمية
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // تفعيل تصميم الحواف الشفافة الحديث Edge-to-Edge
         enableEdgeToEdge()
 
+        // تهيئة نماذج العرض المركزية (ViewModels) المرتبطة بدورة حياة النشاط
         val viewModel = androidx.lifecycle.ViewModelProvider(this)[FinanceViewModel::class.java]
         val securityViewModel = androidx.lifecycle.ViewModelProvider(this)[com.example.ui.viewmodel.SecurityAndLicenseViewModel::class.java]
         backupSyncViewModel = androidx.lifecycle.ViewModelProvider(this)[BackupSyncViewModel::class.java]
 
+        // إبقاء شاشة البداية ظاهرة حتى تنتهي قاعدة البيانات من تحميل الإعدادات بالكامل
         splashScreen.setKeepOnScreenCondition {
             !viewModel.isSettingsLoaded.value
         }
 
+        // إطلاق مهام التهيئة الخلفية المستقلة عن مسار الواجهة
         lifecycleScope.launch(Dispatchers.IO) {
-            logAppSignatureSHA1(this@MainActivity)
             AutoBackupWorker.scheduleDailyBackupWorker(this@MainActivity)
             AutoBackupWorker.checkAndTriggerBackupIfMissed(this@MainActivity)
             BackupReminderWorker.scheduleReminder(this@MainActivity)
         }
 
+        // قراءة تفضيلات القفل والسمة السريعة لمنع وميض الشاشة عند الإقلاع
         val secPrefs = getSharedPreferences("mizan_sec_prefs", MODE_PRIVATE)
         val isPasscodeEnabledFast = secPrefs.getBoolean("fast_passcode_enabled", false)
 
         val sharedPrefs = getSharedPreferences("fast_theme_prefs", MODE_PRIVATE)
         val cachedThemeMode = sharedPrefs.getInt("key_fast_theme_mode", 0) // 0: System, 1: Light, 2: Dark
 
+        // بناء واجهة المستخدم الرسومية عبر Jetpack Compose
         setContent {
             val habayebViewModel: HabayebFinanceViewModel = viewModel()
 
             val context = LocalContext.current
 
+            // مراقبة أحداث الأمان وطرد الجلسة غير المصرح بها
             LaunchedEffect(securityViewModel) {
                 securityViewModel.startRealtimeMonitoring(this@MainActivity)
                 securityViewModel.kickoutEvent.collect { reason ->
@@ -72,6 +106,7 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // فحص وتنفيذ المعاملات المتكررة (الرواتب والأقساط المستحقة) في الخلفية عند الإقلاع
             LaunchedEffect(habayebViewModel) {
                 withContext(Dispatchers.IO) {
                     // Check and execute any recurring transactions on startup safely on background thread
@@ -86,6 +121,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                // الاستماع لأحداث الواجهة مثل رسائل Toast ومربعات التفعيل
                 viewModel.uiEventFlow.collect { event ->
                     when (event) {
                         is com.example.ui.viewmodel.UiEvent.ShowToast -> {
@@ -102,12 +138,13 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // تتبع حالة الإعدادات التلقائية المحدثة
             val settings by viewModel.settingsState.collectAsStateWithLifecycle()
             val isSettingsLoaded by viewModel.isSettingsLoaded.collectAsStateWithLifecycle()
             
             var isUnlocked by rememberSaveable { mutableStateOf(!isPasscodeEnabledFast) }
 
-            // Ensure fast preference is strictly synchronized with database settings
+            // مزامنة حالة تفعيل رمز المرور في التفضيلات السريعة
             LaunchedEffect(settings.isPasscodeEnabled) {
                 if (isSettingsLoaded) {
                     secPrefs.edit().putBoolean("fast_passcode_enabled", settings.isPasscodeEnabled).apply()
@@ -117,6 +154,7 @@ class MainActivity : FragmentActivity() {
             var showOnboardingDialog by remember { mutableStateOf(false) }
             var shouldRequestPermissions by remember { mutableStateOf(false) }
 
+            // تجهيز آلية طلب الأذونات المتعددة ديناميكياً
             val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                 contract = androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
             ) { permissions ->
@@ -141,7 +179,7 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // Strictly check first launch status on start, merging database settings and highly-persistent SharedPreferences lock
+            // عرض نافذة الترحيب بالتشغيل الأول بعد تأخير أنيق
             val isReallyFirstLaunch = settings.isFirstLaunch && !viewModel.hasShownOnboarding()
             LaunchedEffect(isReallyFirstLaunch) {
                 if (isReallyFirstLaunch) {
@@ -151,8 +189,9 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // احتساب السمة المرئية المختارة (فاتح / داكن / تتبع النظام)
             val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-            val darkTheme = remember(isSettingsLoaded, settings.themeMode, cachedThemeMode) {
+            val darkTheme = remember(isSettingsLoaded, settings.themeMode, cachedThemeMode, isSystemDark) {
                 if (isSettingsLoaded) {
                     when (settings.themeMode) {
                         1 -> false
@@ -168,8 +207,18 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // تطبيق السمة وموفر الاتجاه العربي (RTL)
             AppTheme(darkTheme = darkTheme) {
+                // Keep system-bar appearance synchronized atomically with the active theme.
+                SideEffect {
+                    window.statusBarColor = android.graphics.Color.TRANSPARENT
+                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                    insetsController.isAppearanceLightStatusBars = !darkTheme
+                    insetsController.isAppearanceLightNavigationBars = !darkTheme
+                }
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    // 1. نافذة الترحيب والإعداد الأولي عند التثبيت
                     if (isReallyFirstLaunch && showOnboardingDialog) {
                         WelcomeOnboardingDialog(
                             onDismiss = {
@@ -182,6 +231,7 @@ class MainActivity : FragmentActivity() {
                         )
                     }
 
+                    // 2. شاشة قفل التطبيق إذا كان مفتاح الحماية مفعلاً ولم يتم فك القفل بعد
                     if (settings.isPasscodeEnabled && !isUnlocked) {
                         AppLockScreen(
                             viewModel = securityViewModel,
@@ -197,6 +247,7 @@ class MainActivity : FragmentActivity() {
                             }
                         )
                     } else {
+                        // 3. تخطيط التطبيق الرئيسي بكافة شاشاته وتبويباته
                         MainAppLayout(
                             viewModel = viewModel,
                             habayebViewModel = habayebViewModel,
@@ -213,6 +264,10 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    /**
+     * [دالة دورة الحياة - onStop]:
+     * تستدعى عندما ينتقل التطبيق إلى الخلفية. تنفذ نسخة احتياطية صامتة وسريعة للحفاظ على البيانات.
+     */
     override fun onStop() {
         super.onStop()
         try {
@@ -221,37 +276,6 @@ class MainActivity : FragmentActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-    private fun logAppSignatureSHA1(context: android.content.Context) {
-        try {
-            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-                val signingInfo = info.signingInfo
-                if (signingInfo != null) {
-                    if (signingInfo.hasMultipleSigners()) {
-                        signingInfo.apkContentsSigners
-                    } else {
-                        signingInfo.signingCertificateHistory
-                    }
-                } else null
-            } else {
-                @Suppress("DEPRECATION")
-                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES)
-                @Suppress("DEPRECATION")
-                info.signatures
-            }
-            if (signatures != null) {
-                for (signature in signatures) {
-                    val md = MessageDigest.getInstance("SHA1")
-                    val publicKey = md.digest(signature.toByteArray())
-                    val hexString = publicKey.joinToString(":") { String.format("%02X", it) }
-                    android.util.Log.d("GOOGLE_AUTH_DEBUG", "SHA-1 ACTUAL SIGNATURE: $hexString")
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("GOOGLE_AUTH_DEBUG", "Error getting signature", e)
         }
     }
 }

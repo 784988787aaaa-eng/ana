@@ -1,5 +1,21 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * مدير وموزع حوارات دفتر الأستاذ (Main Ledger Dialogs Manager Component)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكوّن تنسيقي مركزي (Centralized Dialog Dispatcher) يدير عرض وإخفاء كافة نوافذ الحوار لدفتر الأستاذ:
+ * 1. حوار إضافة وتعديل المعاملات المالية (TransactionRecordDialog).
+ * 2. حوار البحث في المعاملات والسجلات (SearchLedgerDialog).
+ * 3. حوار عرض قائمة الالتزامات والأهداف المالية (CommitmentsListDialog).
+ * 4. حوار إنشاء وتعديل التزام مالي (CommitmentEditDialog).
+ * 5. حوار إعادة ترتيب الالتزامات (ReorderCommitmentDialog).
+ * 6. حوار تفعيل ترخيص التطبيق والجهاز (DeviceActivationDialog).
+ * 7. حوار تأكيد الحذف الجماعي للأيام المحددة (DeleteDaysConfirmDialog).
+ * =====================================================================================
+ */
+
 import android.content.Context
 import androidx.compose.runtime.Composable
 import com.example.data.local.entities.FixedCommitment
@@ -17,7 +33,7 @@ fun MainLedgerDialogsManager(
     editingTransaction: TransactionDb?,
     currencySymbol: String,
     onDismissTxDialog: () -> Unit,
-    onSaveTransaction: (id: String?, type: String, category: String, amount: Double, description: String) -> Unit,
+    onSaveTransaction: (id: String?, type: String, category: String, amount: BigDecimal, description: String) -> Unit,
     showSearch: Boolean,
     searchQuery: String,
     searchResults: List<TransactionDb>,
@@ -28,7 +44,7 @@ fun MainLedgerDialogsManager(
     computedCommitments: List<Triple<FixedCommitment, BigDecimal, BigDecimal>>,
     totalCash: BigDecimal,
     formatCurrency: (BigDecimal, String) -> String,
-    formatDoubleCurrency: (Double, String) -> String,
+    formatBigDecimalCurrency: (BigDecimal, String) -> String,
     onDismissCommitmentsList: () -> Unit,
     onAddCommitmentClick: () -> Unit,
     onEditCommitmentClick: (FixedCommitment) -> Unit,
@@ -73,7 +89,7 @@ fun MainLedgerDialogsManager(
             onQueryChange = onSearchQueryChange,
             results = searchResults,
             formatCurrency = { amt ->
-                formatCurrency(BigDecimal.valueOf(amt), currencySymbol)
+                formatCurrency(amt, currencySymbol)
             },
             onDismiss = onDismissSearch
         )

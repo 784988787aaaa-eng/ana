@@ -1,8 +1,31 @@
+/**
+ * =====================================================================
+ * ملف: محرك تسلسل وتصدير حمولة النسخ الاحتياطي (BackupPayloadSerializer.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا المكون العصب المركزي لعمليات تحويل البيانات المالية وقواعد بيانات التطبيق
+ * الثنائية إلى صيغة نصية مهيكلة ومعيارية JSON، والعكس. يعتمد على تقنية التدفق المتسلسل
+ * المباشر (Streaming Serialization) عبر [android.util.JsonWriter] لضمان استهلاك ذاكرة ثابت
+ * ومنع أخطاء نفاد الذاكرة (OutOfMemoryError) أثناء تصدير مئات الآلاف من السجلات.
+ * 
+ * [المسؤوليات المعمارية والتقنية]:
+ * 1. الحفاظ الصارم على الدقة المالية لـ [BigDecimal]:
+ *    - تحويل الأرقام حصرياً عبر `toPlainString()` دون أي تحويل وسيط إلى أرقام عشرية عائمة (Float/Double).
+ * 2. التوافق التاريخي العكسي (Backward Compatibility):
+ *    - تثبيت مفاتيح بنية الـ JSON التاريخية لضمان استيراد النسخ القديمة دون أدنى تعارض.
+ * 3. المعالجة الآمنة للتدفقات (Stream-Based I/O):
+ *    - إتاحة التصدير المباشر إلى ملفات [File]، ومسارات خروج [OutputStream]، ومحررات نصوص [Writer].
+ * 4. التدقيق الاستباقي للبنية والتحقق التشفيري:
+ *    - فحص سلامة الحقول الإلزامية ورمز العملة وحساب التجزئة التشفيرية SHA-256 للبيانات.
+ */
 package com.example.data.serialization
 
+// ---------------------------------------------------------------------
+// استيراد حزم سياق أندرويد والكيانات ومحولات الأرقام ومعالجة JSON والتزامن
+// ---------------------------------------------------------------------
 import android.content.Context
-import android.util.Log
-import com.example.data.local.AppDatabase
+import com.example.data.local.BigDecimalConverter
 import com.example.data.local.entities.AppSettings
 import com.example.data.local.entities.CustomCategory
 import com.example.data.local.entities.DatabaseDefaults
@@ -12,14 +35,26 @@ import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.local.entities.TransactionDb
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.IOException
 import java.math.BigDecimal
-import java.security.MessageDigest
 
 /**
- * Data container encapsulating all entities and extras for a full backup payload.
+ * [وعاء بيانات النسخ الاحتياطي الكامل - BackupPayloadData]:
+ * يجمع كافة كيانات وتفضيلات وروابط النظام المالي في كائن موحد قبل التصدير.
+ *
+ * @property settings إعدادات التطبيق والعملة وأسعار الصرف.
+ * @property commitments قائمة الالتزامات المالية الثابتة.
+ * @property transactions قائمة قيود اليومية العامة.
+ * @property habayebCustomers قائمة بطاقات عملاء الحبايب.
+ * @property habayebTransactions قائمة معاملات ديون الحبايب والعملات الأجنبية.
+ * @property deletedItems عناصر سلة المهملات.
+ * @property customCategories التصنيفات المخصصة.
+ * @property categoryLinks خريطة ربط العملاء بالتصنيفات.
+ * @property pinnedCustomerIdsByCategory خريطة العملاء المثبتين حسب التصنيف.
+ * @property categoryOrderList ترتيب التبويبات المخصص.
+ * @property closedCustomName التسمية المخصصة للحسابات المقفلة.
  */
 data class BackupPayloadData(
     val settings: AppSettings,
@@ -36,24 +71,16 @@ data class BackupPayloadData(
 )
 
 /**
- * Unified Payload Serializer & Checksum Engine for local and cloud backup payloads.
- * Consolidates JSON serialization, schema versioning, metadata enrichment, and SHA-256 hash calculation.
+ * [الكائن الأحادي لمحرك تسلسل النسخ الاحتياطي - BackupPayloadSerializer]:
+ * يدير عمليات التحويل الثنائي وكتابة واستيراد حزم النسخ الاحتياطي.
  */
 object BackupPayloadSerializer {
-    private const val TAG = "BackupPayloadSerializer"
-    private val HEX_CHARS = "0123456789abcdef".toCharArray()
 
-    // Cryptographic & Preferences Constants
-    private const val ALGORITHM_SHA_256 = "SHA-256"
-    private const val PREF_MIZAN_SEC = "mizan_sec_prefs"
-    private const val PREF_MIZAN_FINANCE = "mizan_finance_prefs"
-    private const val PREFIX_CAT_LINK = "CAT_LINK_"
-    private const val PREFIX_KEY_PINNED_IN = "KEY_PINNED_IN_"
-    private const val KEY_CATEGORY_ORDER_LIST_PREF = "CATEGORY_ORDER_LIST_KEY"
-    private const val KEY_CLOSED_CUSTOM_NAME_PREF = "CLOSED_CUSTOM_NAME_KEY"
-
-    // JSON Schema Structural Keys
+    // =================================================================
+    // مفاتيح بنية الـ JSON المعيارية (ثابتة لحماية التوافق التاريخي)
+    // =================================================================
     private const val KEY_MIZAN_AL_DAR_DB = "mizan_al_dar_db"
+    private const val KEY_HABAYEB_DEBTS_DB = "habayeb_debts_db"
     private const val KEY_METADATA = "metadata"
     private const val KEY_APP_NAME = "app_name"
     private const val KEY_APP_VERSION = "app_version"
@@ -114,39 +141,79 @@ object BackupPayloadSerializer {
     private const val KEY_DISPLAY_ORDER = "display_order"
     private const val KEY_IS_SYSTEM_CLOSED = "is_system_closed"
 
+    /** حساب بصمة التجزئة SHA-256 للنصوص */
+    fun calculateSha256Hash(input: String): String =
+        BackupIntegrityManager.calculateSha256Hash(input)
+
+    /** حساب البصمة المنطقية الحتمية للحمولة */
+    fun calculateIntegrityHash(data: BackupPayloadData): String =
+        BackupIntegrityManager.calculateIntegrityHash(data)
+
     /**
-     * Calculates cryptographic SHA-256 hash of any string payload for Zero-Diff audits.
+     * [التحقق من سلامة البيانات قبل التصدير - validatePayloadBeforeExport]:
+     * يفحص صحة الحقول الأساسية كرمز العملة قبل الشروع في التصدير.
+     *
+     * @param data بيانات حمولة النسخة الاحتياطية.
      */
-    fun calculateSha256Hash(input: String): String {
-        val digest = MessageDigest.getInstance(ALGORITHM_SHA_256)
-        val hashBytes = digest.digest(input.toByteArray(Charsets.UTF_8))
-        val hexChars = CharArray(hashBytes.size * 2)
-        for (i in hashBytes.indices) {
-            val v = hashBytes[i].toInt() and 0xFF
-            hexChars[i * 2] = HEX_CHARS[v ushr 4]
-            hexChars[i * 2 + 1] = HEX_CHARS[v and 0x0F]
+    fun validatePayloadBeforeExport(data: BackupPayloadData) {
+        if (data.settings.currencySymbol.isBlank()) {
+            throw IllegalArgumentException("رمز العملة في الإعدادات لا يمكن أن يكون فارغاً")
         }
-        return String(hexChars)
     }
 
     /**
-     * Streams full application payload data directly into a Writer using [android.util.JsonWriter]
-     * to ensure constant memory footprint and prevent OutOfMemoryError.
+     * [التحقق من صحة بنية JSON الأساسية - validateJsonStructure]:
+     * يتأكد من سلامة نص الـ JSON ووجود الأقسام والجداول الرئيسية قبل المعالجة.
+     *
+     * @param rawJson النص الخام لملف النسخة.
+     * @return كائن [JSONObject] الجذري.
+     */
+    fun validateJsonStructure(rawJson: String): JSONObject {
+        if (rawJson.isBlank()) {
+            throw IOException("نص النسخة الاحتياطية فارغ")
+        }
+        val root = try {
+            JSONObject(rawJson)
+        } catch (e: Exception) {
+            throw IOException("صيغة JSON غير صالحة للنسخة الاحتياطية: ${e.message}", e)
+        }
+
+        val hasValidSchema = root.has(KEY_METADATA) ||
+                root.has(KEY_SETTINGS) ||
+                root.has(KEY_TRANSACTIONS) ||
+                root.has(KEY_MIZAN_AL_DAR_DB) ||
+                root.has(KEY_HABAYEB_DEBTS_DB)
+
+        if (!hasValidSchema) {
+            throw IOException("بنية ملف النسخة الاحتياطية غير معروفة أو تفتقد للعناصر الأساسية")
+        }
+
+        return root
+    }
+
+    /**
+     * [التصدير المتدفق المباشر إلى كاتب - exportBackupToWriter]:
+     * يكتب عناصر الحمولة تباعاً عبر [android.util.JsonWriter] دون تجميعها كنص ضخم في الذاكرة.
+     *
+     * @param data بيانات الحمولة الشاملة.
+     * @param writer كاتب الإدخال/الإخراج المستهدف.
      */
     fun exportBackupToWriter(data: BackupPayloadData, writer: java.io.Writer) {
+        validatePayloadBeforeExport(data)
+
         val jsonWriter = android.util.JsonWriter(writer)
         jsonWriter.beginObject()
 
-        // Metadata
+        // البيانات الوصفية (Metadata)
         jsonWriter.name(KEY_METADATA)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_APP_NAME).value("Mizan Al-Dar")
         jsonWriter.name(KEY_APP_VERSION).value("1.1.0")
         jsonWriter.name(KEY_BACKUP_TIMESTAMP).value(System.currentTimeMillis() / 1000)
-        jsonWriter.name(KEY_SECURITY_HASH).value("security_" + (data.settings.hashCode() + data.transactions.size * 31).toString())
+        jsonWriter.name(KEY_SECURITY_HASH).value(calculateIntegrityHash(data))
         jsonWriter.endObject()
 
-        // Settings
+        // الإعدادات العامة (Settings)
         jsonWriter.name(KEY_SETTINGS)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_CURRENCY_SYMBOL).value(data.settings.currencySymbol)
@@ -154,7 +221,7 @@ object BackupPayloadSerializer {
         jsonWriter.name(KEY_EXCHANGE_RATES_JSON).value(data.settings.exchangeRatesJson)
         jsonWriter.endObject()
 
-        // Fixed Commitments
+        // الالتزامات المالية الثابتة (Fixed Commitments)
         jsonWriter.name(KEY_FIXED_COMMITMENTS)
         jsonWriter.beginArray()
         for (fc in data.commitments) {
@@ -167,7 +234,7 @@ object BackupPayloadSerializer {
         }
         jsonWriter.endArray()
 
-        // Transactions
+        // قيود اليومية العامة (Transactions)
         jsonWriter.name(KEY_TRANSACTIONS)
         jsonWriter.beginArray()
         for (tx in data.transactions) {
@@ -182,7 +249,7 @@ object BackupPayloadSerializer {
         }
         jsonWriter.endArray()
 
-        // Habayeb Debts
+        // ديون الحبايب والعملاء والعملات الأجنبية (Habayeb Debts)
         jsonWriter.name(KEY_HABAYEB_DEBTS)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_CUSTOMERS)
@@ -233,7 +300,7 @@ object BackupPayloadSerializer {
         jsonWriter.endArray()
         jsonWriter.endObject()
 
-        // Deleted Items
+        // سلة المهملات والمحذوفات (Deleted Items)
         jsonWriter.name(KEY_DELETED_ITEMS)
         jsonWriter.beginArray()
         for (di in data.deletedItems) {
@@ -247,14 +314,14 @@ object BackupPayloadSerializer {
         }
         jsonWriter.endArray()
 
-        // Pinned Customers
+        // الحسابات المثبتة وترتيب التصنيفات (Pinned Customers & Order)
         if (data.pinnedCustomerIdsByCategory.isNotEmpty()) {
             jsonWriter.name(KEY_PINNED_CUSTOMER_IDS_BY_CATEGORY)
             jsonWriter.beginObject()
-            for ((catKey, set) in data.pinnedCustomerIdsByCategory) {
+            for ((catKey, set) in data.pinnedCustomerIdsByCategory.toSortedMap()) {
                 jsonWriter.name(catKey)
                 jsonWriter.beginArray()
-                set.forEach { jsonWriter.value(it) }
+                set.sorted().forEach { jsonWriter.value(it) }
                 jsonWriter.endArray()
             }
             jsonWriter.endObject()
@@ -267,7 +334,7 @@ object BackupPayloadSerializer {
             jsonWriter.name(KEY_CLOSED_CUSTOM_NAME).value(data.closedCustomName)
         }
 
-        // Custom Categories
+        // التصنيفات المخصصة (Custom Categories)
         if (data.customCategories.isNotEmpty()) {
             jsonWriter.name(KEY_CUSTOM_CATEGORIES)
             jsonWriter.beginArray()
@@ -288,7 +355,11 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * Streams full application payload directly to an OutputStream.
+     * [التصدير المتدفق المباشر إلى تيار مخرجات - exportBackupToStream]:
+     * يتدفق البيانات مباشرة عبر OutputStream على خيوط Dispatchers.IO.
+     *
+     * @param data بيانات الحمولة.
+     * @param outputStream تيار المخرجات المستهدف.
      */
     suspend fun exportBackupToStream(
         data: BackupPayloadData,
@@ -300,7 +371,11 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * Streams full application payload directly to a local target File.
+     * [التصدير المباشر إلى ملف محلي - exportBackupToFile]:
+     * ينشئ ملف النسخة ويكتب البيانات فيه بشكل متدفق وسريع.
+     *
+     * @param data بيانات الحمولة.
+     * @param targetFile الملف المستهدف على القرص.
      */
     suspend fun exportBackupToFile(
         data: BackupPayloadData,
@@ -312,7 +387,11 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * Exports full application payload data container to a unified JSON string payload.
+     * [تصدير الحمولة كنص JSON موحد - exportBackupToJson]:
+     * يحول كائن [BackupPayloadData] إلى سلسلة نصية كاملة بصيغة JSON.
+     *
+     * @param data كائن الحمولة.
+     * @return نص الـ JSON الناتج.
      */
     suspend fun exportBackupToJson(
         data: BackupPayloadData
@@ -325,8 +404,8 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * Exports full application database state to a unified JSON string payload.
-     * Backwards compatibility convenience method.
+     * [دالة التصدير المتوافقة مع الإصدارات السابقة - exportBackupToJson]:
+     * تجمع المعاملات والكيانات والتفضيلات وتصدر نص الـ JSON الشامل.
      */
     suspend fun exportBackupToJson(
         settings: AppSettings,
@@ -337,7 +416,8 @@ object BackupPayloadSerializer {
         deletedItems: List<DeletedItemEntity> = emptyList(),
         context: Context? = null
     ): String = withContext(Dispatchers.IO) {
-        val extraData = context?.let { fetchExtraBackupData(it, habayebCustomers) } ?: ExtraBackupData()
+        val extraData = context?.let { BackupExtraDataProvider.fetchExtraBackupData(it, habayebCustomers) }
+            ?: BackupExtraData()
         val payloadData = BackupPayloadData(
             settings = settings,
             commitments = commitments,
@@ -354,96 +434,45 @@ object BackupPayloadSerializer {
         exportBackupToJson(payloadData)
     }
 
-    private suspend fun fetchExtraBackupData(
-        context: Context,
-        habayebCustomers: List<HabayebCustomer>
-    ): ExtraBackupData = withContext(Dispatchers.IO) {
-        val sharedPrefs = context.getSharedPreferences(PREF_MIZAN_SEC, Context.MODE_PRIVATE)
-        val financePrefs = context.getSharedPreferences(PREF_MIZAN_FINANCE, Context.MODE_PRIVATE)
-
-        val categoryLinks = mutableMapOf<String, String>()
-        for (c in habayebCustomers) {
-            val catLink = financePrefs?.getString("$PREFIX_CAT_LINK${c.id}", null)
-                ?: sharedPrefs?.getString("$PREFIX_CAT_LINK${c.id}", null)
-            if (catLink != null) {
-                categoryLinks[c.id] = catLink
-            }
-        }
-
-        val pinnedMap = mutableMapOf<String, Set<String>>()
-        val combinedPrefs = mutableMapOf<String, Any?>()
-        sharedPrefs?.all?.let { combinedPrefs.putAll(it) }
-        financePrefs?.all?.let { combinedPrefs.putAll(it) }
-
-        for ((key, value) in combinedPrefs) {
-            if (key.startsWith(PREFIX_KEY_PINNED_IN)) {
-                val catKey = key.removePrefix(PREFIX_KEY_PINNED_IN)
-                if (value is Set<*>) {
-                    @Suppress("UNCHECKED_CAST")
-                    pinnedMap[catKey] = value as Set<String>
-                }
-            }
-        }
-
-        val catOrder = financePrefs?.getString(KEY_CATEGORY_ORDER_LIST_PREF, null)
-            ?: sharedPrefs?.getString(KEY_CATEGORY_ORDER_LIST_PREF, null)
-        val closedCustomName = financePrefs?.getString(KEY_CLOSED_CUSTOM_NAME_PREF, null)
-            ?: sharedPrefs?.getString(KEY_CLOSED_CUSTOM_NAME_PREF, null)
-
-        val customCategories = try {
-            val db = AppDatabase.getDatabase(context)
-            db.customCategoryDao().getAllCustomCategoriesFlow().first()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to include custom categories in backup payload", e)
-            emptyList()
-        }
-
-        ExtraBackupData(
-            categoryLinks = categoryLinks,
-            pinnedMap = pinnedMap,
-            categoryOrderList = catOrder,
-            closedCustomName = closedCustomName,
-            customCategories = customCategories
-        )
-    }
-
-    private data class ExtraBackupData(
-        val categoryLinks: Map<String, String> = emptyMap(),
-        val pinnedMap: Map<String, Set<String>> = emptyMap(),
-        val categoryOrderList: String? = null,
-        val closedCustomName: String? = null,
-        val customCategories: List<CustomCategory> = emptyList()
-    )
-
     /**
-     * Helper to retrieve BigDecimal from JSON safely.
+     * [استخراج قيمة BigDecimal بأمان ودقة - getBigDecimal]:
+     * يستخرج القيمة الرقمية بدقة متناهية دون تحويل وسيط إلى أرقام عشرية عائمة لمنع فقدان الهللات.
+     *
+     * @param obj كائن JSON الحاوي للحقل.
+     * @param key اسم الحقل الرقمي.
+     * @param fallback القيمة الاحتياطية عند الغياب.
+     * @return كائن [BigDecimal] المطابق.
      */
     fun getBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal {
         if (!obj.has(key)) return BigDecimal(fallback)
-        val valueStr = obj.optString(key, "")
-        if (valueStr.isNotBlank() && valueStr != "null") {
-            try {
-                return BigDecimal(valueStr.trim())
-            } catch (_: Exception) {
-                // Ignore and try fallback
-            }
+        val raw = obj.opt(key) ?: return BigDecimal(fallback)
+        if (raw is BigDecimal) return raw
+        val valueStr = raw.toString().trim()
+        if (valueStr.isEmpty() || valueStr.equals("null", ignoreCase = true)) {
+            return BigDecimal(fallback)
         }
-        val doubleVal = obj.optDouble(key, 0.0)
+        val cleaned = BigDecimalConverter.cleanNumberString(valueStr)
+        if (cleaned.isEmpty()) return BigDecimal(fallback)
         return try {
-            BigDecimal.valueOf(doubleVal)
+            BigDecimal(cleaned)
         } catch (_: Exception) {
             BigDecimal(fallback)
         }
     }
 
     /**
-     * Imports and parses backup payload from JSON string into structured domain data models.
+     * [استيراد وتفكيك حمولة النسخة من JSON - importBackupFromJson]:
+     * يفكك نص الـ JSON إلى نماذج الكيانات الأساسية (الإعدادات، الالتزامات، واليومية).
+     *
+     * @param jsonString نص النسخة الاحتياطية.
+     * @param context سياق التطبيق لجلب العملة الافتراضية.
+     * @return ثلاثية تحتوي على (الإعدادات، قائمة الالتزامات، قائمة قيود اليومية).
      */
     suspend fun importBackupFromJson(
         jsonString: String,
         context: Context? = null
     ): Triple<AppSettings, List<FixedCommitment>, List<TransactionDb>> = withContext(Dispatchers.IO) {
-        val root = JSONObject(jsonString)
+        val root = validateJsonStructure(jsonString)
         val sourceObj = if (root.has(KEY_MIZAN_AL_DAR_DB)) root.getJSONObject(KEY_MIZAN_AL_DAR_DB) else root
 
         val settingsObj = sourceObj.optJSONObject(KEY_SETTINGS)

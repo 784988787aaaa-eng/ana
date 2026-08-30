@@ -1,5 +1,14 @@
 package com.example.ui.helper
 
+/*
+ * =====================================================================================
+ * حزمة الأدوات المساعدة لمعالجة الوسائط والصور (Image & Media Helper Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على دوال معالجة الرسوميات وضبط أبعاد الصور واقتصاص شعار النشاط
+ * التجاري وإدارة الذاكرة المؤقتة للرسوميات النقطية (Bitmaps).
+ * =====================================================================================
+ */
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -10,11 +19,38 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.net.Uri
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 
+/*
+ * =====================================================================================
+ * كائن مساعد معالجة وقص وتحجيم صور الهوية والنشاط التجاري (BusinessProfileImageHelper)
+ * -------------------------------------------------------------------------------------
+ * [المسؤوليات والأهداف المعمارية]:
+ * 1. قراءة وفك ترميز الصور من مسارات Uri بأمان ودون التسبب في أخطاء نفاد الذاكرة
+ *    (Out Of Memory - OOM Prevention عبر حساب inSampleSize ديناميكياً).
+ * 2. الكشف عن زوايا تدوير الكاميرا المخزنة في بيانات EXIF وتعديل اتجاه الصورة تلقائياً.
+ * 3. اقتصاص تفاعلي دقيق للصورة (Crop with Transform) يدعم الإزاحة والتكبير والشكل الدائري والمربع.
+ * 4. إعادة تحجيم الصور الكبيرة لتوفير الذاكرة والمساحة التخزينية.
+ * 5. حفظ الصورة المعالجة بصيغة PNG داخل التخزين الداخلي المحمي للتطبيق (Internal Storage).
+ * =====================================================================================
+ */
 object BusinessProfileImageHelper {
+    // وسم السجلات لتتبع الأخطاء البرمجية
+    private const val TAG = "BusinessProfileImageHelper"
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة تحويل مسار URI إلى صورة Bitmap بأمان (uriToBitmap)
+     * ---------------------------------------------------------------------------------
+     * [الخطوات]:
+     * 1. استخراج أبعاد الصورة فقط دون تحميل البكسلات في الذاكرة (inJustDecodeBounds = true).
+     * 2. حساب عامل تصغير العينة (inSampleSize) لضمان ألا تتجاوز أبعاد الصورة 1200 بكسل.
+     * 3. فك ترميز الصورة بالحجم المصغر لتوفير الذاكرة العشوائية (RAM).
+     * 4. فحص زاوية التدوير EXIF وتدوير الصورة إن لزم الأمر مع تحرير الذاكرة القديمة (recycle).
+     * ---------------------------------------------------------------------------------
+     */
     fun uriToBitmap(context: Context, uri: Uri): Bitmap? {
         return try {
             val options = BitmapFactory.Options().apply {
@@ -45,11 +81,18 @@ object BusinessProfileImageHelper {
             }
             bitmap
         } catch (t: Throwable) {
-            t.printStackTrace()
+            Log.e(TAG, "Failed to load bitmap from uri: $uri", t)
             null
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة استخراج زاوية تدوير الصورة من بيانات EXIF (getExifOrientationDegrees)
+     * ---------------------------------------------------------------------------------
+     * تقرأ ترويسة ملف الصورة لمعرفة ما إذا كانت ملتقطة بوضع أفقي أو عمودي مقلوب.
+     * ---------------------------------------------------------------------------------
+     */
     private fun getExifOrientationDegrees(context: Context, uri: Uri): Float {
         return try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -66,17 +109,37 @@ object BusinessProfileImageHelper {
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة تدوير الصورة بزاوية محددة (rotateBitmap)
+     * ---------------------------------------------------------------------------------
+     * تستخدم مصفوفة التحويلات الهندسية (Matrix) لتدوير الصورة بزوايا 90 أو 180 أو 270 درجة.
+     * ---------------------------------------------------------------------------------
+     */
     fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
         if (bitmap.isRecycled || degrees % 360f == 0f) return bitmap
         return try {
             val matrix = Matrix().apply { postRotate(degrees) }
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         } catch (t: Throwable) {
-            t.printStackTrace()
+            Log.e(TAG, "Failed to rotate bitmap safely", t)
             bitmap
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة الاقتصاص المتقدم مع التحويلات الهندسية (cropWithTransform)
+     * ---------------------------------------------------------------------------------
+     * [الهدف]:
+     * اقتصاص المربع أو الدائرة المحددة من قبل المستخدم على شاشة تعديل الشعار:
+     * 1. حساب إحداثيات الاقتصاص الدقيقة بناءً على مقياس التكبير (scale) والإزاحات (offsetX, offsetY).
+     * 2. اقتصاص المستطيل المستهدف باستخدام دالة Bitmap.createBitmap.
+     * 3. في حال كان المطلوب شكلاً دائرياً (isCircle = true)، يتم رسم قناع دائري
+     *    باستخدام وضع الدمج الرسومي (PorterDuff.Mode.SRC_IN).
+     * 4. تفريغ كائن الـ Bitmap الوسيط من الذاكرة لتجنب تسرب الموارد.
+     * ---------------------------------------------------------------------------------
+     */
     fun cropWithTransform(
         bitmap: Bitmap,
         scale: Float,
@@ -139,11 +202,18 @@ object BusinessProfileImageHelper {
             }
             output
         } catch (t: Throwable) {
-            t.printStackTrace()
+            Log.e(TAG, "Failed to crop bitmap with transform", t)
             bitmap
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة تحجيم الصورة مع الحفاظ على نسبة العرض إلى الارتفاع (scaleBitmap)
+     * ---------------------------------------------------------------------------------
+     * تضمن ألا يتجاوز أكبر بُعد في الصورة الحد الأقصى المسموح به (maxDimension).
+     * ---------------------------------------------------------------------------------
+     */
     fun scaleBitmap(bitmap: Bitmap, maxDimension: Int): Bitmap {
         if (bitmap.isRecycled || bitmap.width <= 0 || bitmap.height <= 0) return bitmap
         if (bitmap.width <= maxDimension && bitmap.height <= maxDimension) return bitmap
@@ -160,11 +230,19 @@ object BusinessProfileImageHelper {
             }
             Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
         } catch (t: Throwable) {
-            t.printStackTrace()
+            Log.e(TAG, "Failed to scale bitmap safely", t)
             bitmap
         }
     }
 
+    /*
+     * ---------------------------------------------------------------------------------
+     * دالة حفظ الصورة في التخزين الداخلي للتطبيق (saveBitmapToInternalStorage)
+     * ---------------------------------------------------------------------------------
+     * تحفظ الصورة بصيغة PNG وبأعلى جودة في المسار الداخلي المعزول "business_logo.png"،
+     * وتعيد المسار المطلق للملف (Absolute Path) لاستخدامه في قاعدة البيانات والتقارير.
+     * ---------------------------------------------------------------------------------
+     */
     fun saveBitmapToInternalStorage(context: Context, bitmap: Bitmap): String? {
         if (bitmap.isRecycled) return null
         return try {
@@ -177,8 +255,9 @@ object BusinessProfileImageHelper {
             }
             file.absolutePath
         } catch (t: Throwable) {
-            t.printStackTrace()
+            Log.e(TAG, "Failed to save business logo to internal storage", t)
             null
         }
     }
 }
+

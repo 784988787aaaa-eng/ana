@@ -1,5 +1,28 @@
+/**
+ * =====================================================================
+ * ملف: حاسبة الإجماليات والتصفيات المالية لعملاء الحبايب (HabayebFinancialCalculator.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الكائن محرك الحسابات المالية، والتجميع الإحصائي، والفلترة المتقدمة لعملاء
+ * قسم "الحبايب". يقوم بحساب صافي الديون بالعملة الافتراضية والعملات الأجنبية، وحساب
+ * مجاميع (لنا / لهم) وفلترة الحسابات حسب التصنيف، التبويب، البحث، والتثبيت.
+ * 
+ * [المسؤوليات المعمارية والتقنية للملف]:
+ * 1. حساب ملخصات الديون الموحدة (Unified Customer Debt Computation):
+ *    - الاعتماد على [CustomerHistoryCalculator] كمصدر موحد للحقيقة لضمان تطابق الأرقام مع التقارير والـ PDF.
+ * 2. الفرز والفلترة متعددة المعايير (Multi-Criteria Filtering & Sorting):
+ *    - معالجة تبويبات الديون (لنا، عليهم، الكل)، البحث الموحد بالنصوص المعربة والأرقام، وتجاهل الحسابات المخفية.
+ * 3. دعم تثبيت الحسابات في أعلى القائمة (Pinned Accounts Precedence):
+ *    - فرز وتثبيت الحسابات المميزة في أعلى القائمة مع فرز بقية الحسابات مالياً أو زمنياً.
+ * 4. تجميع الإحصائيات والأعداد (Category Counter & Aggregate Totals):
+ *    - حساب عدد الحسابات النشطة، والحسابات المقفلة، وعدد العملاء في كل تصنيف بشكل فوري.
+ */
 package com.example.domain.usecase.habayeb
 
+// ---------------------------------------------------------------------
+// استيراد حزم الإعدادات والكيانات ومكتبات الحسابات المحاسبية
+// ---------------------------------------------------------------------
 import android.content.SharedPreferences
 import com.example.data.local.entities.AppSettings
 import com.example.data.local.entities.HabayebCustomer
@@ -10,12 +33,21 @@ import com.example.ui.state.CustomerUiState
 import com.example.ui.state.CustomersUiState
 import java.math.BigDecimal
 import java.math.RoundingMode
-
 import com.example.ui.viewmodel.FinanceConstants
 
+// =========================================================================
+// قسم: الثوابت ونماذج معلمات الفلترة والنتائج المالية
+// =========================================================================
+
+/** بادئة مفاتيح ربط العميل بالتصنيف في التفضيلات */
 private const val PREFIX_CAT_LINK = HabayebCategoryManager.PREFIX_CAT_LINK
+/** المعرف الثابت لتصنيف الحسابات المقفلة */
 private const val CATEGORY_CLOSED = FinanceConstants.CATEGORY_CLOSED
 
+/**
+ * [معلمات فلترة وتصفية قائمة الحبايب - HabayebFilterParameters]:
+ * تغلف كافة خيارات التصفية والبحث والترتيب في كائن واحد متكامل.
+ */
 data class HabayebFilterParameters(
     val query: String,
     val tab: Int,
@@ -26,6 +58,7 @@ data class HabayebFilterParameters(
     val pinnedIds: Set<String>
 )
 
+/** مجموعة المعلمات الأولى المستخدمة لتحسين إعادة الحساب (Memoization) */
 data class HabayebFilterGroup1(
     val query: String,
     val tab: Int,
@@ -33,21 +66,40 @@ data class HabayebFilterGroup1(
     val histSort: Int
 )
 
+/** مجموعة المعلمات الثانية للروابط والتصنيفات والتثبيتات */
 data class HabayebFilterGroup2(
     val hiddenIds: Set<String>,
     val selectedCat: String?,
     val pinnedIds: Set<String>
 )
 
+/**
+ * [نتيجة الفلترة والتجميع المالي - FilteredResult]:
+ * تحتوي على القائمة المصفاة للعملاء بالإضافة إلى الإجماليات المالية وإحصائيات التصنيفات.
+ */
 data class FilteredResult(
     val filteredCustomers: List<CustomerUiState>,
     val totalOwedByThem: BigDecimal,
     val totalOwedToThem: BigDecimal,
-    val categoryCounts: Map<String, Int>
+    val categoryCounts: Map<String, Int>,
+    val activeCustomersCount: Int = 0
 )
 
+/**
+ * [الكائن الأحادي لمحرك حسابات الحبايب - HabayebFinancialCalculator]:
+ * يوفر دوال حساب الحالة المالية وتطبيق الفلاتر والفرز المالي المتقدم.
+ */
 object HabayebFinancialCalculator {
 
+    /**
+     * [حساب حالة واجهة المستخدم الشاملة للعملاء - calculateCustomersUiState]:
+     * يجمع الحركات لكل عميل، ويحسب صافي الدين بالعملة المحلية والأجنبية، ومجاميع الديون الإجمالية.
+     *
+     * @param customers قائمة عملاء الحبايب من قاعدة البيانات.
+     * @param allTransactions كافة الحركات المالية المسجلة.
+     * @param settings إعدادات التطبيق متضمنة أسعار الصرف والعملة الافتراضية.
+     * @return كائن [CustomersUiState] المتكامل للواجهة.
+     */
     fun calculateCustomersUiState(
         customers: List<HabayebCustomer>,
         allTransactions: List<HabayebTransaction>,
@@ -63,24 +115,27 @@ object HabayebFinancialCalculator {
         val customerStates = ArrayList<CustomerUiState>(customers.size)
         for (customer in customers) {
             val custTxs = transactionsByCustomer[customer.id] ?: emptyList()
-            val calcResult = CustomerHistoryCalculator.calculate(
+            val summary = CustomerHistoryCalculator.calculateSummary(
                 custTxs,
                 defaultCurrency,
-                settings.exchangeRatesJson
+                settings.exchangeRatesJson,
+                customer.createdAt
             )
 
-            val defaultCurrencyTotal = calcResult.netDebtBigDecimalMap[normDefaultCurrency] ?: BigDecimal.ZERO
-            val activeForeignDebts = if (calcResult.netDebtBigDecimalMap.size > 1) {
-                calcResult.netDebtBigDecimalMap
+            val defaultCurrencyTotal = summary.netDebtBigDecimalMap[normDefaultCurrency] ?: BigDecimal.ZERO
+            val defaultCurrencyTotalAbs = defaultCurrencyTotal.abs()
+            val activeForeignDebts = if (summary.netDebtBigDecimalMap.size > 1) {
+                summary.netDebtBigDecimalMap
                     .filterKeys { it != normDefaultCurrency }
                     .filterValues { bd -> bd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0 }
             } else {
                 emptyMap()
             }
 
-            val displayCurrency = calcResult.primaryDisplayCurrency
-            val displayNetDebt = calcResult.netDebt
-            val lastTxTime = custTxs.maxOfOrNull { it.timestamp } ?: customer.createdAt
+            val displayCurrency = summary.primaryDisplayCurrency
+            val displayNetDebt = summary.netDebt
+            val lastTxTime = summary.lastTimestamp
+            val normalizedName = StringUtils.normalizeArabic(customer.name)
 
             val state = CustomerUiState(
                 id = customer.id,
@@ -89,23 +144,24 @@ object HabayebFinancialCalculator {
                 notes = customer.notes,
                 createdAt = customer.createdAt,
                 totalTransactions = custTxs.size,
-                netDebt = defaultCurrencyTotal.toDouble(),
+                netDebt = defaultCurrencyTotal,
                 displayNetDebt = displayNetDebt,
                 displayCurrencySymbol = displayCurrency,
                 lastTransactionTimestamp = lastTxTime,
                 originalCustomer = customer,
                 foreignDebts = activeForeignDebts,
-                defaultCurrencyTotal = defaultCurrencyTotal
+                defaultCurrencyTotal = defaultCurrencyTotal,
+                normalizedName = normalizedName,
+                defaultCurrencyTotalAbs = defaultCurrencyTotalAbs
             )
             customerStates.add(state)
 
             if (!state.isClosed) {
-                val bdVal = state.defaultCurrencyTotal
-                val cmp = bdVal.compareTo(BigDecimal.ZERO)
+                val cmp = defaultCurrencyTotal.compareTo(BigDecimal.ZERO)
                 if (cmp > 0) {
-                    globalTotalOwedByThem = globalTotalOwedByThem.add(bdVal)
+                    globalTotalOwedByThem = globalTotalOwedByThem.add(defaultCurrencyTotal)
                 } else if (cmp < 0) {
-                    globalTotalOwedToThem = globalTotalOwedToThem.add(bdVal.abs())
+                    globalTotalOwedToThem = globalTotalOwedToThem.add(defaultCurrencyTotalAbs)
                 }
             }
         }
@@ -118,6 +174,9 @@ object HabayebFinancialCalculator {
         )
     }
 
+    /**
+     * [استخراج خارطة التصنيفات من التفضيلات - extractCategoryMap]:
+     */
     fun extractCategoryMap(sharedPrefs: SharedPreferences): Map<String, String> {
         val map = mutableMapOf<String, String>()
         sharedPrefs.all.forEach { (key, value) ->
@@ -128,6 +187,9 @@ object HabayebFinancialCalculator {
         return map
     }
 
+    /**
+     * [حساب النتيجة المصفاة باستخدام التفضيلات]:
+     */
     fun calculateFilteredResult(
         uiState: CustomersUiState,
         params: HabayebFilterParameters,
@@ -136,19 +198,26 @@ object HabayebFinancialCalculator {
         return calculateFilteredResult(uiState, params, extractCategoryMap(sharedPrefs))
     }
 
+    /**
+     * [تطبيق الفلترة والفرز والإحصاءات المتقدمة - calculateFilteredResult]:
+     * يمر على العملاء لتطبيق فلاتر البحث، التبويب، والتصنيف، وحساب المجاميع وإحصائيات العدادات.
+     */
     fun calculateFilteredResult(
         uiState: CustomersUiState,
         params: HabayebFilterParameters,
         categoryMap: Map<String, String>
     ): FilteredResult {
-        val normalizedQuery = StringUtils.normalizeArabic(params.query)
+        val normalizedQuery = if (params.query.isNotEmpty()) StringUtils.normalizeArabic(params.query) else ""
         val counts = mutableMapOf<String, Int>()
         var closedCount = 0
+        var activeCustomersCount = 0
 
         var owedByTotal = BigDecimal.ZERO
         var owedToTotal = BigDecimal.ZERO
 
-        val baseFilteredList = ArrayList<CustomerUiState>()
+        val baseFilteredList = ArrayList<CustomerUiState>(uiState.customers.size)
+        val selectedCat = params.selectedCat
+        val isQueryEmpty = normalizedQuery.isEmpty()
 
         for (customerUi in uiState.customers) {
             val isClosed = customerUi.isClosed
@@ -156,22 +225,26 @@ object HabayebFinancialCalculator {
 
             if (isClosed) {
                 closedCount++
-            } else if (linkedCat != null) {
-                counts[linkedCat] = (counts[linkedCat] ?: 0) + 1
+            } else {
+                activeCustomersCount++
+                if (linkedCat != null) {
+                    counts[linkedCat] = (counts[linkedCat] ?: 0) + 1
+                }
             }
 
-            val matchesSelectedCatForTotals = when (params.selectedCat) {
+            val matchesSelectedCatForTotals = when (selectedCat) {
                 null -> !isClosed
                 CATEGORY_CLOSED -> isClosed
-                else -> !isClosed && linkedCat == params.selectedCat
+                else -> !isClosed && linkedCat == selectedCat
             }
 
             if (matchesSelectedCatForTotals) {
                 val bdVal = customerUi.defaultCurrencyTotal
-                if (bdVal.compareTo(BigDecimal.ZERO) > 0) {
+                val cmp = bdVal.compareTo(BigDecimal.ZERO)
+                if (cmp > 0) {
                     owedByTotal = owedByTotal.add(bdVal)
-                } else if (bdVal.compareTo(BigDecimal.ZERO) < 0) {
-                    owedToTotal = owedToTotal.add(bdVal.abs())
+                } else if (cmp < 0) {
+                    owedToTotal = owedToTotal.add(customerUi.defaultCurrencyTotalAbs)
                 }
             }
 
@@ -184,16 +257,15 @@ object HabayebFinancialCalculator {
             }
             if (!matchesTab) continue
 
-            val matchesCategory = when (params.selectedCat) {
+            val matchesCategory = when (selectedCat) {
                 null -> !isClosed
                 CATEGORY_CLOSED -> isClosed
-                else -> !isClosed && linkedCat == params.selectedCat
+                else -> !isClosed && linkedCat == selectedCat
             }
             if (!matchesCategory) continue
 
-            val normalizedName = StringUtils.normalizeArabic(customerUi.name)
-            val matchesSearch = params.query.isEmpty() ||
-                    normalizedName.contains(normalizedQuery, ignoreCase = true) ||
+            val matchesSearch = isQueryEmpty ||
+                    customerUi.normalizedName.contains(normalizedQuery, ignoreCase = true) ||
                     customerUi.phone.contains(params.query, ignoreCase = true)
             if (!matchesSearch) continue
 
@@ -202,28 +274,30 @@ object HabayebFinancialCalculator {
 
         counts[CATEGORY_CLOSED] = closedCount
 
-        val (pinnedList, unpinnedList) = baseFilteredList.partition { params.pinnedIds.contains(it.id) }
-
-        val sortedUnpinned = when {
-            params.finSort != 0 -> {
-                if (params.finSort == 1) unpinnedList.sortedByDescending { it.defaultCurrencyTotal.abs() }
-                else unpinnedList.sortedBy { it.defaultCurrencyTotal.abs() }
+        val finalFilteredList = if (params.pinnedIds.isEmpty()) {
+            when {
+                params.finSort == 1 -> baseFilteredList.sortedByDescending { it.defaultCurrencyTotalAbs }
+                params.finSort == 2 -> baseFilteredList.sortedBy { it.defaultCurrencyTotalAbs }
+                params.histSort == 2 -> baseFilteredList.sortedBy { it.lastTransactionTimestamp }
+                else -> baseFilteredList.sortedByDescending { it.lastTransactionTimestamp }
             }
-            params.histSort != 0 -> {
-                if (params.histSort == 1) unpinnedList.sortedByDescending { it.lastTransactionTimestamp }
-                else unpinnedList.sortedBy { it.lastTransactionTimestamp }
+        } else {
+            val (pinnedList, unpinnedList) = baseFilteredList.partition { params.pinnedIds.contains(it.id) }
+            val sortedUnpinned = when {
+                params.finSort == 1 -> unpinnedList.sortedByDescending { it.defaultCurrencyTotalAbs }
+                params.finSort == 2 -> unpinnedList.sortedBy { it.defaultCurrencyTotalAbs }
+                params.histSort == 2 -> unpinnedList.sortedBy { it.lastTransactionTimestamp }
+                else -> unpinnedList.sortedByDescending { it.lastTransactionTimestamp }
             }
-            else -> unpinnedList.sortedByDescending { it.lastTransactionTimestamp }
+            pinnedList.sortedByDescending { it.lastTransactionTimestamp } + sortedUnpinned
         }
-
-        val finalFilteredList = pinnedList.sortedByDescending { it.lastTransactionTimestamp } + sortedUnpinned
 
         return FilteredResult(
             filteredCustomers = finalFilteredList,
             totalOwedByThem = owedByTotal,
             totalOwedToThem = owedToTotal,
-            categoryCounts = counts
+            categoryCounts = counts,
+            activeCustomersCount = activeCustomersCount
         )
     }
 }
-

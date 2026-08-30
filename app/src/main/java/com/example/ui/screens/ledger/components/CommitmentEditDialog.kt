@@ -1,14 +1,53 @@
 package com.example.ui.screens.ledger.components
 
+/*
+ * =====================================================================================
+ * حوار إنشاء وتعديل الالتزامات المالية (Commitment Edit & Creation Dialog)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * نافذة حوارية منبثقة تفاعلية تتيح للمستخدم إضافة التزام مالي جديد أو تعديل هدف قائم:
+ * 1. تسمح بتسجيل اسم الالتزام (مثال: إيجار، قسط، ديون مستحقة) والمبلغ المطلوب وتوفير إمكانية تتبع المدخر له.
+ * 2. تدير تدفق التركيز (Keyboard Focus Flow) وتفتح لوحة المفاتيح تلقائياً لتسريع الإدخال.
+ * 3. تستخدم الحسابات المالية الدقيقة BigDecimal للتحقق من صحة المبالغ وتفادي الكسور العشرية العائمة غير المنضبطة.
+ * 4. تدعم التغذية اللمسية الاهتزازية (Haptic Vibration) عند الحفظ الناجح.
+ * =====================================================================================
+ */
+
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,6 +59,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,11 +69,30 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
 import com.example.ui.theme.EmeraldPrimary
 import java.math.BigDecimal
 
+private const val TAG = "CommitmentEditDialog"
+
+/**
+ * لون محتوى زر الحفظ المميز للالتزام المالي.
+ */
+
+/*
+ * =====================================================================================
+ * دالة العرض لحوار إضافة/تعديل الالتزام (CommitmentEditDialog Composable)
+ * -------------------------------------------------------------------------------------
+ * [المُدخلات]:
+ * - showCommitmentDialog: راية للتحكم في ظهور الحوار المنبثق.
+ * - editingCommitment: كائن الالتزام المراد تعديله (إذا كان null فإن الحوار في وضع الإضافة).
+ * - onDismissRequest: رد النداء عند إغلاق أو إلغاء الحوار.
+ * - onSaveCommitment: رد النداء لتمرير بيانات الالتزام بعد التحقق لحفظها بالداتابيز.
+ * - onDeleteCommitment: رد النداء لحذف الالتزام.
+ * =====================================================================================
+ */
 @Composable
 fun CommitmentEditDialog(
     showCommitmentDialog: Boolean,
@@ -61,8 +120,12 @@ fun CommitmentEditDialog(
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     val initialName = editingCommitment?.name ?: ""
-    val initialTarget = editingCommitment?.targetAmount?.let { if (it.compareTo(java.math.BigDecimal.ZERO) > 0) it.toInt().toString() else "" } ?: ""
-    val initialProgress = editingCommitment?.currentProgress?.let { if (it.compareTo(java.math.BigDecimal.ZERO) > 0) it.toInt().toString() else "" } ?: ""
+    val initialTarget = editingCommitment?.targetAmount?.let {
+        if (it.compareTo(BigDecimal.ZERO) > 0) it.stripTrailingZeros().toPlainString() else ""
+    } ?: ""
+    val initialProgress = editingCommitment?.currentProgress?.let {
+        if (it.compareTo(BigDecimal.ZERO) > 0) it.stripTrailingZeros().toPlainString() else ""
+    } ?: ""
 
     var obligationNameTfv by remember(editingCommitment) {
         mutableStateOf(TextFieldValue(text = initialName, selection = TextRange(initialName.length)))
@@ -80,7 +143,7 @@ fun CommitmentEditDialog(
 
     LaunchedEffect(Unit) {
         try {
-            kotlinx.coroutines.delay(150)
+            kotlinx.coroutines.delay(120)
             if (editingCommitment == null) {
                 nameFocus.requestFocus()
             } else {
@@ -88,13 +151,13 @@ fun CommitmentEditDialog(
             }
             keyboardController?.show()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
         }
     }
 
     Dialog(
         onDismissRequest = onDismissRequest,
-        properties = androidx.compose.ui.window.DialogProperties(
+        properties = DialogProperties(
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = true
         )
@@ -102,11 +165,12 @@ fun CommitmentEditDialog(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
                 modifier = modifier
-                    .widthIn(max = 320.dp)
-                    .fillMaxWidth(0.84f)
-                    .clip(RoundedCornerShape(20.dp)),
+                    .widthIn(max = 340.dp)
+                    .fillMaxWidth(0.88f)
+                    .clip(RoundedCornerShape(22.dp)),
                 shadowElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
             ) {
                 Column(
                     modifier = Modifier
@@ -114,125 +178,176 @@ fun CommitmentEditDialog(
                         .navigationBarsPadding()
                         .imePadding()
                         .verticalScroll(rememberScrollState())
-                        .padding(12.dp),
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Sleek, minimal and creative header
+                    // عنوان الحوار
                     Text(
-                        text = if (editingCommitment != null) stringResource(id = R.string.ledger_edit_commitment_title) else stringResource(id = R.string.ledger_add_commitment_title),
-                        fontWeight = FontWeight.ExtraBold,
-                        color = EmeraldPrimary,
-                        fontSize = 14.sp,
+                        text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_title_edit) else stringResource(id = R.string.ledger_commitment_dialog_title_add),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Input fields - Name
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // حقل اسم الالتزام المالي
                     OutlinedTextField(
                         value = obligationNameTfv,
                         onValueChange = { if (editingCommitment == null) obligationNameTfv = it },
                         enabled = (editingCommitment == null),
-                        label = { Text(stringResource(id = R.string.ledger_commitment_name_label), fontSize = 10.sp) },
+                        placeholder = {
+                            Text(
+                                text = "اسم الالتزام (مثال: إيجار، قسط...)",
+                                fontSize = 11.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        },
                         singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldPrimary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f),
-                            disabledBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f),
-                            focusedLabelColor = EmeraldPrimary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(48.dp)
                             .focusRequester(nameFocus),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { targetFocus.requestFocus() }),
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right, fontSize = 12.sp)
+                        textStyle = TextStyle(
+                            textAlign = TextAlign.Right,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     )
 
-                    // Numeric fields side by side to save height and look ultra-modern
+                    // حقول المبالغ: المبلغ المستهدف والمبلغ المتوفر حالياً
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // حقل المبلغ المستهدف
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
                                 value = targetAmtTfv,
                                 onValueChange = { targetAmtTfv = it },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next
+                                ),
                                 keyboardActions = KeyboardActions(onNext = { progressFocus.requestFocus() }),
-                                label = { Text(stringResource(id = R.string.ledger_commitment_target_amount_label), fontSize = 10.sp) },
+                                placeholder = {
+                                    Text(
+                                        text = "المبلغ المستهدف",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
                                 singleLine = true,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = EmeraldPrimary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f),
-                                    focusedLabelColor = EmeraldPrimary,
-                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .height(48.dp)
                                     .focusRequester(targetFocus),
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 12.sp)
+                                textStyle = TextStyle(
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             )
                         }
 
+                        // حقل المبلغ المتوفر حالياً (اختياري)
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
                                 value = progressAmtTfv,
                                 onValueChange = { progressAmtTfv = it },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
+                                ),
                                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                                label = { Text(stringResource(id = R.string.ledger_commitment_current_progress_label), fontSize = 10.sp) },
+                                placeholder = {
+                                    Text(
+                                        text = "المتوفر (اختياري)",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
                                 singleLine = true,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = EmeraldPrimary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f),
-                                    focusedLabelColor = EmeraldPrimary,
-                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .height(48.dp)
                                     .focusRequester(progressFocus),
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 12.sp)
+                                textStyle = TextStyle(
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                    // Highly polished Cancel/Save action buttons (balanced and compact)
+                    // أزرار الإجراءات: حفظ وإلغاء
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // زر الإلغاء
                         OutlinedButton(
                             onClick = onDismissRequest,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(38.dp),
+                                .height(40.dp),
                             contentPadding = PaddingValues(vertical = 0.dp)
                         ) {
                             Text(
-                                text = stringResource(id = R.string.common_cancel),
+                                text = "إلغاء",
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.sp
+                                fontSize = 12.5.sp
                             )
                         }
 
+                        // زر الحفظ
                         Button(
                             onClick = {
                                 val tar = targetAmtStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -242,18 +357,18 @@ fun CommitmentEditDialog(
                                     onSaveCommitment(obligationName, tar, prg)
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
-                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
-                                .weight(1.2f)
-                                .height(38.dp),
+                                .weight(1.3f)
+                                .height(40.dp),
                             contentPadding = PaddingValues(vertical = 0.dp)
                         ) {
                             Text(
-                                text = stringResource(id = R.string.ledger_save_commitment_btn),
-                                color = Color.White,
+                                text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_save_edit) else stringResource(id = R.string.ledger_commitment_dialog_save_goal),
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                fontSize = 12.5.sp
                             )
                         }
                     }
@@ -262,3 +377,4 @@ fun CommitmentEditDialog(
         }
     }
 }
+

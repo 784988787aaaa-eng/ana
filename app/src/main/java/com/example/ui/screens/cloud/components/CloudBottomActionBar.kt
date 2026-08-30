@@ -1,0 +1,126 @@
+package com.example.ui.screens.cloud.components
+
+/*
+ * =====================================================================================
+ * حزمة شريط الإجراءات السفلي للسحابة (Cloud Bottom Action Bar Component Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على شريط الأزرار التفاعلي المثبت أسفل نافذة النسخ الاحتياطي السحابي:
+ * - زر رفع وحفظ نسخة احتياطية سحابية فورية جديدة إلى Google Drive (الوضع العادي).
+ * - زر حذف العناصر المحددة مع عداد العناصر المختارة (وضع التحديد المتعدد).
+ * =====================================================================================
+ */
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.R
+import com.example.ui.theme.EmeraldPrimary
+
+/*
+ * =====================================================================================
+ * شريط الإجراءات السفلي للسحابة (CloudBottomActionBar)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * شريط أزرار مثبت أسفل الورقة السحابية يدعم التبديل الذكي بين وضعي العمل:
+ * 1. الوضع الافتراضي: زر أخضر بارز للنسخ الاحتياطي الفوري ورفع قاعدة البيانات الحالية.
+ * 2. وضع التحديد: زر أحمر بارز لحذف النسخ السحابية المحددة مع إظهار عدد العناصر.
+ *
+ * [المُدخلات]:
+ * - isSelectionMode: هل وضع التحديد المتعدد مفعل.
+ * - selectedCount: عدد النسخ السحابية المحددة حالياً.
+ * - onMultiDeleteClick: رد نداء عند الضغط على زر الحذف المتعدد.
+ * - onInstantBackupClick: رد نداء عند الضغط على زر النسخ الاحتياطي الفوري.
+ * =====================================================================================
+ */
+@Composable
+fun CloudBottomActionBar(
+    isSelectionMode: Boolean,
+    selectedCount: Int,
+    onMultiDeleteClick: () -> Unit,
+    onInstantBackupClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+            )
+            .padding(16.dp)
+    ) {
+        if (isSelectionMode && selectedCount > 0) {
+            // زر الحذف الجماعي للعناصر المحددة
+            Button(
+                onClick = onMultiDeleteClick,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("multi_delete_cloud_backups_button")
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(20.dp))
+                    Text(
+                        text = stringResource(R.string.cloud_btn_delete_count, selectedCount),
+                        color = MaterialTheme.colorScheme.onError,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        } else {
+            // زر رفع نسخة احتياطية سحابية جديدة الآن
+            Button(
+                onClick = onInstantBackupClick,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("backup_to_cloud_now_button")
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CloudUpload, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
+                    Text(
+                        text = stringResource(R.string.cloud_btn_backup_now),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+

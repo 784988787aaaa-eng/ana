@@ -1,5 +1,16 @@
 package com.example.ui.screens.habayeb.components
 
+/*
+ * =====================================================================================
+ * حزمة مدير نوافذ سجل الحركات (Customer History Dialogs Manager Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الفئة على مدير النوافذ الحوارية لشاشة كشف حساب وسجل حركات العميل:
+ * - تنسيق حالة النوافذ المنبثقة المتعددة (حذف العميل، تعديل الاسم، إضافة/تعديل حركة، خيارات الحركة، التكرار التلقائي، التصفية، وأسعار الصرف).
+ * - معالجة عمليات الحذف الفردي والجماعي وتحديث السجلات والجدولة الدورية.
+ * - التنسيق مع ViewModel ومساعدي المشاركة (WhatsApp / SMS).
+ * =====================================================================================
+ */
+
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -12,15 +23,23 @@ import com.example.data.local.entities.HabayebTransaction
 import com.example.ui.screens.habayeb.utils.CustomerShareHelper
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.example.ui.screens.habayeb.utils.HabayebRecurringManager
+import com.example.ui.viewmodel.FinanceConstants
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import java.math.BigDecimal
 
+/*
+ * =====================================================================================
+ * فئة بيانات حالة نوافذ سجل الحركات (CustomerHistoryDialogState)
+ * -------------------------------------------------------------------------------------
+ * كائن حالة جامع يتحكم في فتح وإغلاق كل نافذة حوارية وتمرير البيانات الخاصة بها.
+ * =====================================================================================
+ */
 data class CustomerHistoryDialogState(
     val confirmDeleteCust: Boolean = false,
     val showEditNameDialog: Boolean = false,
     val editingTransactionForDialog: HabayebTransaction? = null,
     val showAddTransactionDialogFromHistory: HabayebCustomer? = null,
-    val defaultTransactionTypeFromHistory: String = "OWED_BY_THEM",
+    val defaultTransactionTypeFromHistory: String = FinanceConstants.TYPE_OWED_BY_THEM,
     val transactionForOptionsDialog: HabayebTransaction? = null,
     val transactionForAutoRepeatDialog: HabayebTransaction? = null,
     val showDeleteBulkTxConfirmDialog: Boolean = false,
@@ -33,12 +52,36 @@ data class CustomerHistoryDialogState(
     val exchangeTxToModify: HabayebTransaction? = null
 )
 
+/*
+ * =====================================================================================
+ * مدير نوافذ سجل الحركات (CustomerHistoryDialogsManager)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف]:
+ * مكون منظم يعرض النوافذ الحوارية المناسبة بناءً على كائن `dialogState` لتفادي تشابك الشيفرات داخل الشاشة الرئيسية.
+ *
+ * [المُدخلات]:
+ * - activeCustomer: بيانات العميل المفتوح حالياً.
+ * - viewModel: نموذج العرض لإجراء العمليات المالية وقواعد البيانات.
+ * - currencySymbol: رمز العملة الأساسية.
+ * - netDebt: صافي الرصيد الحالي للعميل.
+ * - activeThemeColor / activeSubColor: ألوان السمة النشطة.
+ * - dialogState: كائن حالة ظهور النوافذ الحوارية.
+ * - onDialogStateChange: رد نداء لتحديث حالة النوافذ.
+ * - onCustomerDeleted: رد نداء عند حذف العميل بالكامل للرجوع للشاشة السابقة.
+ * - selectedTxIds: قائمة الحركات المحددة جماعياً.
+ * - onIsTxMultiSelectActiveChange: تحديث تفعيل التحديد الجماعي.
+ * - activeRecurringTxIds: مجموعة معرفات الحركات التي تملك تكراراً دورياً نشطاً.
+ * - txSequenceNumbers: خريطة تسلسل أرقام الحركات المالية.
+ * - onRefreshRecurringTrigger: رد نداء لتحديث مشغل التكرار الدوري.
+ * - allCustomerTxs: جميع حركات العميل المتاحة.
+ * =====================================================================================
+ */
 @Composable
 fun CustomerHistoryDialogsManager(
     activeCustomer: HabayebCustomer,
     viewModel: HabayebFinanceViewModel,
     currencySymbol: String,
-    netDebt: Double,
+    netDebt: BigDecimal = BigDecimal.ZERO,
     activeThemeColor: Color,
     activeSubColor: Color,
     dialogState: CustomerHistoryDialogState,
@@ -107,8 +150,9 @@ fun CustomerHistoryDialogsManager(
     if (dialogState.transactionForOptionsDialog != null) {
         val optTx = dialogState.transactionForOptionsDialog
         val isRecurringOriginal = optTx.id in activeRecurringTxIds
-        val parentSeq = if (!optTx.linkedMainTxId.isNullOrBlank() && !optTx.linkedMainTxId.equals("null", ignoreCase = true) && optTx.linkedMainTxId != "0" && optTx.linkedMainTxId != optTx.id) {
-            txSequenceNumbers[optTx.linkedMainTxId]
+        val cleanLinkedId = optTx.linkedMainTxId?.trim()?.takeIf { it.isNotEmpty() && it != "0" && it != optTx.id }
+        val parentSeq = if (cleanLinkedId != null) {
+            txSequenceNumbers[cleanLinkedId]
         } else null
 
         val onWhatsAppShare = remember(optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) {
@@ -225,7 +269,7 @@ fun CustomerHistoryDialogsManager(
                     exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, targetCurr, targetCurrency, newRate)
                 )
                 viewModel.saveSettings(newSettings)
-                val rateBigDecimal = BigDecimal.valueOf(newRate)
+                val rateBigDecimal = newRate
                 viewModel.updateTransactionExchangeRate(txToModify.id, rateBigDecimal, true)
                 updateState { it.copy(showRateModifyDialog = false, exchangeTxToModify = null) }
             },

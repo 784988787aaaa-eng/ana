@@ -23,7 +23,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.SoftRed
 import kotlinx.coroutines.delay
 
 @Composable
@@ -58,8 +57,8 @@ fun DangerDeleteButton(onDeleteConfirmed: () -> Unit) {
             .fillMaxWidth()
             .height(50.dp)
             .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, SoftRed, RoundedCornerShape(12.dp))
-            .background(SoftRed.copy(alpha = 0.04f))
+            .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.28f))
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -80,12 +79,12 @@ fun DangerDeleteButton(onDeleteConfirmed: () -> Unit) {
                 .fillMaxHeight()
                 .fillMaxWidth(progress)
                 .align(Alignment.CenterStart)
-                .background(SoftRed.copy(alpha = 0.16f))
+                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.16f))
         )
 
         Text(
             text = if (isPressing) stringResource(R.string.settings_delete_all_data_progress) else stringResource(R.string.settings_delete_all_data),
-            color = SoftRed,
+            color = MaterialTheme.colorScheme.error,
             fontWeight = FontWeight.Bold,
             fontSize = 13.sp,
             textAlign = TextAlign.Center

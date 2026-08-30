@@ -1,6 +1,16 @@
 package com.example.ui.components
 
+/*
+ * =====================================================================================
+ * حزمة عناصر التنقل السفلي العائم (Floating Bottom Navigation Package)
+ * -------------------------------------------------------------------------------------
+ * تحتوي هذه الحزمة على كبسولة التنقل السفلية العائمة (Floating Navigation Pill)
+ * التي تتيح التبديل السريع بلمسة واحدة بين الشاشتين الرئيسيتين (الحبايب ودفتر اليومية).
+ * =====================================================================================
+ */
+
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -8,53 +18,90 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.navigation.Screen
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 
+/*
+ * بادئة وسم انتقال ألوان التبويبات في شريط التنقل السفلي لتحديد الحركة في أدوات المراقبة
+ */
+private const val LABEL_TAB_COLOR_PREFIX = "tab_color_"
+
+/*
+ * =====================================================================================
+ * شريط التنقل السفلي العائم (MainBottomNavigation)
+ * -------------------------------------------------------------------------------------
+ * [الوصف والهدف البصري]:
+ * شريط تنقل سفلي بتصميم كبسولة دائرية عائمة (Floating Segmented Island):
+ * 1. يتمركز في أسفل منتصف الشاشة مع مراعاة هوامش شريط أزرار النظام (Navigation Insets).
+ * 2. يختفي تلقائياً بحركة انزلاق ناعمة عند الانتقال إلى الشاشات الفرعية (الإعدادات، السلة، الأمان).
+ * 3. يدعم الاستجابة اللمسية الاهتزازية (Haptic Feedback) لتعزيز شعور النقر الواقعي.
+ * 4. يبرز التبويب النشط بلون العلامة الأساسي (Primary Color) مع خط عريض.
+ *
+ * [البيانات والمُدخلات]:
+ * - currentScreen: الشاشة الحالية المفتوحة لتحديد التبويب النشط.
+ * - onNavigate: دالة رد النداء لتنفيذ التنقل عند النقر على أي تبويب.
+ * - isVisible: شرط الظهور (يظهر فقط في شاشة الحبايب ودفتر اليومية).
+ * =====================================================================================
+ */
 @Composable
 fun MainBottomNavigation(
     currentScreen: Screen,
     onNavigate: (Screen) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isVisible: Boolean = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER
 ) {
+    /*
+     * ---------------------------------------------------------------------------------
+     * استخراج السياق ومحرك الاهتزاز اللمسي (Context & Haptic Engine)
+     * ---------------------------------------------------------------------------------
+     */
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    // تحديد الشاشات الرئيسية التي يظهر فيها شريط التنقل
-    val isVisible = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER
-
+    /*
+     * تجهيز قائمة عناصر التنقل (الشاشة، الأيقونة، الاسم المعرب)
+     */
     val items = remember(context) {
         listOf(
             Triple(Screen.HABAYEB, Icons.Default.People, context.getString(R.string.nav_habayeb_plain)),
-            Triple(Screen.LEDGER, Icons.Default.AccountBalanceWallet, context.getString(R.string.nav_ledger_plain))
+            Triple(Screen.LEDGER, Icons.Default.MenuBook, context.getString(R.string.nav_ledger_plain))
         )
     }
 
-    // حركة انزلاق واختفاء انسيابية لمنع قفز واجهات التطبيق عند التنقل للشاشات الفرعية
+    /*
+     * ---------------------------------------------------------------------------------
+     * ظهور واختفاء متحرك للشريط (Animated Visibility with Spring Physics)
+     * ---------------------------------------------------------------------------------
+     * يظهر بانزلاق للأعلى مع تلاشٍ وظهور، ويختفي بالانزلاق للأسفل مع خفوت.
+     * ---------------------------------------------------------------------------------
+     */
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInVertically(
@@ -65,92 +112,103 @@ fun MainBottomNavigation(
             targetOffsetY = { it },
             animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
         ) + fadeOut(),
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding() // احترام حواف حماية نظام التشغيل لضمان استقرار الإيماءات
+        modifier = modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp, start = 32.dp, end = 32.dp), // مساحة جانبية لجعله رصيفاً عائماً مدمجاً
-            contentAlignment = Alignment.Center
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(bottom = 4.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Row(
+            /*
+             * -------------------------------------------------------------------------
+             * حاوية الكبسولة العائمة (Floating Pill Surface)
+             * -------------------------------------------------------------------------
+             * سطح دائري الحواف بظلال ناعمة وإطار خارجي خفيف يطفو فوق محتوى الشاشة.
+             * -------------------------------------------------------------------------
+             */
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(
+                    0.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                ),
+                shadowElevation = 3.dp,
                 modifier = Modifier
-                    .widthIn(max = 280.dp) // تحديد عرض ذكي يمنع تشتت وتمدد التبويبات الثنائية
-                    .height(50.dp) // ارتفاع رشيق ومحكم يوفر مساحة الشاشة الحية
-                    .graphicsLayer {
-                        shadowElevation = 6f
-                        shape = RoundedCornerShape(25.dp)
-                        clip = true
-                    }
-                    .border(
-                        0.5.dp, // تأطير دقيق جداً ناعم المظهر
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                        RoundedCornerShape(25.dp)
-                    )
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)), // اندماج لوني خفيف مع الخلفية
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                    .wrapContentWidth()
+                    .height(50.dp)
             ) {
-                items.forEach { (screen, icon, label) ->
-                    val selected = currentScreen == screen
-                    val interactionSource = remember { MutableInteractionSource() }
-
-                    // تأثير ارتداد نابضي فيزيائي خفيف لتأكيد التفاعل اللمسي
-                    val scaleAnim by animateFloatAsState(
-                        targetValue = if (selected) 1.04f else 1.0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "BottomTabScale"
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .scale(scaleAnim)
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null, // إلغاء التوهج المائي الافتراضي لضمان النقاء البصري
-                                onClick = {
-                                    if (currentScreen != screen) {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onNavigate(screen)
-                                    }
-                                }
-                            ),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = if (selected) {
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .width(230.dp)
+                        .fillMaxHeight(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    items.forEachIndexed { index, (screen, icon, label) ->
+                        val isSelected = currentScreen == screen
+                        /*
+                         * تحريك لون الأيقونة والنص بسلاسة بين الحالة النشطة والخاملة
+                         */
+                        val contentColor by animateColorAsState(
+                            targetValue = if (isSelected) {
                                 MaterialTheme.colorScheme.primary
                             } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                             },
-                            modifier = Modifier.size(20.dp) // تقليص حجم الأيقونة لتتناسب مع الارتفاع الرشيق الجديد
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                            label = "$LABEL_TAB_COLOR_PREFIX$index"
                         )
 
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        /*
+                         * خلية التبويب التفاعلية
+                         */
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clip(CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        if (currentScreen != screen) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            onNavigate(screen)
+                                        }
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            ) {
+                                // أيقونة التبويب
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = label,
+                                    tint = contentColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                // عنوان التبويب
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = contentColor,
+                                    maxLines = 1
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
         }
     }
 }
+

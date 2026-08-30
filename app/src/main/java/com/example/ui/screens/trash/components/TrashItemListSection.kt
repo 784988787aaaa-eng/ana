@@ -62,7 +62,7 @@ fun TrashEmptyView(
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(76.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center
@@ -70,11 +70,11 @@ fun TrashEmptyView(
                 Icon(
                     imageVector = Icons.Outlined.DeleteSweep,
                     contentDescription = null,
-                    modifier = Modifier.size(42.dp),
+                    modifier = Modifier.size(40.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = stringResource(id = R.string.trash_empty_message),
                 fontSize = 16.sp,
@@ -110,6 +110,7 @@ fun TrashItemListSection(
     onRestoreItem: (DeletedItemEntity) -> Unit,
     onPermanentDeleteItem: (DeletedItemEntity) -> Unit,
     onOpenCustomerOverlay: (TrashWrapper) -> Unit,
+    onOpenTransactionDetail: (TrashWrapper) -> Unit = {},
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -136,59 +137,60 @@ fun TrashItemListSection(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 100.dp),
+                    .padding(horizontal = 14.dp),
+                contentPadding = PaddingValues(top = 4.dp, bottom = 90.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(processedItems, key = { it.entity.id }) { wrapper ->
-                val isSelected = selectedItemIds.contains(wrapper.entity.id)
+                    val isSelected = selectedItemIds.contains(wrapper.entity.id)
 
-                TrashItemCard(
-                    item = wrapper.entity,
-                    parsedData = wrapper.parsed,
-                    isSelected = isSelected,
-                    isSelectionMode = isSelectionMode,
-                    onLongClick = { onToggleSelection(wrapper.entity.id) },
-                    onClick = { onToggleSelection(wrapper.entity.id) },
-                    onRestore = { onRestoreItem(wrapper.entity) },
-                    onPermanentDelete = { onPermanentDeleteItem(wrapper.entity) },
-                    onOpenCustomerOverlay = { onOpenCustomerOverlay(wrapper) }
-                )
-            }
+                    TrashItemCard(
+                        item = wrapper.entity,
+                        parsedData = wrapper.parsed,
+                        isSelected = isSelected,
+                        isSelectionMode = isSelectionMode,
+                        onLongClick = { onToggleSelection(wrapper.entity.id) },
+                        onClick = { onToggleSelection(wrapper.entity.id) },
+                        onRestore = { onRestoreItem(wrapper.entity) },
+                        onPermanentDelete = { onPermanentDeleteItem(wrapper.entity) },
+                        onOpenCustomerOverlay = { onOpenCustomerOverlay(wrapper) },
+                        onOpenTransactionDetail = { onOpenTransactionDetail(wrapper) }
+                    )
+                }
 
-            if (totalFilteredCount > itemsLimit) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Button(
-                            onClick = onLoadMore,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                contentColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                if (totalFilteredCount > itemsLimit) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowDownward,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(id = R.string.trash_show_more_remaining, totalFilteredCount - itemsLimit),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Button(
+                                onClick = onLoadMore,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDownward,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(id = R.string.trash_show_more_remaining, totalFilteredCount - itemsLimit),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
 }

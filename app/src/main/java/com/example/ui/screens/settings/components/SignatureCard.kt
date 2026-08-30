@@ -30,57 +30,12 @@ import com.example.R
 fun SignatureCard() {
     val contextForSig = LocalContext.current
     val clipboardSigManager = androidx.compose.ui.platform.LocalClipboardManager.current
-    val sha1Fingerprint = remember {
-        try {
-            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                contextForSig.packageManager.getPackageInfo(
-                    contextForSig.packageName,
-                    android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SIGNATURES.toLong())
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                contextForSig.packageManager.getPackageInfo(
-                    contextForSig.packageName,
-                    android.content.pm.PackageManager.GET_SIGNATURES
-                )
-            }
-            val signatures = @Suppress("DEPRECATION") packageInfo.signatures
-            if (signatures != null && signatures.isNotEmpty()) {
-                val md = java.security.MessageDigest.getInstance("SHA-1")
-                val publicKey = md.digest(signatures[0].toByteArray())
-                publicKey.joinToString(":") { String.format("%02X", it) }
-            } else {
-                contextForSig.getString(R.string.settings_signature_unavailable)
-            }
-        } catch (e: Exception) {
-            contextForSig.getString(R.string.settings_signature_unavailable)
-        }
+    // تم فصل الحسابات التقنية عن واجهة العرض للحفاظ على مسؤولية كل طبقة.
+    val sha1Fingerprint = remember(contextForSig) {
+        SignatureFingerprintCalculator.getSha1Fingerprint(contextForSig)
     }
-    val sha256Fingerprint = remember {
-        try {
-            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                contextForSig.packageManager.getPackageInfo(
-                    contextForSig.packageName,
-                    android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SIGNATURES.toLong())
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                contextForSig.packageManager.getPackageInfo(
-                    contextForSig.packageName,
-                    android.content.pm.PackageManager.GET_SIGNATURES
-                )
-            }
-            val signatures = @Suppress("DEPRECATION") packageInfo.signatures
-            if (signatures != null && signatures.isNotEmpty()) {
-                val md = java.security.MessageDigest.getInstance("SHA-256")
-                val publicKey = md.digest(signatures[0].toByteArray())
-                publicKey.joinToString(":") { String.format("%02X", it) }
-            } else {
-                contextForSig.getString(R.string.settings_signature_unavailable)
-            }
-        } catch (e: Exception) {
-            contextForSig.getString(R.string.settings_signature_unavailable)
-        }
+    val sha256Fingerprint = remember(contextForSig) {
+        SignatureFingerprintCalculator.getSha256Fingerprint(contextForSig)
     }
 
     ElevatedCard(

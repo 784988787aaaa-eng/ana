@@ -67,7 +67,7 @@ fun RevalueConfirmDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text(stringResource(id = R.string.currency_update_past_future), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.currency_update_past_future), color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

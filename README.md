@@ -1,21 +1,45 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# الدفتر الذكي | Smart Ledger
 
-# Run and deploy your AI Studio app
+تطبيق أندرويد متكامل واحترافي لإدارة الميزانية الشخصية، المصروفات والإيرادات اليومية، ومتابعة ديون وحسابات العملاء (حبايب) بدقة متناهية ودعم تعدد العملات مع نظام نسخ احتياطي سحابي ومحلي مشفر.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/03451cbf-cb35-43a7-affd-eb8e1970a452
+## ✨ المميزات الرئيسية
 
-## Run Locally
+- **📊 دفتر الميزانية والمالية:** إدارة المعاملات اليومية، تصنيف المصروفات والإيرادات، وتتبع الالتزامات الثابتة بدقة حسابية عالية عبر `BigDecimal`.
+- **👥 نظام ديون حبايب:** تتبع مستحقاتك والتزاماتك المالية مع العملاء والأصدقاء، مع دعم كامل للعملات المتعددة وأسعار الصرف اللحظية.
+- **📑 تقارير مالية شاملة:** تصدير كشوفات الحسابات والتقارير بصيغ **PDF** و **Excel (XLSX)** و **CSV** جاهزة للطباعة والمشاركة الفورية عبر واتساب والرسائل.
+- **🔒 الأمان والخصوصية:** حماية التطبيق بقفل البصمة ورمز المرور (PIN)، مع تشفير محلي كامل لقاعدة البيانات دون إرسال أي بيانات لأطراف خارجية.
+- **☁️ النسخ الاحتياطي والمزامنة:** دعم النسخ الاحتياطي المشفر محلياً وسحابياً عبر Google Drive، مع نظام استعادة ذري يمنع فقدان أي بيانات.
+- **🗑️ سلة المحذوفات الذكية:** استرجاع أي معاملة أو حساب تم حذفه بالخطأ بضغطة زر واحدة.
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+---
 
+## 🛠️ البنية التقنية (Tech Stack)
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+- **لغة البرمجة:** Kotlin
+- **واجهة المستخدم:** Jetpack Compose & Material Design 3 (M3)
+- **قاعدة البيانات المحلية:** Android Room Database (Offline-First Architecture)
+- **إدارة الخيوط والتدفقات:** Kotlin Coroutines & StateFlow
+- **الحسابات المالية:** معالجة بنكية دقيقة باستخدام `java.math.BigDecimal`
+- **التصدير والتقارير:** محرك مخصص لتوليد مستندات PDF وجداول OpenXML Excel
+
+---
+
+## 🚀 التشغيل والتطوير المحلي (Local Development)
+
+### المتطلبات الأساسية
+- **[Android Studio](https://developer.android.com/studio)** (الإصدار الحديث الموصى به: Ladybug أو أحدث)
+- **JDK 17** أو أحدث
+- جهاز اختبار حقيقي أو محاكي Android (يدعم Android 8.0 / API 26 وما فوق)
+
+### خطوات التشغيل
+1. افتح تطبيق **Android Studio**.
+2. اختر **Open** وحدد المجلد الجذري للمشروع.
+3. انتظر اكتمال مزامنة Gradle (Sync Project with Gradle Files).
+4. اضغط على **Run 'app'** لتثبيت وتشغيل التطبيق على المحاكي أو جهازك الشخصي.
+
+---
+
+## 📄 الترخيص والدعم
+تم تطوير التطبيق وفق أعلى معايير الجودة وهندسة البرمجيات لتوفير تجربة مستخدم موثوقة وآمنة تماماً لإدارة الأموال.
