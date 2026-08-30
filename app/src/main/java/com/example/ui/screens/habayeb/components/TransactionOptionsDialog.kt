@@ -130,7 +130,7 @@ fun TransactionOptionsDialog(
                     .fillMaxWidth(0.95f)
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 8.dp,
                 shadowElevation = 8.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)

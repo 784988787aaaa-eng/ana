@@ -27,7 +27,7 @@ fun BackupResetConfirmationFlow(
     if (currentStep == 1) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = RoundedCornerShape(20.dp),
             title = {
                 Text(
@@ -73,7 +73,7 @@ fun BackupResetConfirmationFlow(
     } else if (currentStep == 2) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = RoundedCornerShape(20.dp),
             title = {
                 Text(

@@ -145,7 +145,7 @@ fun SearchLedgerDialog(
         // بطاقة الحوار ذات الحواف المنحنية والألوان المتناسقة مع ثيم التطبيق
         Card(
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 620.dp)
@@ -285,7 +285,7 @@ fun SearchResultItem(
         // بطاقة تفاصيل الحركة المالية
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Row(

@@ -129,7 +129,14 @@ fun MainAppLayout(
     }
 
     var showComprehensiveReportDialog by remember { mutableStateOf(false) }
-    var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
+    val initialStartScreen = remember(defaultStartDest) {
+        try {
+            Screen.valueOf(defaultStartDest)
+        } catch (e: Exception) {
+            Screen.HABAYEB
+        }
+    }
+    var currentScreen by remember { mutableStateOf(initialStartScreen) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
 
     /*
@@ -137,10 +144,13 @@ fun MainAppLayout(
      */
     LaunchedEffect(defaultStartDest) {
         if (!hasInitializedStartScreen) {
-            currentScreen = try {
+            val targetScreen = try {
                 Screen.valueOf(defaultStartDest)
             } catch (e: Exception) {
                 Screen.HABAYEB
+            }
+            if (currentScreen != targetScreen) {
+                currentScreen = targetScreen
             }
             hasInitializedStartScreen = true
         }

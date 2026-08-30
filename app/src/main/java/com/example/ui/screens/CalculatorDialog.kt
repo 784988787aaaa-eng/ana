@@ -273,10 +273,10 @@ fun CalculatorDialog(
                     when {
                         isIncomeTheme -> com.example.ui.theme.CreditContainerDark
                         isExpenseTheme -> com.example.ui.theme.DebtContainerDark
-                        else -> MaterialTheme.colorScheme.surface
+                        else -> MaterialTheme.colorScheme.surfaceContainerHigh
                     }
                 } else {
-                    MaterialTheme.colorScheme.surface
+                    MaterialTheme.colorScheme.surfaceContainerHigh
                 }
                 
                 val displayBorderColor = when {

@@ -123,7 +123,7 @@ fun CustomerDeleteConfirmationDialog(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(20.dp)
     )
 }
@@ -221,7 +221,7 @@ fun CustomerEditDialog(
                     .imePadding(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
             ) {

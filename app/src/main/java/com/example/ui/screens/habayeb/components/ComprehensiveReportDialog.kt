@@ -156,7 +156,7 @@ fun ComprehensiveReportDialog(
                     .wrapContentHeight()
                     .padding(16.dp),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp
             ) {
                 Column(

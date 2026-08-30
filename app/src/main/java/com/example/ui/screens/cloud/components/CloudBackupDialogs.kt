@@ -48,7 +48,7 @@ fun CloudOngoingActionDialog(ongoingActionMessage: String) {
     Dialog(onDismissRequest = {}) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
@@ -94,7 +94,7 @@ fun CloudRestoreConfirmDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(20.dp),
         title = {
             Text(
@@ -179,7 +179,7 @@ fun CloudDeleteConfirmDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(20.dp),
         title = {
             Text(
@@ -260,7 +260,7 @@ fun CloudMultiDeleteConfirmDialog(
     val selectedCount = selectedFileIds.size
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(20.dp),
         title = {
             Text(

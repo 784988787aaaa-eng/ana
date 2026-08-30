@@ -136,14 +136,14 @@ fun CustomDateRangePickerContent(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.94f)
                     .padding(horizontal = 4.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Column(

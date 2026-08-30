@@ -115,8 +115,8 @@ fun MainLedgerView(
         when (appSettingsState.themeMode) { 1 -> false; 2 -> true; else -> systemDark }
     }
     if (!view.isInEditMode) {
-        SideEffect {
-            val window = (context as? Activity)?.window ?: return@SideEffect
+        LaunchedEffect(isDark) {
+            val window = (context as? Activity)?.window ?: return@LaunchedEffect
             window.statusBarColor = android.graphics.Color.TRANSPARENT
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
             val insetsController = WindowCompat.getInsetsController(window, view)

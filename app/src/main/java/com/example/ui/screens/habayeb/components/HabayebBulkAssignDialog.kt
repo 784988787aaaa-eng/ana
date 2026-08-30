@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -92,7 +93,9 @@ fun HabayebBulkAssignDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.habayeb_bulk_assign_cancel), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(20.dp)
     )
 }
 

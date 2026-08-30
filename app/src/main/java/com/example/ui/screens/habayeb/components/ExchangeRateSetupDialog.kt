@@ -380,8 +380,8 @@ fun ExchangeRateSetupDialog(
                 .imePadding()
                 .shadow(8.dp, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.12f))
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             ExchangeRateSetupContent(
                 selectedCurrency = selectedCurrency,

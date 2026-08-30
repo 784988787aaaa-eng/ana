@@ -223,7 +223,7 @@ fun CustomerHistoryOverlay(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surface,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     shadowElevation = 1.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {

@@ -199,7 +199,7 @@ fun CurrencySettingsDialog(
                 bottomStart = 6.dp
             ),
             border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
         ) {
             Column(

@@ -120,8 +120,8 @@ fun CustomerItemRow(
 
     val containerColor = when {
         isSelected -> if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-        isHighlighted -> if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-        else -> MaterialTheme.colorScheme.surface
+        isHighlighted -> if (isDark) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh
+        else -> MaterialTheme.colorScheme.surfaceContainer
     }
 
     val cardBorder = when {

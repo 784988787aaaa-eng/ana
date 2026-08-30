@@ -10,69 +10,85 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.graphics.Color
 
-private val ThemeWhite = Color.White
-private val ThemeDarkContent = Color(0xFF171522)
-
+// Mizan Light Color Scheme - Standardized M3 Roles
 private val MizanLightColorScheme = lightColorScheme(
     primary = EmeraldPrimary,
-    onPrimary = ThemeWhite,
-    primaryContainer = Color(0xFFEDE9FF),
-    onPrimaryContainer = Color(0xFF28155F),
+    onPrimary = TokenWhite,
+    primaryContainer = PrimaryContainerLight,
+    onPrimaryContainer = OnPrimaryContainerLight,
+    inversePrimary = EmeraldLight,
     secondary = CoralAccent,
-    onSecondary = ThemeWhite,
-    secondaryContainer = Color(0xFFDDF3F7),
-    onSecondaryContainer = Color(0xFF063542),
+    onSecondary = TokenWhite,
+    secondaryContainer = SecondaryContainerLight,
+    onSecondaryContainer = OnSecondaryContainerLight,
     tertiary = CreditGreen,
-    onTertiary = ThemeWhite,
+    onTertiary = TokenWhite,
     tertiaryContainer = CreditContainerLight,
-    onTertiaryContainer = Color(0xFF14532D),
+    onTertiaryContainer = OnTertiaryContainerLight,
     error = DebtRed,
-    onError = ThemeWhite,
+    onError = TokenWhite,
     errorContainer = DebtContainerLight,
-    onErrorContainer = Color(0xFF7F1D1D),
+    onErrorContainer = OnErrorContainerLight,
     background = IvoryBackground,
-    surface = LightSurface,
-    surfaceVariant = Color(0xFFF1EFF5),
     onBackground = TextPrimaryLight,
+    surface = LightSurface,
     onSurface = TextPrimaryLight,
+    surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = TextSecondaryLight,
+    surfaceTint = EmeraldPrimary,
+    inverseSurface = DarkSurface,
+    inverseOnSurface = TextPrimaryDark,
     outline = BorderLight,
-    outlineVariant = Color(0xFFE9E5EF),
-    surfaceContainer = LightSurface,
-    surfaceContainerHigh = Color(0xFFF4F1F8),
-    surfaceContainerLow = LightSurface
+    outlineVariant = OutlineVariantLight,
+    scrim = TokenScrim,
+    surfaceContainerLowest = SurfaceContainerLowestLight,
+    surfaceContainerLow = SurfaceContainerLowLight,
+    surfaceContainer = SurfaceContainerLight,
+    surfaceContainerHigh = SurfaceContainerHighLight,
+    surfaceContainerHighest = SurfaceContainerHighestLight,
+    surfaceDim = SurfaceDimLight,
+    surfaceBright = SurfaceBrightLight
 )
 
+// Mizan Dark Color Scheme - High-Contrast Distinguishable Surfaces
 private val MizanDarkColorScheme = darkColorScheme(
     primary = EmeraldDark,
-    onPrimary = ThemeWhite,
-    primaryContainer = Color(0xFF2A2540),
-    onPrimaryContainer = Color(0xFFE9E3F7),
+    onPrimary = TokenWhite,
+    primaryContainer = PrimaryContainerDark,
+    onPrimaryContainer = OnPrimaryContainerDark,
+    inversePrimary = EmeraldPrimary,
     secondary = CoralDark,
-    onSecondary = ThemeDarkContent,
-    secondaryContainer = Color(0xFF1A3036),
-    onSecondaryContainer = Color(0xFFD0E9EE),
+    onSecondary = TokenWhite,
+    secondaryContainer = SecondaryContainerDark,
+    onSecondaryContainer = OnSecondaryContainerDark,
     tertiary = CreditGreenDark,
-    onTertiary = ThemeDarkContent,
+    onTertiary = TokenWhite,
     tertiaryContainer = CreditContainerDark,
-    onTertiaryContainer = Color(0xFFB6E4C8),
+    onTertiaryContainer = OnTertiaryContainerDark,
     error = DebtRedDark,
-    onError = ThemeDarkContent,
+    onError = TokenWhite,
     errorContainer = DebtContainerDark,
-    onErrorContainer = Color(0xFFF0C3C8),
+    onErrorContainer = OnErrorContainerDark,
     background = DarkBackground,
-    surface = DarkSurface,
-    surfaceVariant = Color(0xFF1D1A25),
     onBackground = TextPrimaryDark,
+    surface = DarkSurface,
     onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = TextSecondaryDark,
+    surfaceTint = EmeraldDark,
+    inverseSurface = LightSurface,
+    inverseOnSurface = TextPrimaryLight,
     outline = BorderDark,
-    outlineVariant = Color(0xFF2E2937),
-    surfaceContainer = DarkSurface,
-    surfaceContainerHigh = Color(0xFF1E1B27),
-    surfaceContainerLow = Color(0xFF121117)
+    outlineVariant = OutlineVariantDark,
+    scrim = TokenScrim,
+    surfaceContainerLowest = SurfaceContainerLowestDark,
+    surfaceContainerLow = SurfaceContainerLowDark,
+    surfaceContainer = SurfaceContainerDark,
+    surfaceContainerHigh = SurfaceContainerHighDark,
+    surfaceContainerHighest = SurfaceContainerHighestDark,
+    surfaceDim = SurfaceDimDark,
+    surfaceBright = SurfaceBrightDark
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +99,7 @@ fun MizanTheme(
 ) {
     val targetColorScheme = if (darkTheme) MizanDarkColorScheme else MizanLightColorScheme
     val customRippleConfiguration = RippleConfiguration(
-        color = if (darkTheme) ThemeWhite.copy(alpha = 0.12f) else EmeraldPrimary.copy(alpha = 0.12f)
+        color = if (darkTheme) RippleDark else RippleLight
     )
 
     CompositionLocalProvider(
@@ -104,3 +120,4 @@ fun AppTheme(
 ) {
     MizanTheme(darkTheme = darkTheme, content = content)
 }
+

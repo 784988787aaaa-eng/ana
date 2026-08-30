@@ -45,6 +45,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -157,8 +159,12 @@ fun HabayebScreen(
     var isMultiSelectActive by remember { mutableStateOf(false) }
     var isHistoryTxMultiSelectActive by remember { mutableStateOf(false) }
 
-    LaunchedEffect(selectedCustomerIds.toList()) {
-        viewModel.updateSelectedCustomerIds(selectedCustomerIds.toList())
+    LaunchedEffect(Unit) {
+        snapshotFlow { selectedCustomerIds.toList() }
+            .distinctUntilChanged()
+            .collect { list ->
+                viewModel.updateSelectedCustomerIds(list)
+            }
     }
 
     // إدارة الحوار المنبثق النشط والعميل المفتوح كشف حسابه

@@ -83,11 +83,11 @@ fun CustomerTransactionRow(
     }
 
     val rowBgColor = if (isSelected) {
-        activeThemeColor.copy(alpha = if (isDark) 0.20f else 0.12f)
+        if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     } else {
-        MaterialTheme.colorScheme.surface
+        MaterialTheme.colorScheme.surfaceContainer
     }
-    val borderColor = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val borderColor = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
 
     val onCardClick = remember(tx, isTxMultiSelectActive, onSelectToggle, onOptionsClick) {
         {

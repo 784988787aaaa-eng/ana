@@ -116,10 +116,10 @@ fun HabayebFilterToolbar(
     val itemWidths = remember { mutableStateMapOf<String, Float>() }
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val surfaceContainer = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
-    val neutralWhite = MaterialTheme.colorScheme.surface
+    val surfaceContainer = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer
+    val neutralWhite = MaterialTheme.colorScheme.surfaceContainerHigh
     val textPrimary = MaterialTheme.colorScheme.onSurface
-    val backgroundLight = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val backgroundLight = MaterialTheme.colorScheme.outlineVariant
 
     Column(
         modifier = modifier

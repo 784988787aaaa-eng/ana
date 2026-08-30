@@ -177,7 +177,7 @@ fun AddCustomerPopup(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                 modifier = Modifier
                     .widthIn(max = 350.dp)
                     .fillMaxWidth(0.94f)

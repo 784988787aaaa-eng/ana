@@ -121,8 +121,8 @@ fun WelcomeOnboardingDialog(
         label = LABEL_BUTTON_SCALE
     )
 
-    val cardBg = MaterialTheme.colorScheme.surface
-    val itemBg = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val itemBg = MaterialTheme.colorScheme.surfaceContainer
     val itemBorder = MaterialTheme.colorScheme.outlineVariant
     val primaryColor = MaterialTheme.colorScheme.primary
 

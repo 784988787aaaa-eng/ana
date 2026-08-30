@@ -187,7 +187,7 @@ fun BusinessProfileDialog(
                 .imePadding()
                 .animateContentSize(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             shape = RoundedCornerShape(24.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)

@@ -135,9 +135,9 @@ fun RecurringTransactionPopup(
                     .heightIn(max = 520.dp)
                     .imePadding(),
                 shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()

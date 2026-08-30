@@ -7,15 +7,62 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// Mizan Al-Dar Color Palette - Styled with the premium Violet & Neon Cyan "الدفتر الذكي" Palette
+// Mizan Al-Dar Design System Color Palette - Single Source of Truth
+// Styled with the premium Violet & Neon Cyan "الدفتر الذكي" Palette
+
+// Absolute Base Tokens
+val TokenWhite = Color(0xFFFFFFFF)
+val TokenBlack = Color(0xFF000000)
+val TokenTransparent = Color(0x00000000)
+val TokenScrim = Color(0xFF000000)
+
+// Brand Core Tokens
 val EmeraldPrimary = Color(0xFF5B46B8)      // Premium violet tuned to the app icon, with reduced blue intensity
 val EmeraldLight = Color(0xFF8F82E6)        // Soft lavender companion for accessible gradients
 val CoralAccent = Color(0xFF247E9D)         // Filtered cyan-blue accent: calmer and less visually aggressive
 
-// Dark-mode accents intentionally use lower luminance and lower saturation to avoid neon/glow fatigue.
-val EmeraldDark = Color(0xFF6F63B4)      // Quiet violet aligned with the app icon without neon intensity
-val CoralDark = Color(0xFF4B8290)        // Muted cyan-teal companion for dark mode
-val IvoryBackground = Color(0xFFF8F7FB)     // Solid high-contrast background (#F8F9FA)
+// Dark-mode accents tuned with +7-10% saturation and luminance for enhanced contrast & clarity
+val EmeraldDark = Color(0xFF7E70D0)      // Luminous violet aligned with brand identity
+val CoralDark = Color(0xFF3BA2BA)        // Radiant cyan-teal companion for dark mode
+val IvoryBackground = Color(0xFFF5F4FA)     // Solid high-contrast background (#F5F4FA)
+
+// Material 3 Container & Variant Tokens - Light Scheme
+val PrimaryContainerLight = Color(0xFFEDE9FF)
+val OnPrimaryContainerLight = Color(0xFF28155F)
+val SecondaryContainerLight = Color(0xFFDDF3F7)
+val OnSecondaryContainerLight = Color(0xFF063542)
+val OnTertiaryContainerLight = Color(0xFF14532D)
+val OnErrorContainerLight = Color(0xFF7F1D1D)
+val SurfaceVariantLight = Color(0xFFECE7F4)
+val OutlineVariantLight = Color(0xFFDBD4E6)
+val SurfaceContainerLowestLight = Color(0xFFFFFFFF)
+val SurfaceContainerLowLight = Color(0xFFFAF9FD)
+val SurfaceContainerLight = Color(0xFFF1EEF8)
+val SurfaceContainerHighLight = Color(0xFFEBE6F3)
+val SurfaceContainerHighestLight = Color(0xFFE4DFEC)
+val SurfaceDimLight = Color(0xFFDDD8E6)
+val SurfaceBrightLight = Color(0xFFFFFFFF)
+
+// Material 3 Container & Variant Tokens - Dark Scheme (Distinctly stepped surface hierarchy)
+val PrimaryContainerDark = Color(0xFF2E274A)
+val OnPrimaryContainerDark = Color(0xFFEDE7FA)
+val SecondaryContainerDark = Color(0xFF16323B)
+val OnSecondaryContainerDark = Color(0xFFCEECF3)
+val OnTertiaryContainerDark = Color(0xFFB6E4C8)
+val OnErrorContainerDark = Color(0xFFF0C3C8)
+val SurfaceVariantDark = Color(0xFF242035)
+val OutlineVariantDark = Color(0xFF3A3450)
+val SurfaceContainerLowestDark = Color(0xFF0A0911)
+val SurfaceContainerLowDark = Color(0xFF181624)
+val SurfaceContainerDark = Color(0xFF1E1B2D)
+val SurfaceContainerHighDark = Color(0xFF28243A)
+val SurfaceContainerHighestDark = Color(0xFF332E49)
+val SurfaceDimDark = Color(0xFF0F0E17)
+val SurfaceBrightDark = Color(0xFF3B3650)
+
+// Ripple Tokens
+val RippleLight = Color(0x1F5B46B8) // EmeraldPrimary with 12% alpha
+val RippleDark = Color(0x1FFFFFFF)  // TokenWhite with 12% alpha
 
 // Financial semantic colors - High Contrast Display Tokens
 val SoftRed = Color(0xFFD32F2F)            // Debt (لنا / مدين) - Vivid Solid Red Light (#D32F2F)
@@ -42,17 +89,17 @@ val SelectionGreen = Color(0xFF10B981)
 val SelectionGreenContainerLight = Color(0xFFE6F4EA)
 val SelectionGreenContainerDark = Color(0xFF152D1F)
 
-val DarkBackground = Color(0xFF0E0D15)     // Deep violet-black background to reduce visual glare
-val DarkSurface = Color(0xFF171522)        // Elevated violet-charcoal surface
+val DarkBackground = Color(0xFF0E0D16)     // Deep violet-black background to reduce visual glare
+val DarkSurface = Color(0xFF1E1B2D)        // Elevated violet-charcoal surface, immediately distinct from background
 val LightSurface = Color(0xFFFFFFFF)       // Clean light surface
 
-val TextPrimaryDark = Color(0xFFE9E6EE)     // Soft near-white for comfortable dark-mode reading
-val TextSecondaryDark = Color(0xFFA8A3B0)   // Calm secondary text for dark mode
+val TextPrimaryDark = Color(0xFFEBE7F2)     // Soft near-white for comfortable dark-mode reading
+val TextSecondaryDark = Color(0xFFAAA4B5)   // Calm secondary text for dark mode
 val TextPrimaryLight = Color(0xFF211D2B)    // Deep dark crisp primary text light
 val TextSecondaryLight = Color(0xFF5F586B)  // Clear legible secondary text light
 
-val BorderDark = Color(0xFF312C3A)          // Quiet, low-glare dark border
-val BorderLight = Color(0xFFE1DDE9)         // Clean light border
+val BorderDark = Color(0xFF352F48)          // Distinct, low-glare dark border
+val BorderLight = Color(0xFFDFD9E8)         // Clean light border
 
 // Modern Pre-allocated Static Gradients (Zero-allocation during recomposition)
 val PrimaryGradient = Brush.linearGradient(
