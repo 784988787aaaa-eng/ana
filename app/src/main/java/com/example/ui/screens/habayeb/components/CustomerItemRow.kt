@@ -141,10 +141,10 @@ fun CustomerItemRow(
     }
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         border = cardBorder,
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted || isSelected) 3.dp else 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted || isSelected) 2.5.dp else 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -156,18 +156,18 @@ fun CustomerItemRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 4.5.dp),
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Right: Quick Add Action Button (+) / Selection Check (40dp circle)
+                // 1. Right: Quick Add Action Button (+) / Selection Check (40dp rounded)
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(
                             if (isSelected) activeThemeColor
-                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
                         )
                         .clickable { onQuickAdd(customer) },
                     contentAlignment = Alignment.Center
@@ -177,19 +177,19 @@ fun CustomerItemRow(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(21.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = stringResource(id = R.string.habayeb_add_tx_button_clean),
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(21.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 // 2. Middle (Weight 1f): Prominent Full Name (15.5sp SemiBold), Date (11sp) & Sleek Foreign Badge
                 Column(
@@ -267,7 +267,7 @@ fun CustomerItemRow(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 // 3. Left: Balance Amount & Currency, Debt Status
                 CustomerDebtSummarySection(

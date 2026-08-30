@@ -104,13 +104,13 @@ fun CustomerDeleteConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = debtRed,
-                    contentColor = MaterialTheme.colorScheme.onError
+                    contentColor = androidx.compose.ui.graphics.Color.White
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.habayeb_delete_yes),
-                    color = MaterialTheme.colorScheme.onError,
+                    color = androidx.compose.ui.graphics.Color.White,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -385,14 +385,17 @@ fun CustomerEditDialog(
                                 isSaving = true
                                 onConfirm(editedNameStr.trim(), editedPhoneStr.trim())
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = activeThemeColor,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.habayeb_save_edit),
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onError
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }

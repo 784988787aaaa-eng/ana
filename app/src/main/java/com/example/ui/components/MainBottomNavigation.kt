@@ -24,6 +24,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.People
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -132,44 +134,48 @@ fun MainBottomNavigation(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
-                    0.5.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    0.75.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 ),
-                shadowElevation = 3.dp,
+                shadowElevation = 4.dp,
                 modifier = Modifier
                     .wrapContentWidth()
-                    .height(50.dp)
+                    .height(52.dp)
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                        .width(230.dp)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .width(240.dp)
                         .fillMaxHeight(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     items.forEachIndexed { index, (screen, icon, label) ->
                         val isSelected = currentScreen == screen
-                        /*
-                         * تحريك لون الأيقونة والنص بسلاسة بين الحالة النشطة والخاملة
-                         */
                         val contentColor by animateColorAsState(
                             targetValue = if (isSelected) {
                                 MaterialTheme.colorScheme.primary
                             } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             },
                             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                             label = "$LABEL_TAB_COLOR_PREFIX$index"
                         )
+                        val tabBgColor by animateColorAsState(
+                            targetValue = if (isSelected) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                            } else {
+                                Color.Transparent
+                            },
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                            label = "tab_bg_$index"
+                        )
 
-                        /*
-                         * خلية التبويب التفاعلية
-                         */
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(22.dp))
+                                .background(tabBgColor)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -187,7 +193,6 @@ fun MainBottomNavigation(
                                 verticalArrangement = Arrangement.Center,
                                 modifier = Modifier.padding(vertical = 2.dp)
                             ) {
-                                // أيقونة التبويب
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = label,
@@ -195,11 +200,10 @@ fun MainBottomNavigation(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
-                                // عنوان التبويب
                                 Text(
                                     text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = contentColor,
                                     maxLines = 1
                                 )

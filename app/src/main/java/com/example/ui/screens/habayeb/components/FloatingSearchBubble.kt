@@ -82,38 +82,45 @@ private object BubblePrefsKeys {
 @Composable
 fun TinyFloatingSearchToggle(
     isFloatingActive: Boolean,
-    activeThemeColor: Color,
+    activeThemeColor: Color = MaterialTheme.colorScheme.onPrimary,
     onToggleClick: () -> Unit
 ) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier = Modifier
-            .size(26.dp)
+            .size(30.dp)
             .clip(CircleShape)
             .background(
-                color = if (isFloatingActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                color = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f)
+                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
                 shape = CircleShape
             )
             .border(
-                width = 0.5.dp,
-                color = if (isFloatingActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outlineVariant,
+                width = if (isFloatingActive) 1.dp else 0.75.dp,
+                color = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f),
                 shape = CircleShape
             )
-            .clickable(onClick = onToggleClick),
+            .clickable {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                onToggleClick()
+            },
         contentAlignment = Alignment.Center
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = stringResource(id = R.string.floating_search_toggle),
-                tint = if (isFloatingActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(13.dp)
+                tint = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                modifier = Modifier.size(14.dp)
             )
             if (isFloatingActive) {
                 Box(
                     modifier = Modifier
-                        .size(4.dp)
+                        .size(5.dp)
                         .align(Alignment.TopEnd)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary, CircleShape)
                 )
             }
         }

@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
@@ -69,8 +70,7 @@ fun LedgerBottomDock(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val bgMatColor = MaterialTheme.colorScheme.background
-                val isDark = remember(bgMatColor) { bgMatColor.run { red < 0.5f } }
+                val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
                 val incomeBg = remember(isDark) { financialCreditColor(isDark) }
                 val expenseBg = remember(isDark) { financialDebtColor(isDark) }
 
@@ -80,25 +80,38 @@ fun LedgerBottomDock(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onAddIncomeClick()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = incomeBg, contentColor = MaterialTheme.colorScheme.onTertiary), // Secondary Mint/Green
-                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = incomeBg,
+                        contentColor = androidx.compose.ui.graphics.Color.White
+                    ),
+                    shape = RoundedCornerShape(14.dp),
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(42.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.ledger_add_income), tint = MaterialTheme.colorScheme.onTertiary, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(id = R.string.ledger_add_income),
+                        tint = androidx.compose.ui.graphics.Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_income), color = MaterialTheme.colorScheme.onTertiary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        stringResource(id = R.string.ledger_add_income),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
                 }
 
                 // Center Target Button (Goals/Commitments)
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
                         .clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onShowCommitmentsClick()
@@ -117,16 +130,29 @@ fun LedgerBottomDock(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onAddExpenseClick()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = expenseBg, contentColor = MaterialTheme.colorScheme.onError), // Destructive Crimson/Soft Red
-                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = expenseBg,
+                        contentColor = androidx.compose.ui.graphics.Color.White
+                    ),
+                    shape = RoundedCornerShape(14.dp),
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(42.dp)
                 ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(id = R.string.ledger_add_expense), tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.ShoppingCart,
+                        contentDescription = stringResource(id = R.string.ledger_add_expense),
+                        tint = androidx.compose.ui.graphics.Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_expense), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        stringResource(id = R.string.ledger_add_expense),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
                 }
             }
         }

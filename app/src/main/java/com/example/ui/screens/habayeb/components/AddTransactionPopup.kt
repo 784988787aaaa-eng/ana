@@ -419,7 +419,10 @@ fun AddTransactionPopup(
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = MaterialTheme.colorScheme.onError),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = debtRedColor,
+                                        contentColor = androidx.compose.ui.graphics.Color.White
+                                    ),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -428,14 +431,17 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onError
+                                        color = androidx.compose.ui.graphics.Color.White
                                     )
                                 }
 
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = MaterialTheme.colorScheme.onTertiary),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = creditGreenColor,
+                                        contentColor = androidx.compose.ui.graphics.Color.White
+                                    ),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -444,7 +450,7 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onTertiary
+                                        color = androidx.compose.ui.graphics.Color.White
                                     )
                                 }
                             }

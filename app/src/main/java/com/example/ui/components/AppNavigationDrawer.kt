@@ -107,24 +107,27 @@ fun AppNavigationDrawer(
         // =====================================================================
         // قسم: رأس الدرج الجانبي (Drawer Header) مع زر تبديل الوضع الليلي
         // =====================================================================
+        val systemDark = isSystemInDarkTheme()
+        val isDark = remember(settings.themeMode, systemDark) {
+            when (settings.themeMode) {
+                1 -> false
+                2 -> true
+                else -> systemDark
+            }
+        }
+        val headerBrush = remember(isDark) {
+            if (isDark) com.example.ui.theme.PrimaryHeaderGradientDark else com.example.ui.theme.PrimaryHeaderGradientLight
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-                .background(MaterialTheme.colorScheme.primary)
+                .background(headerBrush)
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                val systemDark = isSystemInDarkTheme()
-                val isDark = remember(settings.themeMode, systemDark) {
-                    when (settings.themeMode) {
-                        1 -> false
-                        2 -> true
-                        else -> systemDark
-                    }
-                }
-
                 IconButton(
                     onClick = {
                         val newMode = if (isDark) 1 else 2
@@ -153,18 +156,16 @@ fun AppNavigationDrawer(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
-                                shape = CircleShape
-                            ),
+                            .size(54.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Home,
+                            imageVector = Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                     
@@ -172,8 +173,8 @@ fun AppNavigationDrawer(
                     
                     Text(
                         text = stringResource(id = R.string.app_name_main),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }

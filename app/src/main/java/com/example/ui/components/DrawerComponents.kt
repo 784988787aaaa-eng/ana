@@ -52,104 +52,71 @@ fun DrawerItem(
     label: String,
     onClick: () -> Unit
 ) {
-    /*
-     * ---------------------------------------------------------------------------------
-     * استخراج الألوان والسمات البصرية وفق حالة التحديد (Visual States & Colors)
-     * ---------------------------------------------------------------------------------
-     * يتم تكييف لون الحاوية وسماكة النص وفق حالة التحديد (selected) لتمييز العنصر النشط.
-     * ---------------------------------------------------------------------------------
-     */
     val primaryColor = MaterialTheme.colorScheme.primary
-    val accentColor = MaterialTheme.colorScheme.secondary
-    val containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
-    val textPrimary = MaterialTheme.colorScheme.onSurface
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+    } else {
+        Color.Transparent
+    }
+    val iconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val textPrimary = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     val fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * بناء سطح العنصر التفاعلي (Surface Container)
-     * ---------------------------------------------------------------------------------
-     * يتم استخدام Surface لتوفير تفاعل سلس عند اللمس مع حواف دائرية أنيقة.
-     * ---------------------------------------------------------------------------------
-     */
     Surface(
         onClick = onClick,
         color = containerColor,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(48.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Row(
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                // أيقونة القسم التوضيحية
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = primaryColor,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                // عنوان القسم النصي
-                Text(
-                    text = label,
-                    fontSize = 14.sp,
-                    fontWeight = fontWeight,
-                    color = textPrimary
+                    tint = iconColor,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-
-            /*
-             * مؤشر بصري عمودي يظهر على طرف العنصر عند تحديده لتأكيد النشاط الحالي
-             */
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .fillMaxHeight(0.6f)
-                        .align(Alignment.CenterEnd)
-                        .background(
-                            color = accentColor,
-                            shape = RoundedCornerShape(2.dp)
-                        )
-                )
-            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Text(
+                text = label,
+                fontSize = 13.5.sp,
+                fontWeight = fontWeight,
+                color = textPrimary
+            )
         }
     }
 }
 
-/*
- * =====================================================================================
- * المكون الفرعي: أيقونة التواصل الدائرية (ContactIcon)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * زر أيقونة دائري مدمج يُستخدم لروابط منصات التواصل الاجتماعي ووسائل الاتصال:
- * 1. يوفر مساحة لمس مريحة متوافقة مع معايير إمكانية الوصول (Accessibility).
- * 2. يقدم خلفية دائرية ملونة خفيفة تتفاعل مع لمسات المستخدم.
- *
- * [المُدخلات]:
- * - icon: الأيقونة الشعاعية لمنصة التواصل أو وسيلة الاتصال.
- * - onClick: الحدث المنفذ عند النقر.
- * =====================================================================================
- */
 @Composable
 fun ContactIcon(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+    val backgroundLight = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
 
     Box(
         modifier = Modifier
             .padding(2.dp)
-            .size(40.dp)
+            .size(42.dp)
             .clip(CircleShape)
             .background(backgroundLight)
             .clickable { onClick() },

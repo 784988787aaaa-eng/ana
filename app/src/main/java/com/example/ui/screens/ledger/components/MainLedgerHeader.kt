@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -115,19 +116,24 @@ fun PinnedMainLedgerHeader(
 ) {
     val haptic = LocalHapticFeedback.current
 
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val headerBrush = remember(isDark) {
+        if (isDark) com.example.ui.theme.PrimaryHeaderGradientDark else com.example.ui.theme.PrimaryHeaderGradientLight
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .zIndex(10f)
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Purple Curved Header Banner
+        // 1. Executive Royal Curved Header Banner
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(elevation = 3.dp, shape = RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp), clip = false)
-                .clip(RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp))
-                .background(MaterialTheme.colorScheme.primary)
+                .shadow(elevation = 2.5.dp, shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp), clip = false)
+                .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
+                .background(headerBrush)
                 .statusBarsPadding()
                 .padding(bottom = if (commitments.isNotEmpty()) 8.dp else 6.dp)
         ) {

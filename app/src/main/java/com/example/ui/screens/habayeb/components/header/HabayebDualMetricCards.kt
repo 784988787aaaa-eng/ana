@@ -73,8 +73,8 @@ fun HabayebDualMetricCards(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(top = 8.dp, start = 14.dp, end = 14.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // بطاقة اليمين: "لنا" (Red Color - مبالغ مستحقة لنا)
@@ -91,16 +91,16 @@ fun HabayebDualMetricCards(
         }
 
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = owedByCardBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedBySelected) 3.dp else 1.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedBySelected) 2.5.dp else 0.dp),
             border = BorderStroke(
-                width = if (isOwedBySelected) 1.5.dp else 1.dp,
+                width = if (isOwedBySelected) 1.5.dp else 0.75.dp,
                 color = owedByBorderColor
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(52.dp)
+                .height(56.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -117,23 +117,34 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.habayeb_filter_owed_by),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = redColor,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.habayeb_filter_owed_by),
+                            fontSize = 11.5.sp,
+                            fontWeight = if (isOwedBySelected) FontWeight.Bold else FontWeight.SemiBold,
+                            color = redColor,
+                            textAlign = TextAlign.Center
+                        )
+                        if (isOwedBySelected) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "●",
+                                fontSize = 8.sp,
+                                color = redColor
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     AutoScaleText(
                         text = formattedOwedByThem,
-                        baseFontSize = 14.5.sp,
+                        baseFontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = redColor,
                         maxLines = 1,
@@ -158,16 +169,16 @@ fun HabayebDualMetricCards(
         }
 
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = owedToCardBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedToSelected) 3.dp else 1.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedToSelected) 2.5.dp else 0.dp),
             border = BorderStroke(
-                width = if (isOwedToSelected) 1.5.dp else 1.dp,
+                width = if (isOwedToSelected) 1.5.dp else 0.75.dp,
                 color = owedToBorderColor
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(52.dp)
+                .height(56.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -184,23 +195,34 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.habayeb_filter_owed_to),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = greenColor,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.habayeb_filter_owed_to),
+                            fontSize = 11.5.sp,
+                            fontWeight = if (isOwedToSelected) FontWeight.Bold else FontWeight.SemiBold,
+                            color = greenColor,
+                            textAlign = TextAlign.Center
+                        )
+                        if (isOwedToSelected) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "●",
+                                fontSize = 8.sp,
+                                color = greenColor
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     AutoScaleText(
                         text = formattedOwedToThem,
-                        baseFontSize = 14.5.sp,
+                        baseFontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = greenColor,
                         maxLines = 1,

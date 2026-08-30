@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.ui.theme.PrimaryHeaderGradientDark
+import com.example.ui.theme.PrimaryHeaderGradientLight
 import com.example.ui.helper.AutoScaleText
 import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.screens.habayeb.components.header.HabayebDualMetricCards
@@ -115,12 +117,16 @@ fun HabayebFinanceHeader(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // 1. Curved Header Banner
+        // 1. Curved Header Banner with Executive Royal Gradient
+        val headerBrush = remember(isDark) {
+            if (isDark) PrimaryHeaderGradientDark else PrimaryHeaderGradientLight
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-                .background(activeThemeColor)
+                .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
+                .background(headerBrush)
                 .statusBarsPadding()
                 .padding(bottom = 6.dp)
         ) {
@@ -138,11 +144,11 @@ fun HabayebFinanceHeader(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                        .padding(horizontal = 14.dp, vertical = 5.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Right Action: Hamburger Menu Button
+                    // Right Action: Hamburger Menu Button with Frosted Glass Touch
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -150,13 +156,14 @@ fun HabayebFinanceHeader(
                         },
                         modifier = Modifier
                             .size(38.dp)
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f), CircleShape)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = stringResource(id = R.string.ledger_nav_menu_desc),
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(19.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
@@ -201,7 +208,7 @@ fun HabayebFinanceHeader(
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = stringResource(id = R.string.ledger_visibility_desc),
-                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -222,8 +229,8 @@ fun HabayebFinanceHeader(
                             ) { animatedBalance ->
                                 AutoScaleText(
                                     text = animatedBalance,
-                                    baseFontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    baseFontSize = 23.sp,
+                                    fontWeight = FontWeight.ExtraBold,
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     maxLines = 1,
                                     textAlign = TextAlign.Center
@@ -257,7 +264,7 @@ fun HabayebFinanceHeader(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = stringResource(id = R.string.habayeb_search_label),
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(19.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
