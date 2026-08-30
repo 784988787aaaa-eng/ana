@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import androidx.lifecycle.viewModelScope
 import com.example.R
 import com.example.data.local.AppDatabase
