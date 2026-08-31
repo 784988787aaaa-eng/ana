@@ -1,8 +1,7 @@
 package com.example.ui.theme
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -14,7 +13,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 private val MizanLightColorScheme = lightColorScheme(
     primary = BrandPrimary,
@@ -76,47 +78,48 @@ private val MizanDarkColorScheme = darkColorScheme(
     surfaceContainerLow = NeutralSurfaceContainerLowDark
 )
 
-@Composable
-fun ColorScheme.animated(
-    animationSpec: AnimationSpec<Color> = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-): ColorScheme {
-    return copy(
-        primary = animateColorAsState(primary, animationSpec, label = "th_primary").value,
-        onPrimary = animateColorAsState(onPrimary, animationSpec, label = "th_onPrimary").value,
-        primaryContainer = animateColorAsState(primaryContainer, animationSpec, label = "th_primaryContainer").value,
-        onPrimaryContainer = animateColorAsState(onPrimaryContainer, animationSpec, label = "th_onPrimaryContainer").value,
-        inversePrimary = animateColorAsState(inversePrimary, animationSpec, label = "th_inversePrimary").value,
-        secondary = animateColorAsState(secondary, animationSpec, label = "th_secondary").value,
-        onSecondary = animateColorAsState(onSecondary, animationSpec, label = "th_onSecondary").value,
-        secondaryContainer = animateColorAsState(secondaryContainer, animationSpec, label = "th_secondaryContainer").value,
-        onSecondaryContainer = animateColorAsState(onSecondaryContainer, animationSpec, label = "th_onSecondaryContainer").value,
-        tertiary = animateColorAsState(tertiary, animationSpec, label = "th_tertiary").value,
-        onTertiary = animateColorAsState(onTertiary, animationSpec, label = "th_onTertiary").value,
-        tertiaryContainer = animateColorAsState(tertiaryContainer, animationSpec, label = "th_tertiaryContainer").value,
-        onTertiaryContainer = animateColorAsState(onTertiaryContainer, animationSpec, label = "th_onTertiaryContainer").value,
-        background = animateColorAsState(background, animationSpec, label = "th_background").value,
-        onBackground = animateColorAsState(onBackground, animationSpec, label = "th_onBackground").value,
-        surface = animateColorAsState(surface, animationSpec, label = "th_surface").value,
-        onSurface = animateColorAsState(onSurface, animationSpec, label = "th_onSurface").value,
-        surfaceVariant = animateColorAsState(surfaceVariant, animationSpec, label = "th_surfaceVariant").value,
-        onSurfaceVariant = animateColorAsState(onSurfaceVariant, animationSpec, label = "th_onSurfaceVariant").value,
-        surfaceTint = animateColorAsState(surfaceTint, animationSpec, label = "th_surfaceTint").value,
-        inverseSurface = animateColorAsState(inverseSurface, animationSpec, label = "th_inverseSurface").value,
-        inverseOnSurface = animateColorAsState(inverseOnSurface, animationSpec, label = "th_inverseOnSurface").value,
-        error = animateColorAsState(error, animationSpec, label = "th_error").value,
-        onError = animateColorAsState(onError, animationSpec, label = "th_onError").value,
-        errorContainer = animateColorAsState(errorContainer, animationSpec, label = "th_errorContainer").value,
-        onErrorContainer = animateColorAsState(onErrorContainer, animationSpec, label = "th_onErrorContainer").value,
-        outline = animateColorAsState(outline, animationSpec, label = "th_outline").value,
-        outlineVariant = animateColorAsState(outlineVariant, animationSpec, label = "th_outlineVariant").value,
-        scrim = animateColorAsState(scrim, animationSpec, label = "th_scrim").value,
-        surfaceBright = animateColorAsState(surfaceBright, animationSpec, label = "th_surfaceBright").value,
-        surfaceDim = animateColorAsState(surfaceDim, animationSpec, label = "th_surfaceDim").value,
-        surfaceContainer = animateColorAsState(surfaceContainer, animationSpec, label = "th_surfaceContainer").value,
-        surfaceContainerHigh = animateColorAsState(surfaceContainerHigh, animationSpec, label = "th_surfaceContainerHigh").value,
-        surfaceContainerHighest = animateColorAsState(surfaceContainerHighest, animationSpec, label = "th_surfaceContainerHighest").value,
-        surfaceContainerLow = animateColorAsState(surfaceContainerLow, animationSpec, label = "th_surfaceContainerLow").value,
-        surfaceContainerLowest = animateColorAsState(surfaceContainerLowest, animationSpec, label = "th_surfaceContainerLowest").value,
+/**
+ * دالة استيفاء خطي (Linear Interpolation) لكامل عناصر لوحة ألوان Material 3 ككتلة متزامنة واحدة.
+ * تضمن انتقالاً ناعماً ومتناسقاً (260ms) دون تشتت الحالات أو إعادة رسم غير متزامنة.
+ */
+fun lerpColorScheme(start: ColorScheme, stop: ColorScheme, fraction: Float): ColorScheme {
+    return ColorScheme(
+        primary = lerp(start.primary, stop.primary, fraction),
+        onPrimary = lerp(start.onPrimary, stop.onPrimary, fraction),
+        primaryContainer = lerp(start.primaryContainer, stop.primaryContainer, fraction),
+        onPrimaryContainer = lerp(start.onPrimaryContainer, stop.onPrimaryContainer, fraction),
+        inversePrimary = lerp(start.inversePrimary, stop.inversePrimary, fraction),
+        secondary = lerp(start.secondary, stop.secondary, fraction),
+        onSecondary = lerp(start.onSecondary, stop.onSecondary, fraction),
+        secondaryContainer = lerp(start.secondaryContainer, stop.secondaryContainer, fraction),
+        onSecondaryContainer = lerp(start.onSecondaryContainer, stop.onSecondaryContainer, fraction),
+        tertiary = lerp(start.tertiary, stop.tertiary, fraction),
+        onTertiary = lerp(start.onTertiary, stop.onTertiary, fraction),
+        tertiaryContainer = lerp(start.tertiaryContainer, stop.tertiaryContainer, fraction),
+        onTertiaryContainer = lerp(start.onTertiaryContainer, stop.onTertiaryContainer, fraction),
+        background = lerp(start.background, stop.background, fraction),
+        onBackground = lerp(start.onBackground, stop.onBackground, fraction),
+        surface = lerp(start.surface, stop.surface, fraction),
+        onSurface = lerp(start.onSurface, stop.onSurface, fraction),
+        surfaceVariant = lerp(start.surfaceVariant, stop.surfaceVariant, fraction),
+        onSurfaceVariant = lerp(start.onSurfaceVariant, stop.onSurfaceVariant, fraction),
+        surfaceTint = lerp(start.surfaceTint, stop.surfaceTint, fraction),
+        inverseSurface = lerp(start.inverseSurface, stop.inverseSurface, fraction),
+        inverseOnSurface = lerp(start.inverseOnSurface, stop.inverseOnSurface, fraction),
+        error = lerp(start.error, stop.error, fraction),
+        onError = lerp(start.onError, stop.onError, fraction),
+        errorContainer = lerp(start.errorContainer, stop.errorContainer, fraction),
+        onErrorContainer = lerp(start.onErrorContainer, stop.onErrorContainer, fraction),
+        outline = lerp(start.outline, stop.outline, fraction),
+        outlineVariant = lerp(start.outlineVariant, stop.outlineVariant, fraction),
+        scrim = lerp(start.scrim, stop.scrim, fraction),
+        surfaceBright = lerp(start.surfaceBright, stop.surfaceBright, fraction),
+        surfaceDim = lerp(start.surfaceDim, stop.surfaceDim, fraction),
+        surfaceContainer = lerp(start.surfaceContainer, stop.surfaceContainer, fraction),
+        surfaceContainerHigh = lerp(start.surfaceContainerHigh, stop.surfaceContainerHigh, fraction),
+        surfaceContainerHighest = lerp(start.surfaceContainerHighest, stop.surfaceContainerHighest, fraction),
+        surfaceContainerLow = lerp(start.surfaceContainerLow, stop.surfaceContainerLow, fraction),
+        surfaceContainerLowest = lerp(start.surfaceContainerLowest, stop.surfaceContainerLowest, fraction),
     )
 }
 
@@ -126,9 +129,16 @@ fun MizanTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val targetColorScheme = if (darkTheme) MizanDarkColorScheme else MizanLightColorScheme
+    val themeTransitionFraction by animateFloatAsState(
+        targetValue = if (darkTheme) 1f else 0f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "mizan_theme_transition"
+    )
+
+    val animatedColorScheme = remember(themeTransitionFraction) {
+        lerpColorScheme(MizanLightColorScheme, MizanDarkColorScheme, themeTransitionFraction)
+    }
     val mizanColors = if (darkTheme) DarkMizanColors else LightMizanColors
-    val animatedColorScheme = targetColorScheme.animated()
 
     val customRippleConfiguration = RippleConfiguration(
         color = mizanColors.ripple.copy(alpha = if (darkTheme) 0.15f else 0.12f)

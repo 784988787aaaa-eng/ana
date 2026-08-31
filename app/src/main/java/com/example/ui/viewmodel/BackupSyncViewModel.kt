@@ -30,6 +30,7 @@ private const val TAG = "BackupSyncViewModel"
 class BackupSyncViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: FinanceRepository
+    private val backupRepository: com.example.data.repository.BackupRepository
     private val backupRestoreMutex = Mutex()
     val showActivationRequired = MutableStateFlow(false)
     val googleDriveSyncHelper: GoogleDriveSyncHelper
@@ -75,6 +76,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
     init {
         val database = AppDatabase.getDatabase(application)
         repository = FinanceRepository(database, application)
+        backupRepository = com.example.data.repository.BackupRepository(application, database)
         googleDriveSyncHelper = GoogleDriveSyncHelper(application)
         googleDriveSyncState = googleDriveSyncHelper.syncState
         storedEmailState = com.example.domain.GoogleAuthSessionManager.currentEmail
@@ -251,7 +253,8 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                 try {
                     val isTrulySignedIn = googleDriveSyncHelper.isUserTrulySignedIn()
                     val refreshToken = googleDriveSyncHelper.getStoredRefreshToken()
-                    val isConnected = isTrulySignedIn || !refreshToken.isNullOrEmpty()
+                    val accessToken = googleDriveSyncHelper.getStoredAccessToken()
+                    val isConnected = isTrulySignedIn || !refreshToken.isNullOrEmpty() || !accessToken.isNullOrEmpty()
                     if (!isConnected) {
                         launch(Dispatchers.Main) {
                             onComplete(false)
@@ -262,8 +265,12 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     val jsonStr = googleDriveSyncHelper.downloadBackupFromDrive()
                     if (jsonStr != null) {
                         val result = repository.executeMasterRestore(jsonStr)
+                        if (repository.isTrialExpiredDirect()) {
+                            showActivationRequired.value = true
+                        }
                         refreshLocalBackups()
                         launch(Dispatchers.Main) {
+                            com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                             onComplete(true)
                         }
                     } else {
@@ -287,7 +294,8 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                 try {
                     val isTrulySignedIn = googleDriveSyncHelper.isUserTrulySignedIn()
                     val refreshToken = googleDriveSyncHelper.getStoredRefreshToken()
-                    val isConnected = isTrulySignedIn || !refreshToken.isNullOrEmpty()
+                    val accessToken = googleDriveSyncHelper.getStoredAccessToken()
+                    val isConnected = isTrulySignedIn || !refreshToken.isNullOrEmpty() || !accessToken.isNullOrEmpty()
                     if (!isConnected) {
                         launch(Dispatchers.Main) {
                             onComplete(false)
@@ -298,8 +306,12 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     val jsonStr = googleDriveSyncHelper.downloadBackupFromDriveById(fileId)
                     if (jsonStr != null) {
                         val result = repository.executeMasterRestore(jsonStr)
+                        if (repository.isTrialExpiredDirect()) {
+                            showActivationRequired.value = true
+                        }
                         refreshLocalBackups()
                         launch(Dispatchers.Main) {
+                            com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                             onComplete(true)
                         }
                     } else {
@@ -365,35 +377,39 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun createLocalBackup(context: Context, onComplete: (File?) -> Unit) {
+    fun exportLocalBackup(context: Context, onComplete: (Result<File>) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             backupRestoreMutex.withLock {
                 try {
-                    val jsonStr = buildBackupJson(isMzd = false, context = context)
-                    val dir = getBackupDirectory()
-                    val sdfName = SimpleDateFormat(FinanceConstants.BACKUP_DATE_FORMAT, Locale.US)
-                    val dateStr = sdfName.format(Date())
-                    val fileName = "${FinanceConstants.BACKUP_FILE_PREFIX}$dateStr${FinanceConstants.BACKUP_FILE_EXTENSION}"
-                    val file = File(dir, fileName)
-                    file.writeText(jsonStr)
-
-                    if (file.exists() && file.length() > 0) {
-                        com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
-                        backupPrefs.edit().putLong(FinanceConstants.KEY_LAST_SUCCESSFUL_BACKUP, System.currentTimeMillis()).apply()
-                        refreshLocalBackups()
-                        launch(Dispatchers.Main) {
-                            onComplete(file)
+                    val result = backupRepository.createLocalBackup()
+                    when (result) {
+                        is com.example.data.backup.BackupOperationResult.Success -> {
+                            com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
+                            refreshLocalBackups()
+                            launch(Dispatchers.Main) {
+                                onComplete(Result.success(result.file))
+                            }
                         }
-                    } else {
-                        throw java.io.IOException("File verification failed.")
+                        is com.example.data.backup.BackupOperationResult.Failure -> {
+                            Log.e(TAG, "فشل إنشاء النسخة المحلية: ${result.userMessage}")
+                            launch(Dispatchers.Main) {
+                                onComplete(Result.failure(result.cause ?: java.io.IOException(result.userMessage)))
+                            }
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error in createLocalBackup", e)
+                    Log.e(TAG, "استثناء في exportLocalBackup", e)
                     launch(Dispatchers.Main) {
-                        onComplete(null)
+                        onComplete(Result.failure(e))
                     }
                 }
             }
+        }
+    }
+
+    fun createLocalBackup(context: Context, onComplete: (File?) -> Unit) {
+        exportLocalBackup(context) { result ->
+            onComplete(result.getOrNull())
         }
     }
 
@@ -409,16 +425,13 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                 return@launch
             }
             try {
-                val jsonStr = buildBackupJson(isMzd = false)
-                val dir = getBackupDirectory()
-                val file = File(dir, FinanceConstants.BACKUP_SILENT_FILE_NAME)
-                file.writeText(jsonStr)
-                if (file.exists() && file.length() > 0) {
+                val result = backupRepository.createSilentBackup()
+                if (result is com.example.data.backup.BackupOperationResult.Success) {
                     lastSilentBackupTime = currentTime
                     refreshLocalBackups()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error in triggerSilentLocalBackup", e)
+                Log.e(TAG, "استثناء في triggerSilentLocalBackup", e)
             } finally {
                 backupRestoreMutex.unlock()
             }

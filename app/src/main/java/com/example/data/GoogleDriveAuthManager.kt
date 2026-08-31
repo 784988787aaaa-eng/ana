@@ -229,7 +229,9 @@ class GoogleDriveAuthManager(
             )
         if (clientId.isNotBlank()) {
             try {
-                builder.requestServerAuthCode(clientId, false)
+                // تفعيل forceCodeForRefreshToken = true إلزامي لضمان إرجاع Google لرمز التجديد (refresh_token)
+                // حتى في حال سبق للمستخدم الموافقة أو عند إعادة تثبيت التطبيق.
+                builder.requestServerAuthCode(clientId, true)
             } catch (e: Exception) {
                 Log.e(TAG, "تعذر تعيين serverAuthCode في GoogleSignInOptions", e)
             }
@@ -349,26 +351,27 @@ class GoogleDriveAuthManager(
      * تفحص حالة تسجيل الدخول وصلاحية الرموز وتنفذ التجديد تلقائياً إذا لزم الأمر.
      */
     suspend fun checkAuthState(): GoogleDriveAuthState = withContext(Dispatchers.IO) {
-        val refreshToken = getStoredRefreshToken()
         val email = getStoredEmail() ?: ""
+        val currentToken = getStoredAccessToken()
 
-        if (refreshToken.isNullOrEmpty()) {
-            return@withContext GoogleDriveAuthState.NotSignedIn
+        // 1. إذا كان رمز الوصول الحالي صالحاً وغير منتهي الصلاحية، الجلسة مصادقة فوراً دون الحاجة لطلب شبكي
+        if (!currentToken.isNullOrEmpty() && !isTokenExpired()) {
+            return@withContext GoogleDriveAuthState.Authenticated(email, currentToken)
         }
 
-        if (!isTokenExpired()) {
-            val currentToken = getStoredAccessToken()
-            if (!currentToken.isNullOrEmpty()) {
-                return@withContext GoogleDriveAuthState.Authenticated(email, currentToken)
+        // 2. إذا كان الرمز منتهياً أو غير موجود، نحاول التجديد عبر Refresh Token
+        val refreshToken = getStoredRefreshToken()
+        if (!refreshToken.isNullOrEmpty()) {
+            val refreshed = refreshAccessTokenIfNeeded()
+            if (refreshed != null) {
+                return@withContext GoogleDriveAuthState.Authenticated(email, refreshed)
+            } else {
+                return@withContext GoogleDriveAuthState.RefreshFailed("فشل تجديد رمز الوصول")
             }
         }
 
-        val refreshed = refreshAccessTokenIfNeeded()
-        if (refreshed != null) {
-            GoogleDriveAuthState.Authenticated(email, refreshed)
-        } else {
-            GoogleDriveAuthState.RefreshFailed("فشل تجديد رمز الوصول")
-        }
+        // 3. لا يوجد رمز وصول صالح ولا رمز تجديد
+        return@withContext GoogleDriveAuthState.NotSignedIn
     }
 
     /**
@@ -377,11 +380,7 @@ class GoogleDriveAuthManager(
      */
     suspend fun refreshAccessTokenIfNeeded(): String? = refreshMutex.withLock {
         withContext(Dispatchers.IO) {
-            val refreshToken = getStoredRefreshToken()
-            if (refreshToken.isNullOrEmpty()) {
-                return@withContext null
-            }
-
+            // 1. التحقق أولاً من صلاحية رمز الوصول الحالي لتجنب استدعاء الشبكة دون داعٍ
             if (!isTokenExpired()) {
                 val currentToken = getStoredAccessToken()
                 if (!currentToken.isNullOrEmpty()) {
@@ -389,11 +388,18 @@ class GoogleDriveAuthManager(
                 }
             }
 
+            // 2. إذا لم يكن هناك رمز وصول صالح، يلزم وجود Refresh Token للتجديد
+            val refreshToken = getStoredRefreshToken()
+            if (refreshToken.isNullOrEmpty()) {
+                Log.w(TAG, "لا يوجد رمز تجديد محفوظ لتجديد الجلسة")
+                return@withContext null
+            }
+
             try {
                 cloudEngine.executeWithRetry(
                     operationName = "RefreshAccessToken",
                     maxRetries = 2,
-                    initialDelayMs = 500L
+                    initialDelayMs = 250L
                 ) {
                     val formBuilder = FormBody.Builder()
                         .add(PARAM_CLIENT_ID, clientId)

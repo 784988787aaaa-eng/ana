@@ -2,8 +2,6 @@ package com.example.ui.screens
 
 import androidx.compose.material3.MaterialTheme
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,7 +32,6 @@ import com.example.domain.evaluateSimpleExpression
 import java.math.BigDecimal
 import com.example.ui.theme.mizanColors
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CalculatorDialog(
     onDismiss: () -> Unit,
@@ -47,19 +44,17 @@ fun CalculatorDialog(
     // Fallback to app's primary theme color dynamically
     val brandPrimary = activeThemeColor ?: MaterialTheme.colorScheme.primary
 
-    // Evaluate preview in real-time
-    val resultPreview = remember(rawExpression) {
+    // Single derived evaluation result for the current expression
+    val calculatedResult = remember(rawExpression) {
         if (rawExpression.isEmpty()) null
         else evaluateSimpleExpression(rawExpression)
     }
 
-    val isExpressionValid = remember(rawExpression) {
+    val isExpressionValid = remember(rawExpression, calculatedResult) {
         if (rawExpression.isEmpty()) {
             true
         } else {
-            val eval = evaluateSimpleExpression(rawExpression)
-            val direct = rawExpression.toDoubleOrNull()
-            eval != null || direct != null
+            calculatedResult != null || rawExpression.toBigDecimalOrNull() != null
         }
     }
 
@@ -67,14 +62,13 @@ fun CalculatorDialog(
 
     fun performClickFeedback() {
         try {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         } catch (e: Exception) {
             // Ignore in environment without active haptic device
         }
     }
 
     fun handleDigit(digit: String) {
-        performClickFeedback()
         if (rawExpression == "0") {
             rawExpression = digit
         } else {
@@ -83,7 +77,6 @@ fun CalculatorDialog(
     }
 
     fun handleOperator(op: String) {
-        performClickFeedback()
         if (rawExpression.isEmpty()) {
             if (op == "-") {
                 rawExpression = "-"
@@ -104,7 +97,6 @@ fun CalculatorDialog(
     }
 
     fun handleBackspace() {
-        performClickFeedback()
         if (rawExpression.isNotEmpty()) {
             rawExpression = rawExpression.dropLast(1)
         }
@@ -112,9 +104,9 @@ fun CalculatorDialog(
 
     fun evaluate() {
         performClickFeedback()
-        val result = evaluateSimpleExpression(rawExpression)
+        val result = calculatedResult ?: evaluateSimpleExpression(rawExpression)
         if (result != null) {
-            rawExpression = if (result.remainder(java.math.BigDecimal.ONE).compareTo(java.math.BigDecimal.ZERO) == 0) {
+            rawExpression = if (result.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
                 result.toBigInteger().toString()
             } else {
                 result.toPlainString()
@@ -125,12 +117,8 @@ fun CalculatorDialog(
     fun confirmAndDismiss() {
         if (!isExpressionValid) return
         performClickFeedback()
-        val finalBigDecimal = evaluateSimpleExpression(rawExpression)
-        val finalValue = if (finalBigDecimal != null) {
-            finalBigDecimal
-        } else {
-            rawExpression.toBigDecimalOrNull() ?: BigDecimal.ZERO
-        }
+        val finalBigDecimal = calculatedResult ?: evaluateSimpleExpression(rawExpression)
+        val finalValue: BigDecimal = finalBigDecimal ?: (rawExpression.toBigDecimalOrNull() ?: BigDecimal.ZERO)
         onValueConfirmed(finalValue)
     }
 
@@ -246,17 +234,14 @@ fun CalculatorDialog(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            
-                            // Theme-matched Cursor Blink
-                            BlinkingCursor(cursorColor = brandPrimary)
                         }
 
                         // Preview / Result Line
-                        if (resultPreview != null && resultPreview.toPlainString() != rawExpression) {
-                            val formattedPreview = if (resultPreview.remainder(java.math.BigDecimal.ONE).compareTo(java.math.BigDecimal.ZERO) == 0) {
-                                resultPreview.toBigInteger().toString()
+                        if (calculatedResult != null && calculatedResult.toPlainString() != rawExpression) {
+                            val formattedPreview = if (calculatedResult.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
+                                calculatedResult.toBigInteger().toString()
                             } else {
-                                resultPreview.toPlainString()
+                                calculatedResult.toPlainString()
                             }
                             Text(
                                 text = "= $formattedPreview",
@@ -421,28 +406,5 @@ fun CalcButton(
                 textAlign = TextAlign.Center
             )
         }
-    }
-}
-
-@Composable
-private fun BlinkingCursor(cursorColor: Color) {
-    val infiniteTransition = rememberInfiniteTransition(label = "cursor")
-    val cursorAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "cursorBlink"
-    )
-    if (cursorAlpha > 0.5f) {
-        Text(
-            text = "|",
-            color = cursorColor,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = androidx.compose.ui.Modifier.padding(start = 2.dp)
-        )
     }
 }

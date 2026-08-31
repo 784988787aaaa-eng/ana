@@ -160,7 +160,8 @@ class GoogleDriveSyncHelper(private val context: Context) {
     init {
         val email = getStoredEmail()
         val refreshToken = getStoredRefreshToken()
-        if (!email.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
+        val accessToken = getStoredAccessToken()
+        if (!email.isNullOrEmpty() && (!refreshToken.isNullOrEmpty() || (!accessToken.isNullOrEmpty() && !authManager.isTokenExpired()))) {
             _syncState.value = CloudSyncState.Authenticated(email)
         }
 
@@ -171,7 +172,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
                     try {
                         val db = AppDatabase.getDatabase(context)
                         val settings = db.settingsDao().getSettingsDirect()
-                        if (getStoredRefreshToken().isNullOrEmpty() && (settings == null || !settings.isCloudSyncEnabled)) {
+                        if (getStoredRefreshToken().isNullOrEmpty() && getStoredAccessToken().isNullOrEmpty() && (settings == null || !settings.isCloudSyncEnabled)) {
                             Log.d(TAG, "اكتشاف إعادة تثبيت دون وجود جلسة سارية، جاري تسجيل الخروج الصامت.")
                             getGoogleSignInClient().signOut()
                             authManager.clearAuthData()

@@ -79,7 +79,13 @@ fun CloudBackupSection(
                         return@GoogleDriveSyncCard
                     }
 
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        try {
+                            googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 } catch (e: Exception) {
                     Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
                 }
@@ -124,7 +130,13 @@ fun CloudBackupSection(
             onConnectClick = {
                 showCloudBackupsSheet = false
                 try {
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        try {
+                            googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 } catch (e: Exception) {
                     Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
                 }

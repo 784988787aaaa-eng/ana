@@ -5,14 +5,14 @@
  * 
  * [الغرض العام والتعليمي من الملف]:
  * يمثل هذا الملف المنسق عالي المستوى (High-Level Backup Coordinator) المسؤول عن
- * استخراج البيانات المالية من قاعدة البيانات، تحويلها لصيغة JSON مشفرة ومعيارية،
- * وإدارتها عبر طبقة الملفات وتحديث تواريخ النسخ الاحتياطي في التفضيلات.
+ * استخراج البيانات المالية من قاعدة البيانات، تحويلها لصيغة JSON معيارية،
+ * وإدارتها عبر طبقة الملفات في المسار العام المعتمد وتحديث تواريخ النسخ في التفضيلات.
  * 
  * [المسؤوليات المعمارية والتقنية]:
  * 1. جمع البيانات المتكاملة (Data Aggregation): الإعدادات، المعاملات، الالتزامات، ديون الحبايب، وسلة المهملات.
  * 2. التسلسل والتحويل إلى JSON عبر [BackupPayloadSerializer].
  * 3. الحماية ضد التزامن المزدوج باستخدام قفل [backupMutex] لمنع تداخل عمليات النسخ.
- * 4. إدارة الملفات الفيزيائية عبر تفويض المهمة إلى [BackupFileManager].
+ * 4. إدارة الملفات الفيزيائية في المسار العام المعتمد عبر تفويض المهمة إلى [BackupFileManager].
  * 5. تسجيل وقت آخر عملية نسخ ناجحة بدقة في SharedPreferences.
  * 6. حماية الخصوصية: حظر كامل لتسجيل أي تفاصيل مالية في السجلات.
  */
@@ -59,7 +59,7 @@ sealed class BackupExecutionState {
 
 /**
  * [فئة خدمة النسخ الاحتياطي - BackupService]:
- * تتولى تجميع البيانات وتسلسلها وحفظها في ملفات مشفرة ومحمية.
+ * تتولى تجميع البيانات وتسلسلها وحفظها في المسار العام الرسمي المعتمد.
  */
 class BackupService(
     private val context: Context,
@@ -116,7 +116,7 @@ class BackupService(
 
     /**
      * [دالة تنفيذ النسخ المحلي الكامل - performLocalBackup]:
-     * تنفذ دورة النسخ بالترتيب: تجهيز البيانات -> تحويل JSON -> كتابة ذرية -> تدقيق الملف -> تسجيل التوقيت.
+     * تنفذ دورة النسخ بالترتيب: تجهيز البيانات -> تحويل JSON -> كتابة ذرية في المسار الشهري العام -> تدقيق الملف -> تسجيل التوقيت.
      */
     suspend fun performLocalBackup(
         customFileName: String? = null,
@@ -133,7 +133,7 @@ class BackupService(
                     )
                 }
 
-                // 2. تحديد المجلد واسم الملف
+                // 2. تحديد المجلد واسم الملف في المسار العام المعتمد
                 val directory = targetDir ?: fileManager.getMonthlyBackupDirectory()
                 val fileName = customFileName ?: fileManager.generateStandardBackupFileName()
 
@@ -157,7 +157,7 @@ class BackupService(
                     val prefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
                     prefs.edit().putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, now).apply()
 
-                    Log.d(TAG, "اكتملت دورة النسخ الاحتياطي المحلي بنجاح.")
+                    Log.d(TAG, "اكتملت دورة النسخ الاحتياطي المحلي بنجاح في المسار العام.")
                     BackupOperationResult.Success(file, now)
                 } else {
                     val err = writeResult.exceptionOrNull()
@@ -179,7 +179,7 @@ class BackupService(
 
     /**
      * [دالة النسخ الاحتياطي الصامت - performSilentBackup]:
-     * تنفذ نسخة تلقائية يومية باسم مخصص في المجلد الشهري دون إزعاج المستخدم.
+     * تنفذ نسخة تلقائية باسم مخصص في المجلد الشهري العام دون إزعاج المستخدم.
      */
     suspend fun performSilentBackup(): BackupOperationResult = withContext(Dispatchers.IO) {
         performLocalBackup(
@@ -188,4 +188,3 @@ class BackupService(
         )
     }
 }
-

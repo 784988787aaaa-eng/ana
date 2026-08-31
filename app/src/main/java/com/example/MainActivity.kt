@@ -181,12 +181,12 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // عرض نافذة الترحيب بالتشغيل الأول بعد تأخير أنيق
+            // عرض نافذة الترحيب بالتشغيل الأول بعد جاهزية الواجهة مباشرة
             val isReallyFirstLaunch = settings.isFirstLaunch && !viewModel.hasShownOnboarding()
             LaunchedEffect(isReallyFirstLaunch) {
                 if (isReallyFirstLaunch) {
-                    // Let the user breathe, see and experience the app interface behind first (3500ms elegant delay)
-                    kotlinx.coroutines.delay(3500)
+                    // إتاحة فرصة قصيرة جداً (400ms) لرسم الإطار الأول بسلاسة ثم عرض دليل الترحيب
+                    kotlinx.coroutines.delay(400)
                     showOnboardingDialog = true
                 }
             }

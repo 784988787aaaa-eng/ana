@@ -68,7 +68,8 @@ fun CloudBackupsBottomSheet(
     
     val storedEmail = remember(syncState) { viewModel.googleDriveSyncHelper.getStoredEmail() }
     val isConnected = remember(storedEmail, syncState) {
-        !storedEmail.isNullOrEmpty() || syncState is CloudSyncState.Authenticated || syncState is CloudSyncState.Success
+        (!storedEmail.isNullOrEmpty() || syncState is CloudSyncState.Authenticated || syncState is CloudSyncState.Success) &&
+            syncState !is CloudSyncState.SessionExpired
     }
     
     // UI Local States

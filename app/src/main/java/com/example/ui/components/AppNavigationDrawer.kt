@@ -199,7 +199,7 @@ fun AppNavigationDrawer(
                 icon = Icons.Default.People,
                 label = stringResource(id = R.string.drawer_business_profile_label),
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     isShowingBusinessProfile = true
                 }
             )
@@ -209,7 +209,7 @@ fun AppNavigationDrawer(
                 icon = Icons.Default.Assessment,
                 label = stringResource(id = R.string.drawer_comprehensive_report_label),
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onComprehensiveReportClick()
                 }
             )
@@ -219,7 +219,7 @@ fun AppNavigationDrawer(
                 icon = Icons.Default.Settings,
                 label = stringResource(id = R.string.drawer_currency_label),
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     isShowingCurrencySettings = true
                 }
             )
@@ -229,7 +229,7 @@ fun AppNavigationDrawer(
                 icon = Icons.Default.Lock,
                 label = stringResource(id = R.string.drawer_security_label),
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     isShowingSecuritySettings = true
                 }
             )

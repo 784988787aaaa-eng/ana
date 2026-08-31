@@ -57,16 +57,16 @@ fun MainAppContent(
     )
 
     Box(modifier = modifier.fillMaxSize()) {
-        val premiumSpring = remember {
+        val navFadeSpec = remember {
             spring<Float>(
-                dampingRatio = 0.85f,
-                stiffness = 350f
+                dampingRatio = 0.9f,
+                stiffness = 500f
             )
         }
-        val premiumOffsetSpring = remember {
+        val navOffsetSpec = remember {
             spring<IntOffset>(
-                dampingRatio = 0.85f,
-                stiffness = 350f
+                dampingRatio = 0.9f,
+                stiffness = 500f
             )
         }
 
@@ -77,41 +77,33 @@ fun MainAppContent(
                 val isTargetSub = targetState == Screen.SETTINGS || targetState == Screen.TRASH || targetState == Screen.BUSINESS_PROFILE || targetState == Screen.SECURITY
 
                 if (isTargetSub && !isInitialSub) {
-                    // Entering sub-screen: Slide UP from bottom + Fade in + Scale in
-                    val slideIn = slideInVertically(animationSpec = premiumOffsetSpring) { it } +
-                            fadeIn(animationSpec = premiumSpring) +
-                            scaleIn(initialScale = 0.95f, animationSpec = premiumSpring)
-                    val slideOut = fadeOut(animationSpec = premiumSpring) +
-                            scaleOut(targetScale = 0.95f, animationSpec = premiumSpring)
+                    // Entering secondary/settings screen: Vertical spring entrance with subtle fade
+                    val slideIn = slideInVertically(animationSpec = navOffsetSpec) { (it * 0.12f).toInt() } +
+                            fadeIn(animationSpec = navFadeSpec)
+                    val slideOut = fadeOut(animationSpec = navFadeSpec)
                     slideIn togetherWith slideOut
                 } else if (isInitialSub && !isTargetSub) {
-                    // Exiting sub-screen: Slide DOWN to bottom + Fade out + Scale out
-                    val slideIn = fadeIn(animationSpec = premiumSpring) +
-                            scaleIn(initialScale = 0.95f, animationSpec = premiumSpring)
-                    val slideOut = slideOutVertically(animationSpec = premiumOffsetSpring) { it } +
-                            fadeOut(animationSpec = premiumSpring) +
-                            scaleOut(targetScale = 0.95f, animationSpec = premiumSpring)
+                    // Exiting secondary screen back to main: Subtle fade & slide down
+                    val slideIn = fadeIn(animationSpec = navFadeSpec)
+                    val slideOut = slideOutVertically(animationSpec = navOffsetSpec) { (it * 0.12f).toInt() } +
+                            fadeOut(animationSpec = navFadeSpec)
                     slideIn togetherWith slideOut
                 } else {
-                    // Lateral or sub-to-sub: Horizontal slide
+                    // Lateral tab switching (Ledger <-> Habayeb): Horizontal translation with clean fade
                     val isForward = targetState.ordinal > initialState.ordinal
                     val slideIn = if (isForward) {
-                        slideInHorizontally(animationSpec = premiumOffsetSpring) { width -> width } +
-                        fadeIn(animationSpec = premiumSpring) +
-                        scaleIn(initialScale = 0.95f, animationSpec = premiumSpring)
+                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.2f).toInt() } +
+                        fadeIn(animationSpec = navFadeSpec)
                     } else {
-                        slideInHorizontally(animationSpec = premiumOffsetSpring) { width -> -width } +
-                        fadeIn(animationSpec = premiumSpring) +
-                        scaleIn(initialScale = 1.05f, animationSpec = premiumSpring)
+                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.2f).toInt() } +
+                        fadeIn(animationSpec = navFadeSpec)
                     }
                     val slideOut = if (isForward) {
-                        slideOutHorizontally(animationSpec = premiumOffsetSpring) { width -> -width } +
-                        fadeOut(animationSpec = premiumSpring) +
-                        scaleOut(targetScale = 1.05f, animationSpec = premiumSpring)
+                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.2f).toInt() } +
+                        fadeOut(animationSpec = navFadeSpec)
                     } else {
-                        slideOutHorizontally(animationSpec = premiumOffsetSpring) { width -> width } +
-                        fadeOut(animationSpec = premiumSpring) +
-                        scaleOut(targetScale = 0.95f, animationSpec = premiumSpring)
+                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.2f).toInt() } +
+                        fadeOut(animationSpec = navFadeSpec)
                     }
                     slideIn togetherWith slideOut
                 }

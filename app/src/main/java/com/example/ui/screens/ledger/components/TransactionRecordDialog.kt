@@ -89,7 +89,7 @@ fun TransactionRecordDialog(
 
     LaunchedEffect(Unit) {
         try {
-            kotlinx.coroutines.delay(150)
+            kotlinx.coroutines.android.awaitFrame()
             focusRequester.requestFocus()
             softwareKeyboardController?.show()
         } catch (e: Exception) {

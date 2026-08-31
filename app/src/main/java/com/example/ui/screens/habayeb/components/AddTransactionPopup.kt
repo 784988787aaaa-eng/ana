@@ -133,7 +133,7 @@ fun AddTransactionPopup(
 
     LaunchedEffect(Unit) {
         try {
-            kotlinx.coroutines.delay(150)
+            kotlinx.coroutines.android.awaitFrame()
             amountFocusRequester.requestFocus()
             softwareKeyboardController?.show()
         } catch (e: Exception) {
@@ -185,7 +185,7 @@ fun AddTransactionPopup(
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
                 isSaving = false
             } else {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                 val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
                     CurrencyConfig.convertAmountBigDecimal(amountBd, currencySymbol, selectedTransactionCurrency, effectiveRateBd)
                 } else {

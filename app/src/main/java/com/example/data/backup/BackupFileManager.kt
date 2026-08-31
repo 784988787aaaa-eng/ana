@@ -8,9 +8,10 @@
  * لإنشاء وقراءة والتحقق من وحذف ملفات النسخ الاحتياطي ذات الامتداد `.mzd`.
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. الكتابة الذرية الآمنة (Atomic Write): الكتابة أولاً في ملف مؤقت (`tmp_backup_*.tmp`) والتحقق من صحته قبل النقل والتسمية للملف النهائي لتفادي تلف البيانات حال انقطاع التطبيق فجأة.
- * 2. التحقق المسبق من سلامة الملفات (Validation): فحص الوجود والحجم وعدم الفراغ قبل القراءة أو الاستعادة.
- * 3. تنظيم الهيكل الهرمي للمجلدات: تقسيم النسخ الاحتياطية تلقائياً حسب الأشهر (`yyyy-MM`).
+ * 1. الاعتماد الحصري على [BackupPathResolver] لتحديد المسار العام المعتمد:
+ *    /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
+ * 2. الكتابة الذرية الآمنة (Atomic Write): الكتابة أولاً في ملف مؤقت (`tmp_backup_*.tmp`) والتحقق من صحته قبل النقل والتسمية للملف النهائي لتفادي تلف البيانات حال انقطاع التطبيق فجأة.
+ * 3. التحقق المسبق من سلامة الملفات (Validation): فحص الوجود والحجم وعدم الفراغ قبل القراءة أو الاستعادة.
  * 4. إدارة التيارات بأمان (Resource Safety): ضمان إغلاق كافة التدفقات بمكتنف `use` لمنع تسريب الموارد.
  * 5. حماية الخصوصية: حظر كامل لتسجيل أي بيانات شخصية أو محتوى مالي في السجلات.
  */
@@ -20,9 +21,7 @@ package com.example.data.backup
 // استيراد حزم بيئة أندرويد والكوروتين وإدارة الملفات والاستثناءات
 // ---------------------------------------------------------------------
 import android.content.Context
-import android.os.Environment
 import android.util.Log
-import com.example.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -47,44 +46,29 @@ class BackupFileManager(private val context: Context) {
 
     /**
      * [دالة المسار الأساسي - getBaseBackupDirectory]:
-     * ترجع المجلد الرئيسي المخصص لحفظ النسخ الاحتياطية في ذاكرة المستندات الخاصة للتطبيق.
+     * ترجع المجلد الرئيسي المخصص لحفظ النسخ الاحتياطية في المسار العام المعتمد:
+     * Documents/الدفتر الذكي
      */
     fun getBaseBackupDirectory(): File {
-        val folderName = context.getString(R.string.backup_folder_name)
-        val safeDocsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            ?: context.filesDir
-        val mainDir = File(safeDocsDir, folderName)
-        try {
-            if (!mainDir.exists()) {
-                mainDir.mkdirs()
-            }
-            if (mainDir.exists()) {
-                return mainDir
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "فشل إنشاء مجلد النسخ الأساسي: ${e.javaClass.simpleName}")
-        }
-        return safeDocsDir
+        val rootDir = BackupPathResolver.getPublicBackupRoot()
+        val ensureResult = BackupPathResolver.ensureDirectory(rootDir)
+        return ensureResult.getOrDefault(rootDir)
     }
 
     /**
      * [دالة المجلد الشهري - getMonthlyBackupDirectory]:
-     * تنشئ وترجع مجلداً فرعياً بصيغة (yyyy-MM) لتصنيف النسخ حسب شهر الإنشاء.
+     * تنشئ وترجع مجلداً فرعياً بصيغة (yyyy-MM) في المسار العام المعتمد لتصنيف النسخ حسب شهر الإنشاء.
      */
     fun getMonthlyBackupDirectory(): File {
-        val baseDir = getBaseBackupDirectory()
-        val sdf = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US)
-        val monthStr = sdf.format(Date())
-        val targetDir = File(baseDir, monthStr)
-        if (!targetDir.exists()) {
-            targetDir.mkdirs()
-        }
-        return targetDir
+        val monthlyDir = BackupPathResolver.getCurrentMonthlyDirectory()
+        val ensureResult = BackupPathResolver.ensureDirectory(monthlyDir)
+        return ensureResult.getOrDefault(monthlyDir)
     }
 
     /**
      * [دالة استعراض كافة ملفات النسخ - getAllBackupFiles]:
-     * تبحث بشكل تراجعي (Recursive Walk) عن كافة ملفات `.mzd` في شجرة المجلدات وترتبها تنازلياً حسب تاريخ التعديل.
+     * تبحث بشكل تراجعي (Recursive Walk) عن كافة ملفات `.mzd` في شجرة المجلد العام المعتمد
+     * وترتبها تنازلياً حسب تاريخ التعديل (للاستخدام البرمجي مثل استدراك الرفع السحابي).
      */
     fun getAllBackupFiles(): List<File> {
         val baseDir = getBaseBackupDirectory()
@@ -119,7 +103,7 @@ class BackupFileManager(private val context: Context) {
 
     /**
      * [دالة الإنشاء الذري لملف النسخة - createBackupFile]:
-     * تنفذ الكتابة الآمنة بتسلسل: إنشاء ملف مؤقت -> كتابة البيانات المشفرة -> تدقيق الصحة -> استبدال/إعادة تسمية ذري.
+     * تنفذ الكتابة الآمنة بتسلسل: التحقق من المسار -> إنشاء ملف مؤقت -> كتابة البيانات المشفرة -> تدقيق الصحة -> استبدال/إعادة تسمية ذري.
      */
     suspend fun createBackupFile(
         targetDirectory: File,
@@ -132,14 +116,22 @@ class BackupFileManager(private val context: Context) {
                 return@withContext Result.failure(IllegalArgumentException("محتوى النسخة الاحتياطية فارغ ولا يمكن كتابته"))
             }
 
-            if (!targetDirectory.exists()) {
-                targetDirectory.mkdirs()
+            // التحقق من اسم الملف المستهدف
+            BackupPathResolver.validateFileName(targetFileName)
+
+            // ضمان وجود وصلاحية المجلد المستهدف
+            val dirResult = BackupPathResolver.ensureDirectory(targetDirectory)
+            if (dirResult.isFailure) {
+                return@withContext Result.failure(
+                    dirResult.exceptionOrNull() ?: IOException("فشل تجهيز مجلد النسخ الاحتياطي: ${targetDirectory.path}")
+                )
             }
+            val validTargetDir = dirResult.getOrThrow()
 
             tempFile = File.createTempFile(
                 BackupConstants.BACKUP_TEMP_PREFIX,
                 BackupConstants.BACKUP_TEMP_SUFFIX,
-                targetDirectory
+                validTargetDir
             )
 
             // كتابة المحتوى بأمان مع إغلاق التيار ومزامنة القرص الفيزيائي (fsync)
@@ -163,13 +155,13 @@ class BackupFileManager(private val context: Context) {
                 )
             }
 
-            val finalFile = File(targetDirectory, targetFileName)
+            val finalFile = File(validTargetDir, targetFileName)
 
             val renameSuccess = tempFile.renameTo(finalFile)
             if (renameSuccess) {
                 validateBackupFile(finalFile)
             } else {
-                // بديل آمن (Fallback) في حال فشل renameTo المباشر مع دعم الاستبدال دون حذف مسبق
+                // بديل آمن في حال فشل renameTo المباشر مع دعم الاستبدال دون حذف مسبق
                 try {
                     tempFile.copyTo(finalFile, overwrite = true)
                     tempFile.delete()
@@ -198,7 +190,7 @@ class BackupFileManager(private val context: Context) {
 
     /**
      * [دالة قراءة محتوى ملف النسخة - readBackupFile]:
-     * تقرأ نصوص المحتوى المشفر بعد التأكد من سلامة وصلاحية الملف الفيزيائي.
+     * تقرأ نصوص المحتوى بعد التأكد من سلامة وصلاحية الملف الفيزيائي.
      */
     suspend fun readBackupFile(file: File): Result<String> = withContext(Dispatchers.IO) {
         val validation = validateBackupFile(file)
@@ -251,4 +243,3 @@ class BackupFileManager(private val context: Context) {
 
     suspend fun readBackupContent(file: File): Result<String> = readBackupFile(file)
 }
-

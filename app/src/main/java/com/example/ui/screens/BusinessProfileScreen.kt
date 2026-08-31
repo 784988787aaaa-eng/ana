@@ -146,8 +146,7 @@ fun BusinessProfileDialog(
                 .fillMaxWidth(0.92f)
                 .widthIn(max = 340.dp)
                 .padding(4.dp)
-                .imePadding()
-                .animateContentSize(),
+                .imePadding(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),

@@ -8,11 +8,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,11 +33,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,11 +63,12 @@ fun QuadBackupCard(
         else -> androidx.compose.foundation.isSystemInDarkTheme()
     }
 
-    val localBackups by backupSyncViewModel.localBackups.collectAsStateWithLifecycle()
     val googleCloudSyncState by backupSyncViewModel.googleDriveSyncState.collectAsStateWithLifecycle()
     
     var showBackupPermissionExplanationDialog by remember { mutableStateOf(false) }
     var onPermissionGrantedCallback by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showRestoreWarningDialog by remember { mutableStateOf(false) }
+    var pendingRestoreJson by remember { mutableStateOf<String?>(null) }
 
     // Backup SAF Create Document launcher
     val safExportLauncher = rememberLauncherForActivityResult(
@@ -107,11 +103,8 @@ fun QuadBackupCard(
                 val inputStream = context.contentResolver.openInputStream(uri)
                 val jsonText = inputStream?.bufferedReader()?.use { it.readText() } ?: ""
                 if (jsonText.isNotBlank()) {
-                    backupSyncViewModel.executeMasterRestore(jsonText, context) { success, restoredSettings ->
-                        if (success && restoredSettings != null) {
-                            onRestoreSuccess(restoredSettings)
-                        }
-                    }
+                    pendingRestoreJson = jsonText
+                    showRestoreWarningDialog = true
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to restore backup from SAF OpenDocument: ${e.message}")
@@ -241,9 +234,7 @@ fun QuadBackupCard(
         if (googleCloudSyncState is CloudSyncState.SessionExpired) {
             Toast.makeText(context, context.getString(R.string.toast_reconnect_cloud), Toast.LENGTH_LONG).show()
             googleSignInClient.signOut().addOnCompleteListener {
-                googleSignInClient.revokeAccess().addOnCompleteListener {
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                }
+                googleSignInClient.revokeAccess()
             }
         } else if (googleCloudSyncState is CloudSyncState.Success) {
             Toast.makeText(context, context.getString(R.string.settings_gdrive_sync_success), Toast.LENGTH_SHORT).show()
@@ -276,18 +267,16 @@ fun QuadBackupCard(
                     safExportLauncher = safExportLauncher
                 )
 
-                // 2. إدارة واسترجاع الملفات المحلية (File Transfer & Discovered Backups)
+                // 2. تصدير واستيراد النسخ الاحتياطية المحلية
                 FileTransferManager(
                     backupSyncViewModel = backupSyncViewModel,
                     context = context,
-                    localBackups = localBackups,
                     safRestoreLauncher = safRestoreLauncher,
                     checkBackupPermissionsGranted = checkBackupPermissionsGranted,
                     onShowPermissionExplanation = { callback ->
                         onPermissionGrantedCallback = callback
                         showBackupPermissionExplanationDialog = true
-                    },
-                    onRestoreSuccess = onRestoreSuccess
+                    }
                 )
 
                 // 3. زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
@@ -323,6 +312,27 @@ fun QuadBackupCard(
                 }
             }
         }
+    }
+
+    if (showRestoreWarningDialog && pendingRestoreJson != null) {
+        RestoreWarningDialog(
+            onDismiss = {
+                showRestoreWarningDialog = false
+                pendingRestoreJson = null
+            },
+            onConfirm = {
+                val json = pendingRestoreJson
+                showRestoreWarningDialog = false
+                pendingRestoreJson = null
+                if (!json.isNullOrBlank()) {
+                    backupSyncViewModel.executeMasterRestore(json, context) { success, restoredSettings ->
+                        if (success && restoredSettings != null) {
+                            onRestoreSuccess(restoredSettings)
+                        }
+                    }
+                }
+            }
+        )
     }
 
     if (showResetConfirmationFlow) {
