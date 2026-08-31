@@ -142,10 +142,16 @@ class BackupFileManager(private val context: Context) {
                 targetDirectory
             )
 
-            // كتابة المحتوى بأمان مع إغلاق التيار تلقائياً
-            tempFile.bufferedWriter(Charsets.UTF_8).use { writer ->
+            // كتابة المحتوى بأمان مع إغلاق التيار ومزامنة القرص الفيزيائي (fsync)
+            java.io.FileOutputStream(tempFile).use { fos ->
+                val writer = fos.bufferedWriter(Charsets.UTF_8)
                 writer.write(content)
                 writer.flush()
+                try {
+                    fos.fd.sync()
+                } catch (_: Exception) {
+                    // تجاهل في البيئات التي لا تدعم fsync المباشر
+                }
             }
 
             // التحقق من صحة واكتمال الملف المؤقت
@@ -158,15 +164,12 @@ class BackupFileManager(private val context: Context) {
             }
 
             val finalFile = File(targetDirectory, targetFileName)
-            if (finalFile.exists()) {
-                finalFile.delete()
-            }
 
             val renameSuccess = tempFile.renameTo(finalFile)
             if (renameSuccess) {
                 validateBackupFile(finalFile)
             } else {
-                // بديل آمن (Fallback) في حال فشل renameTo المباشر
+                // بديل آمن (Fallback) في حال فشل renameTo المباشر مع دعم الاستبدال دون حذف مسبق
                 try {
                     tempFile.copyTo(finalFile, overwrite = true)
                     tempFile.delete()

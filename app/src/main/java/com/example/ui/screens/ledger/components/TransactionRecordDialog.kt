@@ -17,8 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -36,8 +34,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.example.data.local.entities.TransactionDb
 import com.example.ui.screens.CalculatorDialog
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun TransactionRecordDialog(
@@ -51,6 +48,7 @@ fun TransactionRecordDialog(
 ) {
     if (!showTxDialog) return
 
+    val mizanColors = MaterialTheme.mizanColors
     val context = LocalContext.current
     val initialAmount = remember(editingTransaction, showTxDialog) { editingTransaction?.amount?.toPlainString() ?: "" }
     val initialDesc = remember(editingTransaction, showTxDialog) { editingTransaction?.description ?: "" }
@@ -99,20 +97,19 @@ fun TransactionRecordDialog(
         }
     }
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val isIncome = txDialogType == "INCOME"
 
     // Colors: Green for Income (وارد), Red for Expense (منصرف) matching action buttons
     val themeColor = if (isIncome) {
-        financialCreditColor(isDark)
+        mizanColors.credit
     } else {
-        financialDebtColor(isDark)
+        mizanColors.debt
     }
     val themeColorSub = themeColor.copy(alpha = 0.85f)
 
     // Dialog background & inputs using MaterialTheme color scheme
     val dialogBgColor = MaterialTheme.colorScheme.surface
-    val textInputBgColor = if (isDark) themeColor.copy(alpha = 0.12f) else themeColor.copy(alpha = 0.05f)
+    val textInputBgColor = if (isIncome) mizanColors.creditContainer.copy(alpha = 0.35f) else mizanColors.debtContainer.copy(alpha = 0.35f)
     val textColor = MaterialTheme.colorScheme.onSurface
 
     Dialog(
@@ -206,7 +203,7 @@ fun TransactionRecordDialog(
                             focusedBorderColor = themeColor,
                             unfocusedBorderColor = themeColor.copy(alpha = 0.6f),
                             focusedLabelColor = themeColor,
-                            unfocusedLabelColor = if (isDark) themeColor.copy(alpha = 0.8f) else themeColorSub
+                            unfocusedLabelColor = themeColorSub
                         ),
                         textStyle = LocalTextStyle.current.copy(
                             color = textColor,
@@ -241,7 +238,7 @@ fun TransactionRecordDialog(
                             focusedBorderColor = themeColor,
                             unfocusedBorderColor = themeColor.copy(alpha = 0.6f),
                             focusedLabelColor = themeColor,
-                            unfocusedLabelColor = if (isDark) themeColor.copy(alpha = 0.8f) else themeColorSub
+                            unfocusedLabelColor = themeColorSub
                         ),
                         textStyle = LocalTextStyle.current.copy(
                             color = textColor,
@@ -285,7 +282,7 @@ fun TransactionRecordDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = if (isDark) themeColor.copy(alpha = 0.9f) else themeColorSub
+                            contentColor = themeColorSub
                         )
                     ) {
                         Text(
@@ -317,9 +314,9 @@ fun TransactionRecordDialog(
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = themeColor,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            contentColor = if (isIncome) mizanColors.onCredit else mizanColors.onDebt,
                             disabledContainerColor = themeColor.copy(alpha = 0.35f),
-                            disabledContentColor = if (isDark) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f) else Color.Gray.copy(alpha = 0.4f)
+                            disabledContentColor = mizanColors.contentDisabled
                         )
                     ) {
                         Text(

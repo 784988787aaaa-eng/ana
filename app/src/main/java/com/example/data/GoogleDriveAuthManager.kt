@@ -35,6 +35,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.FormBody
 import okhttp3.Request
@@ -112,6 +114,7 @@ class GoogleDriveAuthManager(
 
     // محرك الشبكة السحابي الموحد لإعادة المحاولة عند التقلبات
     private val cloudEngine = CloudNetworkEngine.getInstance(context)
+    private val refreshMutex = Mutex()
 
     /**
      * [خاصية التخزين المشفر - sharedPrefs]:
@@ -372,60 +375,65 @@ class GoogleDriveAuthManager(
      * [دالة تجديد رمز الوصول - refreshAccessTokenIfNeeded]:
      * ترسل طلب POST مشفراً إلى نقطة نهاية Google Token لتجديد الرمز باستخدام Refresh Token.
      */
-    suspend fun refreshAccessTokenIfNeeded(): String? = withContext(Dispatchers.IO) {
-        val refreshToken = getStoredRefreshToken()
-        if (refreshToken.isNullOrEmpty()) {
-            return@withContext null
-        }
-
-        if (!isTokenExpired()) {
-            val currentToken = getStoredAccessToken()
-            if (!currentToken.isNullOrEmpty()) {
-                return@withContext currentToken
+    suspend fun refreshAccessTokenIfNeeded(): String? = refreshMutex.withLock {
+        withContext(Dispatchers.IO) {
+            val refreshToken = getStoredRefreshToken()
+            if (refreshToken.isNullOrEmpty()) {
+                return@withContext null
             }
-        }
 
-        try {
-            cloudEngine.executeWithRetry(
-                operationName = "RefreshAccessToken",
-                maxRetries = 2,
-                initialDelayMs = 500L
-            ) {
-                val formBuilder = FormBody.Builder()
-                    .add(PARAM_CLIENT_ID, clientId)
-                    .add(PARAM_REFRESH_TOKEN, refreshToken)
-                    .add(PARAM_GRANT_TYPE, GRANT_TYPE_REFRESH_TOKEN)
-                if (clientSecret.isNotEmpty()) {
-                    formBuilder.add(PARAM_CLIENT_SECRET, clientSecret)
+            if (!isTokenExpired()) {
+                val currentToken = getStoredAccessToken()
+                if (!currentToken.isNullOrEmpty()) {
+                    return@withContext currentToken
                 }
+            }
 
-                val request = Request.Builder()
-                    .url(TOKEN_ENDPOINT_URL)
-                    .post(formBuilder.build())
-                    .build()
+            try {
+                cloudEngine.executeWithRetry(
+                    operationName = "RefreshAccessToken",
+                    maxRetries = 2,
+                    initialDelayMs = 500L
+                ) {
+                    val formBuilder = FormBody.Builder()
+                        .add(PARAM_CLIENT_ID, clientId)
+                        .add(PARAM_REFRESH_TOKEN, refreshToken)
+                        .add(PARAM_GRANT_TYPE, GRANT_TYPE_REFRESH_TOKEN)
+                    if (clientSecret.isNotEmpty()) {
+                        formBuilder.add(PARAM_CLIENT_SECRET, clientSecret)
+                    }
 
-                cloudEngine.client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        val rawBody = response.body?.string() ?: ""
-                        val json = JSONObject(rawBody)
-                        val accessToken = json.getString(RESPONSE_ACCESS_TOKEN)
-                        val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
+                    val request = Request.Builder()
+                        .url(TOKEN_ENDPOINT_URL)
+                        .post(formBuilder.build())
+                        .build()
 
-                        storeTokens(accessToken, refreshToken, expiresIn)
-                        Log.d(TAG, "تم تجديد رمز الوصول بنجاح.")
-                        accessToken
-                    } else {
-                        Log.w(TAG, "استجابة غير ناجحة عند تجديد رمز الوصول (رمز الحالة: ${response.code})")
-                        if (response.code == 400 || response.code == 401) {
-                            clearAuthData()
+                    cloudEngine.client.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
+                            val rawBody = response.body?.string() ?: ""
+                            val json = JSONObject(rawBody)
+                            val accessToken = json.getString(RESPONSE_ACCESS_TOKEN)
+                            val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
+
+                            storeTokens(accessToken, refreshToken, expiresIn)
+                            Log.d(TAG, "تم تجديد رمز الوصول بنجاح.")
+                            accessToken
+                        } else {
+                            val rawBody = response.body?.string() ?: ""
+                            Log.w(TAG, "استجابة غير ناجحة عند تجديد رمز الوصول (رمز الحالة: ${response.code})")
+                            if (response.code == 400 || response.code == 401) {
+                                if (rawBody.contains("invalid_grant") || rawBody.contains("unauthorized_client")) {
+                                    clearAuthData()
+                                }
+                            }
+                            null
                         }
-                        null
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "تعذر تجديد رمز الوصول: ${e.javaClass.simpleName}")
+                null
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "تعذر تجديد رمز الوصول: ${e.javaClass.simpleName}")
-            null
         }
     }
 

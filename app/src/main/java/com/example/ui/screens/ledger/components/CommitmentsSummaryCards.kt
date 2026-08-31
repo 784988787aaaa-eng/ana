@@ -11,8 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,9 +44,6 @@ fun CommitmentsSummaryCards(
     if (commitments.isEmpty()) return
 
     val mizanColors = MaterialTheme.mizanColors
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val greenColor = mizanColors.credit
-    val redColor = MaterialTheme.colorScheme.error
 
     val (totalRemainingCommitments, netAmount) = remember(computedCommitments, totalCash) {
         val remaining = computedCommitments.fold(BigDecimal.ZERO) { acc, triple -> acc.add(triple.third) }
@@ -60,8 +55,6 @@ fun CommitmentsSummaryCards(
         Pair(remaining, net)
     }
 
-    val cardBaseBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -69,18 +62,18 @@ fun CommitmentsSummaryCards(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Card 1: Right in RTL -> "الصافي" (Green)
+        // Card 1: Right in RTL -> "الصافي" (Credit / Green)
         Card(
             modifier = Modifier
                 .weight(1f)
                 .defaultMinSize(minHeight = 52.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (isDark) greenColor.copy(alpha = 0.12f) else cardBaseBg
+                containerColor = mizanColors.creditContainer
             ),
             border = BorderStroke(
                 1.dp,
-                greenColor.copy(alpha = if (isDark) 0.35f else 0.22f)
+                mizanColors.creditBorder
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
@@ -105,7 +98,7 @@ fun CommitmentsSummaryCards(
                     text = formatCurrency(netAmount, currencySymbol).toWesternDigits(),
                     baseFontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = greenColor,
+                    color = mizanColors.credit,
                     maxLines = 1,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -113,18 +106,18 @@ fun CommitmentsSummaryCards(
             }
         }
 
-        // Card 2: Left in RTL -> "باقي الالتزامات" (Red)
+        // Card 2: Left in RTL -> "باقي الالتزامات" (Debt / Red)
         Card(
             modifier = Modifier
                 .weight(1f)
                 .defaultMinSize(minHeight = 52.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (isDark) redColor.copy(alpha = 0.12f) else cardBaseBg
+                containerColor = mizanColors.debtContainer
             ),
             border = BorderStroke(
                 1.dp,
-                redColor.copy(alpha = if (isDark) 0.35f else 0.22f)
+                mizanColors.debtBorder
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
@@ -149,7 +142,7 @@ fun CommitmentsSummaryCards(
                     text = formatCurrency(totalRemainingCommitments, currencySymbol).toWesternDigits(),
                     baseFontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = redColor,
+                    color = mizanColors.debt,
                     maxLines = 1,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()

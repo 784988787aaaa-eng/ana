@@ -26,6 +26,7 @@ package com.example.domain
 // استيراد حزم سياق أندرويد وإدارة الملفات في نظام التشغيل
 // ---------------------------------------------------------------------
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import java.io.File
 
 /**
@@ -74,7 +75,7 @@ object DatabaseSecurityGuard {
         // حجم ترويسة SQLite يجب ألا يقل عن 16 بايت
         if (dbFile.length() < 16) return false
         return try {
-            dbFile.inputStream().use { input ->
+            val isHeaderValid = dbFile.inputStream().use { input ->
                 val header = ByteArray(16)
                 val read = input.read(header)
                 if (read == 16) {
@@ -88,9 +89,43 @@ object DatabaseSecurityGuard {
                     matches
                 } else false
             }
+
+            if (!isHeaderValid) return false
+
+            // فحص PRAGMA quick_check للتأكد من سلامة الجداول الداخلية
+            var quickCheckPassed = true
+            try {
+                val db = SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READONLY)
+                db.use { database ->
+                    database.rawQuery("PRAGMA quick_check", null).use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val result = cursor.getString(0)
+                            quickCheckPassed = result.equals("ok", ignoreCase = true)
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                // إذا تعذر فتحها بالقراءة فقط نكتفي بفحص الترويسة
+            }
+            quickCheckPassed
         } catch (e: Exception) {
             false
         }
+    }
+
+    /**
+     * [التحقق من تفويض تصدير البيانات - preventUnauthorizedExport]:
+     * يتحقق من رمز المرور إذا كان القفل مفعلاً لمنع التصدير غير المصرح به للبيانات.
+     */
+    fun preventUnauthorizedExport(context: Context, enteredPin: String?): Boolean {
+        val secManager = AppSecurityManager.getInstance(context)
+        if (!secManager.isFastPasscodeEnabled() || !secManager.hasAdminPin()) {
+            return true
+        }
+        if (enteredPin.isNullOrBlank()) {
+            return false
+        }
+        return secManager.validateAdminPin(enteredPin)
     }
 
     /**

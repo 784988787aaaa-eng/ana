@@ -15,8 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,7 +47,6 @@ fun CommitmentSummaryGradientCard(
     } else 0f
     val overallPercent = (overallPercentFloat * 100).toInt()
     val isFullyCovered = totalAllocatedSum >= totalTargetSum && totalTargetSum > BigDecimal.ZERO
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     val progressGradient = remember(mizanColors.credit, primaryColor) {
         Brush.horizontalGradient(
@@ -63,7 +60,7 @@ fun CommitmentSummaryGradientCard(
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = mizanColors.appSurfaceContainer
         ),
         border = BorderStroke(
             1.dp,
@@ -92,14 +89,14 @@ fun CommitmentSummaryGradientCard(
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isFullyCovered) mizanColors.credit else MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.25f else 0.42f),
+                    color = if (isFullyCovered) mizanColors.credit else mizanColors.brandPrimaryContainer,
                     border = BorderStroke(1.dp, if (isFullyCovered) mizanColors.creditBorder else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = "$overallPercent% مكتمل",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isFullyCovered) mizanColors.onCredit else MaterialTheme.colorScheme.primary,
+                        color = if (isFullyCovered) mizanColors.onCredit else mizanColors.onBrandPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
                     )
                 }

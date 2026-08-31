@@ -20,22 +20,21 @@
 package com.example.data.repository
 
 // ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد وبيئة التخزين وإدارة الملفات والتنسيق الزمني
+// استيراد حزم سياق أندرويد ومدير ملفات النسخ الموحد
 // ---------------------------------------------------------------------
 import android.content.Context
-import android.os.Environment
-import android.util.Log
-import com.example.R
+import com.example.data.backup.BackupConstants
+import com.example.data.backup.BackupFileManager
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * [فئة مدير مجلدات النسخ الاحتياطي - BackupDirectoryManager]:
- * مسؤولة عن إنشاء المسارات، تنظيم المجلدات الشهرية، والبحث عن ملفات النسخ المحلية.
+ * واجهة تفويض وتوافقية (Backward-compatible Facade) تفوض عمليات إدارة المسارات
+ * والمجلدات الشهرية والبحث الشجري إلى [BackupFileManager] الموحد.
  */
 class BackupDirectoryManager(private val context: Context) {
+
+    private val fileManager = BackupFileManager(context)
 
     /**
      * [الكائن المرافق للثوابت والإعدادات]:
@@ -44,46 +43,25 @@ class BackupDirectoryManager(private val context: Context) {
         /** وسم السجلات التشخيصية */
         private const val TAG = "BackupDirManager"
         /** امتداد ملفات النسخ الاحتياطي المشفرة لتطبيق الميزان */
-        private const val MZD_EXTENSION = ".mzd"
+        const val MZD_EXTENSION = BackupConstants.BACKUP_FILE_EXTENSION
         /** نمط تسمية المجلدات الشهرية */
-        private const val MONTH_DATE_PATTERN = "yyyy-MM"
+        const val MONTH_DATE_PATTERN = BackupConstants.MONTH_DATE_PATTERN
     }
 
     /**
      * [دالة جلب المجلد الرئيسي للنسخ الاحتياطي - getBaseBackupDirectory]:
-     * تنشئ المجلد العام للتطبيق داخل مجلد المستندات مع معالجة الاستثناءات والتراجع للتخزين الداخلي.
+     * تفوض جلب المجلد الأساسي إلى [BackupFileManager].
      */
     fun getBaseBackupDirectory(): File {
-        val folderName = context.getString(R.string.backup_folder_name)
-        val safeDocsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            ?: context.filesDir
-        val mainDir = File(safeDocsDir, folderName)
-        try {
-            if (!mainDir.exists()) {
-                mainDir.mkdirs()
-            }
-            if (mainDir.exists()) {
-                return mainDir
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error creating backup directory", e)
-        }
-        return safeDocsDir
+        return fileManager.getBaseBackupDirectory()
     }
 
     /**
      * [دالة جلب المجلد الشهري للنسخ الحالي - getBackupDirectory]:
-     * تنشئ وتعيد مسار المجلد الشهري للنسخ الاحتياطي استناداً إلى تاريخ اليوم الحالي (`yyyy-MM`).
+     * تفوض جلب المجلد الشهري إلى [BackupFileManager].
      */
     fun getBackupDirectory(): File {
-        val baseDir = getBaseBackupDirectory()
-        val sdf = SimpleDateFormat(MONTH_DATE_PATTERN, Locale.US)
-        val monthStr = sdf.format(Date())
-        val targetDir = File(baseDir, monthStr)
-        if (!targetDir.exists()) {
-            targetDir.mkdirs()
-        }
-        return targetDir
+        return fileManager.getMonthlyBackupDirectory()
     }
 
     /**
@@ -92,7 +70,14 @@ class BackupDirectoryManager(private val context: Context) {
      */
     fun getAllMzdFilesRecursively(rootDir: File): List<File> {
         if (!rootDir.exists()) return emptyList()
-        return rootDir.walkTopDown().filter { it.isFile && it.name.endsWith(MZD_EXTENSION) }.toList()
+        return try {
+            rootDir.walkTopDown()
+                .filter { it.isFile && it.name.endsWith(MZD_EXTENSION, ignoreCase = true) }
+                .toList()
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 }
+
 

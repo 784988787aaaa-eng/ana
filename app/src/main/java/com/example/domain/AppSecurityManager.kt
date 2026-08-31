@@ -316,6 +316,106 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * [حفظ تجزئة رمز المرور المشفر - saveAdminPin]:
+     * يحسب تجزئة SHA-256 محصنة بالملح التشفيري وبصمة الجهاز ويحفظها بأمان.
+     */
+    fun saveAdminPin(pin: String) {
+        val deviceId = getUnifiedDeviceId()
+        val hash = HashUtils.hashString(pin, deviceId)
+        securePrefs.edit()
+            .putString(PREF_ADMIN_PIN_HASH, hash)
+            .putInt(PREF_FAILED_PIN_ATTEMPTS, 0)
+            .putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+            .apply()
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit()
+                .putString(PREF_ADMIN_PIN_HASH, hash)
+                .putInt(PREF_FAILED_PIN_ATTEMPTS, 0)
+                .putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+                .apply()
+        }
+    }
+
+    /**
+     * [التحقق من وجود رمز مرور مسجل - hasAdminPin]:
+     */
+    fun hasAdminPin(): Boolean {
+        val hash = securePrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: legacyPrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: ""
+        return hash.isNotBlank()
+    }
+
+    /**
+     * [فحص حالة الحظر المؤقت - isPinLockedOut]:
+     */
+    fun isPinLockedOut(): Boolean {
+        val lockoutUntil = securePrefs.getLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+        return System.currentTimeMillis() < lockoutUntil
+    }
+
+    /**
+     * [جلب ثواني الحظر المتبقية - getRemainingLockoutSeconds]:
+     */
+    fun getRemainingLockoutSeconds(): Long {
+        val lockoutUntil = securePrefs.getLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+        val remainingMs = lockoutUntil - System.currentTimeMillis()
+        return if (remainingMs > 0) remainingMs / 1000L else 0L
+    }
+
+    /**
+     * [التحقق الآمن من رمز المرور - validateAdminPin]:
+     * يتحقق باستخدام المقارنة الزمنية الثابتة مع حماية من هجمات القوة الغاشمة (Brute-Force Lockout).
+     */
+    fun validateAdminPin(enteredPin: String): Boolean {
+        if (isPinLockedOut()) {
+            return false
+        }
+        val storedHash = securePrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: legacyPrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: ""
+        if (storedHash.isBlank()) {
+            return true
+        }
+
+        val deviceId = getUnifiedDeviceId()
+        val enteredHash = HashUtils.hashString(enteredPin, deviceId)
+        val isMatch = HashUtils.secureEquals(enteredHash, storedHash)
+
+        if (isMatch) {
+            securePrefs.edit()
+                .putInt(PREF_FAILED_PIN_ATTEMPTS, 0)
+                .putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+                .apply()
+            return true
+        } else {
+            val failedAttempts = (securePrefs.getInt(PREF_FAILED_PIN_ATTEMPTS, 0) + 1)
+            val editor = securePrefs.edit().putInt(PREF_FAILED_PIN_ATTEMPTS, failedAttempts)
+            if (failedAttempts >= 5) {
+                // حظر لمدة 30 ثانية بعد 5 محاولات خاطئة متتالية
+                val lockoutDurationMs = 30_000L
+                editor.putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, System.currentTimeMillis() + lockoutDurationMs)
+            }
+            editor.apply()
+            return false
+        }
+    }
+
+    /**
+     * [مسح رمز المرور المسجل - clearAdminPin]:
+     */
+    fun clearAdminPin() {
+        securePrefs.edit()
+            .remove(PREF_ADMIN_PIN_HASH)
+            .remove(PREF_FAILED_PIN_ATTEMPTS)
+            .remove(PREF_LOCKOUT_UNTIL_TIMESTAMP)
+            .apply()
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit()
+                .remove(PREF_ADMIN_PIN_HASH)
+                .remove(PREF_FAILED_PIN_ATTEMPTS)
+                .remove(PREF_LOCKOUT_UNTIL_TIMESTAMP)
+                .apply()
+        }
+    }
+
     // =========================================================================
     // قسم: تسجيل مستمعي تغيير التفضيلات (LISTENER REGISTRATION)
     // =========================================================================
@@ -364,6 +464,9 @@ class AppSecurityManager private constructor(context: Context) {
         const val PREF_UNIFIED_DEVICE_ID = "unified_device_id"
         const val PREF_FAST_PASSCODE_ENABLED = "fast_passcode_enabled"
         const val PREF_BIOMETRIC_ENABLED = "biometric_enabled"
+        const val PREF_ADMIN_PIN_HASH = "admin_pin_hash"
+        const val PREF_FAILED_PIN_ATTEMPTS = "failed_pin_attempts"
+        const val PREF_LOCKOUT_UNTIL_TIMESTAMP = "lockout_until_timestamp"
 
         /** النسخة الأحادية الحية من مدير الأمان في الذاكرة */
         @Volatile
