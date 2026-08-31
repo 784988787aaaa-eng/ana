@@ -1,7 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-import androidx.compose.material3.MaterialTheme
-
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -10,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -19,8 +16,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.data.CloudBackupFile
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SoftRed
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.BackupSyncViewModel
 
 @Composable
@@ -36,7 +32,7 @@ fun CloudOngoingActionDialog(ongoingActionMessage: String) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator(color = EmeraldPrimary, modifier = Modifier.size(40.dp))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
                 Text(
                     text = ongoingActionMessage,
                     fontSize = 13.sp,
@@ -69,7 +65,7 @@ fun CloudRestoreConfirmDialog(
         title = {
             Text(
                 text = stringResource(R.string.cloud_restore_confirm_title),
-                color = SoftRed,
+                color = MaterialTheme.colorScheme.error,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Right,
@@ -101,12 +97,15 @@ fun CloudRestoreConfirmDialog(
                     }
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
                     text = stringResource(R.string.cloud_btn_restore_confirm),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -175,12 +174,15 @@ fun CloudDeleteConfirmDialog(
                     }
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
                     text = stringResource(R.string.cloud_btn_delete_confirm),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -246,12 +248,15 @@ fun CloudMultiDeleteConfirmDialog(
                     }
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
                     text = stringResource(R.string.cloud_btn_multi_delete_confirm),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )

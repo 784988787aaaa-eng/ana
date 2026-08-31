@@ -32,6 +32,7 @@ import com.example.R
 import com.example.domain.evaluateSimpleExpression
 
 import java.math.BigDecimal
+import com.example.ui.theme.mizanColors
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -133,34 +134,29 @@ fun CalculatorDialog(
         onValueConfirmed(finalValue)
     }
 
-    val bgMatColor = MaterialTheme.colorScheme.background
-    val isDark = remember(bgMatColor) { bgMatColor.luminance() < 0.5f }
-    val isIncomeTheme = remember(activeThemeColor) { activeThemeColor == com.example.ui.theme.CreditGreen || activeThemeColor == com.example.ui.theme.SelectionGreen }
-    val isExpenseTheme = remember(activeThemeColor) { activeThemeColor == com.example.ui.theme.DebtRed }
+    val mizanColors = MaterialTheme.mizanColors
+    val isIncomeTheme = remember(activeThemeColor, mizanColors) {
+        activeThemeColor == mizanColors.credit || activeThemeColor == com.example.ui.theme.CreditGreen || activeThemeColor == com.example.ui.theme.SelectionGreen
+    }
+    val isExpenseTheme = remember(activeThemeColor, mizanColors) {
+        activeThemeColor == mizanColors.debt || activeThemeColor == com.example.ui.theme.DebtRed
+    }
 
     val surfaceVarColor = MaterialTheme.colorScheme.surfaceVariant
     // Calculate background color with clean theme tokens
-    val calcBgColor = remember(isDark, isIncomeTheme, isExpenseTheme, surfaceVarColor) {
-        if (isDark) {
-            when {
-                isIncomeTheme -> com.example.ui.theme.CreditContainerDark
-                isExpenseTheme -> com.example.ui.theme.DebtContainerDark
-                else -> surfaceVarColor
-            }
-        } else {
-            when {
-                isIncomeTheme -> com.example.ui.theme.CreditContainerLight
-                isExpenseTheme -> com.example.ui.theme.DebtContainerLight
-                else -> surfaceVarColor
-            }
+    val calcBgColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, surfaceVarColor) {
+        when {
+            isIncomeTheme -> mizanColors.creditContainer
+            isExpenseTheme -> mizanColors.debtContainer
+            else -> surfaceVarColor
         }
     }
 
     // Border color matching the mode
-    val calcBorderColor = remember(isIncomeTheme, isExpenseTheme, brandPrimary) {
+    val calcBorderColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, brandPrimary) {
         when {
-            isIncomeTheme -> com.example.ui.theme.CreditGreen
-            isExpenseTheme -> com.example.ui.theme.DebtRed
+            isIncomeTheme -> mizanColors.credit
+            isExpenseTheme -> mizanColors.debt
             else -> brandPrimary
         }
     }
@@ -210,19 +206,11 @@ fun CalculatorDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Digital Display Screen
-                val displayBgColor = if (isDark) {
-                    when {
-                        isIncomeTheme -> com.example.ui.theme.CreditContainerDark
-                        isExpenseTheme -> com.example.ui.theme.DebtContainerDark
-                        else -> MaterialTheme.colorScheme.surface
-                    }
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+                val displayBgColor = MaterialTheme.colorScheme.surface
                 
                 val displayBorderColor = when {
-                    isIncomeTheme -> com.example.ui.theme.CreditGreen.copy(alpha = 0.6f)
-                    isExpenseTheme -> com.example.ui.theme.DebtRed.copy(alpha = 0.6f)
+                    isIncomeTheme -> mizanColors.credit.copy(alpha = 0.6f)
+                    isExpenseTheme -> mizanColors.debt.copy(alpha = 0.6f)
                     else -> MaterialTheme.colorScheme.outlineVariant
                 }
 
@@ -253,7 +241,7 @@ fun CalculatorDialog(
                                 text = rawExpression.ifEmpty { stringResource(id = R.string.calc_default_zero) },
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (rawExpression.isEmpty()) Color.LightGray else displayTextColor,
+                                color = if (rawExpression.isEmpty()) MaterialTheme.mizanColors.contentTertiary else displayTextColor,
                                 textAlign = TextAlign.Right,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -374,50 +362,33 @@ fun CalcButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val isIncomeTheme = brandPrimary == com.example.ui.theme.CreditGreen || brandPrimary == com.example.ui.theme.SelectionGreen
-    val isExpenseTheme = brandPrimary == com.example.ui.theme.DebtRed
+    val isIncomeTheme = brandPrimary == MaterialTheme.mizanColors.credit || brandPrimary == MaterialTheme.mizanColors.selection
+    val isExpenseTheme = brandPrimary == MaterialTheme.mizanColors.debt
 
-    // Determine button colors dynamically based on active theme & dark mode
+    // Determine button colors dynamically based on active semantic roles
     val backgroundColor = when {
         isEquals -> brandPrimary
-        isBackspace -> {
-            if (isDark) {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.DebtContainerDark
-            } else {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerLight else com.example.ui.theme.DebtContainerLight
-            }
-        }
-        isOp || isAction -> {
-            if (isDark) {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.DebtContainerDark
-            } else {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerLight else com.example.ui.theme.DebtContainerLight
-            }
+        isBackspace || isOp || isAction -> {
+            if (isIncomeTheme) MaterialTheme.mizanColors.creditContainer
+            else if (isExpenseTheme) MaterialTheme.mizanColors.debtContainer
+            else MaterialTheme.colorScheme.surfaceVariant
         }
         else -> { // Numbers
-            if (isDark) {
-                if (isIncomeTheme) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.DebtContainerDark
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            if (isIncomeTheme) MaterialTheme.mizanColors.creditContainer
+            else if (isExpenseTheme) MaterialTheme.mizanColors.debtContainer
+            else MaterialTheme.colorScheme.surface
         }
     }
 
     val textColor = when {
-        isEquals -> Color.White
-        isBackspace -> {
-            if (isDark) Color.White else brandPrimary
-        }
-        isOp || isAction -> brandPrimary
-        else -> { // Numbers
-            if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
-        }
+        isEquals -> MaterialTheme.mizanColors.contentOnBrand
+        isBackspace || isOp || isAction -> brandPrimary
+        else -> MaterialTheme.colorScheme.onSurface
     }
 
     val buttonBorderColor = when {
-        isIncomeTheme -> com.example.ui.theme.CreditGreen.copy(alpha = 0.4f)
-        isExpenseTheme -> com.example.ui.theme.DebtRed.copy(alpha = 0.4f)
+        isIncomeTheme -> MaterialTheme.mizanColors.creditBorder
+        isExpenseTheme -> MaterialTheme.mizanColors.debtBorder
         else -> MaterialTheme.colorScheme.outlineVariant
     }
 

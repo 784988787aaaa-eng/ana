@@ -1,26 +1,5 @@
-/**
- * =====================================================================
- * ملف: حوار تأكيد إعادة تقييم سعر صرف العملات (CurrencyRevalueConfirmDialog.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا المكون نافذة حوار تأكيدية مخصصة في Jetpack Compose تظهر عند تعديل سعر
- * صرف أي عملة أجنبية. تمنح المستخدم الخيار بين تطبيق السعر الجديد على المعاملات
- * السابقة والمستقبلية معاً (إعادة تقييم محاسبية شاملة) أو تطبيقه على المعاملات المستقبلية فقط.
- * 
- * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. اتخاذ القرار المحاسبي (Accounting Decision Prompt):
- *    - حماية سلامة الديون التاريخية وتخيير المستخدم بوضوح قبل تعديل الأرصدة السابقة.
- * 2. التصميم المتناسق والمدمج (Compact & Polished Dialog UI):
- *    - استخدام بطاقة مدمجة بأبعاد محددة (280.dp) وظلال وحواف ناعمة متوافقة مع Material 3.
- * 3. الرسوم المتحركة للتجاوب مع المحتوى (Dynamic Animated Sizing):
- *    - استخدام [animateContentSize] لضمان انتقال ناعم في الأبعاد عند ظهور النصوص أو تغيير اللغة.
- */
 package com.example.ui.components
 
-// ---------------------------------------------------------------------
-// استيراد حزم Compose ومكونات الرسوم والواجهات
-// ---------------------------------------------------------------------
 import java.math.BigDecimal
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -49,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,15 +37,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
 
-/**
- * [مكون حوار تأكيد إعادة تقييم العملة - CurrencyRevalueConfirmDialog]:
- * 
- * @param targetCurrency رمز أو اسم العملة المعدل سعر صرفها.
- * @param newRate سعر الصرف الجديد المدخل بدقة.
- * @param onConfirmHistoricalAndFuture تأكيد إعادة التقييم للمعاملات السابقة والمستقبلية.
- * @param onConfirmFutureOnly تأكيد تطبيق السعر على المعاملات القادمة فقط.
- * @param onDismiss إغلاق الحوار وإلغاء العملية.
- */
 @Composable
 fun CurrencyRevalueConfirmDialog(
     targetCurrency: String,
@@ -97,9 +66,7 @@ fun CurrencyRevalueConfirmDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // =====================================================================
                 // قسم: عنوان الحوار وأيقونة التحديث
-                // =====================================================================
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -121,9 +88,7 @@ fun CurrencyRevalueConfirmDialog(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.8.dp)
 
-                // =====================================================================
                 // قسم: نص رسالة الاستفسار والتوضيح للمستخدم
-                // =====================================================================
                 Text(
                     text = stringResource(id = R.string.currency_update_rate_confirm_msg, targetCurrency),
                     fontSize = 10.5.sp,
@@ -135,9 +100,7 @@ fun CurrencyRevalueConfirmDialog(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // =====================================================================
                 // قسم: أزرار الخيارات (السابق والمستقبل / المستقبل فقط)
-                // =====================================================================
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -153,7 +116,7 @@ fun CurrencyRevalueConfirmDialog(
                     ) {
                         Text(
                             text = stringResource(id = R.string.currency_update_past_future),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -182,4 +145,3 @@ fun CurrencyRevalueConfirmDialog(
         }
     }
 }
-

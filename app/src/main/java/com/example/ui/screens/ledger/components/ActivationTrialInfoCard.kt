@@ -21,29 +21,29 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.LicenseGreenBg
-import com.example.ui.theme.LicenseGreenText
-import com.example.ui.theme.SoftRed
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun ActivationStatusBanner(
     isActivated: Boolean,
     isAutoTriggered: Boolean
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+    val errorColor = MaterialTheme.colorScheme.error
+
     val bannerBg = when {
-        isActivated -> LicenseGreenBg
-        isAutoTriggered -> SoftRed.copy(alpha = 0.08f)
+        isActivated -> mizanColors.creditContainer
+        isAutoTriggered -> errorColor.copy(alpha = 0.08f)
         else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
     }
     val bannerBorder = when {
-        isActivated -> EmeraldPrimary.copy(alpha = 0.3f)
-        isAutoTriggered -> SoftRed.copy(alpha = 0.25f)
+        isActivated -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        isAutoTriggered -> errorColor.copy(alpha = 0.25f)
         else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
     }
     val textColor = when {
-        isActivated -> LicenseGreenText
-        isAutoTriggered -> SoftRed
+        isActivated -> mizanColors.onCredit
+        isAutoTriggered -> errorColor
         else -> MaterialTheme.colorScheme.onSurface
     }
     val descText = when {
@@ -79,6 +79,10 @@ fun ActivationActivatedBody(
     onLogout: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val errorColor = MaterialTheme.colorScheme.error
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -106,7 +110,7 @@ fun ActivationActivatedBody(
                         Icon(
                             imageVector = Icons.Default.Security,
                             contentDescription = null,
-                            tint = EmeraldPrimary,
+                            tint = primaryColor,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
@@ -121,12 +125,12 @@ fun ActivationActivatedBody(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(EmeraldPrimary.copy(alpha = 0.12f))
+                            .background(primaryColor.copy(alpha = 0.12f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.licensing_fluent_cloud_synced_badge),
-                            color = EmeraldPrimary,
+                            color = primaryColor,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -168,7 +172,7 @@ fun ActivationActivatedBody(
                                 Text(
                                     text = stringResource(R.string.licensing_fluent_license_type_digital),
                                     fontSize = 9.sp,
-                                    color = EmeraldPrimary,
+                                    color = primaryColor,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -181,7 +185,7 @@ fun ActivationActivatedBody(
                             Icon(
                                 imageVector = Icons.Default.Logout,
                                 contentDescription = stringResource(R.string.licensing_fluent_btn_signout),
-                                tint = SoftRed,
+                                tint = errorColor,
                                 modifier = Modifier.size(15.dp)
                             )
                         }
@@ -198,7 +202,7 @@ fun ActivationActivatedBody(
                         Icon(
                             imageVector = Icons.Default.VpnKey,
                             contentDescription = null,
-                            tint = EmeraldPrimary,
+                            tint = primaryColor,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -255,7 +259,7 @@ fun ActivationActivatedBody(
         // Close Button
         Button(
             onClick = onDismiss,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -269,7 +273,7 @@ fun ActivationActivatedBody(
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = androidx.compose.ui.graphics.Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -277,7 +281,7 @@ fun ActivationActivatedBody(
                     text = stringResource(R.string.licensing_fluent_btn_close),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = androidx.compose.ui.graphics.Color.White
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -301,7 +305,7 @@ fun ActivationFeatureBadge(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = EmeraldPrimary,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(14.dp)
         )
         Spacer(modifier = Modifier.width(5.dp))

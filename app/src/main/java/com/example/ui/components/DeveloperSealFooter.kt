@@ -7,16 +7,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.ui.theme.WhatsAppLightGreen
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun DeveloperSealFooter(modifier: Modifier = Modifier) {
@@ -74,7 +74,7 @@ fun DeveloperSealFooter(modifier: Modifier = Modifier) {
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = com.example.ui.theme.WhatsAppLightGreen
+                    containerColor = WhatsAppLightGreen
                 ),
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
@@ -83,7 +83,7 @@ fun DeveloperSealFooter(modifier: Modifier = Modifier) {
                     text = stringResource(R.string.contact_whatsapp_direct),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.mizanColors.dialogActionContent
                 )
             }
         }

@@ -1,7 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,14 +14,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun CloudStatsHeader(
@@ -58,13 +55,13 @@ fun CloudStatsHeader(
                     modifier = Modifier
                         .size(26.dp)
                         .clip(CircleShape)
-                        .background(if (isSelectionMode) com.example.ui.theme.InfoBlueBgLight else com.example.ui.theme.CreditContainerLight),
+                        .background(if (isSelectionMode) MaterialTheme.mizanColors.infoContainer else MaterialTheme.mizanColors.creditContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (isSelectionMode) Icons.Default.Checklist else Icons.Default.Backup,
                         contentDescription = null,
-                        tint = if (isSelectionMode) com.example.ui.theme.InfoBlue else com.example.ui.theme.CreditGreen,
+                        tint = if (isSelectionMode) MaterialTheme.mizanColors.info else MaterialTheme.mizanColors.credit,
                         modifier = Modifier.size(14.dp)
                     )
                 }
@@ -88,7 +85,7 @@ fun CloudStatsHeader(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(com.example.ui.theme.CreditGreen)
+                                .background(MaterialTheme.mizanColors.credit)
                         )
                     }
                     /**
@@ -112,7 +109,7 @@ fun CloudStatsHeader(
                 if (isSelectionMode) {
                     TextButton(
                         onClick = onToggleSelectAll,
-                        colors = ButtonDefaults.textButtonColors(contentColor = com.example.ui.theme.InfoBlue),
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.mizanColors.info),
                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                         modifier = Modifier.height(26.dp)
                     ) {
@@ -133,7 +130,7 @@ fun CloudStatsHeader(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.cloud_desc_refresh),
-                            tint = if (isFetching) Color.Gray else EmeraldPrimary,
+                            tint = if (isFetching) MaterialTheme.mizanColors.contentTertiary else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(15.dp)
                         )
                     }

@@ -60,8 +60,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.ui.viewmodel.MonthLedger
 import kotlinx.coroutines.CoroutineScope
@@ -87,7 +85,7 @@ fun DeleteDaysConfirmDialog(
                 Text(
                     text = stringResource(id = R.string.ledger_bulk_delete_days_title),
                     fontWeight = FontWeight.Bold,
-                    color = SoftRed,
+                    color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Right,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -120,9 +118,9 @@ fun DeleteDaysConfirmDialog(
                             onSuccess()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = SoftRed)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             },
             dismissButton = {
@@ -233,7 +231,7 @@ fun ReorderCommitmentDialog(
                             singleLine = true,
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = EmeraldPrimary,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -256,7 +254,7 @@ fun ReorderCommitmentDialog(
                         if (errorMsg.isNotEmpty()) {
                             Text(
                                 text = errorMsg,
-                                color = SoftRed,
+                                color = MaterialTheme.colorScheme.error,
                                 fontSize = 10.5.sp,
                                 textAlign = TextAlign.Center
                             )
@@ -298,7 +296,7 @@ fun ReorderCommitmentDialog(
 
                             Button(
                                 onClick = { applyAction() },
-                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .weight(1.1f)
@@ -307,7 +305,7 @@ fun ReorderCommitmentDialog(
                             ) {
                                 Text(
                                     text = "تطبيق",
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )

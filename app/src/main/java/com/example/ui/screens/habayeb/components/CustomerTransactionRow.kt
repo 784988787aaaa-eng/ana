@@ -24,12 +24,12 @@ import com.example.ui.screens.habayeb.components.row.CustomerTransactionRowState
 import com.example.ui.screens.habayeb.components.row.TransactionRowAmountSection
 import com.example.ui.screens.habayeb.components.row.TransactionRowDateSection
 import com.example.ui.screens.habayeb.components.row.TransactionRowDetailsSection
+import com.example.ui.theme.mizanColors
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CustomerTransactionRow(
     tx: HabayebTransaction,
-    isDark: Boolean,
     currencySymbol: String,
     initialType: String,
     isSelected: Boolean,
@@ -43,18 +43,26 @@ fun CustomerTransactionRow(
     onOptionsClick: (HabayebTransaction) -> Unit,
     onScheduleClick: (HabayebTransaction) -> Unit,
     onExchangeRateClick: (HabayebTransaction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
-    val cached = remember(tx, isDark, currencySymbol, initialType) {
-        CustomerTransactionRowStateCalculator.calculate(tx, isDark, currencySymbol, initialType)
+    val mizanColors = MaterialTheme.mizanColors
+    val cached = remember(tx, currencySymbol, initialType, mizanColors.debt, mizanColors.credit) {
+        CustomerTransactionRowStateCalculator.calculate(
+            tx = tx,
+            currencySymbol = currencySymbol,
+            initialType = initialType,
+            debtColor = mizanColors.debt,
+            creditColor = mizanColors.credit
+        )
     }
 
     val rowBgColor = if (isSelected) {
-        activeThemeColor.copy(alpha = if (isDark) 0.20f else 0.12f)
+        activeThemeColor.copy(alpha = 0.16f)
     } else {
-        MaterialTheme.colorScheme.surface
+        mizanColors.appSurface
     }
-    val borderColor = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val borderColor = if (isSelected) activeThemeColor else mizanColors.border.copy(alpha = 0.5f)
 
     val onCardClick = remember(tx, isTxMultiSelectActive, onSelectToggle, onOptionsClick) {
         {
@@ -113,7 +121,6 @@ fun CustomerTransactionRow(
                 hasActiveRecurring = hasActiveRecurring,
                 activeThemeColor = activeThemeColor,
                 cached = cached,
-                isDark = isDark,
                 tx = tx,
                 onScheduleClick = onScheduleClick,
                 modifier = Modifier.weight(1.0f)
@@ -122,7 +129,6 @@ fun CustomerTransactionRow(
             // 2. Details (Middle-Right)
             TransactionRowDetailsSection(
                 cached = cached,
-                isDark = isDark,
                 hasActiveRecurring = hasActiveRecurring,
                 parentTxSeq = parentTxSeq,
                 tx = tx,

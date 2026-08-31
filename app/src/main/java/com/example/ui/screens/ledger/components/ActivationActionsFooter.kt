@@ -177,14 +177,14 @@ fun ActivationGoogleTabContent(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(12.dp),
                                 strokeWidth = 1.5.dp,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
                             Text(
                                 text = stringResource(R.string.licensing_fluent_btn_activate_now),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -204,7 +204,7 @@ fun ActivationGoogleTabContent(
                         Icon(
                             imageVector = Icons.Default.CloudQueue,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -212,7 +212,7 @@ fun ActivationGoogleTabContent(
                             text = stringResource(R.string.licensing_fluent_btn_google_signin),
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.5.sp,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -377,7 +377,7 @@ fun ActivationActionsFooter(
                 Icon(
                     imageVector = Icons.Default.Chat,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -385,7 +385,7 @@ fun ActivationActionsFooter(
                     text = stringResource(R.string.licensing_whatsapp_short),
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.5.sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }

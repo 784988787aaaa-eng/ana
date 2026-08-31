@@ -1,7 +1,6 @@
 package com.example.ui.screens.habayeb.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,14 +23,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -41,74 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.helper.HabayebMathHelper
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
-import com.example.ui.theme.ChipGreenBgDarkSelected
-import com.example.ui.theme.ChipGreenBgDarkUnselected
-import com.example.ui.theme.ChipGreenBgLightSelected
-import com.example.ui.theme.ChipGreenBgLightUnselected
-import com.example.ui.theme.ChipGreenBorderDarkSelected
-import com.example.ui.theme.ChipGreenBorderDarkUnselected
-import com.example.ui.theme.ChipGreenBorderLightSelected
-import com.example.ui.theme.ChipGreenBorderLightUnselected
-import com.example.ui.theme.ChipGreenHeaderDark
-import com.example.ui.theme.ChipGreenHeaderLight
-import com.example.ui.theme.ChipGreenTextDark
-import com.example.ui.theme.ChipGreenTextLight
-import com.example.ui.theme.ChipRedBgDarkSelected
-import com.example.ui.theme.ChipRedBgDarkUnselected
-import com.example.ui.theme.ChipRedBgLightSelected
-import com.example.ui.theme.ChipRedBgLightUnselected
-import com.example.ui.theme.ChipRedBorderDarkSelected
-import com.example.ui.theme.ChipRedBorderDarkUnselected
-import com.example.ui.theme.ChipRedBorderLightSelected
-import com.example.ui.theme.ChipRedBorderLightUnselected
-import com.example.ui.theme.ChipRedHeaderDark
-import com.example.ui.theme.ChipRedHeaderLight
-import com.example.ui.theme.ChipRedTextDark
-import com.example.ui.theme.ChipRedTextLight
-
 private const val PRIVACY_MASK = "*****"
-
-private object ChipColors {
-    fun redBg(isDark: Boolean, isSelected: Boolean): Color {
-        return if (isDark) {
-            if (isSelected) ChipRedBgDarkSelected else ChipRedBgDarkUnselected
-        } else {
-            if (isSelected) ChipRedBgLightSelected else ChipRedBgLightUnselected
-        }
-    }
-
-    fun redBorder(isDark: Boolean, isSelected: Boolean): Color {
-        return if (isDark) {
-            if (isSelected) ChipRedBorderDarkSelected else ChipRedBorderDarkUnselected
-        } else {
-            if (isSelected) ChipRedBorderLightSelected else ChipRedBorderLightUnselected
-        }
-    }
-
-    fun redText(isDark: Boolean): Color = if (isDark) ChipRedTextDark else ChipRedTextLight
-    fun redHeader(isDark: Boolean): Color = if (isDark) ChipRedHeaderDark else ChipRedHeaderLight
-
-    fun greenBg(isDark: Boolean, isSelected: Boolean): Color {
-        return if (isDark) {
-            if (isSelected) ChipGreenBgDarkSelected else ChipGreenBgDarkUnselected
-        } else {
-            if (isSelected) ChipGreenBgLightSelected else ChipGreenBgLightUnselected
-        }
-    }
-
-    fun greenBorder(isDark: Boolean, isSelected: Boolean): Color {
-        return if (isDark) {
-            if (isSelected) ChipGreenBorderDarkSelected else ChipGreenBorderDarkUnselected
-        } else {
-            if (isSelected) ChipGreenBorderLightSelected else ChipGreenBorderLightUnselected
-        }
-    }
-
-    fun greenText(isDark: Boolean): Color = if (isDark) ChipGreenTextDark else ChipGreenTextLight
-    fun greenHeader(isDark: Boolean): Color = if (isDark) ChipGreenHeaderDark else ChipGreenHeaderLight
-}
 
 @Composable
 fun HabayebFilterTabs(
@@ -120,7 +53,7 @@ fun HabayebFilterTabs(
     isPrivacyMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val mizanColors = MaterialTheme.mizanColors
 
     val formattedOwedByThem = remember(totalOwedByThem) {
         HabayebMathHelper.formatSmart(totalOwedByThem)
@@ -145,10 +78,10 @@ fun HabayebFilterTabs(
             currencySymbol = currencySymbol,
             isSelected = isOwedByThemSelected,
             isPrivacyMode = isPrivacyMode,
-            headerColor = ChipColors.redHeader(isDark),
-            textColor = ChipColors.redText(isDark),
-            targetBgColor = ChipColors.redBg(isDark, isOwedByThemSelected),
-            targetBorderColor = ChipColors.redBorder(isDark, isOwedByThemSelected),
+            headerColor = mizanColors.chipDebtText,
+            textColor = mizanColors.chipDebtText,
+            targetBgColor = if (isOwedByThemSelected) mizanColors.chipDebtSelectedBackground else mizanColors.chipDebtUnselectedBackground,
+            targetBorderColor = if (isOwedByThemSelected) mizanColors.chipDebtSelectedBorder else mizanColors.chipDebtUnselectedBorder,
             animLabel = "owedByTextAnim",
             onClick = { onFilterTabSelected(if (isOwedByThemSelected) 0 else 1) }
         )
@@ -161,10 +94,10 @@ fun HabayebFilterTabs(
             currencySymbol = currencySymbol,
             isSelected = isOwedToThemSelected,
             isPrivacyMode = isPrivacyMode,
-            headerColor = ChipColors.greenHeader(isDark),
-            textColor = ChipColors.greenText(isDark),
-            targetBgColor = ChipColors.greenBg(isDark, isOwedToThemSelected),
-            targetBorderColor = ChipColors.greenBorder(isDark, isOwedToThemSelected),
+            headerColor = mizanColors.chipCreditText,
+            textColor = mizanColors.chipCreditText,
+            targetBgColor = if (isOwedToThemSelected) mizanColors.chipCreditSelectedBackground else mizanColors.chipCreditUnselectedBackground,
+            targetBorderColor = if (isOwedToThemSelected) mizanColors.chipCreditSelectedBorder else mizanColors.chipCreditUnselectedBorder,
             animLabel = "owedToTextAnim",
             onClick = { onFilterTabSelected(if (isOwedToThemSelected) 0 else 2) }
         )

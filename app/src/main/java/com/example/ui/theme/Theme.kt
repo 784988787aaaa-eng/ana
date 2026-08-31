@@ -16,67 +16,64 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
-private val ThemeWhite = Color.White
-private val ThemeBlack = Color.Black
-
 private val MizanLightColorScheme = lightColorScheme(
-    primary = EmeraldPrimary,
-    onPrimary = ThemeWhite,
-    primaryContainer = Color(0xFFEADBFF),
-    onPrimaryContainer = Color(0xFF24005A),
-    secondary = CoralAccent,
-    onSecondary = ThemeWhite,
-    secondaryContainer = Color(0xFFD3E4FF),
-    onSecondaryContainer = Color(0xFF001C38),
+    primary = BrandPrimary,
+    onPrimary = LightMizanColors.onBrandPrimary,
+    primaryContainer = BrandPrimaryContainerLight,
+    onPrimaryContainer = BrandOnPrimaryContainerLight,
+    secondary = BrandSecondary,
+    onSecondary = LightMizanColors.onBrandSecondary,
+    secondaryContainer = BrandSecondaryContainerLight,
+    onSecondaryContainer = BrandOnSecondaryContainerLight,
     tertiary = CreditGreen,
-    onTertiary = ThemeWhite,
+    onTertiary = LightMizanColors.onCredit,
     tertiaryContainer = CreditContainerLight,
-    onTertiaryContainer = Color(0xFF14532D),
+    onTertiaryContainer = LightMizanColors.onCreditContainer,
     error = DebtRed,
-    onError = ThemeWhite,
+    onError = LightMizanColors.onError,
     errorContainer = DebtContainerLight,
-    onErrorContainer = Color(0xFF7F1D1D),
-    background = IvoryBackground,
-    surface = LightSurface,
-    surfaceVariant = Color(0xFFF1F3F5),
-    onBackground = TextPrimaryLight,
-    onSurface = TextPrimaryLight,
-    onSurfaceVariant = TextSecondaryLight,
-    outline = BorderLight,
-    outlineVariant = Color(0xFFEAEAEA),
-    surfaceContainer = LightSurface,
-    surfaceContainerHigh = Color(0xFFF8F9FA),
-    surfaceContainerLow = LightSurface
+    onErrorContainer = LightMizanColors.onDebtContainer,
+    background = NeutralBackgroundLight,
+    surface = NeutralSurfaceLight,
+    surfaceVariant = NeutralSurfaceVariantLight,
+    onBackground = NeutralTextPrimaryLight,
+    onSurface = NeutralTextPrimaryLight,
+    onSurfaceVariant = NeutralTextSecondaryLight,
+    outline = NeutralBorderLight,
+    outlineVariant = NeutralBorderVariantLight,
+    surfaceContainer = NeutralSurfaceLight,
+    surfaceContainerHigh = LightMizanColors.appSurfaceContainerHigh,
+    surfaceContainerLow = NeutralBackgroundLight
 )
 
 private val MizanDarkColorScheme = darkColorScheme(
-    primary = EmeraldDark,
-    onPrimary = ThemeWhite,
-    primaryContainer = Color(0xFF352478),
-    onPrimaryContainer = Color(0xFFEADBFF),
-    secondary = CoralDark,
-    onSecondary = ThemeWhite,
-    secondaryContainer = Color(0xFF004881),
-    onSecondaryContainer = Color(0xFFD3E4FF),
+    primary = BrandPrimaryDark,
+    onPrimary = DarkMizanColors.onBrandPrimary,
+    primaryContainer = BrandPrimaryContainerDark,
+    onPrimaryContainer = BrandOnPrimaryContainerDark,
+    secondary = BrandSecondaryDark,
+    onSecondary = DarkMizanColors.onBrandSecondary,
+    secondaryContainer = BrandSecondaryContainerDark,
+    onSecondaryContainer = BrandOnSecondaryContainerDark,
     tertiary = CreditGreenDark,
-    onTertiary = ThemeBlack,
+    onTertiary = DarkMizanColors.onCredit,
     tertiaryContainer = CreditContainerDark,
-    onTertiaryContainer = Color(0xFFA7F3D0),
+    onTertiaryContainer = DarkMizanColors.onCreditContainer,
     error = DebtRedDark,
-    onError = ThemeBlack,
+    onError = DarkMizanColors.onError,
     errorContainer = DebtContainerDark,
-    onErrorContainer = Color(0xFFFECDD3),
-    background = DarkBackground,
-    surface = DarkSurface,
-    surfaceVariant = Color(0xFF262626),
-    onBackground = TextPrimaryDark,
-    onSurface = TextPrimaryDark,
-    onSurfaceVariant = TextSecondaryDark,
-    outline = BorderDark,
-    outlineVariant = Color(0xFF2A2A2A),
-    surfaceContainer = DarkSurface,
-    surfaceContainerHigh = Color(0xFF262626),
-    surfaceContainerLow = Color(0xFF181818)
+    onErrorContainer = DarkMizanColors.onDebtContainer,
+    background = NeutralBackgroundDark,
+    surface = NeutralSurfaceDark,
+    surfaceVariant = NeutralSurfaceVariantDark,
+    onBackground = NeutralTextPrimaryDark,
+    onSurface = NeutralTextPrimaryDark,
+    onSurfaceVariant = NeutralTextSecondaryDark,
+    outline = NeutralBorderDark,
+    outlineVariant = NeutralBorderVariantDark,
+    surfaceContainer = NeutralSurfaceDark,
+    surfaceContainerHigh = DarkMizanColors.appSurfaceContainerHigh,
+    surfaceContainerLow = NeutralSurfaceContainerLowDark
 )
 
 @Composable
@@ -130,13 +127,15 @@ fun MizanTheme(
     content: @Composable () -> Unit
 ) {
     val targetColorScheme = if (darkTheme) MizanDarkColorScheme else MizanLightColorScheme
+    val mizanColors = if (darkTheme) DarkMizanColors else LightMizanColors
     val animatedColorScheme = targetColorScheme.animated()
 
     val customRippleConfiguration = RippleConfiguration(
-        color = if (darkTheme) ThemeWhite.copy(alpha = 0.15f) else Color(0xFF6B21A8).copy(alpha = 0.12f)
+        color = mizanColors.ripple.copy(alpha = if (darkTheme) 0.15f else 0.12f)
     )
 
     CompositionLocalProvider(
+        LocalMizanColors provides mizanColors,
         LocalRippleConfiguration provides customRippleConfiguration
     ) {
         MaterialTheme(

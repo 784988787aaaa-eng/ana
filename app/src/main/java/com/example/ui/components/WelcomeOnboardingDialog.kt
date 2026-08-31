@@ -49,8 +49,6 @@ private const val LABEL_BUTTON_SCALE = "button_scale"
 fun WelcomeOnboardingDialog(
     onDismiss: () -> Unit
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    
     // Smooth entry scaling and fade animation
     var animationPlayed by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -107,7 +105,7 @@ fun WelcomeOnboardingDialog(
                     alpha = animatedAlpha
                 }
                 .shadow(
-                    elevation = if (isDark) 24.dp else 16.dp,
+                    elevation = 16.dp,
                     shape = RoundedCornerShape(28.dp),
                     spotColor = primaryColor.copy(alpha = 0.25f)
                 ),
@@ -287,13 +285,13 @@ fun WelcomeOnboardingDialog(
                                 text = stringResource(id = R.string.onboarding_start_button).replace(" 🏠", ""),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -365,4 +363,3 @@ private fun OnboardingFeatureCard(
         }
     }
 }
-

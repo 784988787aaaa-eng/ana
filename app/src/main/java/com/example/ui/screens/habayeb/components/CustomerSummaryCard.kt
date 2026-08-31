@@ -31,12 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.example.ui.theme.ChipGreenHeaderDark
-import com.example.ui.theme.ChipGreenHeaderLight
-import com.example.ui.theme.ChipRedHeaderDark
-import com.example.ui.theme.ChipRedHeaderLight
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 
 import com.example.domain.model.TransactionType
 
@@ -94,20 +89,20 @@ fun BalanceCompactChip(
     val remainingForHimStr = stringResource(id = R.string.status_remaining_for_him)
     val remainingWithHimStr = stringResource(id = R.string.status_remaining_with_him)
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val mizanColors = MaterialTheme.mizanColors
     val surfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     val outlineColor = MaterialTheme.colorScheme.outline
 
-    val chipState = remember(amount, currencyCode, initialType, isDark, clearedStr, remainingOnHimStr, remainingForHimStr, remainingWithHimStr, surfaceVariantColor, outlineColor) {
+    val chipState = remember(amount, currencyCode, initialType, mizanColors, clearedStr, remainingOnHimStr, remainingForHimStr, remainingWithHimStr, surfaceVariantColor, outlineColor) {
         val cmp = amount.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO)
         val isZero = cmp == 0
         val isPositive = cmp > 0
         val isNegative = cmp < 0
 
-        val redColor = financialDebtColor(isDark)
-        val redHeaderColor = if (isDark) ChipRedHeaderDark else ChipRedHeaderLight
-        val greenColor = financialCreditColor(isDark)
-        val greenHeaderColor = if (isDark) ChipGreenHeaderDark else ChipGreenHeaderLight
+        val redColor = mizanColors.debt
+        val redHeaderColor = mizanColors.chipDebtText
+        val greenColor = mizanColors.credit
+        val greenHeaderColor = mizanColors.chipCreditText
 
         val (chipColor, headerTextColor, stateLabel) = when {
             isZero -> Triple(outlineColor, outlineColor, clearedStr)
@@ -141,7 +136,7 @@ fun BalanceCompactChip(
     val stateLabel = chipState.third.first
     val formattedAmountStr = chipState.third.second
 
-    val targetBgColor = if (isSelected) targetChipColor.copy(alpha = 0.16f) else if (isDark) targetChipColor.copy(alpha = 0.10f) else targetChipColor.copy(alpha = 0.08f)
+    val targetBgColor = if (isSelected) targetChipColor.copy(alpha = 0.16f) else targetChipColor.copy(alpha = 0.09f)
     val targetBorderColor = if (isSelected) targetChipColor else targetChipColor.copy(alpha = 0.45f)
     val borderWidth = if (isSelected) 1.5.dp else 1.dp
 

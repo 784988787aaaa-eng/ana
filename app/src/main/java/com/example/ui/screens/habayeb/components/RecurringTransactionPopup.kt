@@ -56,11 +56,6 @@ import com.example.ui.viewmodel.FinanceConstants
 import java.util.Calendar
 import java.util.UUID
 
-/**
- * لون شفاف مخصص لبطاقات وخلفيات شريط العنوان داخل نافذة المعاملات المتكررة.
- */
-private val TRANSLUCENT_WHITE_PILL = Color.White.copy(alpha = 0.22f)
-
 @Composable
 fun RecurringTransactionPopup(
     transaction: HabayebTransaction,
@@ -133,7 +128,7 @@ fun RecurringTransactionPopup(
                                 Box(
                                     modifier = Modifier
                                         .size(28.dp)
-                                        .background(TRANSLUCENT_WHITE_PILL, CircleShape),
+                                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -158,7 +153,7 @@ fun RecurringTransactionPopup(
                             val currStr = transaction.currencyCode.ifEmpty { fallbackCurrency }
                             Box(
                                 modifier = Modifier
-                                    .background(TRANSLUCENT_WHITE_PILL, RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(

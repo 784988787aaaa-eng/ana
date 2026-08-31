@@ -48,7 +48,7 @@ fun RecurringFrequencySelector(
     selectedDaysOfMonth: Set<Int>,
     onDaysOfMonthChange: (Set<Int>) -> Unit,
     activeThemeColor: Color,
-    isDark: Boolean
+    isDark: Boolean = false
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current

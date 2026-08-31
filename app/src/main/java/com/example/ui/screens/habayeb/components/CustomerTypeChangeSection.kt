@@ -31,10 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.DarkNeutralTrack
-import com.example.ui.theme.LightNeutralTrack
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.FinanceConstants
 
 @Composable
@@ -46,13 +43,12 @@ fun CustomerTypeChangeSection(
     modifier: Modifier = Modifier
 ) {
     var pendingTypeChange by remember { mutableStateOf<String?>(null) }
+    val mizanColors = MaterialTheme.mizanColors
 
-    val bgColor = MaterialTheme.colorScheme.background
-    val isDark = remember(bgColor) { bgColor.run { red < 0.5f } }
-    val activeRedColor = remember(isDark) { financialDebtColor(isDark) }
-    val activeGreenColor = remember(isDark) { financialCreditColor(isDark) }
-    val inactiveBgColor = remember(isDark) { if (isDark) DarkNeutralTrack else LightNeutralTrack }
-    val inactiveTextColor = remember(isDark) { if (isDark) Color.Gray else Color.DarkGray }
+    val activeRedColor = mizanColors.debt
+    val activeGreenColor = mizanColors.credit
+    val inactiveBgColor = mizanColors.disabledTrack
+    val inactiveTextColor = mizanColors.contentSecondary
 
     Box(
         modifier = modifier
@@ -99,7 +95,7 @@ fun CustomerTypeChangeSection(
                         text = stringResource(id = R.string.habayeb_to_them),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isToThemSelected) Color.White else inactiveTextColor
+                        color = if (isToThemSelected) mizanColors.onCredit else inactiveTextColor
                     )
                 }
 
@@ -123,7 +119,7 @@ fun CustomerTypeChangeSection(
                         text = stringResource(id = R.string.habayeb_owed),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isByThemSelected) Color.White else inactiveTextColor
+                        color = if (isByThemSelected) mizanColors.onDebt else inactiveTextColor
                     )
                 }
             }
@@ -150,20 +146,23 @@ fun CustomerTypeChangeSection(
             confirmButton = {
                 Button(
                     onClick = { pendingTypeChange = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = activeThemeColor,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = stringResource(id = R.string.context_menu_cancel),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
             },
             dismissButton = {
                 val confirmButtonColor = when (pendingTypeChange) {
-                    FinanceConstants.TYPE_OWED_TO_THEM -> financialCreditColor(isDark)
-                    FinanceConstants.TYPE_OWED_BY_THEM -> financialDebtColor(isDark)
+                    FinanceConstants.TYPE_OWED_TO_THEM -> mizanColors.credit
+                    FinanceConstants.TYPE_OWED_BY_THEM -> mizanColors.debt
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 }
                 TextButton(

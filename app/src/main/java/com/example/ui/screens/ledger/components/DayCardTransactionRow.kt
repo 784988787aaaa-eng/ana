@@ -41,10 +41,7 @@ import com.example.R
 import com.example.data.local.entities.TransactionDb
 import com.example.domain.DateUtils
 import com.example.domain.model.TransactionType
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SoftRed
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -72,8 +69,9 @@ fun DayCardTransactionRow(
     onTransactionSelectToggle: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mizanColors = MaterialTheme.mizanColors
     val isIncome = tx.type == TransactionType.INCOME.value
-    val txAmountColor = if (isIncome) financialCreditColor(isDark) else financialDebtColor(isDark)
+    val txAmountColor = if (isIncome) mizanColors.credit else mizanColors.debt
     val txAmountSign = if (isIncome) "▲ +" else "▼ -"
     val formattedTxAmount = txAmountSign + formatCurrency(tx.amount, currencySymbol).toWesternDigits()
     val formattedTxTime = remember(tx.timestamp) {
@@ -84,7 +82,7 @@ fun DayCardTransactionRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(5.dp))
-            .background(if (isSelected) EmeraldPrimary.copy(alpha = if (isDark) 0.18f else 0.12f) else Color.Transparent)
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.35f else 0.45f) else Color.Transparent)
             .combinedClickable(
                 onClick = {
                     if (isSelectionMode) {
@@ -113,10 +111,10 @@ fun DayCardTransactionRow(
                     modifier = Modifier
                         .size(15.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) EmeraldPrimary else Color.Transparent)
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .border(
                             1.2.dp,
-                            if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                             CircleShape
                         )
                         .clickable {
@@ -129,7 +127,7 @@ fun DayCardTransactionRow(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(8.dp)
                         )
                     }
@@ -209,7 +207,7 @@ fun DayCardTransactionRow(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(id = R.string.ledger_commitment_delete),
-                    tint = SoftRed.copy(alpha = 0.50f),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.65f),
                     modifier = Modifier.size(11.5.dp)
                 )
             }

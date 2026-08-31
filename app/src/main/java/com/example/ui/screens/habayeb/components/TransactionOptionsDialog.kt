@@ -54,8 +54,7 @@ import com.example.data.local.entities.HabayebTransaction
 import com.example.domain.FormatUtils
 import com.example.domain.model.TransactionType
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
-import com.example.ui.theme.SoftGreen
-import com.example.ui.theme.SoftRed
+import com.example.ui.theme.mizanColors
 
 private data class TransactionHeaderSummary(
     val shortDesc: String,
@@ -80,8 +79,7 @@ fun TransactionOptionsDialog(
     onDeleteAutoRepeat: (() -> Unit)? = null,
     parentSeqNumber: Int? = null
 ) {
-    val bgColor = MaterialTheme.colorScheme.background
-    val isDark = remember(bgColor) { bgColor.red < 0.5f }
+    val mizanColors = MaterialTheme.mizanColors
     var showShareMenu by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -135,7 +133,7 @@ fun TransactionOptionsDialog(
                                         Icon(
                                             imageVector = Icons.Default.Chat,
                                             contentDescription = null,
-                                            tint = if (isDark) SoftGreen else MaterialTheme.colorScheme.primary,
+                                            tint = mizanColors.credit,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -150,7 +148,7 @@ fun TransactionOptionsDialog(
                                         Icon(
                                             imageVector = Icons.Default.Sms,
                                             contentDescription = null,
-                                            tint = if (isDark) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary,
+                                            tint = MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -171,11 +169,11 @@ fun TransactionOptionsDialog(
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             val defaultRial = stringResource(id = R.string.habayeb_currency_rial)
-                            val primaryColor = MaterialTheme.colorScheme.primary
-                            val errorColor = MaterialTheme.colorScheme.error
+                            val creditColor = mizanColors.credit
+                            val debtColor = mizanColors.debt
 
                             val headerSummary = remember(
-                                transaction, customerName, isDark, defaultRial, primaryColor, errorColor
+                                transaction, customerName, defaultRial, creditColor, debtColor
                             ) {
                                 val desc = if (transaction.description.isNotBlank()) transaction.description else customerName
                                 val cleanDesc = CurrencyConfig.getCleanDetails(desc).ifBlank { customerName }
@@ -189,11 +187,7 @@ fun TransactionOptionsDialog(
                                 }
                                 val formattedAmountStr = FormatUtils.formatDouble(txAmount.toDouble())
                                 val isPositive = transaction.type == TransactionType.PAYMENT_BY_THEM.value || transaction.type == TransactionType.OWED_TO_THEM.value
-                                val color = if (isPositive) {
-                                    if (isDark) SoftGreen else primaryColor
-                                } else {
-                                    if (isDark) SoftRed else errorColor
-                                }
+                                val color = if (isPositive) creditColor else debtColor
                                 TransactionHeaderSummary(shortDescStr, formattedAmountStr, currencyStr, color)
                             }
 

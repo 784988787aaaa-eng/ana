@@ -37,10 +37,13 @@ fun DeleteBulkTxConfirmDialog(
             confirmButton = {
                 Button(
                     onClick = onConfirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(id = R.string.habayeb_delete), color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.habayeb_delete), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -139,7 +142,10 @@ fun ExchangeRateModifyDialog(
                                                 showRateSetupOverlay = true
                                             }
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.tertiary,
+                                            contentColor = MaterialTheme.colorScheme.onTertiary
+                                        ),
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -150,7 +156,7 @@ fun ExchangeRateModifyDialog(
                                             text = stringResource(id = R.string.habayeb_activate_exchange),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                            color = MaterialTheme.colorScheme.onTertiary
                                         )
                                     }
                                 } else {
@@ -158,7 +164,10 @@ fun ExchangeRateModifyDialog(
                                         onClick = {
                                             onDeactivateExchange()
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError
+                                        ),
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -169,7 +178,7 @@ fun ExchangeRateModifyDialog(
                                             text = stringResource(id = R.string.habayeb_deactivate_exchange),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                            color = MaterialTheme.colorScheme.onError
                                         )
                                     }
                                 }

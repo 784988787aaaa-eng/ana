@@ -55,6 +55,7 @@ import com.example.ui.helper.openWhatsAppChat
 import com.example.ui.navigation.Screen
 import com.example.ui.screens.BusinessProfileDialog
 import com.example.ui.screens.SecurityDialog
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 
 /**
@@ -139,7 +140,7 @@ fun AppNavigationDrawer(
                     Icon(
                         imageVector = if (isDark) Icons.Default.WbSunny else Icons.Default.NightsStay,
                         contentDescription = stringResource(id = R.string.desc_toggle_dark_mode),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -155,7 +156,7 @@ fun AppNavigationDrawer(
                         modifier = Modifier
                             .size(52.dp)
                             .background(
-                                color = Color.White.copy(alpha = 0.15f),
+                                color = MaterialTheme.mizanColors.headerControlContainer,
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -163,7 +164,7 @@ fun AppNavigationDrawer(
                         Icon(
                             imageVector = Icons.Default.Home,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -174,7 +175,7 @@ fun AppNavigationDrawer(
                         text = stringResource(id = R.string.app_name_main),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

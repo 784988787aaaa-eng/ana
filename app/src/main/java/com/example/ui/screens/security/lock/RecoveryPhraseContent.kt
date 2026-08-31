@@ -35,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,8 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.domain.StringUtils.toEnglishDigits
-import com.example.ui.theme.CoralAccent
-import com.example.ui.theme.WarningAmber
+import com.example.ui.theme.mizanColors
 
 /**
  * Visual content for the Recovery Phrase screen when the user forgets the PIN.
@@ -62,6 +60,8 @@ fun RecoveryPhraseContent(
     onReturnToKeypadClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -73,13 +73,13 @@ fun RecoveryPhraseContent(
             modifier = Modifier
                 .size(72.dp)
                 .clip(CircleShape)
-                .background(CoralAccent.copy(alpha = 0.15f)),
+                .background(mizanColors.error.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Security,
                 contentDescription = stringResource(id = R.string.lock_recover_account),
-                tint = CoralAccent,
+                tint = mizanColors.error,
                 modifier = Modifier.size(36.dp)
             )
         }
@@ -90,7 +90,7 @@ fun RecoveryPhraseContent(
             text = stringResource(id = R.string.lock_recovery_title),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = mizanColors.securityForeground,
             textAlign = TextAlign.Center
         )
 
@@ -99,7 +99,7 @@ fun RecoveryPhraseContent(
         Text(
             text = stringResource(id = R.string.lock_recovery_desc),
             fontSize = 12.sp,
-            color = Color.White.copy(alpha = 0.7f),
+            color = mizanColors.securityForegroundMuted,
             textAlign = TextAlign.Center,
             lineHeight = 18.sp
         )
@@ -112,14 +112,14 @@ fun RecoveryPhraseContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("recovery_phrase_input_lock"),
-            label = { Text(stringResource(id = R.string.lock_recovery_phrase_hint), color = Color.White.copy(alpha = 0.6f)) },
+            label = { Text(stringResource(id = R.string.lock_recovery_phrase_hint), color = mizanColors.securityForegroundMuted) },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = CoralAccent,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                focusedLabelColor = CoralAccent,
-                unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                focusedBorderColor = mizanColors.error,
+                unfocusedBorderColor = mizanColors.securityInputBorder,
+                focusedLabelColor = mizanColors.error,
+                unfocusedLabelColor = mizanColors.securityForegroundMuted,
+                focusedTextColor = mizanColors.securityForeground,
+                unfocusedTextColor = mizanColors.securityForeground
             ),
             singleLine = true,
             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
@@ -145,13 +145,13 @@ fun RecoveryPhraseContent(
                 Icon(
                     imageVector = Icons.Default.Lightbulb,
                     contentDescription = null,
-                    tint = WarningAmber,
+                    tint = mizanColors.warning,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (showHintText) stringResource(id = R.string.lock_hide_hint) else stringResource(id = R.string.lock_show_hint),
-                    color = WarningAmber,
+                    color = mizanColors.warning,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -160,7 +160,7 @@ fun RecoveryPhraseContent(
         AnimatedVisibility(visible = showHintText && !recoveryHint.isNullOrBlank()) {
             Text(
                 text = stringResource(id = R.string.lock_hint_prefix, recoveryHint ?: ""),
-                color = Color.White,
+                color = mizanColors.securityForeground,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -174,7 +174,7 @@ fun RecoveryPhraseContent(
                 .fillMaxWidth()
                 .height(52.dp)
                 .testTag("verify_recovery_unlock_btn"),
-            colors = ButtonDefaults.buttonColors(containerColor = CoralAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = mizanColors.error),
             shape = RoundedCornerShape(16.dp),
             enabled = recoveryPhraseInput.isNotBlank()
         ) {
@@ -182,7 +182,7 @@ fun RecoveryPhraseContent(
                 text = stringResource(id = R.string.lock_verify_and_unlock),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = mizanColors.securityForeground
             )
         }
 
@@ -198,12 +198,12 @@ fun RecoveryPhraseContent(
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = stringResource(id = R.string.lock_back_to_keypad_desc),
-                    tint = Color.LightGray
+                    tint = mizanColors.securityForegroundMuted
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = stringResource(id = R.string.lock_return_to_keypad),
-                    color = Color.LightGray,
+                    color = mizanColors.securityForegroundMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )

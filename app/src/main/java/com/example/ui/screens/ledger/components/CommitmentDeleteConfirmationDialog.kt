@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
-import com.example.ui.theme.SoftRed
 
 @Composable
 fun CommitmentDeleteConfirmationDialog(
@@ -51,12 +50,12 @@ fun CommitmentDeleteConfirmationDialog(
                     onConfirmDelete(commitmentName)
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.ledger_confirm_delete_btn),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )

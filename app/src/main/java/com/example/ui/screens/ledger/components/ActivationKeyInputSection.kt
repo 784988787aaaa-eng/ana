@@ -18,8 +18,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SoftRed
 
 @Composable
 fun ActivationKeyInputSection(
@@ -65,15 +63,15 @@ fun ActivationKeyInputSection(
                         .height(48.dp)
                         .testTag("activation_code_input"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                        errorBorderColor = SoftRed
+                        errorBorderColor = MaterialTheme.colorScheme.error
                     )
                 )
 
                 Button(
                     onClick = onVerifyManualCode,
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .height(48.dp)
@@ -84,7 +82,7 @@ fun ActivationKeyInputSection(
                         text = stringResource(R.string.licensing_fluent_btn_activate_now),
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -92,7 +90,7 @@ fun ActivationKeyInputSection(
             if (isCodeError) {
                 Text(
                     text = stringResource(R.string.licensing_fluent_product_key_error),
-                    color = SoftRed,
+                    color = MaterialTheme.colorScheme.error,
                     fontSize = 10.5.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )

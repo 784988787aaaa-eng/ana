@@ -115,7 +115,7 @@ fun BusinessProfileLogoSection(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(id = R.string.biz_edit),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(12.dp)
                         )
                     }
@@ -139,7 +139,7 @@ fun BusinessProfileLogoSection(
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = stringResource(id = R.string.desc_remove_logo),
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onError,
                                 modifier = Modifier.size(12.dp)
                             )
                         }

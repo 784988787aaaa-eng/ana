@@ -30,7 +30,6 @@ import com.example.ui.theme.CreditContainerLight
 import com.example.ui.theme.CreditGreen
 import com.example.ui.theme.DebtContainerLight
 import com.example.ui.theme.DebtRed
-import com.example.ui.theme.IndigoAccent
 import com.example.ui.theme.WhatsAppGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -291,7 +290,7 @@ fun CustomerHistoryShareBottomSheet(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = WhatsAppGreen,
-                        contentColor = Color.White
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)
@@ -317,8 +316,8 @@ fun CustomerHistoryShareBottomSheet(
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = IndigoAccent,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)

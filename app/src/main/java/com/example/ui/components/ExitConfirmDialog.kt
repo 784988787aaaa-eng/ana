@@ -9,14 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun ExitConfirmDialog(
@@ -31,7 +30,7 @@ fun ExitConfirmDialog(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(MaterialTheme.mizanColors.dialogScrim)
             .clickable { onDismiss() },
         contentAlignment = Alignment.Center
     ) {
@@ -84,7 +83,7 @@ fun ExitConfirmDialog(
                     Checkbox(
                         checked = dontShowAgain,
                         onCheckedChange = { dontShowAgain = it },
-                        colors = CheckboxDefaults.colors(checkedColor = EmeraldPrimary),
+                        colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -131,7 +130,7 @@ fun ExitConfirmDialog(
                     ) {
                         Text(
                             text = stringResource(id = R.string.dialog_exit_confirm),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )

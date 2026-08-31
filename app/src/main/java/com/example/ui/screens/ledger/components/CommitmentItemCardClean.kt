@@ -30,11 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.NeonCyan
-import com.example.ui.theme.NeonGreen
-import com.example.ui.theme.SoftGreen
-import com.example.ui.theme.SoftRed
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -64,6 +60,7 @@ fun CommitmentItemCardClean(
     onDeleteClick: (FixedCommitment) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val mizanColors = MaterialTheme.mizanColors
     val isCovered = remaining.compareTo(BigDecimal.ZERO) <= 0
     val progressFraction = if (fc.targetAmount.compareTo(BigDecimal.ZERO) > 0) {
         allocated.divide(fc.targetAmount, 6, java.math.RoundingMode.HALF_UP)
@@ -73,11 +70,12 @@ fun CommitmentItemCardClean(
     val progressPercent = (progressFraction * 100).toInt()
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-    val itemGradient = remember {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val itemGradient = remember(mizanColors.credit, primaryColor) {
         Brush.horizontalGradient(
             colors = listOf(
-                NeonGreen,
-                NeonCyan
+                mizanColors.credit,
+                primaryColor
             )
         )
     }
@@ -85,11 +83,11 @@ fun CommitmentItemCardClean(
     Card(
         shape = RoundedCornerShape(13.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isCovered) SoftGreen.copy(alpha = if (isDark) 0.10f else 0.04f) else MaterialTheme.colorScheme.surface
+            containerColor = if (isCovered) mizanColors.creditContainer.copy(alpha = if (isDark) 0.10f else 0.04f) else MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             1.dp,
-            if (isCovered) SoftGreen.copy(alpha = 0.28f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            if (isCovered) mizanColors.creditBorder.copy(alpha = 0.28f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -115,10 +113,10 @@ fun CommitmentItemCardClean(
                         modifier = Modifier
                             .size(20.dp)
                             .clip(CircleShape)
-                            .background(if (isCovered) SoftGreen else Color.Transparent)
+                            .background(if (isCovered) mizanColors.credit else Color.Transparent)
                             .border(
                                 1.5.dp,
-                                if (isCovered) SoftGreen else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                                 CircleShape
                             )
                             .clickable {
@@ -131,7 +129,7 @@ fun CommitmentItemCardClean(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(12.dp)
                             )
                         }
@@ -141,7 +139,7 @@ fun CommitmentItemCardClean(
                         text = fc.name.toWesternDigits(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.5.sp,
-                        color = if (isCovered) SoftGreen else MaterialTheme.colorScheme.onSurface,
+                        color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
                 }
@@ -154,26 +152,26 @@ fun CommitmentItemCardClean(
                     if (isCovered) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = SoftGreen.copy(alpha = 0.14f)
+                            color = mizanColors.creditContainer
                         ) {
                             Text(
                                 text = "مكتمل",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                color = SoftGreen,
+                                color = mizanColors.credit,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     } else {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = SoftRed.copy(alpha = 0.10f)
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
                         ) {
                             Text(
                                 text = "متبقي: ${formatCurrency(remaining, currencySymbol)}".toWesternDigits(),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                color = SoftRed,
+                                color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -183,7 +181,7 @@ fun CommitmentItemCardClean(
                         text = "$progressPercent%",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isCovered) SoftGreen else EmeraldPrimary
+                        color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -206,7 +204,7 @@ fun CommitmentItemCardClean(
                             .fillMaxWidth(progressFraction)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(2.5.dp))
-                            .background(if (isCovered) Brush.horizontalGradient(listOf(SoftGreen, SoftGreen)) else itemGradient)
+                            .background(if (isCovered) Brush.horizontalGradient(listOf(mizanColors.credit, mizanColors.credit)) else itemGradient)
                     )
                 }
             }
@@ -254,7 +252,7 @@ fun CommitmentItemCardClean(
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(id = R.string.ledger_commitment_delete),
-                            tint = SoftRed.copy(alpha = 0.65f),
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.65f),
                             modifier = Modifier.size(13.dp)
                         )
                     }

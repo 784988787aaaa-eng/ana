@@ -54,13 +54,7 @@ import com.example.R
 import com.example.data.local.entities.FixedCommitment
 import com.example.ui.helper.AutoScaleText
 import com.example.ui.screens.habayeb.components.TinyFloatingSearchToggle
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.LightRedTint
-import com.example.ui.theme.NeonCyan
-import com.example.ui.theme.NeonGreen
-import com.example.ui.theme.PurpleAccent
-import com.example.ui.theme.Slate200
-import com.example.ui.theme.SoftLavender
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -97,6 +91,9 @@ fun PinnedMainLedgerHeader(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
+    val mizanColors = MaterialTheme.mizanColors
+    val headerBg = MaterialTheme.colorScheme.primary
+    val onHeader = MaterialTheme.colorScheme.onPrimary
 
     Column(
         modifier = modifier
@@ -110,7 +107,7 @@ fun PinnedMainLedgerHeader(
                 .fillMaxWidth()
                 .shadow(elevation = 3.dp, shape = RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp), clip = false)
                 .clip(RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp))
-                .background(EmeraldPrimary)
+                .background(headerBg)
                 .statusBarsPadding()
                 .padding(bottom = if (commitments.isNotEmpty()) 8.dp else 6.dp)
         ) {
@@ -136,12 +133,12 @@ fun PinnedMainLedgerHeader(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f))
+                                .background(onHeader.copy(alpha = 0.15f))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = stringResource(id = R.string.common_cancel),
-                                tint = Color.White,
+                                tint = onHeader,
                                 modifier = Modifier.size(15.dp)
                             )
                         }
@@ -151,7 +148,7 @@ fun PinnedMainLedgerHeader(
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onSelectAllDays()
                             },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+                            colors = ButtonDefaults.textButtonColors(contentColor = onHeader),
                             modifier = Modifier.height(34.dp)
                         ) {
                             Text(
@@ -166,7 +163,7 @@ fun PinnedMainLedgerHeader(
                         text = selectedDayKeysCountText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
-                        color = Color.White
+                        color = onHeader
                     )
 
                     IconButton(
@@ -179,12 +176,12 @@ fun PinnedMainLedgerHeader(
                         modifier = Modifier
                             .size(34.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.15f))
+                            .background(onHeader.copy(alpha = 0.15f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(id = R.string.ledger_bulk_delete_days_desc),
-                            tint = if (selectedDayKeys.isEmpty()) Color.White.copy(alpha = 0.4f) else LightRedTint,
+                            tint = if (selectedDayKeys.isEmpty()) onHeader.copy(alpha = 0.4f) else MaterialTheme.colorScheme.errorContainer,
                             modifier = Modifier.size(15.dp)
                         )
                     }
@@ -211,12 +208,12 @@ fun PinnedMainLedgerHeader(
                             },
                             modifier = Modifier
                                 .size(38.dp)
-                                .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                                .background(onHeader.copy(alpha = 0.16f), CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
                                 contentDescription = stringResource(id = R.string.ledger_nav_menu_desc),
-                                tint = Color.White,
+                                tint = onHeader,
                                 modifier = Modifier.size(19.dp)
                             )
                         }
@@ -233,7 +230,7 @@ fun PinnedMainLedgerHeader(
                                 text = stringResource(id = R.string.ledger_actual_cash),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color.White.copy(alpha = 0.85f),
+                                color = onHeader.copy(alpha = 0.85f),
                                 textAlign = TextAlign.Center
                             )
 
@@ -250,7 +247,7 @@ fun PinnedMainLedgerHeader(
                                     Icon(
                                         imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                         contentDescription = stringResource(id = R.string.ledger_visibility_desc),
-                                        tint = Color.White,
+                                        tint = onHeader,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -264,7 +261,7 @@ fun PinnedMainLedgerHeader(
                                     text = formattedAmount,
                                     baseFontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = onHeader,
                                     maxLines = 1,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.graphicsLayer {
@@ -281,7 +278,7 @@ fun PinnedMainLedgerHeader(
                         ) {
                             TinyFloatingSearchToggle(
                                 isFloatingActive = isFloatingSearchActive,
-                                activeThemeColor = Color.White,
+                                activeThemeColor = onHeader,
                                 onToggleClick = { onFloatingSearchActiveChanged(!isFloatingSearchActive) }
                             )
 
@@ -293,12 +290,12 @@ fun PinnedMainLedgerHeader(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.White.copy(alpha = 0.16f))
+                                    .background(onHeader.copy(alpha = 0.16f))
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = stringResource(id = R.string.habayeb_search_label),
-                                    tint = Color.White,
+                                    tint = onHeader,
                                     modifier = Modifier.size(19.dp)
                                 )
                             }
@@ -340,7 +337,7 @@ fun PinnedMainLedgerHeader(
                                 ) {
                                     Text(
                                         text = stringResource(id = R.string.ledger_link_debts),
-                                        color = Color.White.copy(alpha = 0.95f),
+                                        color = onHeader.copy(alpha = 0.95f),
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -348,10 +345,10 @@ fun PinnedMainLedgerHeader(
                                         checked = linkHabayebDebts,
                                         onCheckedChange = onLinkHabayebDebtsChange,
                                         colors = SwitchDefaults.colors(
-                                            checkedThumbColor = SoftLavender,
-                                            checkedTrackColor = PurpleAccent,
-                                            uncheckedThumbColor = Slate200,
-                                            uncheckedTrackColor = Color.White.copy(alpha = 0.25f)
+                                            checkedThumbColor = onHeader,
+                                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                            uncheckedThumbColor = onHeader.copy(alpha = 0.7f),
+                                            uncheckedTrackColor = onHeader.copy(alpha = 0.25f)
                                         ),
                                         modifier = Modifier
                                             .height(18.dp)
@@ -368,20 +365,20 @@ fun PinnedMainLedgerHeader(
                                         text = stringResource(id = R.string.ledger_commitments_ratio),
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White.copy(alpha = 0.95f)
+                                        color = onHeader.copy(alpha = 0.95f)
                                     )
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(NeonGreen.copy(alpha = 0.22f))
-                                            .border(1.dp, NeonGreen.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
+                                            .background(mizanColors.creditContainer)
+                                            .border(1.dp, mizanColors.creditBorder, RoundedCornerShape(6.dp))
                                             .padding(horizontal = 5.dp, vertical = 1.dp)
                                     ) {
                                         Text(
                                             text = "${(percentFloat * 100).toInt()}%",
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = NeonGreen
+                                            color = mizanColors.credit
                                         )
                                     }
                                 }
@@ -389,11 +386,12 @@ fun PinnedMainLedgerHeader(
 
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            val neonGradient = remember {
+                            val primaryColor = MaterialTheme.colorScheme.primary
+                            val neonGradient = remember(mizanColors.credit, primaryColor) {
                                 Brush.horizontalGradient(
                                     colors = listOf(
-                                        NeonGreen,
-                                        NeonCyan
+                                        mizanColors.credit,
+                                        primaryColor
                                     )
                                 )
                             }
@@ -408,7 +406,7 @@ fun PinnedMainLedgerHeader(
                                         .fillMaxWidth()
                                         .fillMaxHeight()
                                         .clip(RoundedCornerShape(2.5.dp))
-                                        .background(Color.White.copy(alpha = 0.2f))
+                                        .background(onHeader.copy(alpha = 0.2f))
                                 )
                                 if (percentFloat > 0f) {
                                     Box(
@@ -417,7 +415,7 @@ fun PinnedMainLedgerHeader(
                                             .fillMaxHeight()
                                             .clip(RoundedCornerShape(2.5.dp))
                                             .background(
-                                                if (linkHabayebDebts) androidx.compose.ui.graphics.SolidColor(SoftLavender) else neonGradient
+                                                if (linkHabayebDebts) androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.secondary) else neonGradient
                                             )
                                     )
                                 }

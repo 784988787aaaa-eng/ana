@@ -23,19 +23,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.CreditContainerDark
-import com.example.ui.theme.CreditContainerLight
-import com.example.ui.theme.CreditGreen
-import com.example.ui.theme.CreditGreenDark
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.SelectionGreen
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun BackupSheetHeader(
     isConnected: Boolean,
-    isDark: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
+    val mizanColors = MaterialTheme.mizanColors
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -50,7 +46,7 @@ fun BackupSheetHeader(
             Icon(
                 imageVector = Icons.Default.CloudQueue,
                 contentDescription = null,
-                tint = EmeraldPrimary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp)
             )
             Text(
@@ -61,8 +57,8 @@ fun BackupSheetHeader(
             )
         }
 
-        val connectedBg = if (isDark) CreditContainerDark else CreditContainerLight
-        val connectedText = if (isDark) CreditGreenDark else CreditGreen
+        val connectedBg = mizanColors.creditContainer
+        val connectedText = mizanColors.credit
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
@@ -77,7 +73,7 @@ fun BackupSheetHeader(
                     modifier = Modifier
                         .size(5.dp)
                         .clip(CircleShape)
-                        .background(if (isConnected) SelectionGreen else MaterialTheme.colorScheme.onSurfaceVariant)
+                        .background(if (isConnected) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant)
                 )
                 Text(
                     text = if (isConnected) stringResource(R.string.backup_status_connected) else stringResource(R.string.backup_status_local),

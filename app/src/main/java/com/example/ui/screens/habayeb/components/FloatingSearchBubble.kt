@@ -67,12 +67,12 @@ fun TinyFloatingSearchToggle(
             .size(26.dp)
             .clip(CircleShape)
             .background(
-                color = if (isFloatingActive) Color.White.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.15f),
+                color = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f) else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
                 shape = CircleShape
             )
             .border(
                 width = 0.5.dp,
-                color = if (isFloatingActive) Color.White.copy(alpha = 0.45f) else Color.Transparent,
+                color = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.45f) else Color.Transparent,
                 shape = CircleShape
             )
             .clickable(onClick = onToggleClick),
@@ -82,7 +82,7 @@ fun TinyFloatingSearchToggle(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = stringResource(id = R.string.floating_search_toggle),
-                tint = if (isFloatingActive) Color.White else Color.White.copy(alpha = 0.8f),
+                tint = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                 modifier = Modifier.size(13.dp)
             )
             if (isFloatingActive) {
@@ -90,7 +90,7 @@ fun TinyFloatingSearchToggle(
                     modifier = Modifier
                         .size(4.dp)
                         .align(Alignment.TopEnd)
-                        .background(Color.White, CircleShape)
+                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
                 )
             }
         }
@@ -178,7 +178,7 @@ fun FloatingSearchBubble(
                     )
                     .border(
                         width = 1.2.dp,
-                        color = Color.White.copy(alpha = if (isInteracting) 0.9f else 0.45f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = if (isInteracting) 0.9f else 0.45f),
                         shape = CircleShape
                     )
                     .pointerInput(screenWidthPx, screenHeightPx, maxX, maxY) {
@@ -233,7 +233,7 @@ fun FloatingSearchBubble(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(id = R.string.floating_search_icon),
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(searchIconSize)
                 )
             }

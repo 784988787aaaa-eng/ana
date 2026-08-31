@@ -36,9 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.TransactionDb
 import com.example.domain.model.TransactionType
-import com.example.ui.theme.SelectionGreen
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.DayLedger
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -100,10 +98,12 @@ fun DayCard(
         sign + formatCurrency(dayLedger.netAmount, currencySymbol).toWesternDigits()
     }
 
-    val netHeaderColor = remember(dayLedger.netAmount, isDark) {
-        if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) > 0) financialCreditColor(isDark)
-        else if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) < 0) financialDebtColor(isDark)
-        else if (isDark) Color.LightGray else Color.Gray
+    val mizanColors = MaterialTheme.mizanColors
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val netHeaderColor = remember(dayLedger.netAmount, mizanColors, onSurfaceVariant) {
+        if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) > 0) mizanColors.credit
+        else if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) < 0) mizanColors.debt
+        else onSurfaceVariant
     }
 
     Card(
@@ -111,13 +111,13 @@ fun DayCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isDaySelected) {
-                if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF3F0FF)
+                if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
             } else {
                 MaterialTheme.colorScheme.surface
             }
         ),
         border = if (isDaySelected) {
-            BorderStroke(1.5.dp, SelectionGreen)
+            BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
         } else {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         },

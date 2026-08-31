@@ -42,8 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.domain.model.TransactionType
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
 @Composable
@@ -58,16 +57,17 @@ fun AddCustomerTypeAndCurrencySelector(
     isSavingCustomer: Boolean,
     onSaveClick: () -> Unit,
     activeThemeColor: Color,
-    isDark: Boolean,
     exchangeRatesJson: String,
     onRequestRateSetup: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    val debtRed = remember(isDark) { financialDebtColor(isDark) }
-    val creditGreen = remember(isDark) { financialCreditColor(isDark) }
+    val mizanColors = MaterialTheme.mizanColors
+    val debtRed = mizanColors.debt
+    val creditGreen = mizanColors.credit
 
     val currentTypeThemeColor = remember(initialType, debtRed, creditGreen, activeThemeColor) {
         when (initialType) {
@@ -188,7 +188,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(10.dp)
                             )
                         }
@@ -377,7 +377,7 @@ fun AddCustomerTypeAndCurrencySelector(
                 onClick = onSaveClick,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = activeThemeColor,
-                    contentColor = Color.White
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 shape = RoundedCornerShape(8.dp),

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -23,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.helper.AutoScaleText
-import com.example.ui.theme.*
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun HabayebDualMetricCards(
@@ -31,12 +32,16 @@ fun HabayebDualMetricCards(
     onFilterTabSelected: (Int) -> Unit,
     formattedOwedByThem: String,
     formattedOwedToThem: String,
-    isDark: Boolean,
-    greenColor: Color,
-    redColor: Color,
     haptic: HapticFeedback,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false,
+    greenColor: Color = Color.Unspecified,
+    redColor: Color = Color.Unspecified
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+    val effectiveDebtColor = if (redColor != Color.Unspecified) redColor else mizanColors.debt
+    val effectiveCreditColor = if (greenColor != Color.Unspecified) greenColor else mizanColors.credit
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -46,16 +51,8 @@ fun HabayebDualMetricCards(
     ) {
         // Right Card: "لنا" (Red Color - Solid Safe Background)
         val isOwedBySelected = selectedFilterTab == 1
-        val owedByCardBg = if (isDark) {
-            if (isOwedBySelected) ChipRedBgDarkSelected else DebtContainerDark
-        } else {
-            if (isOwedBySelected) ChipRedBgLightSelected else DebtContainerLight
-        }
-        val owedByBorderColor = if (isDark) {
-            if (isOwedBySelected) redColor else DebtBorderDark
-        } else {
-            if (isOwedBySelected) redColor else DebtBorderLight
-        }
+        val owedByCardBg = if (isOwedBySelected) mizanColors.chipDebtSelectedBackground else mizanColors.chipDebtUnselectedBackground
+        val owedByBorderColor = if (isOwedBySelected) effectiveDebtColor else mizanColors.chipDebtUnselectedBorder
 
         Card(
             shape = RoundedCornerShape(12.dp),
@@ -74,7 +71,7 @@ fun HabayebDualMetricCards(
                     .fillMaxSize()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(color = redColor)
+                        indication = ripple(color = effectiveDebtColor)
                     ) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onFilterTabSelected(if (isOwedBySelected) 0 else 1)
@@ -92,7 +89,7 @@ fun HabayebDualMetricCards(
                         text = stringResource(id = R.string.habayeb_filter_owed_by),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = redColor,
+                        color = effectiveDebtColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
@@ -102,7 +99,7 @@ fun HabayebDualMetricCards(
                         text = formattedOwedByThem,
                         baseFontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = redColor,
+                        color = effectiveDebtColor,
                         maxLines = 1,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -113,16 +110,8 @@ fun HabayebDualMetricCards(
 
         // Left Card: "علينا" (Emerald Green Color - Solid Safe Background)
         val isOwedToSelected = selectedFilterTab == 2
-        val owedToCardBg = if (isDark) {
-            if (isOwedToSelected) ChipGreenBgDarkSelected else CreditContainerDark
-        } else {
-            if (isOwedToSelected) ChipGreenBgLightSelected else CreditContainerLight
-        }
-        val owedToBorderColor = if (isDark) {
-            if (isOwedToSelected) greenColor else CreditBorderDark
-        } else {
-            if (isOwedToSelected) greenColor else CreditBorderLight
-        }
+        val owedToCardBg = if (isOwedToSelected) mizanColors.chipCreditSelectedBackground else mizanColors.chipCreditUnselectedBackground
+        val owedToBorderColor = if (isOwedToSelected) effectiveCreditColor else mizanColors.chipCreditUnselectedBorder
 
         Card(
             shape = RoundedCornerShape(12.dp),
@@ -141,7 +130,7 @@ fun HabayebDualMetricCards(
                     .fillMaxSize()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(color = greenColor)
+                        indication = ripple(color = effectiveCreditColor)
                     ) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onFilterTabSelected(if (isOwedToSelected) 0 else 2)
@@ -159,7 +148,7 @@ fun HabayebDualMetricCards(
                         text = stringResource(id = R.string.habayeb_filter_owed_to),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = greenColor,
+                        color = effectiveCreditColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
@@ -169,7 +158,7 @@ fun HabayebDualMetricCards(
                         text = formattedOwedToThem,
                         baseFontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = greenColor,
+                        color = effectiveCreditColor,
                         maxLines = 1,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()

@@ -21,8 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
 import com.example.ui.helper.AutoScaleText
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -46,9 +45,10 @@ fun CommitmentsSummaryCards(
 ) {
     if (commitments.isEmpty()) return
 
+    val mizanColors = MaterialTheme.mizanColors
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val greenColor = financialCreditColor(isDark)
-    val redColor = financialDebtColor(isDark)
+    val greenColor = mizanColors.credit
+    val redColor = MaterialTheme.colorScheme.error
 
     val (totalRemainingCommitments, netAmount) = remember(computedCommitments, totalCash) {
         val remaining = computedCommitments.fold(BigDecimal.ZERO) { acc, triple -> acc.add(triple.third) }
@@ -60,7 +60,7 @@ fun CommitmentsSummaryCards(
         Pair(remaining, net)
     }
 
-    val cardBaseBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color.White
+    val cardBaseBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface
 
     Row(
         modifier = modifier

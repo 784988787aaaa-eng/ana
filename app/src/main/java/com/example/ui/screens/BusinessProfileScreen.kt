@@ -96,7 +96,7 @@ fun BusinessProfileScreen(
                         text = stringResource(id = R.string.biz_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Right
                     )
@@ -109,7 +109,7 @@ fun BusinessProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.biz_back),
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },

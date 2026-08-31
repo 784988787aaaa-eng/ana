@@ -59,15 +59,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
-import com.example.ui.theme.EmeraldPrimary
 import java.math.BigDecimal
 
 private const val TAG = "CommitmentEditDialog"
-
-/**
- * لون محتوى زر الحفظ المميز للالتزام المالي.
- */
-private val COMMITMENT_SAVE_BUTTON_TEXT_COLOR = Color.White
 
 @Composable
 fun CommitmentEditDialog(
@@ -185,7 +179,7 @@ fun CommitmentEditDialog(
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldPrimary,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -234,7 +228,7 @@ fun CommitmentEditDialog(
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = EmeraldPrimary,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -275,7 +269,7 @@ fun CommitmentEditDialog(
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = EmeraldPrimary,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -333,7 +327,7 @@ fun CommitmentEditDialog(
                                     onSaveCommitment(obligationName, tar, prg)
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1.3f)
@@ -342,7 +336,7 @@ fun CommitmentEditDialog(
                         ) {
                             Text(
                                 text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_save_edit) else stringResource(id = R.string.ledger_commitment_dialog_save_goal),
-                                color = COMMITMENT_SAVE_BUTTON_TEXT_COLOR,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.5.sp
                             )

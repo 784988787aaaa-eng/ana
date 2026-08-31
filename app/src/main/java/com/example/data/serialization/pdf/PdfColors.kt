@@ -16,53 +16,66 @@
  */
 package com.example.data.serialization.pdf
 
+import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.compose.ui.graphics.toArgb
+import com.example.ui.theme.MizanDocumentColors
+
 /**
  * [الكائن الأحادي لألوان تقارير PDF - PdfColors]:
  * يجمع رموز الألوان الست عشرية (Hex) المخصصة لمحركات رسم التقارير المطبوعة.
+ * تم تحويله بالكامل ليعمل كـ Adapter/Mapping Layer يعتمد على MizanDocumentColors كمصدر للحقيقة.
  */
 object PdfColors {
+    private fun ComposeColor.toHex(): String {
+        return String.format(java.util.Locale.US, "#%06X", 0xFFFFFF and this.toArgb())
+    }
+
     /** اللون الزمردي الأساسي المعتمد لهوية التقارير */
-    const val PRIMARY_EMERALD = "#0F4C43"
+    val PRIMARY_EMERALD = MizanDocumentColors.brandPrimary.toHex()
     /** لون خلفية الترويسات الرئيسية للجداول */
-    const val HEADER_BG = "#2C3E50"
+    val HEADER_BG = MizanDocumentColors.headerBackground.toHex()
     /** لون النصوص داخل الترويسات الداكنة (أبيض ناصع) */
-    const val HEADER_TEXT = "#FFFFFF"
+    val HEADER_TEXT = MizanDocumentColors.headerText.toHex()
     /** لون إطارات وحدود الترويسات */
-    const val HEADER_BORDER = "#CBD5E1"
+    val HEADER_BORDER = MizanDocumentColors.borderStrong.toHex()
     /** لون النص الفحمي عالي التباين */
-    const val TEXT_CHARCOAL = "#1E293B"
+    val TEXT_CHARCOAL = MizanDocumentColors.contentPrimary.toHex()
     /** لون النص الرمادي الهادئ للبيانات الثانوية */
-    const val TEXT_MUTED_GREY = "#64748B"
+    val TEXT_MUTED_GREY = MizanDocumentColors.contentSecondary.toHex()
     /** لون النص الداكن الأساسي */
-    const val TEXT_DARK = "#0F172A"
+    val TEXT_DARK = MizanDocumentColors.contentPrimary.toHex()
     /** لون النص المتوسط للملاحظات */
-    const val TEXT_MEDIUM = "#334155"
+    val TEXT_MEDIUM = MizanDocumentColors.contentSecondary.toHex()
     /** لون النص الفاتح للتفاصيل الدقيقة */
-    const val TEXT_LIGHT = "#475569"
+    val TEXT_LIGHT = MizanDocumentColors.contentTertiary.toHex()
     /** لون صافي الدين الأزرق الكحلي */
-    const val NET_DEBT_BLUE = "#1E3A8A"
+    val NET_DEBT_BLUE = MizanDocumentColors.netDebtBlue.toHex()
     /** خلفية معاملات الدين (أحمر خافت جداً) */
-    const val OWED_BG = "#FEF2F2"
+    val OWED_BG = MizanDocumentColors.debtContainer.toHex()
     /** نص مبالغ الدين والالتزام (أحمر داكن) */
-    const val OWED_TEXT = "#B91C1C"
+    val OWED_TEXT = MizanDocumentColors.debt.toHex()
+    /** حد خلايا الدين والالتزام (أحمر فاتح) */
+    val DEBT_BORDER = MizanDocumentColors.debtBorder.toHex()
     /** خلفية معاملات السداد والدفع (أخضر خافت جداً) */
-    const val PAYMENT_BG = "#F0FDF4"
+    val PAYMENT_BG = MizanDocumentColors.creditContainer.toHex()
     /** نص مبالغ السداد والمقبوضات (أخضر داكن) */
-    const val PAYMENT_TEXT = "#156534"
+    val PAYMENT_TEXT = MizanDocumentColors.credit.toHex()
+    /** حد خلايا السداد والمقبوضات (أخضر فاتح) */
+    val CREDIT_BORDER = MizanDocumentColors.creditBorder.toHex()
     /** خلفية صفوف المعاملات بالعملات الأجنبية */
-    const val FOREIGN_ROW_BG = "#F8FAFC"
+    val FOREIGN_ROW_BG = MizanDocumentColors.surfaceVariant.toHex()
     /** خلفية بطاقات الملخصات */
-    const val CARD_BG = "#F8FAFC"
+    val CARD_BG = MizanDocumentColors.surfaceContainer.toHex()
     /** لون الخط الفاصل بين صفوف الجداول */
-    const val ROW_DIVIDER = "#E2E8F0"
+    val ROW_DIVIDER = MizanDocumentColors.borderVariant.toHex()
     /** خلفية الصفوف التبادلية (Zebra Striping) */
-    const val ALT_ROW_BG = "#F8FAFC"
+    val ALT_ROW_BG = MizanDocumentColors.altRowBackground.toHex()
     /** خلفية صف الإجماليات الختامي */
-    const val TOTALS_ROW_BG = "#F1F5F9"
+    val TOTALS_ROW_BG = MizanDocumentColors.totalsRowBackground.toHex()
     /** خلفية شريط تنبيه الديون */
-    const val BANNER_OWED_BG = "#FEE2E2"
+    val BANNER_OWED_BG = MizanDocumentColors.debtContainer.toHex()
     /** خلفية شريط تنبيه السداد */
-    const val BANNER_PAYMENT_BG = "#DCFCE7"
+    val BANNER_PAYMENT_BG = MizanDocumentColors.creditContainer.toHex()
 }
 
 

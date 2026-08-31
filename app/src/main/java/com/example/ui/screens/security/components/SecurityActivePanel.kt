@@ -35,15 +35,13 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.local.entities.AppSettings
 import com.example.domain.StringUtils.toEnglishDigits
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 
 enum class SecurityActiveAction {
     CHANGE_PIN,
     DEACTIVATE
 }
-
-private val SWITCH_THUMB_COLOR = Color.White
 
 @Composable
 fun SecurityActivePanel(
@@ -55,8 +53,7 @@ fun SecurityActivePanel(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
-
+    val mizanColors = MaterialTheme.mizanColors
     var pendingAction by remember { mutableStateOf<SecurityActiveAction?>(null) }
 
     Card(
@@ -70,12 +67,12 @@ fun SecurityActivePanel(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val shieldBg = if (isDark) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.CreditContainerLight
-            val shieldBorder = if (isDark) com.example.ui.theme.SelectionGreen else com.example.ui.theme.CreditBorderLight
-            val shieldTint = if (isDark) com.example.ui.theme.CreditGreenDark else com.example.ui.theme.CreditGreen
-            val activeText = if (isDark) com.example.ui.theme.CreditGreenDark else com.example.ui.theme.CreditGreen
-            val deactivateContent = if (isDark) com.example.ui.theme.DebtRedDark else com.example.ui.theme.DebtRed
-            val deactivateBorder = if (isDark) com.example.ui.theme.DebtBorderDark else com.example.ui.theme.DebtBorderLight
+            val shieldBg = mizanColors.creditContainer
+            val shieldBorder = mizanColors.creditBorder
+            val shieldTint = mizanColors.credit
+            val activeText = mizanColors.credit
+            val deactivateContent = mizanColors.debt
+            val deactivateBorder = mizanColors.debtBorder
 
             // Shield Icon
             Box(
@@ -113,7 +110,7 @@ fun SecurityActivePanel(
                 val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                     ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -132,7 +129,7 @@ fun SecurityActivePanel(
                             Icon(
                                 imageVector = Icons.Default.Fingerprint,
                                 contentDescription = null,
-                                tint = EmeraldPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -154,8 +151,8 @@ fun SecurityActivePanel(
                             checked = isBiometricEnabled,
                             onCheckedChange = { viewModel.toggleBiometric(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = SWITCH_THUMB_COLOR,
-                                checkedTrackColor = EmeraldPrimary
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
                             )
                         )
                     }
@@ -252,6 +249,7 @@ fun VerifyOldPinDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val mizanColors = MaterialTheme.mizanColors
     var pinInput by remember { mutableStateOf("") }
     var recoveryInput by remember { mutableStateOf("") }
     var showRecoveryMode by remember { mutableStateOf(false) }
@@ -369,12 +367,12 @@ fun VerifyOldPinDialog(
                                 .clickable { showHint = !showHint }
                                 .padding(vertical = 4.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Lightbulb, contentDescription = null, tint = com.example.ui.theme.WarningAmber, modifier = Modifier.size(16.dp))
+                            Icon(imageVector = Icons.Default.Lightbulb, contentDescription = null, tint = mizanColors.warning, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = if (showHint) stringResource(id = R.string.sec_hint_display_pattern, recoveryHint) else stringResource(id = R.string.sec_hint_toggle_show),
                                 fontSize = 12.sp,
-                                color = com.example.ui.theme.WarningAmber,
+                                color = mizanColors.warning,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -410,7 +408,7 @@ fun VerifyOldPinDialog(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Text(stringResource(id = R.string.sec_btn_confirm), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }

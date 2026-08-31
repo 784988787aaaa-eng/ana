@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun MainLedgerSelectionBar(
@@ -56,7 +56,7 @@ fun MainLedgerSelectionBar(
         Row(
             modifier = Modifier
                 .padding(horizontal = 20.dp)
-                .shadow(16.dp, RoundedCornerShape(30.dp), spotColor = Color.Black.copy(alpha = 0.1f))
+                .shadow(16.dp, RoundedCornerShape(30.dp), spotColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.1f))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(30.dp))
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(30.dp))
                 .padding(horizontal = 8.dp, vertical = 6.dp),
@@ -102,7 +102,7 @@ fun MainLedgerSelectionBar(
                     Icon(
                         imageVector = if (isSelectAllChecked) Icons.Default.Check else Icons.Default.List,
                         contentDescription = stringResource(id = R.string.ledger_select_all),
-                        tint = if (isSelectAllChecked) EmeraldPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isSelectAllChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))

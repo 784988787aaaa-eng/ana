@@ -41,8 +41,6 @@ import com.example.ui.helper.AutoScaleText
 import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.screens.habayeb.components.header.HabayebDualMetricCards
 import com.example.ui.screens.habayeb.components.header.HabayebHeaderSearchBar
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
 private const val PRIVACY_MASK = "*****"
@@ -68,10 +66,6 @@ fun HabayebFinanceHeader(
     activeThemeColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val greenColor = financialCreditColor(isDark)
-    val redColor = financialDebtColor(isDark)
-
     val netDebt = remember(totalOwedByThem, totalOwedToThem) {
         totalOwedByThem.subtract(totalOwedToThem)
     }
@@ -139,12 +133,12 @@ fun HabayebFinanceHeader(
                         },
                         modifier = Modifier
                             .size(38.dp)
-                            .background(Color.White.copy(alpha = 0.16f), CircleShape)
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = stringResource(id = R.string.ledger_nav_menu_desc),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(19.dp)
                         )
                     }
@@ -173,7 +167,7 @@ fun HabayebFinanceHeader(
                             text = dynamicTitle,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             textAlign = TextAlign.Center
                         )
 
@@ -190,7 +184,7 @@ fun HabayebFinanceHeader(
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = stringResource(id = R.string.ledger_visibility_desc),
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -213,7 +207,7 @@ fun HabayebFinanceHeader(
                                     text = animatedBalance,
                                     baseFontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     maxLines = 1,
                                     textAlign = TextAlign.Center
                                 )
@@ -228,7 +222,7 @@ fun HabayebFinanceHeader(
                     ) {
                         TinyFloatingSearchToggle(
                             isFloatingActive = isFloatingActive,
-                            activeThemeColor = Color.White,
+                            activeThemeColor = MaterialTheme.colorScheme.onPrimary,
                             onToggleClick = onToggleFloatingClick
                         )
 
@@ -240,12 +234,12 @@ fun HabayebFinanceHeader(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.16f))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = stringResource(id = R.string.habayeb_search_label),
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(19.dp)
                             )
                         }
@@ -260,9 +254,6 @@ fun HabayebFinanceHeader(
             onFilterTabSelected = onFilterTabSelected,
             formattedOwedByThem = formattedOwedByThem,
             formattedOwedToThem = formattedOwedToThem,
-            isDark = isDark,
-            greenColor = greenColor,
-            redColor = redColor,
             haptic = haptic
         )
     }

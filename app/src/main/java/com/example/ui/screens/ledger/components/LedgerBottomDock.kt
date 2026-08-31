@@ -22,13 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
-
-/**
- * لون الأيقونات والنصوص البيضاء للأزرار المالية البارزة داخل شريط السجل السفلي.
- */
-private val DOCK_BUTTON_CONTENT_COLOR = Color.White
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun LedgerBottomDock(
@@ -58,10 +52,9 @@ fun LedgerBottomDock(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val bgMatColor = MaterialTheme.colorScheme.background
-                val isDark = remember(bgMatColor) { bgMatColor.run { red < 0.5f } }
-                val incomeBg = remember(isDark) { financialCreditColor(isDark) }
-                val expenseBg = remember(isDark) { financialDebtColor(isDark) }
+                val mizanColors = MaterialTheme.mizanColors
+                val incomeBg = mizanColors.credit
+                val expenseBg = mizanColors.debt
 
                 // Add Income Button (First element - Right side in RTL)
                 Button(
@@ -76,9 +69,9 @@ fun LedgerBottomDock(
                         .weight(1f)
                         .height(42.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.ledger_add_income), tint = DOCK_BUTTON_CONTENT_COLOR, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.ledger_add_income), tint = mizanColors.onCredit, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_income), color = DOCK_BUTTON_CONTENT_COLOR, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.ledger_add_income), color = mizanColors.onCredit, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
 
                 // Center Target Button (Goals/Commitments)
@@ -113,9 +106,9 @@ fun LedgerBottomDock(
                         .weight(1f)
                         .height(42.dp)
                 ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(id = R.string.ledger_add_expense), tint = DOCK_BUTTON_CONTENT_COLOR, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(id = R.string.ledger_add_expense), tint = mizanColors.onDebt, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_expense), color = DOCK_BUTTON_CONTENT_COLOR, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.ledger_add_expense), color = mizanColors.onDebt, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }

@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.local.entities.FixedCommitment
-import com.example.ui.theme.EmeraldPrimary
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -192,7 +191,7 @@ fun CommitmentsListDialog(
                     // 4. Primary Bottom Action Button: [ + إضافة التزام / هدف جديد ]
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = EmeraldPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(46.dp)
@@ -209,7 +208,7 @@ fun CommitmentsListDialog(
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -217,7 +216,7 @@ fun CommitmentsListDialog(
                                 text = "+ إضافة التزام / هدف جديد",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }

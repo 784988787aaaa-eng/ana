@@ -33,8 +33,7 @@ import com.example.domain.model.TransactionType
 import com.example.ui.helper.rememberContactPicker
 import com.example.ui.screens.CalculatorDialog
 import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import java.util.Calendar
 
@@ -46,7 +45,7 @@ fun AddCustomerPopup(
     activeThemeColor: Color,
     activeSubColor: Color
 ) {
-    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
+    val mizanColors = MaterialTheme.mizanColors
     val context = LocalContext.current
 
     var nameStr by rememberSaveable { mutableStateOf("") }
@@ -56,11 +55,11 @@ fun AddCustomerPopup(
     var initialType by rememberSaveable { mutableStateOf<String?>(null) }
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
-    val debtRed = remember(isDark) { financialDebtColor(isDark) }
-    val creditGreen = remember(isDark) { financialCreditColor(isDark) }
+    val debtRed = mizanColors.debt
+    val creditGreen = mizanColors.credit
     val defaultPrimary = MaterialTheme.colorScheme.primary
 
-    val dynamicThemeColor = remember(initialType, isDark, debtRed, creditGreen, defaultPrimary) {
+    val dynamicThemeColor = remember(initialType, debtRed, creditGreen, defaultPrimary) {
         when (initialType) {
             TransactionType.OWED_BY_THEM.value -> debtRed     // عند اختيار "عليه": يتلون بالأحمر المالي الجذاب
             TransactionType.OWED_TO_THEM.value -> creditGreen // عند اختيار "له": يتلون بالأخضر المالي الجذاب
@@ -195,7 +194,7 @@ fun AddCustomerPopup(
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = stringResource(id = R.string.habayeb_cancel),
-                                        tint = Color.Gray,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -230,7 +229,6 @@ fun AddCustomerPopup(
                                 },
                                 onContactPickerClick = { launchContactPicker() },
                                 onDone = { focusManager.clearFocus() },
-                                isDark = isDark,
                                 focusRequester = focusRequester,
                                 initialAmountFocusRequester = initialAmountFocusRequester,
                                 notesFocusRequester = notesFocusRequester,
@@ -279,7 +277,6 @@ fun AddCustomerPopup(
                                     )
                                 },
                                 activeThemeColor = dynamicThemeColor,
-                                isDark = isDark,
                                 exchangeRatesJson = settings.exchangeRatesJson,
                                 onRequestRateSetup = { rate ->
                                     tempRateStr = rate

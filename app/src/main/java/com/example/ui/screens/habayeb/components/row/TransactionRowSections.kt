@@ -31,10 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.HabayebTransaction
 import com.example.ui.screens.habayeb.components.AutoSizeText
-import com.example.ui.theme.Slate100
-import com.example.ui.theme.Slate300
-import com.example.ui.theme.Slate600
-import com.example.ui.theme.Slate800
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.FinanceConstants
 
 @Composable
@@ -44,11 +41,13 @@ fun TransactionRowDateSection(
     hasActiveRecurring: Boolean,
     activeThemeColor: Color,
     cached: TransactionRowCachedData,
-    isDark: Boolean,
     tx: HabayebTransaction,
     onScheduleClick: (HabayebTransaction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -67,7 +66,7 @@ fun TransactionRowDateSection(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(10.dp)
                     )
                 }
@@ -130,7 +129,7 @@ fun TransactionRowDateSection(
         Text(
             text = cached.timeStr,
             fontSize = 8.sp,
-            color = RowColors.mutedGray(isDark),
+            color = mizanColors.contentSecondary,
             fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
             maxLines = 1
@@ -141,14 +140,16 @@ fun TransactionRowDateSection(
 @Composable
 fun TransactionRowDetailsSection(
     cached: TransactionRowCachedData,
-    isDark: Boolean,
     hasActiveRecurring: Boolean,
     parentTxSeq: Int?,
     tx: HabayebTransaction,
     currencySymbol: String,
     onExchangeRateClick: (HabayebTransaction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -181,8 +182,8 @@ fun TransactionRowDetailsSection(
             if (hasActiveRecurring) {
                 Box(
                     modifier = Modifier
-                        .background(RowColors.alertGoldBg(isDark), RoundedCornerShape(4.dp))
-                        .border(0.5.dp, RowColors.alertGoldBorder(isDark), RoundedCornerShape(4.dp))
+                        .background(mizanColors.alertGoldBackground, RoundedCornerShape(4.dp))
+                        .border(0.5.dp, mizanColors.alertGoldBorder, RoundedCornerShape(4.dp))
                         .padding(horizontal = 4.dp, vertical = 1.dp)
                 ) {
                     Text(
@@ -191,14 +192,14 @@ fun TransactionRowDetailsSection(
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         softWrap = false,
-                        color = RowColors.alertGoldText(isDark)
+                        color = mizanColors.alertGoldText
                     )
                 }
             } else if (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id) {
                 Box(
                     modifier = Modifier
-                        .background(RowColors.infoBlueBg(isDark), RoundedCornerShape(4.dp))
-                        .border(0.5.dp, RowColors.infoBlueBorder(isDark), RoundedCornerShape(4.dp))
+                        .background(mizanColors.infoBlueBackground, RoundedCornerShape(4.dp))
+                        .border(0.5.dp, mizanColors.infoBlueBorder, RoundedCornerShape(4.dp))
                         .padding(horizontal = 4.dp, vertical = 1.dp)
                 ) {
                     Text(
@@ -207,7 +208,7 @@ fun TransactionRowDetailsSection(
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         softWrap = false,
-                        color = RowColors.infoBlueText(isDark)
+                        color = mizanColors.infoBlueText
                     )
                 }
             }
@@ -221,13 +222,13 @@ fun TransactionRowDetailsSection(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .background(
-                            if (isCalculated) RowColors.successGreenBg(isDark)
-                            else if (isDark) Slate800.copy(alpha = 0.5f) else Slate100
+                            if (isCalculated) mizanColors.successGreenBackground
+                            else mizanColors.appSurfaceVariant
                         )
                         .border(
                             0.5.dp,
-                            if (isCalculated) RowColors.successGreenBorder(isDark)
-                            else if (isDark) Slate600.copy(alpha = 0.6f) else Slate300,
+                            if (isCalculated) mizanColors.successGreenBorder
+                            else mizanColors.border,
                             RoundedCornerShape(4.dp)
                         )
                         .clickable { onExchangeRateClick(tx) }
@@ -238,7 +239,7 @@ fun TransactionRowDetailsSection(
                     Icon(
                         imageVector = if (isCalculated) Icons.Default.Check else Icons.Default.Close,
                         contentDescription = null,
-                        tint = if (isCalculated) RowColors.successGreenBorder(isDark) else RowColors.warningRedBorder(isDark).copy(alpha = 0.6f),
+                        tint = if (isCalculated) mizanColors.successGreenBorder else mizanColors.debtBorder.copy(alpha = 0.8f),
                         modifier = Modifier.size(9.dp)
                     )
                     Spacer(modifier = Modifier.width(3.dp))
@@ -252,7 +253,7 @@ fun TransactionRowDetailsSection(
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         softWrap = false,
-                        color = if (isCalculated) RowColors.successGreenBorder(isDark) else RowColors.darkGray(isDark).copy(alpha = 0.8f)
+                        color = if (isCalculated) mizanColors.successGreenBorder else mizanColors.contentSecondary.copy(alpha = 0.8f)
                     )
                 }
             }

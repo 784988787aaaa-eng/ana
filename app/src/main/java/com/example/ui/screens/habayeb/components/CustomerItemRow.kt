@@ -50,8 +50,7 @@ import com.example.ui.helper.AutoScaleText
 import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.screens.habayeb.utils.HabayebDateFormatter
 import com.example.ui.state.CustomerUiState
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -94,11 +93,9 @@ fun CustomerItemRow(
     }
     val hasNonZeroForeign = nonZeroForeign.isNotEmpty()
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-
     val containerColor = when {
-        isSelected -> if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-        isHighlighted -> if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        isHighlighted -> MaterialTheme.colorScheme.surfaceVariant
         else -> MaterialTheme.colorScheme.surface
     }
 
@@ -154,7 +151,7 @@ fun CustomerItemRow(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(21.dp)
                         )
                     } else {
@@ -204,16 +201,8 @@ fun CustomerItemRow(
                         )
 
                         if (hasNonZeroForeign) {
-                            val badgeBg = if (isDark) {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                            } else {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                            }
-                            val badgeTextColor = if (isDark) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            }
+                            val badgeBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                            val badgeTextColor = MaterialTheme.colorScheme.primary
                             val badgeBorder = BorderStroke(
                                 width = 0.5.dp,
                                 color = badgeTextColor.copy(alpha = 0.3f)
@@ -288,9 +277,9 @@ private fun CustomerDebtSummarySection(
     val itemCurrencySymbol = customer.displayCurrencySymbol
     val initialType = customer.originalCustomer.initialType
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val activeRed = financialDebtColor(isDark)
-    val activeGreen = financialCreditColor(isDark)
+    val mizanColors = MaterialTheme.mizanColors
+    val activeRed = mizanColors.debt
+    val activeGreen = mizanColors.credit
 
     val (debtColor, isOwedByThem) = remember(initialType, isPositive, isNegative, isZero, activeRed, activeGreen, textSecondaryColor) {
         when (initialType) {

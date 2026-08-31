@@ -40,7 +40,6 @@ fun BackupRestoreBottomSheet(
     onOpenCloudBackupsList: () -> Unit = {},
     onRestoreSuccess: (AppSettings) -> Unit = {}
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val syncState by backupSyncViewModel.googleDriveSyncState.collectAsStateWithLifecycle()
     val storedEmail = remember(syncState) { backupSyncViewModel.googleDriveSyncHelper.getStoredEmail() }
     val isConnected = remember(storedEmail, syncState) {
@@ -71,8 +70,7 @@ fun BackupRestoreBottomSheet(
             ) {
                 // 1. Header with Title & Status Badge
                 BackupSheetHeader(
-                    isConnected = isConnected,
-                    isDark = isDark
+                    isConnected = isConnected
                 )
 
                 // 2. Comprehensive Backup Card

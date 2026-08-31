@@ -44,8 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
@@ -115,12 +114,12 @@ fun ExchangeRateSetupContent(
         }
     }
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val mizanColors = MaterialTheme.mizanColors
 
     val statusColor by animateColorAsState(
         targetValue = when {
-            isChecked -> financialCreditColor(isDark)
-            showUncheckedError -> financialDebtColor(isDark)
+            isChecked -> mizanColors.credit
+            showUncheckedError -> mizanColors.debt
             else -> activeThemeColor.copy(alpha = 0.85f)
         },
         animationSpec = tween(durationMillis = 180),
@@ -254,7 +253,7 @@ fun ExchangeRateSetupContent(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(10.dp)
                         )
                     }
@@ -320,7 +319,7 @@ fun ExchangeRateSetupContent(
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = statusColor,
-                        contentColor = Color.White
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text(stringResource(id = R.string.habayeb_save), fontSize = 10.sp, fontWeight = FontWeight.Bold)

@@ -26,8 +26,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -160,9 +159,9 @@ fun AddTransactionPopup(
     var showRateSetupOverlay by rememberSaveable { mutableStateOf(false) }
     var tempRateStr by rememberSaveable { mutableStateOf(INITIAL_EMPTY_TEXT) }
 
-    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
-    val debtRedColor = financialDebtColor(isDark)
-    val creditGreenColor = financialCreditColor(isDark)
+    val mizanColors = MaterialTheme.mizanColors
+    val debtRedColor = mizanColors.debt
+    val creditGreenColor = mizanColors.credit
 
     val scope = rememberCoroutineScope()
     val executeSave = { finalActionType: String ->
@@ -371,7 +370,7 @@ fun AddTransactionPopup(
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = Color.White),
+                                    colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = mizanColors.onDebt),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -380,14 +379,14 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = mizanColors.onDebt
                                     )
                                 }
 
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = Color.White),
+                                    colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = mizanColors.onCredit),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -396,7 +395,7 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = mizanColors.onCredit
                                     )
                                 }
                             }

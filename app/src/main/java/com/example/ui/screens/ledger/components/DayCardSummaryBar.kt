@@ -22,8 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -46,9 +45,10 @@ fun DayCardSummaryBar(
     formatCurrency: (BigDecimal, String) -> String,
     modifier: Modifier = Modifier
 ) {
-    val barBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF7F9FC)
-    val netSummaryColor = if (dailyNet > BigDecimal.ZERO) financialCreditColor(isDark)
-    else if (dailyNet < BigDecimal.ZERO) financialDebtColor(isDark)
+    val mizanColors = MaterialTheme.mizanColors
+    val barBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceVariant
+    val netSummaryColor = if (dailyNet > BigDecimal.ZERO) mizanColors.credit
+    else if (dailyNet < BigDecimal.ZERO) mizanColors.debt
     else MaterialTheme.colorScheme.onSurfaceVariant
     val netSummaryPrefix = if (dailyNet > BigDecimal.ZERO) "+" else ""
 
@@ -76,7 +76,7 @@ fun DayCardSummaryBar(
                     text = "${stringResource(id = R.string.ledger_daily_income).replace("اليوم", "").trim()}: ${formatCurrency(dailyIncome, currencySymbol).toWesternDigits()}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = financialCreditColor(isDark),
+                    color = mizanColors.credit,
                     maxLines = 1
                 )
             }
@@ -99,7 +99,7 @@ fun DayCardSummaryBar(
                     text = "${stringResource(id = R.string.ledger_daily_expense).replace("اليوم", "").trim()}: ${formatCurrency(dailyExpense, currencySymbol).toWesternDigits()}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = financialDebtColor(isDark),
+                    color = mizanColors.debt,
                     maxLines = 1
                 )
             }

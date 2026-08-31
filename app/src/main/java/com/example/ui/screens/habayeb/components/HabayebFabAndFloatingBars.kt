@@ -183,7 +183,7 @@ fun HabayebFab(
                     )
                     .border(
                         width = 1.2.dp,
-                        color = Color.White.copy(alpha = if (isInteracting) 0.9f else 0.45f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = if (isInteracting) 0.9f else 0.45f),
                         shape = CircleShape
                     )
                     .pointerInput(screenWidthPx, screenHeightPx, maxX, maxY, defaultDockX, defaultDockY) {
@@ -249,7 +249,7 @@ fun HabayebFab(
                         id = if (targetCustomer != null) R.string.habayeb_add_tx_desc else R.string.habayeb_add_customer_fab
                     ),
                     modifier = Modifier.size(iconSize),
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }

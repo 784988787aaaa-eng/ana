@@ -24,12 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.SelectionGreen
-
-/**
- * لون أيقونة علامة الصح داخل مربع اختيار اليوم.
- */
-private val DAY_SELECTION_CHECK_ICON_COLOR = Color.White
 
 @Composable
 fun DayCardHeader(
@@ -58,15 +52,15 @@ fun DayCardHeader(
                     modifier = Modifier
                         .size(18.dp)
                         .clip(CircleShape)
-                        .background(if (isDaySelected) SelectionGreen else MaterialTheme.colorScheme.surface)
-                        .border(1.5.dp, SelectionGreen, CircleShape),
+                        .background(if (isDaySelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
+                        .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isDaySelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = DAY_SELECTION_CHECK_ICON_COLOR,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(11.dp)
                         )
                     }

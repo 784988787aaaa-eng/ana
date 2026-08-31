@@ -3,7 +3,10 @@ package com.example.ui.screens.habayeb.components.row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.R
@@ -12,27 +15,9 @@ import com.example.domain.model.TransactionType
 import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import com.example.ui.screens.habayeb.utils.HabayebDateFormatter
-import com.example.ui.theme.AlertGoldBgDark
-import com.example.ui.theme.AlertGoldBorderDark
-import com.example.ui.theme.AlertGoldTextDark
-import com.example.ui.theme.AlertGoldTextLight
-import com.example.ui.theme.InfoBlue
-import com.example.ui.theme.InfoBlueBgDark
-import com.example.ui.theme.InfoBlueBgLight
-import com.example.ui.theme.InfoBlueTextDark
-import com.example.ui.theme.InfoBlueTextLight
-import com.example.ui.theme.MutedTextDark
-import com.example.ui.theme.MutedTextLight
-import com.example.ui.theme.SuccessGreenBgDark
-import com.example.ui.theme.SuccessGreenBgLight
-import com.example.ui.theme.SuccessGreenBorderDark
-import com.example.ui.theme.SuccessGreenBorderLight
-import com.example.ui.theme.WarningAmberBg
-import com.example.ui.theme.WarningAmberBorder
-import com.example.ui.theme.WarningRedBorder
-import com.example.ui.theme.WarningRedBorderLight
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.FinanceConstants
 import java.math.BigDecimal
 import java.util.Date
@@ -40,22 +25,85 @@ import java.util.Date
 private const val CURRENCY_NONE_TAG = "NONE"
 
 object RowColors {
+    val creditGreen: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.credit
+
+    val debtRed: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.debt
+
+    val mutedGray: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.contentSecondary
+
+    val alertGoldBg: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.alertGoldBackground
+
+    val alertGoldBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.alertGoldBorder
+
+    val alertGoldText: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.alertGoldText
+
+    val infoBlueBg: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.infoBlueBackground
+
+    val infoBlueBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.infoBlueBorder
+
+    val infoBlueText: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.infoBlueText
+
+    val successGreenBg: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.successGreenBackground
+
+    val successGreenBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.successGreenBorder
+
+    val warningRedBorder: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.debtBorder
+
+    val darkGray: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.mizanColors.contentSecondary
+
+    // Backwards compatibility helpers
     fun creditGreen(isDark: Boolean) = financialCreditColor(isDark)
     fun debtRed(isDark: Boolean) = financialDebtColor(isDark)
-    fun mutedGray(isDark: Boolean) = if (isDark) MutedTextDark else MutedTextLight
-    
-    fun alertGoldBg(isDark: Boolean) = if (isDark) AlertGoldBgDark else WarningAmberBg
-    fun alertGoldBorder(isDark: Boolean) = if (isDark) AlertGoldBorderDark else WarningAmberBorder
-    fun alertGoldText(isDark: Boolean) = if (isDark) AlertGoldTextDark else AlertGoldTextLight
-    
-    fun infoBlueBg(isDark: Boolean) = if (isDark) InfoBlueBgDark else InfoBlueBgLight
-    fun infoBlueBorder(isDark: Boolean) = InfoBlue
-    fun infoBlueText(isDark: Boolean) = if (isDark) InfoBlueTextDark else InfoBlueTextLight
-    
-    fun successGreenBg(isDark: Boolean) = if (isDark) SuccessGreenBgDark else SuccessGreenBgLight
-    fun successGreenBorder(isDark: Boolean) = if (isDark) SuccessGreenBorderDark else SuccessGreenBorderLight
-    fun warningRedBorder(isDark: Boolean) = if (isDark) WarningRedBorder else WarningRedBorderLight
-    fun darkGray(isDark: Boolean) = if (isDark) MutedTextDark else MutedTextLight
+    fun mutedGray(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun alertGoldBg(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun alertGoldBorder(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun alertGoldText(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun infoBlueBg(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun infoBlueBorder(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun infoBlueText(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun successGreenBg(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun successGreenBorder(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun warningRedBorder(isDark: Boolean): Color = financialDebtColor(isDark)
+    fun darkGray(isDark: Boolean): Color = financialDebtColor(isDark)
 }
 
 @Immutable
@@ -77,9 +125,10 @@ data class TransactionRowCachedData(
 object CustomerTransactionRowStateCalculator {
     fun calculate(
         tx: HabayebTransaction,
-        isDark: Boolean,
         currencySymbol: String,
-        initialType: String
+        initialType: String,
+        debtColor: Color,
+        creditColor: Color
     ): TransactionRowCachedData {
         val parsedCurrencyInfo = CurrencyConfig.parseTransactionCurrency(tx.description, CURRENCY_NONE_TAG)
         val txCurrencySymbol = if (tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.currencyCode.isNotBlank()) {
@@ -96,8 +145,8 @@ object CustomerTransactionRowStateCalculator {
 
         val txType = TransactionType.fromValue(tx.type)
         val indicatorColor = when (txType) {
-            TransactionType.OWED_BY_THEM, TransactionType.OWED_TO_THEM -> RowColors.debtRed(isDark)
-            else -> RowColors.creditGreen(isDark)
+            TransactionType.OWED_BY_THEM, TransactionType.OWED_TO_THEM -> debtColor
+            else -> creditColor
         }
 
         val txArrow = when (txType) {
@@ -167,4 +216,17 @@ object CustomerTransactionRowStateCalculator {
             typeResId = typeResId
         )
     }
+
+    fun calculate(
+        tx: HabayebTransaction,
+        isDark: Boolean,
+        currencySymbol: String,
+        initialType: String
+    ): TransactionRowCachedData = calculate(
+        tx = tx,
+        currencySymbol = currencySymbol,
+        initialType = initialType,
+        debtColor = financialDebtColor(isDark),
+        creditColor = financialCreditColor(isDark)
+    )
 }

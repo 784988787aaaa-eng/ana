@@ -55,7 +55,7 @@ fun CategoryDeleteConfirmationDialog(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = activeThemeColor,
-                        contentColor = Color.White
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = buttonShape,
                     modifier = Modifier

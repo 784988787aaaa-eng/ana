@@ -20,10 +20,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.NeonCyan
-import com.example.ui.theme.NeonGreen
-import com.example.ui.theme.SoftGreen
+import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -45,6 +42,8 @@ fun CommitmentSummaryGradientCard(
     currencySymbol: String,
     formatCurrency: (BigDecimal, String) -> String
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+    val primaryColor = MaterialTheme.colorScheme.primary
     val overallPercentFloat = if (totalTargetSum > BigDecimal.ZERO) {
         (totalAllocatedSum.toDouble() / totalTargetSum.toDouble()).coerceIn(0.0, 1.0).toFloat()
     } else 0f
@@ -52,11 +51,11 @@ fun CommitmentSummaryGradientCard(
     val isFullyCovered = totalAllocatedSum >= totalTargetSum && totalTargetSum > BigDecimal.ZERO
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-    val progressGradient = remember {
+    val progressGradient = remember(mizanColors.credit, primaryColor) {
         Brush.horizontalGradient(
             colors = listOf(
-                NeonGreen,
-                NeonCyan
+                mizanColors.credit,
+                primaryColor
             )
         )
     }
@@ -64,11 +63,11 @@ fun CommitmentSummaryGradientCard(
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF7FBF9)
+            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceVariant
         ),
         border = BorderStroke(
             1.dp,
-            if (isFullyCovered) SoftGreen.copy(alpha = 0.35f) else EmeraldPrimary.copy(alpha = 0.20f)
+            if (isFullyCovered) mizanColors.creditBorder.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -93,14 +92,14 @@ fun CommitmentSummaryGradientCard(
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isFullyCovered) SoftGreen else EmeraldPrimary.copy(alpha = if (isDark) 0.25f else 0.12f),
-                    border = BorderStroke(1.dp, if (isFullyCovered) SoftGreen else EmeraldPrimary.copy(alpha = 0.4f))
+                    color = if (isFullyCovered) mizanColors.credit else MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.25f else 0.42f),
+                    border = BorderStroke(1.dp, if (isFullyCovered) mizanColors.creditBorder else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = "$overallPercent% مكتمل",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isFullyCovered) Color.White else EmeraldPrimary,
+                        color = if (isFullyCovered) mizanColors.onCredit else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
                     )
                 }

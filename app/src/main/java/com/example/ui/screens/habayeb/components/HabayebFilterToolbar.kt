@@ -105,7 +105,7 @@ fun HabayebFilterToolbar(
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val surfaceContainer = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
-    val neutralWhite = if (isDark) MaterialTheme.colorScheme.surface else Color.White
+    val neutralWhite = MaterialTheme.colorScheme.surface
     val textPrimary = MaterialTheme.colorScheme.onSurface
     val backgroundLight = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 
@@ -310,7 +310,7 @@ fun HabayebFilterToolbar(
                 Box {
                     val isSortActive = financialSortMode != 0 || historicalSortMode != 1
                     val sortBtnBg = if (isSortActive) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant
-                    val sortIconTint = if (isSortActive) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    val sortIconTint = if (isSortActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                         IconButton(

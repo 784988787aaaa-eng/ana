@@ -124,7 +124,7 @@ fun CustomerHistoryFilterSheet(
                 dateModes.forEach { (mode, label) ->
                     val isSelected = dateFilterMode == mode
                     val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
-                    val chipText = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -208,7 +208,7 @@ fun CustomerHistoryFilterSheet(
                 typeModes.forEach { (mode, label) ->
                     val isSelected = typeFilterMode == mode
                     val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
-                    val chipText = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         modifier = Modifier
                             .weight(1f)

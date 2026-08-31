@@ -61,7 +61,6 @@ fun SecuritySetupForm(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
-    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
 
     var passcodeVisible by remember { mutableStateOf(false) }
     var confirmPasscodeVisible by remember { mutableStateOf(false) }
@@ -145,7 +144,7 @@ fun SecuritySetupForm(
                 keyboardActions = KeyboardActions(onNext = { confirmPasscodeFocus.requestFocus() }),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDark) MaterialTheme.colorScheme.primary else EmeraldPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent
@@ -191,7 +190,7 @@ fun SecuritySetupForm(
                 keyboardActions = KeyboardActions(onNext = { recoveryPhraseFocus.requestFocus() }),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDark) MaterialTheme.colorScheme.primary else EmeraldPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent
@@ -227,7 +226,7 @@ fun SecuritySetupForm(
                     Icon(
                         imageVector = Icons.Default.Key,
                         contentDescription = null,
-                        tint = EmeraldPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 },
@@ -239,7 +238,7 @@ fun SecuritySetupForm(
                 keyboardActions = KeyboardActions(onNext = { recoveryHintFocus.requestFocus() }),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDark) MaterialTheme.colorScheme.primary else EmeraldPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent
@@ -261,7 +260,7 @@ fun SecuritySetupForm(
                     Icon(
                         imageVector = Icons.Default.Lightbulb,
                         contentDescription = null,
-                        tint = EmeraldPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 },
@@ -273,7 +272,7 @@ fun SecuritySetupForm(
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDark) MaterialTheme.colorScheme.primary else EmeraldPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent
@@ -285,11 +284,7 @@ fun SecuritySetupForm(
             )
 
             // ACK CHECKBOX
-            val ackBg = if (isDark) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-            } else {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.08f)
-            }
+            val ackBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
             val ackText = MaterialTheme.colorScheme.onSurface
             val checkboxBorderColor = MaterialTheme.colorScheme.outline
 

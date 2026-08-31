@@ -149,7 +149,7 @@ object PdfStatementTotalsRenderer {
             style = Paint.Style.FILL
         }
         val paintBannerBorder = Paint().apply {
-            color = Color.parseColor(if (isOwedByThemStatus) "#FCA5A5" else if (isOwedToThemStatus) "#86EFAC" else PdfColors.HEADER_BORDER)
+            color = Color.parseColor(if (isOwedByThemStatus) PdfColors.DEBT_BORDER else if (isOwedToThemStatus) PdfColors.CREDIT_BORDER else PdfColors.HEADER_BORDER)
             strokeWidth = 1f
             style = Paint.Style.STROKE
         }
@@ -209,11 +209,11 @@ object PdfStatementTotalsRenderer {
         val boxHeight = 24f + (uncalculatedForeignSums.size * itemHeight)
 
         val paintBg = Paint().apply {
-            color = Color.parseColor("#F8FAFC")
+            color = Color.parseColor(PdfColors.CARD_BG)
             style = Paint.Style.FILL
         }
         val paintBorder = Paint().apply {
-            color = Color.parseColor("#CBD5E1")
+            color = Color.parseColor(PdfColors.HEADER_BORDER)
             strokeWidth = 1f
             style = Paint.Style.STROKE
         }

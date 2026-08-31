@@ -10,20 +10,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 
 /**
  * Standard PIN Keypad Digit / Action Button with custom styling and haptics support.
@@ -34,8 +34,9 @@ fun KeypadButton(
     isFunctional: Boolean,
     onClick: () -> Unit
 ) {
-    val bg = remember(isFunctional) { if (isFunctional) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.12f) }
-    val textCol = remember(isFunctional) { if (isFunctional) Color.White.copy(alpha = 0.8f) else Color.White }
+    val mizanColors = MaterialTheme.mizanColors
+    val bg = remember(isFunctional, mizanColors) { if (isFunctional) mizanColors.securityKeyBackground.copy(alpha = 0.5f) else mizanColors.securityKeyBackground }
+    val textCol = remember(isFunctional, mizanColors) { if (isFunctional) mizanColors.securityForegroundMuted else mizanColors.securityKeyContent }
     val textSize = remember(isFunctional) { if (isFunctional) 13.sp else 24.sp }
     val fontWeight = remember(isFunctional) { if (isFunctional) FontWeight.Medium else FontWeight.ExtraBold }
     val interactionSource = remember { MutableInteractionSource() }
@@ -47,7 +48,7 @@ fun KeypadButton(
             .background(bg)
             .border(
                 width = 1.dp,
-                color = Color.White.copy(alpha = 0.08f),
+                color = mizanColors.securityKeyBorder,
                 shape = CircleShape
             )
             .clickable(
@@ -77,16 +78,17 @@ fun KeypadIconButton(
     contentDescription: String,
     onClick: () -> Unit
 ) {
+    val mizanColors = MaterialTheme.mizanColors
     val interactionSource = remember { MutableInteractionSource() }
 
     Box(
         modifier = Modifier
             .size(72.dp)
             .clip(CircleShape)
-            .background(EmeraldPrimary.copy(alpha = 0.15f))
+            .background(mizanColors.securityIndicatorFilled.copy(alpha = 0.15f))
             .border(
                 width = 1.dp,
-                color = EmeraldPrimary.copy(alpha = 0.3f),
+                color = mizanColors.securityIndicatorFilled.copy(alpha = 0.3f),
                 shape = CircleShape
             )
             .clickable(
@@ -100,7 +102,7 @@ fun KeypadIconButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = EmeraldPrimary,
+            tint = mizanColors.securityIndicatorFilled,
             modifier = Modifier.size(30.dp)
         )
     }

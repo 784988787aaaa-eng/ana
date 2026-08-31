@@ -36,7 +36,7 @@ import com.example.R
 import com.example.data.local.entities.HabayebCustomer
 import com.example.domain.StringUtils
 import com.example.ui.helper.rememberContactPicker
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun CustomerDeleteConfirmationDialog(
@@ -48,8 +48,8 @@ fun CustomerDeleteConfirmationDialog(
     val isSingle = customer != null || selectedCustomerIds.size == 1
     val singleCustomerName = customer?.name ?: ""
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val debtRed = financialDebtColor(isDark)
+    val mizanColors = MaterialTheme.mizanColors
+    val debtRed = mizanColors.debt
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -80,13 +80,13 @@ fun CustomerDeleteConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = debtRed,
-                    contentColor = Color.White
+                    contentColor = mizanColors.onDebt
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.habayeb_delete_yes),
-                    color = Color.White,
+                    color = mizanColors.onDebt,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -346,14 +346,17 @@ fun CustomerEditDialog(
                                 isSaving = true
                                 onConfirm(editedNameStr.trim(), editedPhoneStr.trim())
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = activeThemeColor,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.habayeb_save_edit),
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }

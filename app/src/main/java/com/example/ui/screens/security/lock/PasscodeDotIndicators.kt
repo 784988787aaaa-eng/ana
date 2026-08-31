@@ -11,15 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 
 /**
  * Animated Dot Indicators showing filled PIN progress with bouncy scaling and error shake offset.
@@ -31,6 +31,8 @@ fun PasscodeDotIndicators(
     modifier: Modifier = Modifier,
     totalDots: Int = 4
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+
     Row(
         modifier = modifier.offset(x = shakeOffsetPx.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -51,10 +53,10 @@ fun PasscodeDotIndicators(
                     .size(16.dp)
                     .scale(dotScale)
                     .clip(CircleShape)
-                    .background(if (filled) EmeraldPrimary else Color.White.copy(alpha = 0.12f))
+                    .background(if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityIndicatorEmpty)
                     .border(
                         width = 1.2.dp,
-                        color = if (filled) EmeraldPrimary else Color.White.copy(alpha = 0.25f),
+                        color = if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityIndicatorEmpty,
                         shape = CircleShape
                     )
             )

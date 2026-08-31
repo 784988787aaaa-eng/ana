@@ -41,15 +41,15 @@ fun AddCustomerFormFields(
     onCalendarClick: () -> Unit,
     onContactPickerClick: () -> Unit,
     onDone: () -> Unit,
-    isDark: Boolean,
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false,
     focusRequester: FocusRequester,
     initialAmountFocusRequester: FocusRequester,
     notesFocusRequester: FocusRequester,
-    phoneFocusRequester: FocusRequester,
-    modifier: Modifier = Modifier
+    phoneFocusRequester: FocusRequester
 ) {
     val fieldShape = remember { RoundedCornerShape(8.dp) }
-    val unfocusedBorder = if (isDark) MaterialTheme.colorScheme.outlineVariant else Color.LightGray.copy(alpha = 0.5f)
+    val unfocusedBorder = MaterialTheme.colorScheme.outlineVariant
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = activeThemeColor,
         focusedLabelColor = activeThemeColor,

@@ -27,7 +27,6 @@ fun CustomerHistoryTableSection(
     listState: LazyListState,
     txSearchQuery: String,
     activeCustomer: HabayebCustomer,
-    isDark: Boolean,
     currencySymbol: String,
     runningBalances: Map<String, BigDecimal>,
     activeRecurringTxIds: Set<String>,
@@ -41,7 +40,8 @@ fun CustomerHistoryTableSection(
     onOptionsClick: (HabayebTransaction) -> Unit,
     onScheduleClick: (HabayebTransaction) -> Unit,
     onExchangeRateClick: (HabayebTransaction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
     Box(modifier = modifier) {
         // HIGH-DENSITY HIGH-FIDELITY TRANSACTION LIST DIRECTLY BELOW BALANCE CARDS

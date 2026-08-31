@@ -125,7 +125,7 @@ private fun HabayebSearchHeaderBar(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .height(46.dp)
-            .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(23.dp))
+            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f), RoundedCornerShape(23.dp))
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -232,7 +232,7 @@ private fun HabayebNormalHeaderBar(
             },
             modifier = Modifier
                 .size(38.dp)
-                .background(Color.White.copy(alpha = 0.15f), CircleShape)
+                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f), CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Menu,
@@ -352,7 +352,7 @@ private fun HabayebNormalHeaderBar(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White.copy(alpha = 0.15f))
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
             ) {
                 Icon(
                     imageVector = Icons.Default.Search,

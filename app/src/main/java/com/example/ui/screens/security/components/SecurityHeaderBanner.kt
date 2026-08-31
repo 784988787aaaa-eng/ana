@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.mizanColors
 
 @Composable
 fun SecurityHeaderBanner(
@@ -40,17 +40,9 @@ fun SecurityHeaderBanner(
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
-        val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
-        val iconBg = if (isDark) {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.InfoBlueBgDark
-        } else {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditContainerLight else com.example.ui.theme.InfoBlueBgLight
-        }
-        val iconTint = if (isDark) {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditGreenDark else MaterialTheme.colorScheme.primary
-        } else {
-            if (isAlreadyPasscodeEnabled) com.example.ui.theme.CreditGreen else EmeraldPrimary
-        }
+        val mizanColors = MaterialTheme.mizanColors
+        val iconBg = if (isAlreadyPasscodeEnabled) mizanColors.creditContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        val iconTint = if (isAlreadyPasscodeEnabled) mizanColors.credit else MaterialTheme.colorScheme.primary
 
         Row(
             modifier = Modifier
