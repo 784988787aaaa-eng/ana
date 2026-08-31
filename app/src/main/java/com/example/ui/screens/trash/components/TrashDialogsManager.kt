@@ -63,7 +63,7 @@ fun TrashDialogsManager(
                 )
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }

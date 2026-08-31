@@ -1,14 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة شاشة الحبايب والعملاء (Habayeb Customers & Ledger Screen Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على المنسق الرئيسي لواجهة الحبايب (العملاء والحسابات المدينة والدائنة)،
- * وتدير الفلترة والتصنيفات، البحث، التحديد المتعدد، كشف الحساب التفصيلي، وإدارة الحوارات.
- * =====================================================================================
- */
-
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -45,8 +36,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,31 +70,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-/*
- * إعادة تصدير حالة الحوارات (HabayebDialogState) لتجنب انقطاع التوافقية
- */
+// Re-export HabayebDialogState for zero broken references
 typealias HabayebDialogState = HabayebDialogState
 
-/*
- * =====================================================================================
- * شاشة الحبايب وإدارة الحسابات (HabayebScreen)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * المنسق المعماري الشامل لواجهة الحبايب ودفتر الأستاذ للعملاء:
- * 1. ترويسة مالية تلخص إجمالي ما لنا (له) وما علينا (عليه) مع دعم وضع الخصوصية.
- * 2. شريط أدوات الفلترة والترتيب وتخصيص وإعادة ترتيب التصنيفات المخصصة.
- * 3. قائمة حسابات مرنة تدعم التثبيت والتمييز البصري والإضافة السريعة والتحديد المتعدد.
- * 4. طبقة تراكبية (Overlay) لكشف الحساب التاريخي مع رسوم حركية سلسة.
- * 5. إدارة موحدة لكافة النوافذ المنبثقة من خلال (HabayebDialogHost).
- *
- * [المُدخلات]:
- * - viewModel: نموذج بيانات الإدارة المالية للحبايب والعملاء.
- * - securityViewModel: نموذج بيانات الأمان والترخيص ووضع الخصوصية.
- * - onMenuClick: فتح القائمة الجانبية للتطبيق.
- * - onClose: إغلاق الشاشة أو الرجوع.
- * - contentPadding: هوامش التباعد الداخلية من نظام التشغيل.
- * - isDrawerOpen: حالة فتح القائمة الجانبية لمنع اعتراض زر الرجوع.
- * =====================================================================================
+/**
+ * Clean architectural coordinator for the Habayeb Customers & Ledger screen.
+ * Acts as the unified stable Facade entry point for navigation and hosts dedicated sub-managers.
  */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -135,11 +105,6 @@ fun HabayebScreen(
     val activeSubColor = MaterialTheme.colorScheme.primaryContainer
     val surfaceBackgroundColor = MaterialTheme.colorScheme.background
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * جمع تدفقات الحالة من نماذج البيانات (State Ingestion)
-     * ---------------------------------------------------------------------------------
-     */
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settingsState by viewModel.settingsState.collectAsStateWithLifecycle()
     val isPrivacyMode by securityViewModel.isPrivacyModeEnabled.collectAsStateWithLifecycle()
@@ -154,20 +119,14 @@ fun HabayebScreen(
     }
     val currencySymbol = settingsState.currencySymbol
 
-    // حالات التحديد المتعدد للحسابات والمعاملات
     val selectedCustomerIds = remember { mutableStateListOf<String>() }
     var isMultiSelectActive by remember { mutableStateOf(false) }
     var isHistoryTxMultiSelectActive by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { selectedCustomerIds.toList() }
-            .distinctUntilChanged()
-            .collect { list ->
-                viewModel.updateSelectedCustomerIds(list)
-            }
+    LaunchedEffect(selectedCustomerIds.toList()) {
+        viewModel.updateSelectedCustomerIds(selectedCustomerIds.toList())
     }
 
-    // إدارة الحوار المنبثق النشط والعميل المفتوح كشف حسابه
     var activeDialogState by remember { mutableStateOf<HabayebDialogState>(HabayebDialogState.None) }
     var activeCustomerForHistory by remember { mutableStateOf<HabayebCustomer?>(null) }
     var stableCustomer by remember { mutableStateOf<HabayebCustomer?>(null) }
@@ -184,7 +143,6 @@ fun HabayebScreen(
         onHistoryOverlayActiveChanged(activeCustomerForHistory != null)
     }
 
-    // التحقق من طلب تفعيل النسخة المرخصة
     val showActivationRequired by viewModel.showActivationRequired.collectAsStateWithLifecycle()
     LaunchedEffect(showActivationRequired) {
         if (showActivationRequired) {
@@ -193,7 +151,6 @@ fun HabayebScreen(
         }
     }
 
-    // حالة تمرير القائمة مع إعادة التعيين عند تغير الفلاتر
     val listState = remember(uiState.selectedCategory, uiState.selectedFilterTab, uiState.financialSortMode, uiState.historicalSortMode) {
         LazyListState(0, 0)
     }
@@ -203,9 +160,6 @@ fun HabayebScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    /*
-     * الانتقال الفوري والتمرير التلقائي إلى حساب محدد
-     */
     val jumpToAccount: (String) -> Unit = remember(coroutineScope, listState) {
         { accountId ->
             highlightedCustomerId = accountId
@@ -221,7 +175,6 @@ fun HabayebScreen(
         }
     }
 
-    // إزالة التمييز البصري للحساب بعد فترة وجيزة
     LaunchedEffect(highlightedCustomerId) {
         if (highlightedCustomerId != null) {
             delay(1800)
@@ -229,14 +182,12 @@ fun HabayebScreen(
         }
     }
 
-    // التمرير لأعلى القائمة عند بدء كتابة نص بحث
     LaunchedEffect(uiState.searchQuery) {
         if (uiState.searchQuery.isNotEmpty() && (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0)) {
             listState.scrollToItem(0, 0)
         }
     }
 
-    // الاستماع لأحداث واجهة المستخدم من الـ ViewModel
     LaunchedEffect(Unit) {
         viewModel.uiEventFlow.collect { event ->
             when (event) {
@@ -246,7 +197,6 @@ fun HabayebScreen(
         }
     }
 
-    // التمرير للحساب المستهدف عند جهوزية القائمة
     LaunchedEffect(uiState.filteredCustomers, pendingTargetToken) {
         val targetId = pendingTargetAccountId
         if (targetId != null) {
@@ -266,11 +216,6 @@ fun HabayebScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * معالجة زر الرجوع الفيزيائي حسب الأولوية والتسلسل الهرمي
-     * ---------------------------------------------------------------------------------
-     */
     BackHandler(enabled = !isDrawerOpen) {
         if (activeDialogState !is HabayebDialogState.None) {
             activeDialogState = HabayebDialogState.None
@@ -291,9 +236,6 @@ fun HabayebScreen(
         }
     }
 
-    /*
-     * معالجة النقر على بطاقة العميل
-     */
     val onCustomerClickRemembered = remember(isMultiSelectActive) {
         { customer: CustomerUiState ->
             if (isMultiSelectActive) {
@@ -310,9 +252,6 @@ fun HabayebScreen(
         }
     }
 
-    /*
-     * معالجة النقر المطول على بطاقة العميل (بدء التحديد أو فتح قائمة السياق)
-     */
     val onCustomerLongClickRemembered = remember(isMultiSelectActive, uiState.filteredCustomers) {
         { customerId: String ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -325,9 +264,6 @@ fun HabayebScreen(
         }
     }
 
-    /*
-     * معالجة الإضافة السريعة لمعاملة جديدة على حساب العميل
-     */
     val onQuickAddRemembered = remember {
         { customer: CustomerUiState ->
             val defaultType = if (customer.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) >= 0) {
@@ -346,11 +282,6 @@ fun HabayebScreen(
         }
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * بناء الهيكل البصري للشاشة بالاتجاه العربي (RTL)
-     * ---------------------------------------------------------------------------------
-     */
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(
             modifier = Modifier
@@ -364,7 +295,6 @@ fun HabayebScreen(
                         .fillMaxWidth()
                         .background(surfaceBackgroundColor)
                 ) {
-                    // الترويسة المالية، أزرار البحث، ووضع الخصوصية
                     HabayebFinanceHeader(
                         isSearchActive = isSearchActive,
                         onSearchActiveChanged = onSearchActiveChanged,
@@ -387,7 +317,6 @@ fun HabayebScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // شريط أدوات الفلترة والترتيب وإدارة التصنيفات
                     HabayebFilterToolbar(
                         selectedCategory = uiState.selectedCategory,
                         customCategories = uiState.customCategories,
@@ -414,7 +343,6 @@ fun HabayebScreen(
                     )
                 }
 
-                // قسم قائمة الحسابات والعملاء
                 HabayebListSection(
                     listState = listState,
                     filteredCustomers = uiState.filteredCustomers,
@@ -438,7 +366,6 @@ fun HabayebScreen(
                 )
             }
 
-            // الأزرار العائمة لإضافة عميل أو إضافة معاملة
             HabayebFabHost(
                 targetCustomer = if (activeCustomerForHistory != null) (stableCustomer ?: activeCustomerForHistory) else null,
                 contentPadding = contentPadding,
@@ -454,7 +381,6 @@ fun HabayebScreen(
                 onFabOverlayChanged = onFabOverlayChanged
             )
 
-            // شريط الإجراءات العائم للتحديد المتعدد (حذف جماعي أو تعيين تصنيف)
             if (isMultiSelectActive && selectedCustomerIds.isNotEmpty()) {
                 Box(
                     modifier = Modifier
@@ -471,7 +397,6 @@ fun HabayebScreen(
                 }
             }
 
-            // طبقة تراكبية لعرض كشف الحساب التفصيلي للعميل المختار
             AnimatedVisibility(
                 visible = activeCustomerForHistory != null,
                 enter = slideInHorizontally(initialOffsetX = { -it / 4 }, animationSpec = tween(160, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(140)),
@@ -494,7 +419,6 @@ fun HabayebScreen(
                 }
             }
 
-            // مضيف كافة النوافذ والحوارات المنبثقة
             HabayebDialogHost(
                 activeDialogState = activeDialogState,
                 viewModel = viewModel,
@@ -526,4 +450,3 @@ fun HabayebScreen(
         }
     }
 }
-

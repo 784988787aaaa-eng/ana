@@ -20,7 +20,6 @@ package com.example
 // ---------------------------------------------------------------------
 // استيراد حزم أندرويد و Jetpack Compose ونماذج العرض (ViewModels) وإدارة الحالة
 // ---------------------------------------------------------------------
-import androidx.activity.viewModels
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -33,11 +32,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.components.WelcomeOnboardingDialog
+import android.content.pm.PackageManager
+import java.security.MessageDigest
 import com.example.ui.main.MainAppLayout
 import com.example.ui.screens.AppLockScreen
 import com.example.ui.theme.AppTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import com.example.ui.viewmodel.BackupSyncViewModel
@@ -52,7 +52,7 @@ import androidx.lifecycle.lifecycleScope
  * ترث من `FragmentActivity` لدعم دوال التوافق والمصادقة الحيوية ونظام Compose.
  */
 class MainActivity : FragmentActivity() {
-    private val backupSyncViewModel: BackupSyncViewModel by viewModels()
+    private lateinit var backupSyncViewModel: BackupSyncViewModel
 
     /**
      * [دالة دورة الحياة - onCreate]:
@@ -68,20 +68,19 @@ class MainActivity : FragmentActivity() {
         // تهيئة نماذج العرض المركزية (ViewModels) المرتبطة بدورة حياة النشاط
         val viewModel = androidx.lifecycle.ViewModelProvider(this)[FinanceViewModel::class.java]
         val securityViewModel = androidx.lifecycle.ViewModelProvider(this)[com.example.ui.viewmodel.SecurityAndLicenseViewModel::class.java]
+        backupSyncViewModel = androidx.lifecycle.ViewModelProvider(this)[BackupSyncViewModel::class.java]
 
         // إبقاء شاشة البداية ظاهرة حتى تنتهي قاعدة البيانات من تحميل الإعدادات بالكامل
         splashScreen.setKeepOnScreenCondition {
             !viewModel.isSettingsLoaded.value
         }
 
-        // تأجيل العمليات الخلفية غير الحرجة (إعداد العمال وجلسة جوجل) إلى ما بعد رسم أول إطار للواجهة
-        window.decorView.post {
-            lifecycleScope.launch(Dispatchers.IO) {
-                com.example.domain.GoogleAuthSessionManager.initialize(applicationContext)
-                AutoBackupWorker.scheduleDailyBackupWorker(this@MainActivity)
-                AutoBackupWorker.checkAndTriggerBackupIfMissed(this@MainActivity)
-                BackupReminderWorker.scheduleReminder(this@MainActivity)
-            }
+        // إطلاق مهام التهيئة الخلفية المستقلة عن مسار الواجهة
+        lifecycleScope.launch(Dispatchers.IO) {
+            logAppSignatureSHA1(this@MainActivity)
+            AutoBackupWorker.scheduleDailyBackupWorker(this@MainActivity)
+            AutoBackupWorker.checkAndTriggerBackupIfMissed(this@MainActivity)
+            BackupReminderWorker.scheduleReminder(this@MainActivity)
         }
 
         // قراءة تفضيلات القفل والسمة السريعة لمنع وميض الشاشة عند الإقلاع
@@ -99,6 +98,7 @@ class MainActivity : FragmentActivity() {
 
             // مراقبة أحداث الأمان وطرد الجلسة غير المصرح بها
             LaunchedEffect(securityViewModel) {
+                securityViewModel.startRealtimeMonitoring(this@MainActivity)
                 securityViewModel.kickoutEvent.collect { reason ->
                     android.widget.Toast.makeText(
                         this@MainActivity,
@@ -108,31 +108,22 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // تتبع حالة الإعدادات التلقائية المحدثة
-            val settings by viewModel.settingsState.collectAsStateWithLifecycle()
-            val isSettingsLoaded by viewModel.isSettingsLoaded.collectAsStateWithLifecycle()
-
-            // تأجيل المهام غير الأساسية (مراقبة الترخيص والمعاملات المتكررة) إلى ما بعد رسم أول إطار مرئي
-            LaunchedEffect(isSettingsLoaded) {
-                if (isSettingsLoaded) {
-                    kotlinx.coroutines.delay(800)
-                    securityViewModel.startRealtimeMonitoring(this@MainActivity)
-                    withContext(Dispatchers.IO) {
-                        HabayebRecurringManager.checkAndExecuteRecurring(context, habayebViewModel) { count ->
-                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(R.string.toast_recurring_txs_success, count),
-                                    android.widget.Toast.LENGTH_LONG
-                                ).show()
-                            }
+            // فحص وتنفيذ المعاملات المتكررة (الرواتب والأقساط المستحقة) في الخلفية عند الإقلاع
+            LaunchedEffect(habayebViewModel) {
+                withContext(Dispatchers.IO) {
+                    // Check and execute any recurring transactions on startup safely on background thread
+                    HabayebRecurringManager.checkAndExecuteRecurring(context, habayebViewModel) { count ->
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.toast_recurring_txs_success, count),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
                 }
-            }
 
-            // الاستماع لأحداث الواجهة مثل رسائل Toast ومربعات التفعيل
-            LaunchedEffect(viewModel) {
+                // الاستماع لأحداث الواجهة مثل رسائل Toast ومربعات التفعيل
                 viewModel.uiEventFlow.collect { event ->
                     when (event) {
                         is com.example.ui.viewmodel.UiEvent.ShowToast -> {
@@ -149,14 +140,16 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // تتبع حالة الإعدادات التلقائية المحدثة
+            val settings by viewModel.settingsState.collectAsStateWithLifecycle()
+            val isSettingsLoaded by viewModel.isSettingsLoaded.collectAsStateWithLifecycle()
+            
             var isUnlocked by rememberSaveable { mutableStateOf(!isPasscodeEnabledFast) }
 
-            // مزامنة حالة تفعيل رمز المرور في التفضيلات السريعة على مسار خلفي
-            LaunchedEffect(settings.isPasscodeEnabled, isSettingsLoaded) {
+            // مزامنة حالة تفعيل رمز المرور في التفضيلات السريعة
+            LaunchedEffect(settings.isPasscodeEnabled) {
                 if (isSettingsLoaded) {
-                    withContext(Dispatchers.IO) {
-                        secPrefs.edit().putBoolean("fast_passcode_enabled", settings.isPasscodeEnabled).apply()
-                    }
+                    secPrefs.edit().putBoolean("fast_passcode_enabled", settings.isPasscodeEnabled).apply()
                 }
             }
 
@@ -188,10 +181,8 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // عرض نافذة الترحيب بالتشغيل الأول بعد تأخير أنيق (تذكر القراءة لمنع إعادة الاستعلام في Recomposition)
-            val isReallyFirstLaunch = remember(settings.isFirstLaunch) {
-                settings.isFirstLaunch && !viewModel.hasShownOnboarding()
-            }
+            // عرض نافذة الترحيب بالتشغيل الأول بعد تأخير أنيق
+            val isReallyFirstLaunch = settings.isFirstLaunch && !viewModel.hasShownOnboarding()
             LaunchedEffect(isReallyFirstLaunch) {
                 if (isReallyFirstLaunch) {
                     // Let the user breathe, see and experience the app interface behind first (3500ms elegant delay)
@@ -220,14 +211,6 @@ class MainActivity : FragmentActivity() {
 
             // تطبيق السمة وموفر الاتجاه العربي (RTL)
             AppTheme(darkTheme = darkTheme) {
-                // تحديث أشرطة النظام عند تغير السمة فقط لتجنب إعادة التنفيذ مع كل Recomposition
-                LaunchedEffect(darkTheme) {
-                    window.statusBarColor = android.graphics.Color.TRANSPARENT
-                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-                    insetsController.isAppearanceLightStatusBars = !darkTheme
-                    insetsController.isAppearanceLightNavigationBars = !darkTheme
-                }
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     // 1. نافذة الترحيب والإعداد الأولي عند التثبيت
                     if (isReallyFirstLaunch && showOnboardingDialog) {
@@ -282,9 +265,46 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         super.onStop()
         try {
-            backupSyncViewModel.triggerSilentLocalBackup()
+            if (::backupSyncViewModel.isInitialized) {
+                backupSyncViewModel.triggerSilentLocalBackup()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    /**
+     * [دالة مساعدة لطباعة توقيع التطبيق]:
+     * تستخرج وتطبع بصمة SHA-1 في سجلات التصحيح.
+     */
+    private fun logAppSignatureSHA1(context: android.content.Context) {
+        try {
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                val signingInfo = info.signingInfo
+                if (signingInfo != null) {
+                    if (signingInfo.hasMultipleSigners()) {
+                        signingInfo.apkContentsSigners
+                    } else {
+                        signingInfo.signingCertificateHistory
+                    }
+                } else null
+            } else {
+                @Suppress("DEPRECATION")
+                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES)
+                @Suppress("DEPRECATION")
+                info.signatures
+            }
+            if (signatures != null) {
+                for (signature in signatures) {
+                    val md = MessageDigest.getInstance("SHA1")
+                    val publicKey = md.digest(signature.toByteArray())
+                    val hexString = publicKey.joinToString(":") { String.format("%02X", it) }
+                    android.util.Log.d("GOOGLE_AUTH_DEBUG", "SHA-1 ACTUAL SIGNATURE: $hexString")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("GOOGLE_AUTH_DEBUG", "Error getting signature", e)
         }
     }
 }

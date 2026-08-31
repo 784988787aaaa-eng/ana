@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * حوار تأكيد حذف الالتزام المالي (Commitment Delete Confirmation Dialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية منبثقة تطلب تأكيداً صريحاً من المستخدم قبل حذف سجل التزام مالي:
- * 1. تمنع الحذف غير المقصود أو العرضي للالتزامات والديون المجدولة.
- * 2. تعرض رسالة تحذيرية واضحة باللغة العربية مع محاذاة منسقة لليمين.
- * 3. توفر زراً باللون الأحمر التحذيري (SoftRed) لتأكيد الحذف وزراً ملغياً للعودة الآمنة.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,17 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * دالة العرض لحوار تأكيد الحذف (CommitmentDeleteConfirmationDialog Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - commitmentName: اسم الالتزام المراد حذفه (إذا كان null لا يتم عرض الحوار).
- * - onConfirmDelete: رد النداء لتنفيذ الحذف بالاسم المحدد.
- * - onDismiss: رد النداء لإغلاق الحوار وإلغاء العملية.
- * =====================================================================================
- */
 @Composable
 fun CommitmentDeleteConfirmationDialog(
     commitmentName: String?,
@@ -72,12 +51,12 @@ fun CommitmentDeleteConfirmationDialog(
                     onConfirmDelete(commitmentName)
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.ledger_confirm_delete_btn),
-                    color = MaterialTheme.colorScheme.onError,
+                    color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
@@ -102,4 +81,3 @@ fun CommitmentDeleteConfirmationDialog(
         modifier = Modifier.fillMaxWidth(0.90f)
     )
 }
-

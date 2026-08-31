@@ -1,22 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * صف المعاملة المالية داخل بطاقة اليوم (Day Card Transaction Row Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * عنصر واجهة مصغر وعالي الكثافة لعرض معاملة مالية مفردة ضمن سجل معاملات اليوم:
- * 1. يعرض في الطرف الأيمن (RTL):
- *    - مربع اختيار المعاملة الدائري (عند تفعيل وضع التحديد المتعدد).
- *    - أيقونة اتجاه الحركة (سهم للأعلى للدخل الأخضر، أو سهم للأسفل للمصروف الأحمر).
- *    - وصف المعاملة (أو النوع الافتراضي) مع التوقيت المنسق بدقة.
- * 2. يعرض في الطرف الأيسر (RTL):
- *    - قيمة المبلغ المالي ملونة ومسبوقة بعلامة الإشارة (+ / -).
- *    - أزرار سريعة مصغرة لتعديل المعاملة أو طلب حذفها.
- * 3. يدعم التفاعل بالنقر العادي والمطول لتحديد المعاملات وإجراء العمليات الجماعية.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,15 +42,11 @@ import com.example.data.local.entities.TransactionDb
 import com.example.domain.DateUtils
 import com.example.domain.model.TransactionType
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -78,24 +57,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لصف المعاملة المالية (DayCardTransactionRow Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - tx: كائن بيانات المعاملة المالية من قاعدة البيانات.
- * - isSelected: راية توضح إذا ما كانت هذه المعاملة محددة حالياً.
- * - isSelectionMode: راية تفعيل وضع التحديد المتعدد.
- * - isDark: راية تفعيل المظهر الداكن.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * - haptic: مشغل الاهتزاز التفاعلي عند الضغط.
- * - onEditTransaction: رد النداء عند طلب تعديل المعاملة.
- * - onDeleteRequest: رد النداء عند طلب حذف المعاملة.
- * - onTransactionSelectToggle: رد النداء لتبديل حالة تحديد هذه المعاملة.
- * - modifier: مغير التنسيق والمحاذاة.
- * =====================================================================================
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DayCardTransactionRow(
@@ -123,7 +84,7 @@ fun DayCardTransactionRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(5.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.18f else 0.12f) else Color.Transparent)
+            .background(if (isSelected) EmeraldPrimary.copy(alpha = if (isDark) 0.18f else 0.12f) else Color.Transparent)
             .combinedClickable(
                 onClick = {
                     if (isSelectionMode) {
@@ -140,22 +101,22 @@ fun DayCardTransactionRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // اليمين في RTL: أيقونة الاتجاه + الوصف والتوقيت
+        // Right in RTL (Start): 16dp Sleek Vector Icon + Description & Time
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             modifier = Modifier.weight(1f, fill = false)
         ) {
-            // مربع التحديد في وضع الاختيار الجماعي
+            // Selection Mode Checkbox
             if (isSelectionMode) {
                 Box(
                     modifier = Modifier
                         .size(15.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .background(if (isSelected) EmeraldPrimary else Color.Transparent)
                         .border(
                             1.2.dp,
-                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                             CircleShape
                         )
                         .clickable {
@@ -168,14 +129,14 @@ fun DayCardTransactionRow(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = Color.White,
                             modifier = Modifier.size(8.dp)
                         )
                     }
                 }
             }
 
-            // أيقونة اتجاه الحركة المصغرة (16dp)
+            // Minimal Vector Directional Icon (16dp)
             Icon(
                 imageVector = if (isIncome) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                 contentDescription = null,
@@ -183,7 +144,7 @@ fun DayCardTransactionRow(
                 modifier = Modifier.size(16.dp)
             )
 
-            // وصف المعاملة (السطر الأول) والتوقيت (السطر الثاني)
+            // Description (Line 1) and Time (Line 2) with zero wasted space
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -208,12 +169,12 @@ fun DayCardTransactionRow(
             }
         }
 
-        // اليسار في RTL: المبلغ + أزرار الإجراءات السريعة (تعديل وحذف)
+        // Left in RTL (End): Amount + Compact Actions (Edit & Delete)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            // نص المبلغ المالي المنسق
+            // Amount Text
             Text(
                 text = formattedTxAmount,
                 fontWeight = FontWeight.Bold,
@@ -221,7 +182,7 @@ fun DayCardTransactionRow(
                 color = txAmountColor
             )
 
-            // زر تعديل المعاملة
+            // Edit icon button (Ultra compact & clean)
             IconButton(
                 modifier = Modifier.size(20.dp),
                 onClick = {
@@ -237,7 +198,7 @@ fun DayCardTransactionRow(
                 )
             }
 
-            // زر حذف المعاملة
+            // Delete icon button (Ultra compact & clean)
             IconButton(
                 modifier = Modifier.size(20.dp),
                 onClick = {
@@ -248,11 +209,10 @@ fun DayCardTransactionRow(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(id = R.string.ledger_commitment_delete),
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.65f),
+                    tint = SoftRed.copy(alpha = 0.50f),
                     modifier = Modifier.size(11.5.dp)
                 )
             }
         }
     }
 }
-

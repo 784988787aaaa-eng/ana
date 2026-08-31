@@ -1,16 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-/*
- * =====================================================================================
- * حزمة قسم قائمة النسخ السحابية (Cloud Backups List Section Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على المكون البصري المخصص لعرض وإدارة قائمة النسخ السحابية:
- * - مؤشر جلب البيانات والتحميل الأولي.
- * - واجهة الحالة الفارغة التوجيهية عند عدم وجود أي نسخ احتياطية.
- * - القائمة التمريرية الكسولة (LazyColumn) لعرض البطاقات وتفويض أحداث الاستعادة والحذف والتحديد.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,29 +26,6 @@ import com.example.R
 import com.example.data.CloudBackupFile
 import com.example.ui.theme.EmeraldPrimary
 
-/*
- * =====================================================================================
- * قسم قائمة ملفات النسخ السحابية (CloudBackupsListSection)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * يدير هذا المكون عرض الحالات المختلفة لقائمة النسخ السحابية:
- * 1. حالة التحميل (Loading): مؤشر دائري ونص وصفي أثناء جلب قائمة الملفات من Google Drive.
- * 2. الحالة الفارغة (Empty State): أيقونة ورسالة إرشادية للمستخدم في حال عدم وجود نسخ سحابية.
- * 3. قائمة البيانات (LazyColumn): عرض قائمة منظمة ومفهرسة للملفات مع تفويض التفاعلات.
- *
- * [المُدخلات]:
- * - isFetching: هل عملية جلب البيانات جارية حالياً من السحابة.
- * - cloudBackups: قائمة ملفات النسخ السحابية المسترجعة.
- * - selectedFileIdsSet: مجموعة معرفات الملفات المحددة أثناء وضع التحديد.
- * - isSelectionMode: هل وضع التحديد المتعدد نشط.
- * - menuExpandedFileId: معرّف الملف الذي تم فتح قائمته المنبثقة (أو null).
- * - onMenuToggle: رد نداء لتغيير القائمة المفتوحة.
- * - onRestoreClick: رد نداء عند الضغط على استعادة ملف محدد.
- * - onDeleteClick: رد نداء عند الضغط على حذف ملف محدد.
- * - onItemSelectToggle: رد نداء لتبديل حالة تحديد ملف محدد.
- * - onItemLongClick: رد نداء عند الضغط المطول على ملف لبدء التحديد المتعدد.
- * =====================================================================================
- */
 @Composable
 fun CloudBackupsListSection(
     isFetching: Boolean,
@@ -75,7 +41,6 @@ fun CloudBackupsListSection(
     modifier: Modifier = Modifier
 ) {
     if (isFetching && cloudBackups.isEmpty()) {
-        // حالة جلب البيانات لأول مرة
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -84,7 +49,7 @@ fun CloudBackupsListSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.primary,
+                color = EmeraldPrimary,
                 modifier = Modifier.size(36.dp)
             )
             Text(
@@ -94,7 +59,6 @@ fun CloudBackupsListSection(
             )
         }
     } else if (cloudBackups.isEmpty()) {
-        // حالة عدم وجود نسخ احتياطية سحابية
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -123,7 +87,6 @@ fun CloudBackupsListSection(
             )
         }
     } else {
-        // قائمة النسخ الاحتياطية التمريرية
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
@@ -158,4 +121,3 @@ fun CloudBackupsListSection(
         }
     }
 }
-

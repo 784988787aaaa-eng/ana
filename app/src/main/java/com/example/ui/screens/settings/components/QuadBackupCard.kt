@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -49,6 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.data.CloudSyncState
 import com.example.data.local.entities.AppSettings
+import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.BackupSyncViewModel
 import kotlinx.coroutines.launch
 
@@ -253,97 +252,56 @@ fun QuadBackupCard(
 
     var showResetConfirmationFlow by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ElevatedCard(
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // 1. المزامنة السحابية في أعلى الجميع (Cloud Sync & Backup Section)
-        CloudBackupSection(
-            backupSyncViewModel = backupSyncViewModel,
-            isDark = isDark,
-            context = context,
-            googleCloudSyncState = googleCloudSyncState,
-            googleSignInClient = googleSignInClient,
-            googleSignInLauncher = googleSignInLauncher,
-            safExportLauncher = safExportLauncher
-        )
-
-        // 2. إدارة واسترجاع الملفات المحلية (File Transfer & Discovered Backups)
-        FileTransferManager(
-            backupSyncViewModel = backupSyncViewModel,
-            context = context,
-            localBackups = localBackups,
-            safRestoreLauncher = safRestoreLauncher,
-            checkBackupPermissionsGranted = checkBackupPermissionsGranted,
-            onShowPermissionExplanation = { callback ->
-                onPermissionGrantedCallback = callback
-                showBackupPermissionExplanationDialog = true
-            },
-            onRestoreSuccess = onRestoreSuccess
-        )
-
-        // 3. منطقة الخطر ومسح البيانات (Danger Zone)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.08f)
-            ),
-            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f))
+        Column(
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.End
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
-                                shape = RoundedCornerShape(8.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteForever,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Text(
-                            text = stringResource(R.string.backup_danger_zone_title),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = stringResource(R.string.backup_danger_zone_desc),
-                            fontSize = 10.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                // 1. المزامنة السحابية في أعلى الجميع (Cloud Sync & Backup Section)
+                CloudBackupSection(
+                    backupSyncViewModel = backupSyncViewModel,
+                    isDark = isDark,
+                    context = context,
+                    googleCloudSyncState = googleCloudSyncState,
+                    googleSignInClient = googleSignInClient,
+                    googleSignInLauncher = googleSignInLauncher,
+                    safExportLauncher = safExportLauncher
+                )
 
+                // 2. إدارة واسترجاع الملفات المحلية (File Transfer & Discovered Backups)
+                FileTransferManager(
+                    backupSyncViewModel = backupSyncViewModel,
+                    context = context,
+                    localBackups = localBackups,
+                    safRestoreLauncher = safRestoreLauncher,
+                    checkBackupPermissionsGranted = checkBackupPermissionsGranted,
+                    onShowPermissionExplanation = { callback ->
+                        onPermissionGrantedCallback = callback
+                        showBackupPermissionExplanationDialog = true
+                    },
+                    onRestoreSuccess = onRestoreSuccess
+                )
+
+                // 3. زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
                 Button(
                     onClick = { showResetConfirmationFlow = true },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
-                        contentColor = MaterialTheme.colorScheme.error
+                        containerColor = SoftRed.copy(alpha = 0.08f),
+                        contentColor = SoftRed
                     ),
-                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
-                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, SoftRed.copy(alpha = 0.35f)),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(40.dp)
+                        .height(36.dp)
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -352,13 +310,13 @@ fun QuadBackupCard(
                         Icon(
                             imageVector = Icons.Default.DeleteForever,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
+                            tint = SoftRed,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = stringResource(R.string.backup_btn_delete_all),
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 12.sp,
+                            color = SoftRed,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -366,7 +324,6 @@ fun QuadBackupCard(
             }
         }
     }
-
 
     if (showResetConfirmationFlow) {
         BackupResetConfirmationFlow(

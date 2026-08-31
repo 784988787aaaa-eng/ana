@@ -1,14 +1,5 @@
 package com.example.ui.components
 
-/*
- * =====================================================================================
- * حزمة عناصر القائمة الجانبية (Drawer Components Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على العناصر والمكونات الفرعية المستخدمة في بناء القائمة الجانبية (Navigation Drawer)،
- * مثل أزرار التنقل الرئيسية، مؤشرات التحديد، وأيقونات التواصل.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,23 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.sp
 
-/*
- * =====================================================================================
- * المكون الفرعي: عنصر القائمة الجانبية (DrawerItem)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * يمثل صفاً تفاعلياً واحداً داخل القائمة الجانبية للتنقل بين شاشات التطبيق:
- * 1. يعرض أيقونة القسم وعنوانه النصي بتنسيق متناسق.
- * 2. يبرز العنصر النشط (المحدد حالياً) بتغيير لون الخلفية وسماكة الخط وإظهار شريط عمودي جانبي.
- * 3. يستجيب للنقر عبر تنفيذ دالة رد النداء (onClick) لتغيير الشاشة وإغلاق القائمة.
- *
- * [البيانات والمُدخلات]:
- * - selected: قيمة منطقية تشير إلى ما إذا كانت هذه الشاشة هي المعروضة حالياً.
- * - icon: الأيقونة الشعاعية المعبرة عن القسم.
- * - label: نص عنوان القسم باللغة العربية.
- * - onClick: الإجراء المنفذ عند النقر على العنصر.
- * =====================================================================================
- */
 @Composable
 fun DrawerItem(
     selected: Boolean,
@@ -53,70 +27,73 @@ fun DrawerItem(
     onClick: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-    } else {
-        Color.Transparent
-    }
-    val iconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    val textPrimary = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    val accentColor = MaterialTheme.colorScheme.secondary
+    val containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
+    val textPrimary = MaterialTheme.colorScheme.onSurface
     val fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
     Surface(
         onClick = onClick,
         color = containerColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(50.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Box(
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(20.dp)
+                    tint = primaryColor,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    fontWeight = fontWeight,
+                    color = textPrimary
                 )
             }
-            Spacer(modifier = Modifier.width(14.dp))
-            Text(
-                text = label,
-                fontSize = 13.5.sp,
-                fontWeight = fontWeight,
-                color = textPrimary
-            )
+
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxHeight(0.6f)
+                        .align(Alignment.CenterEnd)
+                        .background(
+                            color = accentColor,
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                )
+            }
         }
     }
 }
 
+/**
+ * مكون أيقونة التواصل الاجتماعي مع الحفاظ على مساحة لمس مريحة متوافقة مع معايير إمكانية الوصول.
+ */
 @Composable
 fun ContactIcon(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundLight = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+    val backgroundLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
 
     Box(
         modifier = Modifier
             .padding(2.dp)
-            .size(42.dp)
+            .size(40.dp)
             .clip(CircleShape)
             .background(backgroundLight)
             .clickable { onClick() },
@@ -130,4 +107,3 @@ fun ContactIcon(
         )
     }
 }
-

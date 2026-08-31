@@ -1,16 +1,5 @@
 package com.example.ui.screens.business
 
-/*
- * =====================================================================================
- * حزمة قسم البيانات الأساسية للملف التجاري (Business Profile Info Section Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على المكون البصري الخاص بإدخال اسم المنشأة والوصف التعريفي للنشاط:
- * - حقول نصوص محددة الطول (Character Limit Constraints).
- * - نقل التركيز التلقائي بين الحقول باستخدام لوحة المفاتيح.
- * - دعم العرض داخل شاشة مستقلة أو داخل حوار منبثق (Dialog Mode).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,32 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 
-/*
+/**
  * ثوابت معمارية تحدد حدود إدخال النصوص لقسم الملف التعريفي للنشاط التجاري.
  * تضمن اتساق سياسة التحقق من صحة الإدخال ومطابقتها لواجهة العرض.
  */
 private const val MAX_BIZ_NAME_LENGTH = 40
 private const val MAX_BIZ_DESC_LENGTH = 45
 
-/*
- * =====================================================================================
- * قسم البيانات والمعلومات الأساسية للمنشأة (BusinessProfileInfoSection)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * بطاقة إدخال مخصصة لاسم المتجر أو المؤسسة والوصف الترويجي القصير:
- * 1. حقل إدخال اسم النشاط التجاري مع عداد الحروف والحد الأقصى (40 حرف).
- * 2. حقل إدخال الوصف الترويجي مع عداد الحروف والحد الأقصى (45 حرف).
- * 3. تنسيق بصري يتكيف مع سِمة الألوان النشطة ويدعم الكتابة باللغة العربية (RTL).
- *
- * [المُدخلات]:
- * - bizName: القيمة الحالية لاسم النشاط التجاري.
- * - onBizNameChange: رد نداء عند تعديل اسم النشاط.
- * - bizDesc: القيمة الحالية لوصف النشاط التجاري.
- * - onBizDescChange: رد نداء عند تعديل وصف النشاط.
- * - isDialog: هل يتم العرض داخل نافذة حوار منبثقة (لضبط الارتفاع والظلال).
- * - activeThemeColor: لون السِمة المخصص النشط لتلوين الحواف والمؤشر.
- * =====================================================================================
- */
 @Composable
 fun BusinessProfileInfoSection(
     bizName: String,
@@ -97,7 +67,6 @@ fun BusinessProfileInfoSection(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // حقل إدخال اسم المنشأة / النشاط التجاري
             OutlinedTextField(
                 value = bizName,
                 onValueChange = { if (it.length <= MAX_BIZ_NAME_LENGTH) onBizNameChange(it) },
@@ -127,7 +96,6 @@ fun BusinessProfileInfoSection(
                 textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
             )
 
-            // حقل إدخال وصف النشاط أو مجال العمل
             OutlinedTextField(
                 value = bizDesc,
                 onValueChange = { if (it.length <= MAX_BIZ_DESC_LENGTH) onBizDescChange(it) },
@@ -160,4 +128,3 @@ fun BusinessProfileInfoSection(
         }
     }
 }
-

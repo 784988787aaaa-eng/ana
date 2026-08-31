@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة إضافة عميل جديد (Add Customer Popup Component Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الحوار المنبثق لإنشاء عميل جديد مع الرصيد الافتتاحي:
- * - واجهة حوارية متكاملة تتضمن الحقول النصية وخيارات العملة وأسعار الصرف ونوع الحساب (له/عليه).
- * - التحقق من صحة المدخلات وكشف الأسماء المكررة فورياً.
- * - دعم الآلة الحاسبة المدمجة، ومنتقي التاريخ والوقت، واستيراد جهة الاتصال.
- * - التبديل البصري للون السمة حسب نوع المعاملة المحدد (أخضر لـ "له" وأحمر لـ "عليه").
- * =====================================================================================
- */
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
@@ -50,25 +38,6 @@ import com.example.ui.theme.financialDebtColor
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import java.util.Calendar
 
-/*
- * =====================================================================================
- * نافذة حوار إضافة عميل جديد (AddCustomerPopup)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * حوار لإدخال بيانات عميل جديد وفتح رصيده الافتتاحي:
- * 1. جمع الاسم والهاتف والبيان والمبلغ والنوع والعملة.
- * 2. تطبيق أسعار الصرف إذا كانت العملة أجنبية مع دعم إعداد السعر فورياً عبر تراكب `ExchangeRateSetupContent`.
- * 3. التلوين الديناميكي لواجهة الحوار بناءً على تحديد النوع (له / عليه).
- * 4. التحقق من الأسماء المكررة وتفويض الحفظ إلى `AddCustomerSaveHelper`.
- *
- * [المُدخلات]:
- * - viewModel: نموذج عرض المالية لإدارة الحفظ والإعدادات.
- * - onDismiss: رد نداء لإغلاق الحوار.
- * - onCustomerAdded: رد نداء عند نجاح الإضافة مع معرّف العميل الجديد.
- * - activeThemeColor: اللون الأساسي الافتراضي للسمة.
- * - activeSubColor: اللون الثانوي لخلفيات الأزرار.
- * =====================================================================================
- */
 @Composable
 fun AddCustomerPopup(
     viewModel: HabayebFinanceViewModel,
@@ -177,7 +146,7 @@ fun AddCustomerPopup(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
                     .widthIn(max = 350.dp)
                     .fillMaxWidth(0.94f)
@@ -226,7 +195,7 @@ fun AddCustomerPopup(
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = stringResource(id = R.string.habayeb_cancel),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = Color.Gray,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -340,4 +309,3 @@ fun AddCustomerPopup(
         )
     }
 }
-

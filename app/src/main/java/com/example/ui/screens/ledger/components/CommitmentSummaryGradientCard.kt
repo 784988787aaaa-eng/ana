@@ -1,18 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * بطاقة ملخص الالتزامات بالتدرج اللوني (Commitment Summary Gradient Card Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * بطاقة إحصائية مجمعة تلخص إجمالي التغطية المالية للالتزامات والأهداف:
- * 1. تعرض عدد الأهداف المكتملة مقابل إجمالي الأهداف المسجلة (مثال: تغطية 3 من 5 أهداف).
- * 2. تحتوي على شريط تقدم إجمالي بتدرج لوني انسيابي (Gradient Progress Bar 6dp).
- * 3. تعرض كبسولة النسبة المئوية العامة المكتملة مع تغيير النمط البصري عند الاكتمال الكامل (100%).
- * 4. تلخص إجمالي المبالغ المتاحة حالياً مقابل إجمالي المبالغ المطلوبة للالتزامات كافة.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -36,14 +23,9 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonGreen
-import com.example.ui.theme.financialCreditColor
+import com.example.ui.theme.SoftGreen
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -54,19 +36,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لبطاقة الملخص بالتدرج اللوني (CommitmentSummaryGradientCard Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - totalTargetSum: إجمالي المبالغ المطلوبة لجميع الالتزامات.
- * - totalAllocatedSum: إجمالي المبالغ المخصصة حالياً.
- * - coveredCount: عدد الالتزامات المكتملة تغطيتها.
- * - totalCount: إجمالي عدد الالتزامات المسجلة.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * =====================================================================================
- */
 @Composable
 fun CommitmentSummaryGradientCard(
     totalTargetSum: BigDecimal,
@@ -82,14 +51,12 @@ fun CommitmentSummaryGradientCard(
     val overallPercent = (overallPercentFloat * 100).toInt()
     val isFullyCovered = totalAllocatedSum >= totalTargetSum && totalTargetSum > BigDecimal.ZERO
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val creditColor = financialCreditColor(isDark)
-    val secondaryColor = MaterialTheme.colorScheme.secondary
 
-    val progressGradient = remember(isDark, creditColor, secondaryColor) {
+    val progressGradient = remember {
         Brush.horizontalGradient(
             colors = listOf(
-                creditColor,
-                secondaryColor
+                NeonGreen,
+                NeonCyan
             )
         )
     }
@@ -97,11 +64,11 @@ fun CommitmentSummaryGradientCard(
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF7FBF9)
         ),
         border = BorderStroke(
             1.dp,
-            if (isFullyCovered) creditColor.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+            if (isFullyCovered) SoftGreen.copy(alpha = 0.35f) else EmeraldPrimary.copy(alpha = 0.20f)
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -111,7 +78,7 @@ fun CommitmentSummaryGradientCard(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // السطر 1: عنوان التغطية وكبسولة النسبة المئوية
+            // Line 1: Coverage title & Percentage capsule
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -126,20 +93,20 @@ fun CommitmentSummaryGradientCard(
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isFullyCovered) creditColor else MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.25f else 0.12f),
-                    border = BorderStroke(1.dp, if (isFullyCovered) creditColor else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                    color = if (isFullyCovered) SoftGreen else EmeraldPrimary.copy(alpha = if (isDark) 0.25f else 0.12f),
+                    border = BorderStroke(1.dp, if (isFullyCovered) SoftGreen else EmeraldPrimary.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = "$overallPercent% مكتمل",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isFullyCovered) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.primary,
+                        color = if (isFullyCovered) Color.White else EmeraldPrimary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
                     )
                 }
             }
 
-            // السطر 2: شريط التقدم بتدرج لوني انسيابي (6dp)
+            // Line 2: Matching Gradient Progress Bar (6dp)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,7 +129,7 @@ fun CommitmentSummaryGradientCard(
                 }
             }
 
-            // السطر 3: نصوص الملخص المالي
+            // Line 3: Financial Summary Text
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,4 +151,3 @@ fun CommitmentSummaryGradientCard(
         }
     }
 }
-

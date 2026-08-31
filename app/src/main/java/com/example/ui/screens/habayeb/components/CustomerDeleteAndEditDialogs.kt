@@ -1,15 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نوافذ حذف وتعديل الحسابات (Customer Delete and Edit Dialogs Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على النوافذ الحوارية لإدارة دورة حياة بيانات الحساب:
- * 1. نافذة تأكيد حذف الحساب (CustomerDeleteConfirmationDialog): حذف مفرد أو جماعي.
- * 2. نافذة تعديل بيانات الحساب (CustomerEditDialog): تعديل الاسم ورقم الهاتف مع فحص تكرار الأسماء واختيار جهات الاتصال.
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -48,20 +38,6 @@ import com.example.domain.StringUtils
 import com.example.ui.helper.rememberContactPicker
 import com.example.ui.theme.financialDebtColor
 
-/*
- * =====================================================================================
- * نافذة تأكيد حذف الحساب (CustomerDeleteConfirmationDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوار تحذيرية لتأكيد حذف حساب عميل مفرد أو مجموعة حسابات محددة بالتحديد المتعدد.
- *
- * [المُدخلات]:
- * - customer: كائن العميل المراد حذفه (في حالة الحذف المفرد).
- * - selectedCustomerIds: قائمة معرفات العملاء المحددين (في حالة الحذف الجماعي).
- * - onConfirm: رد نداء عند تأكيد الحذف.
- * - onDismiss: رد نداء عند إلغاء العملية.
- * =====================================================================================
- */
 @Composable
 fun CustomerDeleteConfirmationDialog(
     customer: HabayebCustomer? = null,
@@ -104,13 +80,13 @@ fun CustomerDeleteConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = debtRed,
-                    contentColor = androidx.compose.ui.graphics.Color.White
+                    contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.habayeb_delete_yes),
-                    color = androidx.compose.ui.graphics.Color.White,
+                    color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -123,26 +99,11 @@ fun CustomerDeleteConfirmationDialog(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(20.dp)
     )
 }
 
-/*
- * =====================================================================================
- * نافذة تعديل بيانات الحساب (CustomerEditDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية لتعديل اسم العميل ورقم هاتفه مع التحقق من عدم تطابق الاسم مع عميل موجود آخر.
- *
- * [المُدخلات]:
- * - customer: كائن العميل الحالي.
- * - activeThemeColor: لون السمة النشط للمدخلات والأزرار.
- * - existingCustomers: قائمة العملاء الحاليين لفحص تكرار الأسماء.
- * - onConfirm: رد نداء عند حفظ الاسم والهاتف الجديدين.
- * - onDismiss: رد نداء لإغلاق النافذة.
- * =====================================================================================
- */
 @Composable
 fun CustomerEditDialog(
     customer: HabayebCustomer,
@@ -221,7 +182,7 @@ fun CustomerEditDialog(
                     .imePadding(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
             ) {
@@ -385,17 +346,14 @@ fun CustomerEditDialog(
                                 isSaving = true
                                 onConfirm(editedNameStr.trim(), editedPhoneStr.trim())
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = activeThemeColor,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
+                            colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.habayeb_save_edit),
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = Color.White
                             )
                         }
                     }

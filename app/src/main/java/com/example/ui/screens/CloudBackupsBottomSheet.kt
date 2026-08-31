@@ -1,14 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة إدارة النسخ الاحتياطية السحابية (Cloud Backups Bottom Sheet Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الورقة السفلية لإدارة ومزامنة النسخ الاحتياطية السحابية على Google Drive:
- * استعراض الملفات، البحث الفوري، التحديد المتعدد للحذف المجمع، الاستعادة المباشرة، وإنشاء نسخ فورية.
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -58,25 +49,9 @@ import com.example.ui.screens.cloud.components.CloudNotConnectedView
 import com.example.ui.screens.cloud.components.CloudOngoingActionDialog
 import com.example.ui.screens.cloud.components.CloudRestoreConfirmDialog
 import com.example.ui.screens.cloud.components.CloudStatsHeader
+import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.BackupSyncViewModel
 
-/*
- * =====================================================================================
- * الورقة السفلية للنسخ الاحتياطية السحابية (CloudBackupsBottomSheet)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة سفلية منبثقة تفاعلية متكاملة لإدارة التخزين السحابي على Google Drive:
- * 1. جلب قائمة ملفات النسخ السحابية المصفاة والبحث فيها وتحديثها.
- * 2. وضع التحديد الفردي والمتعدد (Multi-selection Mode) لحذف عدة ملفات دفعة واحدة.
- * 3. حوارات تأكيد الأمان قبل استعادة قاعدة البيانات أو حذف النسخ الاحتياطية.
- * 4. إنشاء ورفع نسخة احتياطية فورية (Instant Backup) بضغطة زر.
- *
- * [المُدخلات]:
- * - viewModel: نموذج بيانات المزامنة والنسخ الاحتياطي.
- * - onConnectClick: رد نداء فتح شاشة أو حوار ربط حساب Google Drive.
- * - onDismiss: رد نداء إغلاق الورقة السفلية.
- * =====================================================================================
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CloudBackupsBottomSheet(
@@ -86,11 +61,7 @@ fun CloudBackupsBottomSheet(
 ) {
     val context = LocalContext.current
     
-    /*
-     * ---------------------------------------------------------------------------------
-     * جمع تدفقات الحالة بمراعاة دورة الحياة (Lifecycle-Aware State Collection)
-     * ---------------------------------------------------------------------------------
-     */
+    // Collect flows safely using safe lifecycle-aware state collectors
     val cloudBackups by viewModel.filteredCloudBackups.collectAsStateWithLifecycle()
     val isFetching by viewModel.isFetchingCloudBackups.collectAsStateWithLifecycle()
     val syncState by viewModel.googleDriveSyncState.collectAsStateWithLifecycle()
@@ -100,11 +71,7 @@ fun CloudBackupsBottomSheet(
         !storedEmail.isNullOrEmpty() || syncState is CloudSyncState.Authenticated || syncState is CloudSyncState.Success
     }
     
-    /*
-     * ---------------------------------------------------------------------------------
-     * حالات واجهة المستخدم المحلية (UI Local States)
-     * ---------------------------------------------------------------------------------
-     */
+    // UI Local States
     var isSearchActive by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     
@@ -116,37 +83,27 @@ fun CloudBackupsBottomSheet(
     val selectedFileIds = remember { mutableStateListOf<String>() }
     var showMultiDeleteConfirm by remember { mutableStateOf(false) }
 
-    // تحسين الأداء: تحويل القائمة لمجموعة للبحث السريع O(1) أثناء التمرير في القائمة الكسولة
+    // Optimization: O(1) set lookup for selection checks during LazyColumn scroll
     val selectedFileIdsSet = remember(selectedFileIds.toList()) { selectedFileIds.toSet() }
 
-    /*
-     * جلب قائمة النسخ السحابية عند فتح الورقة السفلية
-     */
+    // Fetch cloud backups list when bottom sheet opens
     LaunchedEffect(Unit) {
         if (isConnected) {
             viewModel.fetchCloudBackupsList()
         }
     }
 
-    /*
-     * إشعار المستخدم بنجاح إنشاء النسخة السحابية
-     */
     LaunchedEffect(syncState) {
         if (syncState is CloudSyncState.Success) {
             Toast.makeText(context, context.getString(R.string.cloud_toast_new_backup_success), Toast.LENGTH_LONG).show()
         }
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * بناء الورقة السفلية بالاتجاه العربي (RTL)
-     * ---------------------------------------------------------------------------------
-     */
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             Box(
@@ -158,11 +115,11 @@ fun CloudBackupsBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp)
-                        .padding(bottom = 80.dp), // إتاحة مساحة للشريط السفلي العائم
+                        .padding(bottom = 80.dp), // space for bottom button
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // شريط الترويسة وأزرار البحث ووضع التحديد
+                    // Header Row Component
                     CloudHeaderBar(
                         isSearchActive = isSearchActive,
                         searchQuery = searchQuery,
@@ -183,11 +140,9 @@ fun CloudBackupsBottomSheet(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 
                     if (!isConnected) {
-                        // واجهة عدم اتصال الحساب مع زر تسجيل الدخول
                         CloudNotConnectedView(onConnectClick = onConnectClick)
                     } else {
                         val isAllSelected = cloudBackups.isNotEmpty() && selectedFileIds.size == cloudBackups.size
-                        // شريط إحصائيات الحساب وعدد النسخ مع خيار التحديد الكلي
                         CloudStatsHeader(
                             email = storedEmail ?: stringResource(R.string.cloud_default_connected_acc),
                             backupsCount = cloudBackups.size,
@@ -207,7 +162,6 @@ fun CloudBackupsBottomSheet(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // بطاقة عرض الأخطاء إن وجدت
                         if (syncState is CloudSyncState.Error) {
                             val errMsg = (syncState as CloudSyncState.Error).message
                             Card(
@@ -235,7 +189,7 @@ fun CloudBackupsBottomSheet(
                                     )
                                     Text(
                                         text = stringResource(R.string.cloud_warn_perm_conn_desc, errMsg),
-                                        color = MaterialTheme.colorScheme.error,
+                                        color = SoftRed,
                                         fontSize = 11.sp,
                                         lineHeight = 16.sp,
                                         textAlign = TextAlign.Center,
@@ -245,7 +199,7 @@ fun CloudBackupsBottomSheet(
                             }
                         }
 
-                        // قسم قائمة النسخ السحابية (حالة التحميل / فارغة / القائمة الكسولة)
+                        // Cloud Backups List Section (Loading / Empty / LazyColumn)
                         CloudBackupsListSection(
                             isFetching = isFetching,
                             cloudBackups = cloudBackups,
@@ -270,7 +224,7 @@ fun CloudBackupsBottomSheet(
                     }
                 }
 
-                // الشريط السفلي العائم للإجراءات (نسخ فوري أو حذف متعدد)
+                // Bottom Floating Action bar
                 if (isConnected) {
                     CloudBottomActionBar(
                         isSelectionMode = isSelectionMode,
@@ -289,18 +243,12 @@ fun CloudBackupsBottomSheet(
         }
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * مربعات حوار التأكيد والتقدم الجاري (Action Overlay Dialogs)
-     * ---------------------------------------------------------------------------------
-     */
-    // حوار العملية الجارية (Progress Dialog)
+    // --- Action Overlay Dialogs ---
     val currentOngoingMessage = ongoingActionMessage
     if (currentOngoingMessage != null) {
         CloudOngoingActionDialog(currentOngoingMessage)
     }
 
-    // حوار تأكيد استعادة النسخة السحابية
     val currentRestoreId = showRestoreConfirmId
     if (currentRestoreId != null) {
         CloudRestoreConfirmDialog(
@@ -315,7 +263,6 @@ fun CloudBackupsBottomSheet(
         )
     }
 
-    // حوار تأكيد حذف نسخة سحابية مفردة
     val currentDeleteId = showDeleteConfirmId
     if (currentDeleteId != null) {
         CloudDeleteConfirmDialog(
@@ -329,7 +276,6 @@ fun CloudBackupsBottomSheet(
         )
     }
 
-    // حوار تأكيد الحذف المتعدد للنسخ السحابية المحددة
     if (showMultiDeleteConfirm) {
         CloudMultiDeleteConfirmDialog(
             context = context,
@@ -347,4 +293,3 @@ fun CloudBackupsBottomSheet(
         )
     }
 }
-

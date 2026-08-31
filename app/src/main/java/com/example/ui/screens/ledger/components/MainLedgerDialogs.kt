@@ -1,16 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * حوارات دفتر الأستاذ العامة (Main Ledger Dialogs Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * ملف يحتوي على مربعات الحوار التفاعلية المنفصلة لدفتر الأستاذ:
- * 1. حوار تأكيد الحذف الجماعي للأيام (DeleteDaysConfirmDialog): يجمع كافة معرفات المعاملات للأيام المحددة ويحذفها دفعة واحدة.
- * 2. حوار إعادة ترتيب الالتزام المالي (ReorderCommitmentDialog): نافذة مدمجة لإدخال رقم الترتيب الجديد للالتزام مع التحقق التلقائي من النطاق وفتح لوحة المفاتيح فوراً.
- * =====================================================================================
- */
-
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
@@ -72,6 +61,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.ui.viewmodel.MonthLedger
 import kotlinx.coroutines.CoroutineScope
@@ -97,7 +87,7 @@ fun DeleteDaysConfirmDialog(
                 Text(
                     text = stringResource(id = R.string.ledger_bulk_delete_days_title),
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error,
+                    color = SoftRed,
                     textAlign = TextAlign.Right,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -130,9 +120,9 @@ fun DeleteDaysConfirmDialog(
                             onSuccess()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)
+                    colors = ButtonDefaults.buttonColors(containerColor = SoftRed)
                 ) {
-                    Text(stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             },
             dismissButton = {
@@ -243,7 +233,7 @@ fun ReorderCommitmentDialog(
                             singleLine = true,
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedBorderColor = EmeraldPrimary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -266,7 +256,7 @@ fun ReorderCommitmentDialog(
                         if (errorMsg.isNotEmpty()) {
                             Text(
                                 text = errorMsg,
-                                color = MaterialTheme.colorScheme.error,
+                                color = SoftRed,
                                 fontSize = 10.5.sp,
                                 textAlign = TextAlign.Center
                             )
@@ -308,7 +298,7 @@ fun ReorderCommitmentDialog(
 
                             Button(
                                 onClick = { applyAction() },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .weight(1.1f)
@@ -317,7 +307,7 @@ fun ReorderCommitmentDialog(
                             ) {
                                 Text(
                                     text = "تطبيق",
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    color = Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )

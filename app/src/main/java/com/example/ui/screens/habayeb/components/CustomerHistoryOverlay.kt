@@ -1,18 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة طبقة كشف حساب وسجل حركات العميل (Customer History Overlay Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الشاشة الحوارية الشاملة لعرض كشف حساب تفصيلي للعميل:
- * - تجميع وحساب الأرصدة التراكمية، ومؤشرات الرصيد الصافي بعملات متعددة.
- * - شريط علوي تفاعلي للبحث، والتصفية، وتعديل الاسم، وحذف الحساب، والمشاركة.
- * - بطاقة الملخص المالي السريع وأزرار التصفية الفورية حسب العملات المختلفة.
- * - جدول الحركات التفصيلي مع دعم التحديد الجماعي، والتكرار التلقائي، وتعديل سعر الصرف.
- * - لوحة تصدير ومشاركة كشف الحساب كـ PDF أو عبر تطبيقات المراسلة.
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -57,25 +44,6 @@ import com.example.ui.screens.habayeb.utils.HabayebRecurringManager
 import com.example.ui.screens.habayeb.utils.rememberFilteredCustomerTransactions
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 
-/*
- * =====================================================================================
- * شاشة كشف حساب العميل التفاعلية (CustomerHistoryOverlay)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شاشة متكاملة لعرض وتحليل وإدارة كافة المعاملات المالية المرتبطة بعميل معين.
- *
- * [المُدخلات]:
- * - customer: بيانات العميل المطلوب عرض كشف حسابه.
- * - viewModel: نموذج العرض لإدارة العمليات المالية والبيانات.
- * - onDismiss: رد نداء عند إغلاق الشاشة والرجوع.
- * - activeThemeColor / activeSubColor: ألوان السمة النشطة.
- * - currencySymbol: رمز العملة الأساسية.
- * - contentPadding: هوامش التباعد الخاصة بالشاشات والحواف.
- * - isSearchActive: هل شريط البحث مفعل حالياً.
- * - onSearchActiveChanged: رد نداء عند تغير حالة البحث.
- * - onTxMultiSelectActiveChanged: رد نداء عند تغير حالة التحديد الجماعي للحركات.
- * =====================================================================================
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerHistoryOverlay(
@@ -223,7 +191,7 @@ fun CustomerHistoryOverlay(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 1.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {

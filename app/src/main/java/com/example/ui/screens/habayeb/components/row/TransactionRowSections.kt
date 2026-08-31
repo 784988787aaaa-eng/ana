@@ -1,30 +1,5 @@
 package com.example.ui.screens.habayeb.components.row
 
-/*
- * =====================================================================================
- * أقسام ومكونات صف المعاملة المالية (Transaction Row Sections Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * ملف يحتوي على الأقسام الفرعية الثلاثة التي يتكون منها كل صف معاملة مالية في جدول حبايب:
- *
- * 1. [قسم التاريخ والتسلسل - TransactionRowDateSection]:
- *    - يعرض رقم المعاملة التسلسلي (#Seq) ومؤشر التحديد (Check) عند تفعيل التحديد المتعدد.
- *    - يعرض مؤشر التكرار الجدولي إن كانت المعاملة مصدر تكرار نشط.
- *    - يعرض اسم اليوم والتاريخ بصيغة ملونة ومميزة والوقت بنظام 12 ساعة.
- *
- * 2. [قسم التفاصيل والملاحظات - TransactionRowDetailsSection]:
- *    - يعرض نوع المعاملة (لنا / علينا / دفعة منه / دفعة له) بلون مميز.
- *    - يعرض الملاحظات أو نص بديل عند عدم وجود ملاحظات.
- *    - يعرض الشارات التوضيحية (معاملة تكرارية، معاملة فرعية منشأة آلياً).
- *    - يوفر زر تفاعلي لعرض وتعديل سعر الصرف للعملات الأجنبية المحولة.
- *
- * 3. [قسم المبالغ والعملات - TransactionRowAmountSection]:
- *    - يعرض سهم اتجاه الحركة المالية (صاعد/هابط) مع المبلغ المالي المنسق.
- *    - يستعين بمكون AutoSizeText لضبط حجم الخط تلقائياً عند كبر الأرقام.
- *    - يعرض المبلغ المكافئ بالعملة الأساسية بين قوسين إن كانت المعاملة أجنبية.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,22 +37,6 @@ import com.example.ui.theme.Slate600
 import com.example.ui.theme.Slate800
 import com.example.ui.viewmodel.FinanceConstants
 
-/*
- * =====================================================================================
- * قسم التاريخ ورقم التسلسل (TransactionRowDateSection)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - isSelected: هل الصف محدد حالياً في وضع التحديد المتعدد.
- * - txSeqNo: الرقم التسلسلي للمعاملة ضمن حساب العميل.
- * - hasActiveRecurring: هل المعاملة مرتبطة بجدول تكرار دوري نشط.
- * - activeThemeColor: اللون الأساسي النشط للسمة.
- * - cached: كائن البيانات المنسقة مسبقاً.
- * - isDark: هل الوضع الليلي مفعل.
- * - tx: كائن المعاملة الكامل.
- * - onScheduleClick: رد نداء عند النقر على مؤشر الجدولة.
- * - modifier: مُعدِّل التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun TransactionRowDateSection(
     isSelected: Boolean,
@@ -98,7 +57,6 @@ fun TransactionRowDateSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            // مؤشر التحديد (Check Icon)
             if (isSelected) {
                 Box(
                     modifier = Modifier
@@ -109,14 +67,12 @@ fun TransactionRowDateSection(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                        tint = Color.White,
                         modifier = Modifier.size(10.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(3.dp))
             }
-
-            // رقم المعاملة التسلسلي
             Text(
                 text = "#$txSeqNo",
                 fontSize = 9.sp,
@@ -126,8 +82,6 @@ fun TransactionRowDateSection(
                     .background(activeThemeColor.copy(alpha = 0.08f), RoundedCornerShape(4.dp))
                     .padding(horizontal = 4.dp, vertical = 1.dp)
             )
-
-            // أيقونة التكرار الدوري القابلة للنقر
             if (hasActiveRecurring) {
                 Box(
                     modifier = Modifier
@@ -148,7 +102,6 @@ fun TransactionRowDateSection(
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        // نص التاريخ المنسق مع تلوين اسم اليوم
         val dayName = stringResource(id = cached.dayNameResId)
         val onSurfaceColor = MaterialTheme.colorScheme.onSurface
         val annotatedDate = remember(dayName, cached.dateStr, activeThemeColor, onSurfaceColor) {
@@ -174,7 +127,6 @@ fun TransactionRowDateSection(
         
         Spacer(modifier = Modifier.height(0.5.dp))
 
-        // نص الوقت بنظام 12 ساعة
         Text(
             text = cached.timeStr,
             fontSize = 8.sp,
@@ -186,21 +138,6 @@ fun TransactionRowDateSection(
     }
 }
 
-/*
- * =====================================================================================
- * قسم تفاصيل المعاملة والشارات (TransactionRowDetailsSection)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - cached: كائن البيانات المنسقة مسبقاً.
- * - isDark: هل الوضع الليلي مفعل.
- * - hasActiveRecurring: هل المعاملة مصدر تكرار دوري.
- * - parentTxSeq: الرقم التسلسلي للمعاملة الرئيسية المرتبطة.
- * - tx: كائن المعاملة الكامل.
- * - currencySymbol: رمز العملة الافتراضية.
- * - onExchangeRateClick: رد نداء عند النقر على زر سعر الصرف.
- * - modifier: مُعدِّل التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun TransactionRowDetailsSection(
     cached: TransactionRowCachedData,
@@ -217,7 +154,6 @@ fun TransactionRowDetailsSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // نص نوع المعاملة
         Text(
             text = stringResource(id = cached.typeResId),
             fontSize = 8.5.sp,
@@ -228,7 +164,6 @@ fun TransactionRowDetailsSection(
         
         Spacer(modifier = Modifier.height(1.dp))
 
-        // نص الملاحظات أو نص بديل
         Text(
             text = cached.cleanDescription.ifEmpty { stringResource(id = R.string.habayeb_no_notes) },
             fontSize = 11.sp,
@@ -238,13 +173,11 @@ fun TransactionRowDetailsSection(
             overflow = TextOverflow.Ellipsis
         )
 
-        // صف الشارات وأزرار التحويل
         Row(
             modifier = Modifier.padding(top = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
         ) {
-            // شارة مصدر التكرار الدوري
             if (hasActiveRecurring) {
                 Box(
                     modifier = Modifier
@@ -262,7 +195,6 @@ fun TransactionRowDetailsSection(
                     )
                 }
             } else if (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id) {
-                // شارة المعاملة الفرعية المنشأة آلياً
                 Box(
                     modifier = Modifier
                         .background(RowColors.infoBlueBg(isDark), RoundedCornerShape(4.dp))
@@ -280,7 +212,6 @@ fun TransactionRowDetailsSection(
                 }
             }
 
-            // زر وحالة سعر الصرف للعملات الأجنبية
             val targetCurrency = currencySymbol
             val isSelfConversion = (cached.displayCurrency == targetCurrency)
             val showToggle = !isSelfConversion && ((tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.currencyCode.isNotBlank()) || cached.isTxForeign || cached.isCalculated)
@@ -329,15 +260,6 @@ fun TransactionRowDetailsSection(
     }
 }
 
-/*
- * =====================================================================================
- * قسم المبلغ المالي والعملات (TransactionRowAmountSection)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - cached: كائن البيانات المنسقة مسبقاً بما فيه السهم والمبلغ والعملة والمبلغ المكافئ.
- * - modifier: مُعدِّل التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun TransactionRowAmountSection(
     cached: TransactionRowCachedData,
@@ -352,7 +274,6 @@ fun TransactionRowAmountSection(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // سهم اتجاه الحركة المالية
             Icon(
                 imageVector = cached.txArrow,
                 contentDescription = null,
@@ -360,7 +281,6 @@ fun TransactionRowAmountSection(
                 modifier = Modifier.size(14.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
-            // نص المبلغ والعملة مع تكيف الحجم التلقائي
             AutoSizeText(
                 text = "${cached.formattedAmount} ${cached.displayCurrency}",
                 fontSize = 13.sp,
@@ -368,7 +288,6 @@ fun TransactionRowAmountSection(
                 color = cached.indicatorColor
             )
         }
-        // نص المبلغ المكافئ بالعملة الأساسية إن وجد
         if (cached.equivalentAmountText != null) {
             AutoSizeText(
                 text = cached.equivalentAmountText,
@@ -379,4 +298,3 @@ fun TransactionRowAmountSection(
         }
     }
 }
-

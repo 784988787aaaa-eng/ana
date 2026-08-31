@@ -30,7 +30,7 @@ fun SettingsHeaderCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.primary)
+            .background(EmeraldPrimary)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

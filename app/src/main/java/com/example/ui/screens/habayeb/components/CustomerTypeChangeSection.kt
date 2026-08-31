@@ -1,15 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة قسم تغيير نوع الحساب الافتراضي للعميل (Customer Type Change Section Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على واجهة التبديل السريع لنوع حساب العميل الافتراضي (له / عليه):
- * 1. زر التبديل التفاعلي بين (OWED_TO_THEM "له" باللون الأخضر) و (OWED_BY_THEM "عليه" باللون الأحمر).
- * 2. حوار التأكيد التحذيري (AlertDialog) لتنبيه المستخدم قبل تغيير نوع الحساب مع توضيح أثر ذلك على تصنيف العمليات.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,21 +37,6 @@ import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import com.example.ui.viewmodel.FinanceConstants
 
-/*
- * =====================================================================================
- * قسم تغيير نوع الحساب (CustomerTypeChangeSection)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * عنصر واجهة يتيح التبديل بين نوعي الحساب الافتراضي (دائن / مدين) مع حوار تأكيد الأمان.
- *
- * [المُدخلات]:
- * - currentType: النوع الحالي للحساب (له / عليه).
- * - activeThemeColor: لون السمة النشط لأزرار الحوار.
- * - onUpdateCustomerType: رد نداء لتنفيذ تحديث نوع الحساب في قاعدة البيانات.
- * - onDismiss: رد نداء لإغلاق القائمة بعد إتمام التغيير.
- * - modifier: مغير التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun CustomerTypeChangeSection(
     currentType: String,
@@ -77,7 +52,7 @@ fun CustomerTypeChangeSection(
     val activeRedColor = remember(isDark) { financialDebtColor(isDark) }
     val activeGreenColor = remember(isDark) { financialCreditColor(isDark) }
     val inactiveBgColor = remember(isDark) { if (isDark) DarkNeutralTrack else LightNeutralTrack }
-    val inactiveTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val inactiveTextColor = remember(isDark) { if (isDark) Color.Gray else Color.DarkGray }
 
     Box(
         modifier = modifier
@@ -124,7 +99,7 @@ fun CustomerTypeChangeSection(
                         text = stringResource(id = R.string.habayeb_to_them),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isToThemSelected) MaterialTheme.colorScheme.onTertiary else inactiveTextColor
+                        color = if (isToThemSelected) Color.White else inactiveTextColor
                     )
                 }
 
@@ -148,7 +123,7 @@ fun CustomerTypeChangeSection(
                         text = stringResource(id = R.string.habayeb_owed),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isByThemSelected) MaterialTheme.colorScheme.onError else inactiveTextColor
+                        color = if (isByThemSelected) Color.White else inactiveTextColor
                     )
                 }
             }
@@ -180,7 +155,7 @@ fun CustomerTypeChangeSection(
                 ) {
                     Text(
                         text = stringResource(id = R.string.context_menu_cancel),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 }

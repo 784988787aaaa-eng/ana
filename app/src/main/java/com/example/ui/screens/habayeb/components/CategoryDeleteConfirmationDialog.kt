@@ -1,15 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة تأكيد حذف التصنيف المالي (Category Delete Confirmation Dialog Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على نافذة الحوار المخصصة لتأكيد حذف تصنيف عملاء محدد:
- * - تتيح خيارين للحذف: إما حذف التصنيف فقط (مع الإبقاء على العملاء)، أو حذف التصنيف والعملاء المرتبطين به.
- * - زر التراجع الإلغائي الملون بسمة التطبيق لمنع الحذف العرضي أو غير المقصود.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,23 +17,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
 
-/*
- * =====================================================================================
- * نافذة تأكيد حذف التصنيف (CategoryDeleteConfirmationDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية تأكيدية لإزالة تصنيف معين توفر ثلاث خيارات واضحة:
- * 1. إلغاء العملية والعودة.
- * 2. حذف التصنيف فقط وفك ارتباط الحسابات به دون حذف بيانات العملاء.
- * 3. حذف التصنيف وجميع الحسابات المرتبطة به كلياً (إجراء تحذيري مميز بلون الخطأ).
- *
- * [المُدخلات]:
- * - categoryName: اسم التصنيف المراد حذفه لعرضه في نص التأكيد.
- * - activeThemeColor: لون السمة النشط لزر الإلغاء الافتراضي.
- * - onDismiss: رد نداء لإغلاق النافذة عند الإلغاء.
- * - onConfirmDelete: رد نداء يحمل مؤشر حذف الحسابات المرتبطة (true إذا كان شاملاً للحسابات).
- * =====================================================================================
- */
 @Composable
 fun CategoryDeleteConfirmationDialog(
     categoryName: String,
@@ -57,7 +30,7 @@ fun CategoryDeleteConfirmationDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
                 .widthIn(max = 300.dp)
@@ -77,12 +50,12 @@ fun CategoryDeleteConfirmationDialog(
                     textAlign = TextAlign.Center
                 )
 
-                // زر الإلغاء (Cancel button)
+                // Cancel button
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = activeThemeColor,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        contentColor = Color.White
                     ),
                     shape = buttonShape,
                     modifier = Modifier
@@ -96,7 +69,7 @@ fun CategoryDeleteConfirmationDialog(
                     )
                 }
 
-                // زر حذف التصنيف فقط (Delete Category Only)
+                // Delete Category Only
                 OutlinedButton(
                     onClick = {
                         onConfirmDelete(false)
@@ -118,7 +91,7 @@ fun CategoryDeleteConfirmationDialog(
                     )
                 }
 
-                // زر حذف التصنيف مع الحسابات المرتبطة (Delete Category and Linked Accounts)
+                // Delete Category and Linked Accounts
                 OutlinedButton(
                     onClick = {
                         onConfirmDelete(true)
@@ -143,4 +116,3 @@ fun CategoryDeleteConfirmationDialog(
         }
     }
 }
-

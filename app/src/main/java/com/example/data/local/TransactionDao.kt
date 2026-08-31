@@ -23,7 +23,6 @@ package com.example.data.local
 // ---------------------------------------------------------------------
 import androidx.room.Dao
 import androidx.room.Delete
-import androidx.paging.PagingSource
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -44,25 +43,6 @@ interface TransactionDao {
      */
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     fun getAllTransactionsFlow(): Flow<List<TransactionDb>>
-
-    /**
-     * مصدر Paging 3 للعرض التدريجي. لا يجلب جدول transactions كاملاً إلى الذاكرة.
-     */
-    @Query("SELECT * FROM transactions ORDER BY timestamp DESC, id DESC")
-    fun getTransactionsPagingSource(): PagingSource<Int, TransactionDb>
-
-    /**
-     * بحث SQL مجزأ بدل تصفية القائمة كاملة في الذاكرة.
-     * يستخدم LIKE مع ترتيب ثابت لتمكين Paging 3.
-     */
-    @Query("SELECT * FROM transactions WHERE description LIKE '%' || :query || '%' ORDER BY timestamp DESC, id DESC")
-    fun searchTransactionsPagingSource(query: String): PagingSource<Int, TransactionDb>
-
-    @Query("SELECT COALESCE(SUM(CASE WHEN type = 'INCOME' THEN CAST(amount AS REAL) ELSE 0.0 END), 0.0) FROM transactions WHERE timestamp >= :startTimestamp AND timestamp <= :endTimestamp")
-    suspend fun getIncomeSumForPeriod(startTimestamp: Long, endTimestamp: Long): BigDecimal
-
-    @Query("SELECT COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN CAST(amount AS REAL) ELSE 0.0 END), 0.0) FROM transactions WHERE timestamp >= :startTimestamp AND timestamp <= :endTimestamp")
-    suspend fun getExpenseSumForPeriodByTimestamp(startTimestamp: Long, endTimestamp: Long): BigDecimal
 
     /**
      * [استعلام تصفح حركات الدفتر على دفعات - getPagedTransactionsDirect]:

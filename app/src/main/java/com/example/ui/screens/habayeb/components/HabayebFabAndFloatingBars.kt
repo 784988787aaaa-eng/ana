@@ -1,19 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة زر وأشرطة الإضافة العائمة لشاشة الحبايب (Habayeb FAB and Floating Bars Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على مكونات زر الإضافة العائم التفاعلي والحر:
- * 1. مفاتيح تفضيلات التخزين المحلي (FloatingAddPrefsKeys) لحفظ إحداثيات ومستوى حجم الزر.
- * 2. زر الإضافة العائم (HabayebFab):
- *    - زر حر يمكن تحريكه وسحبه في أي مكان على الشاشة بالضغط المطول.
- *    - تثبيت وحفظ الموضع تلقائياً في التفضيلات المحلية (SharedPreferences).
- *    - النقر المزدوج لتبديل وتغيير حجم الزر بين 3 مستويات ديناميكية.
- *    - النقر الفردي لإضافة عميل جديد أو إضافة حركة مالية للعميل المستهدف.
- * =====================================================================================
- */
-
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -142,7 +128,7 @@ fun HabayebFab(
     )
 
     // استخدام لون الثيم الرئيسي النقاطي للتطابق التام مع ثيم التطبيق
-    val effectivePrimary = MaterialTheme.colorScheme.primary
+    val effectivePrimary = if (primaryColor != Color.Unspecified) primaryColor else MaterialTheme.colorScheme.primary
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(
@@ -197,7 +183,7 @@ fun HabayebFab(
                     )
                     .border(
                         width = 1.2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = if (isInteracting) 0.9f else 0.62f),
+                        color = Color.White.copy(alpha = if (isInteracting) 0.9f else 0.45f),
                         shape = CircleShape
                     )
                     .pointerInput(screenWidthPx, screenHeightPx, maxX, maxY, defaultDockX, defaultDockY) {
@@ -263,7 +249,7 @@ fun HabayebFab(
                         id = if (targetCustomer != null) R.string.habayeb_add_tx_desc else R.string.habayeb_add_customer_fab
                     ),
                     modifier = Modifier.size(iconSize),
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = Color.White
                 )
             }
         }

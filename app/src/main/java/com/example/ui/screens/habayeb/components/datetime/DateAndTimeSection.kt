@@ -1,20 +1,5 @@
 package com.example.ui.screens.habayeb.components.datetime
 
-/*
- * =====================================================================================
- * قسم اختيار التاريخ والوقت (Date and Time Section Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة مركب يجمع بين عدادات التاريخ التفاعلية (اليوم، الشهر، السنة)
- * وعدادات الوقت التفاعلية (الساعة، الدقيقة، الفترة AM/PM) بصورة مدمجة وأنيقة.
- *
- * [الخصائص والمزايا]:
- * 1. حساب تلقائي للحد الأقصى لعدد أيام الشهر المختار لمنع التواريخ غير الصالحة (مثل 31 فبراير).
- * 2. دعم إظهار أو إخفاء قسم الوقت بناءً على متطلبات الشاشة الحالية.
- * 3. تحديث فوري لكائن التقويم (Calendar) وإرساله عبر رد النداء.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -39,15 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import java.util.Calendar
 
-/*
- * =====================================================================================
- * دالة قسم اختيار التاريخ والوقت (DateAndTimeSection)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - calendar: كائن التقويم الذي يحمل التاريخ والوقت الحاليين.
- * - onCalendarChange: رد نداء يُستدعى عند تغيير أي قيمة (يوم، شهر، سنة، إلخ).
- * - showTime: مفتاح منطقي لتحديد ما إذا كان قسم اختيار الوقت سيظهر بجانب التاريخ.
- * =====================================================================================
+/**
+ * Composite visual component displaying date dials and optional time dials.
  */
 @Composable
 fun DateAndTimeSection(
@@ -60,11 +38,6 @@ fun DateAndTimeSection(
     val day = calendar.get(Calendar.DAY_OF_MONTH)
     val maxDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * دالة مساعدة لتحديث حقل محدد في التقويم واستنساخ نسخة جديدة
-     * ---------------------------------------------------------------------------------
-     */
     fun updateCalendar(field: Int, newValue: Int) {
         val newCal = (calendar.clone() as Calendar).apply {
             if (field == Calendar.MONTH) {
@@ -89,7 +62,7 @@ fun DateAndTimeSection(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // كتلة اختيار التاريخ (Date Block)
+        // Date Block
         Box(
             modifier = Modifier
                 .weight(if (showTime) 1.2f else 1f)
@@ -118,7 +91,7 @@ fun DateAndTimeSection(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // منتقي اليوم
+                    // Day
                     RollingDialPicker(
                         label = stringResource(id = R.string.datetime_picker_day),
                         value = day,
@@ -126,7 +99,7 @@ fun DateAndTimeSection(
                         onValueChange = { updateCalendar(Calendar.DAY_OF_MONTH, it) }
                     )
 
-                    // منتقي الشهر
+                    // Month
                     RollingDialPicker(
                         label = stringResource(id = R.string.datetime_picker_month),
                         value = month,
@@ -134,7 +107,7 @@ fun DateAndTimeSection(
                         onValueChange = { updateCalendar(Calendar.MONTH, it) }
                     )
 
-                    // منتقي السنة
+                    // Year
                     RollingDialPicker(
                         label = stringResource(id = R.string.datetime_picker_year),
                         value = year,
@@ -146,7 +119,7 @@ fun DateAndTimeSection(
         }
 
         if (showTime) {
-            // فاصل عمودي أنيق بين التاريخ والوقت
+            // Divider
             Box(
                 modifier = Modifier
                     .padding(horizontal = 6.dp)
@@ -155,18 +128,18 @@ fun DateAndTimeSection(
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             )
 
-            // كتلة اختيار الوقت (Time Block)
+            // Time Block
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
-                    RoundedCornerShape(14.dp)
-                )
-                .padding(vertical = 6.dp, horizontal = 4.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+                        RoundedCornerShape(14.dp)
+                    )
+                    .padding(vertical = 6.dp, horizontal = 4.dp)
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,4 +161,3 @@ fun DateAndTimeSection(
         }
     }
 }
-

@@ -124,9 +124,6 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     val showActivationRequired = MutableStateFlow(false)
-    fun triggerActivationRequired() {
-        showActivationRequired.value = true
-    }
     fun resetActivationRequired() {
         showActivationRequired.value = false
     }
@@ -259,10 +256,6 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     ) { mainCount, habayebCount ->
         mainCount + habayebCount
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
-    val isTrialExpiredState: StateFlow<Boolean> = combine(isActivatedState, totalTransactionsCount) { isActivated, totalCount ->
-        !isActivated && totalCount >= LicenseManager.SECURE_LIMIT_VAL
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun isTrialExpired(): Boolean {
         val count = totalTransactionsCount.value

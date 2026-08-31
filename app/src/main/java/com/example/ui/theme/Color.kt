@@ -7,120 +7,63 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// =====================================================================================
-// نظام الألوان المالي الفاخر - الدفتر الذكي (Smart Ledger Executive Design System)
-// تصميم احترافي عالمي مستوحى من كبرى التطبيقات المالية (Apple Wallet, Revolut, Linear)
-// =====================================================================================
+// Mizan Al-Dar Color Palette - Styled with the premium Violet & Neon Cyan "الدفتر الذكي" Palette
+val EmeraldPrimary = Color(0xFF4B36A2)      // Premium Glowing Violet/Purple (#4B36A2)
+val EmeraldLight = Color(0xFF8C7CFF)        // Lighter Purple/Lavender for beautiful gradients (#8C7CFF)
+val CoralAccent = Color(0xFF00B2FE)         // Neon Cyan / Electric Blue Accent (#00B2FE)
 
-// 1. التوكنز الأساسية المطلقة (Absolute Base Tokens)
-val TokenWhite = Color(0xFFFFFFFF)
-val TokenBlack = Color(0xFF000000)
-val TokenTransparent = Color(0x00000000)
-val TokenScrim = Color(0xFF000000)
+val EmeraldDark = Color(0xFF4B36A2)         // Rich Glowing Violet/Purple directly in dark mode
+val CoralDark = Color(0xFF00B2FE)           // Rich Glowing Neon Cyan directly in dark mode
+val IvoryBackground = Color(0xFFF8F9FA)     // Solid high-contrast background (#F8F9FA)
 
-// 2. هوية العلامة الأساسية - النيلي الملكي والياقوت المالي (Royal Indigo & Electric Sapphire)
-val EmeraldPrimary = Color(0xFF4338CA)      // Royal Indigo 700 - لون قيادي فاخر وموثوق
-val EmeraldLight = Color(0xFF6366F1)        // Indigo 500 - تدرج إشعاعي حديث
-val CoralAccent = Color(0xFF0284C7)         // Sky Blue 600 - لمسة إلكترونية حيوية
+// Financial semantic colors - High Contrast Display Tokens
+val SoftRed = Color(0xFFD32F2F)            // Debt (لنا / مدين) - Vivid Solid Red Light (#D32F2F)
+val SoftGreen = Color(0xFF2E7D32)          // Credit (علينا / دائن) - Deep Emerald Green Light (#2E7D32)
 
-// Dark-mode Brand Accents - مضاءة ومصممة بدقة لشاشات OLED
-val EmeraldDark = Color(0xFF818CF8)         // Indigo 400 - فائق الوضوح والراحة البصرية في الظلام
-val CoralDark = Color(0xFF38BDF8)           // Sky 400 - تباين ناعم متناسق
-val IvoryBackground = Color(0xFFF8FAFC)     // Slate 50 - مساحة بيضاء كريستالية نقية وعصرية
+val CreditGreen = Color(0xFF2E7D32)        // Credit Green Light (#2E7D32)
+val DebtRed = Color(0xFFD32F2F)            // Debt Red Light (#D32F2F)
+val CreditGreenDark = Color(0xFF51CF66)    // Credit Green Dark (Soft neon green #51CF66)
+val DebtRedDark = Color(0xFFFF6B6B)        // Debt Red Dark (Soft high-contrast red #FF6B6B)
 
-// 3. درجات الحاويات والأسطح - الوضع النهاري (Light Mode Architecture)
-val PrimaryContainerLight = Color(0xFFEEF2FF)     // Indigo 50
-val OnPrimaryContainerLight = Color(0xFF312E81)   // Indigo 900
-val SecondaryContainerLight = Color(0xFFE0F2FE)   // Sky 50
-val OnSecondaryContainerLight = Color(0xFF0369A1) // Sky 700
-val OnTertiaryContainerLight = Color(0xFF064E3B)  // Emerald 900
-val OnErrorContainerLight = Color(0xFF881337)     // Rose 900
-val SurfaceVariantLight = Color(0xFFF1F5F9)       // Slate 100
-val OutlineVariantLight = Color(0xFFE2E8F0)       // Slate 200 - حدود دقيقة جداً
-val SurfaceContainerLowestLight = Color(0xFFFFFFFF)
-val SurfaceContainerLowLight = Color(0xFFF8FAFC)
-val SurfaceContainerLight = Color(0xFFFFFFFF)     // بطاقات بيضاء ناصعة وفخمة
-val SurfaceContainerHighLight = Color(0xFFF1F5F9)
-val SurfaceContainerHighestLight = Color(0xFFE2E8F0)
-val SurfaceDimLight = Color(0xFFE2E8F0)
-val SurfaceBrightLight = Color(0xFFFFFFFF)
+// Financial Card / Container backgrounds (Solid Safe Colors for replacement & low-contrast screens)
+val CreditContainerLight = Color(0xFFF0FDF4) // خلفية بطاقة "علينا" الخضراء في الوضع النهاري (#F0FDF4)
+val CreditContainerDark = Color(0xFF16281E)  // خلفية بطاقة "علينا" الخضراء في الوضع الليلي (#16281E)
+val CreditBorderLight = Color(0xFFA7F3D0)
+val CreditBorderDark = Color(0xFF1B4D2E)
 
-// 4. درجات الحاويات والأسطح - الوضع الليلي الفاخر (Midnight Obsidian & Dark Slate)
-val PrimaryContainerDark = Color(0xFF1E1B4B)      // Deep Indigo Charcoal
-val OnPrimaryContainerDark = Color(0xFFE0E7FF)
-val SecondaryContainerDark = Color(0xFF0C4A6E)
-val OnSecondaryContainerDark = Color(0xFFBAE6FD)
-val OnTertiaryContainerDark = Color(0xFFA7F3D0)
-val OnErrorContainerDark = Color(0xFFFECDD3)
-val SurfaceVariantDark = Color(0xFF1E293B)        // Slate 800
-val OutlineVariantDark = Color(0xFF334155)        // Slate 700
-val SurfaceContainerLowestDark = Color(0xFF070A10)
-val SurfaceContainerLowDark = Color(0xFF0B101B)
-val SurfaceContainerDark = Color(0xFF111827)       // Gray 900 - سطح البطاقات الداكنة
-val SurfaceContainerHighDark = Color(0xFF1E293B)   // Slate 800
-val SurfaceContainerHighestDark = Color(0xFF334155)// Slate 700
-val SurfaceDimDark = Color(0xFF0B0F17)
-val SurfaceBrightDark = Color(0xFF1E293B)
+val DebtContainerLight = Color(0xFFFDF2F2)   // خلفية بطاقة "لنا" الحمراء في الوضع النهاري (#FDF2F2)
+val DebtContainerDark = Color(0xFF2C1A1D)    // خلفية بطاقة "لنا" الحمراء في الوضع الليلي (#2C1A1D)
+val DebtBorderLight = Color(0xFFFECDD3)
+val DebtBorderDark = Color(0xFF531A21)
 
-// 5. تأثيرات التموج اللمسي (Ripple Tokens)
-val RippleLight = Color(0x1A4338CA)
-val RippleDark = Color(0x26818CF8)
-
-// 6. الألوان المالية الدلالية المعتمدة (Financial Semantic Tokens - Credit & Debt)
-// الأخضر المالي (علينا / إيراد / دائن)
-val SoftGreen = Color(0xFF059669)                 // Emerald 600 - ناصع وواضح
-val CreditGreen = Color(0xFF059669)
-val CreditGreenDark = Color(0xFF34D399)             // Emerald 400 - متألق في الوضع الداكن
-val CreditContainerLight = Color(0xFFECFDF5)        // Emerald 50
-val CreditContainerDark = Color(0xFF064E3B)         // Emerald 900
-val CreditBorderLight = Color(0xFFA7F3D0)           // Emerald 200
-val CreditBorderDark = Color(0xFF047857)            // Emerald 700
-
-// الأحمر المالي (لنا / مصروف / مدين)
-val SoftRed = Color(0xFFE11D48)                   // Rose 600 - راقٍ وغير مؤذٍ للعين
-val DebtRed = Color(0xFFE11D48)
-val DebtRedDark = Color(0xFFFB7185)               // Rose 400 - مضيء ومتناسق في الظلام
-val DebtContainerLight = Color(0xFFFFF1F2)          // Rose 50
-val DebtContainerDark = Color(0xFF4C0519)           // Rose 950
-val DebtBorderLight = Color(0xFFFECDD3)             // Rose 200
-val DebtBorderDark = Color(0xFF9F1239)              // Rose 800
-
-// 7. ألوان التحديد النشط (Selection colors)
+// Selection colors
 val SelectionGreen = Color(0xFF10B981)
-val SelectionGreenContainerLight = Color(0xFFECFDF5)
-val SelectionGreenContainerDark = Color(0xFF064E3B)
+val SelectionGreenContainerLight = Color(0xFFE6F4EA)
+val SelectionGreenContainerDark = Color(0xFF152D1F)
 
-val DarkBackground = Color(0xFF080C14)             // Midnight Obsidian Background
-val DarkSurface = Color(0xFF111827)                // Deep Slate Card Surface
-val LightSurface = Color(0xFFFFFFFF)               // Pure White Surface
+val DarkBackground = Color(0xFF121212)     // Pure Standard Deep Dark (#121212)
+val DarkSurface = Color(0xFF1E1E1E)        // High-Contrast Solid Dark Surface (#1E1E1E)
+val LightSurface = Color(0xFFFFFFFF)       // Pure Clean White Surface (#FFFFFF)
 
-val TextPrimaryDark = Color(0xFFF8FAFC)            // Slate 50 - قراءة مريحة وعالية التباين
-val TextSecondaryDark = Color(0xFF94A3B8)          // Slate 400
-val TextPrimaryLight = Color(0xFF0F172A)           // Slate 900 - أسود كحلي عميق وفخم
-val TextSecondaryLight = Color(0xFF64748B)         // Slate 500
+val TextPrimaryDark = Color(0xFFF5F5F5)     // Bright Crisp White for dark mode contrast
+val TextSecondaryDark = Color(0xFFAAAAAA)   // High-contrast muted secondary text dark
+val TextPrimaryLight = Color(0xFF1A1A1A)    // Deep dark crisp primary text light
+val TextSecondaryLight = Color(0xFF555555)  // Clear legible secondary text light
 
-val BorderDark = Color(0xFF1E293B)                 // Slate 800
-val BorderLight = Color(0xFFE2E8F0)                // Slate 200
+val BorderDark = Color(0xFF333333)          // High contrast dark border
+val BorderLight = Color(0xFFE0E0E0)         // Clean light border
 
-// 8. تدرجات لونية تنفيذية جاهزة (Pre-allocated Static Gradients)
+// Modern Pre-allocated Static Gradients (Zero-allocation during recomposition)
 val PrimaryGradient = Brush.linearGradient(
-    colors = listOf(Color(0xFF4338CA), Color(0xFF6366F1))
-)
-
-val PrimaryHeaderGradientLight = Brush.verticalGradient(
-    colors = listOf(Color(0xFF3730A3), Color(0xFF4338CA), Color(0xFF4F46E5))
-)
-
-val PrimaryHeaderGradientDark = Brush.verticalGradient(
-    colors = listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF172554))
+    colors = listOf(EmeraldPrimary, EmeraldLight)
 )
 
 val CoralGradient = Brush.linearGradient(
-    colors = listOf(CoralAccent, Color(0xFF0369A1))
+    colors = listOf(CoralAccent, Color(0xFF0284C7))
 )
 
 val IncomeGradientLight = Brush.linearGradient(
-    colors = listOf(Color(0xFFECFDF5), LightSurface)
+    colors = listOf(Color(0xFFF0FDF4), LightSurface)
 )
 
 val IncomeGradientDark = Brush.linearGradient(
@@ -128,7 +71,7 @@ val IncomeGradientDark = Brush.linearGradient(
 )
 
 val ExpenseGradientLight = Brush.linearGradient(
-    colors = listOf(Color(0xFFFFF1F2), LightSurface)
+    colors = listOf(Color(0xFFFDF2F2), LightSurface)
 )
 
 val ExpenseGradientDark = Brush.linearGradient(
@@ -140,23 +83,23 @@ val SelectedItemGradientLight = Brush.linearGradient(
 )
 
 val SelectedItemGradientDark = Brush.linearGradient(
-    colors = listOf(SelectionGreenContainerDark, Color(0xFF022C22))
+    colors = listOf(SelectionGreenContainerDark, Color(0xFF121F17))
 )
 
 val NeonGreenCyanGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFF10B981), Color(0xFF06B6D4))
+    colors = listOf(Color(0xFF00E676), Color(0xFF00B0FF))
 )
 
 val VioletHeroGradient = Brush.linearGradient(
-    colors = listOf(Color(0xFF312E81), Color(0xFF4338CA), Color(0xFF6366F1))
+    colors = listOf(Color(0xFF4B36A2), Color(0xFF7C3AED), Color(0xFF8C7CFF))
 )
 
 val HeaderCardGradientDark = Brush.linearGradient(
-    colors = listOf(Color(0xFF1E293B), Color(0xFF0F172A))
+    colors = listOf(Color(0xFF1E1E1E), Color(0xFF262626))
 )
 
 val HeaderCardGradientLight = Brush.linearGradient(
-    colors = listOf(LightSurface, Color(0xFFF8FAFC))
+    colors = listOf(Color(0xFFFFFFFF), Color(0xFFF8F9FA))
 )
 
 val GoldLicenseGradient = Brush.linearGradient(
@@ -169,42 +112,38 @@ val WarningGradient = Brush.linearGradient(
 
 val SplashSweepGradient = Brush.sweepGradient(
     colorStops = arrayOf(
-        0.0f to EmeraldPrimary,
-        0.5f to CoralAccent,
-        1.0f to EmeraldPrimary
+        0.0f to Color(0xFF2563EB),
+        0.5f to Color(0xFF10B981),
+        1.0f to Color(0xFF2563EB)
     )
 )
 
 val SplashRadialGlow = Brush.radialGradient(
     colors = listOf(
-        EmeraldPrimary.copy(alpha = 0.20f),
-        CoralAccent.copy(alpha = 0.13f),
+        Color(0xFF2563EB).copy(alpha = 0.22f),
+        Color(0xFF10B981).copy(alpha = 0.15f),
         Color.Transparent
     )
 )
 
-// 9. ألوان وظيفية متخصصة (Specific Functional Palette Colors)
+// Specific Functional Palette Colors
 val WhatsAppGreen = Color(0xFF128C7E)
 val WhatsAppLightGreen = Color(0xFF25D366)
-val WhatsAppDarkGreen = Color(0xFF059669)
-val WarningAmber = Color(0xFFD97706)
-val WarningAmberDark = Color(0xFFF59E0B)
-val WarningAmberBg = Color(0xFFFFFBEB)
-val WarningAmberBgDark = Color(0xFF451A03)
-val WarningAmberBorder = Color(0xFFFDE68A)
-val WarningAmberBorderDark = Color(0xFF78350F)
-val WarningDarkRedText = Color(0xFF991B1B)
-val WarningOrangeButton = Color(0xFFEA580C)
-val LicenseGreenBg = Color(0xFFECFDF5)
-val LicenseGreenText = Color(0xFF059669)
-val LicenseBadgeGreenText = Color(0xFF047857)
-val InfoBlue = Color(0xFF0284C7)
-val InfoBlueBgLight = Color(0xFFF0F9FF)
-val InfoBlueBgDark = Color(0xFF0C4A6E)
-val InfoBlueTextLight = Color(0xFF0369A1)
-val InfoBlueTextDark = Color(0xFF38BDF8)
+val WarningAmber = Color(0xFFF59E0B)
+val WarningAmberBg = Color(0xFFFFF8E1)
+val WarningAmberBorder = Color(0xFFFFB300)
+val WarningDarkRedText = Color(0xFFB71C1C)
+val WarningOrangeButton = Color(0xFFE65100)
+val LicenseGreenBg = Color(0xFFE8F5E9)
+val LicenseGreenText = Color(0xFF2E7D32)
+val LicenseBadgeGreenText = Color(0xFF1B5E20)
+val InfoBlue = Color(0xFF3B82F6)
+val InfoBlueBgLight = Color(0xFFEFF6FF)
+val InfoBlueBgDark = Color(0xFF1E293B)
+val InfoBlueTextLight = Color(0xFF1D4ED8)
+val InfoBlueTextDark = Color(0xFF60A5FA)
 
-// 10. سلسلة درجات السليت (Slate Series)
+// Slate & UI Accents
 val Slate50 = Color(0xFFF8FAFC)
 val Slate100 = Color(0xFFF1F5F9)
 val Slate200 = Color(0xFFE2E8F0)
@@ -216,65 +155,65 @@ val Slate700 = Color(0xFF334155)
 val Slate800 = Color(0xFF1E293B)
 val Slate900 = Color(0xFF0F172A)
 
-// 11. عناصر الحالة والأزرار (Status & Action tokens)
-val NeonGreen = Color(0xFF10B981)
-val NeonCyan = Color(0xFF06B6D4)
+// Status & Action tokens
+val NeonGreen = Color(0xFF00E676)
+val NeonCyan = Color(0xFF00B0FF)
 val IndigoAccent = Color(0xFF6366F1)
 val PurpleAccent = Color(0xFF8B5CF6)
-val SoftLavender = Color(0xFFA5B4FC)
-val WarningRed = Color(0xFFEF4444)
-val WarningRedBorder = Color(0xFFF87171)
-val WarningRedBorderLight = Color(0xFFFCA5A5)
-val LightRedTint = Color(0xFFFECDD3)
+val SoftLavender = Color(0xFFC4B5FD)
+val WarningRed = Color(0xFFE53935)
+val WarningRedBorder = Color(0xFFB91C1C)
+val WarningRedBorderLight = Color(0xFFD93025)
+val LightRedTint = Color(0xFFFF8A80)
 
-// Alert Gold Tokens
+// Alert Gold (Yellow/Amber badge tokens)
 val AlertGoldBgDark = Color(0xFF451A03)
 val AlertGoldBorderDark = Color(0xFF92400E)
-val AlertGoldTextDark = Color(0xFFFCD34D)
+val AlertGoldTextDark = Color(0xFFFBBF24)
 val AlertGoldTextLight = Color(0xFFB45309)
 
 // Success Green badge tokens
 val SuccessGreenBgDark = Color(0xFF064E3B)
-val SuccessGreenBgLight = Color(0xFFECFDF5)
-val SuccessGreenBorderDark = Color(0xFF059669)
-val SuccessGreenBorderLight = Color(0xFFA7F3D0)
-val MutedTextDark = Color(0xFF94A3B8)
-val MutedTextLight = Color(0xFF64748B)
-val DarkNeutralTrack = Color(0xFF1E293B)
-val LightNeutralTrack = Color(0xFFE2E8F0)
+val SuccessGreenBgLight = Color(0xFFE6F4EA)
+val SuccessGreenBorderDark = Color(0xFF10B981)
+val SuccessGreenBorderLight = Color(0xFF137333)
+val MutedTextDark = Color(0xFF9AA0A6)
+val MutedTextLight = Color(0xFF5F6368)
+val DarkNeutralTrack = Color(0xFF2D2D2D)
+val LightNeutralTrack = Color(0xFFEEEEEE)
 
-// 12. بطاقات وأزرار التصفية (Chip Filter Color Tokens)
-val ChipRedBgDarkSelected = Color(0xFF881337)
-val ChipRedBgDarkUnselected = Color(0xFF4C0519)
-val ChipRedBgLightSelected = Color(0xFFFFE4E6)
-val ChipRedBgLightUnselected = Color(0xFFFFF1F2)
+// Chip Filter Color Tokens (Solid High-Contrast Safe Values)
+val ChipRedBgDarkSelected = Color(0xFF3B2025)
+val ChipRedBgDarkUnselected = Color(0xFF2C1A1D)
+val ChipRedBgLightSelected = Color(0xFFFCE8E8)
+val ChipRedBgLightUnselected = Color(0xFFFDF2F2)
 
-val ChipRedBorderDarkSelected = DebtRedDark
-val ChipRedBorderDarkUnselected = Color(0xFF9F1239)
-val ChipRedBorderLightSelected = Color(0xFFE11D48)
+val ChipRedBorderDarkSelected = Color(0xFFFF6B6B)
+val ChipRedBorderDarkUnselected = Color(0xFF531A21)
+val ChipRedBorderLightSelected = Color(0xFFD32F2F)
 val ChipRedBorderLightUnselected = Color(0xFFFECDD3)
 
-val ChipRedTextDark = DebtRedDark
-val ChipRedTextLight = Color(0xFFE11D48)
-val ChipRedHeaderDark = Color(0xFFFDA4AF)
-val ChipRedHeaderLight = Color(0xFF9F1239)
+val ChipRedTextDark = Color(0xFFFF6B6B)
+val ChipRedTextLight = Color(0xFFD32F2F)
+val ChipRedHeaderDark = Color(0xFFFFA3A3)
+val ChipRedHeaderLight = Color(0xFFB71C1C)
 
-val ChipGreenBgDarkSelected = Color(0xFF064E3B)
-val ChipGreenBgDarkUnselected = Color(0xFF022C22)
-val ChipGreenBgLightSelected = Color(0xFFD1FAE5)
-val ChipGreenBgLightUnselected = Color(0xFFECFDF5)
+val ChipGreenBgDarkSelected = Color(0xFF1D3528)
+val ChipGreenBgDarkUnselected = Color(0xFF16281E)
+val ChipGreenBgLightSelected = Color(0xFFE6F9ED)
+val ChipGreenBgLightUnselected = Color(0xFFF0FDF4)
 
-val ChipGreenBorderDarkSelected = CreditGreenDark
-val ChipGreenBorderDarkUnselected = Color(0xFF047857)
-val ChipGreenBorderLightSelected = Color(0xFF059669)
+val ChipGreenBorderDarkSelected = Color(0xFF51CF66)
+val ChipGreenBorderDarkUnselected = Color(0xFF1B4D2E)
+val ChipGreenBorderLightSelected = Color(0xFF2E7D32)
 val ChipGreenBorderLightUnselected = Color(0xFFA7F3D0)
 
-val ChipGreenTextDark = CreditGreenDark
-val ChipGreenTextLight = Color(0xFF059669)
-val ChipGreenHeaderDark = Color(0xFF6EE7B7)
-val ChipGreenHeaderLight = Color(0xFF065F46)
+val ChipGreenTextDark = Color(0xFF51CF66)
+val ChipGreenTextLight = Color(0xFF2E7D32)
+val ChipGreenHeaderDark = Color(0xFF86EFAC)
+val ChipGreenHeaderLight = Color(0xFF1B5E20)
 
-// 13. دوال حل الألوان الدلالية حسب الوضع (Financial Semantic Color Resolvers)
+// Financial Semantic Color Resolvers
 fun financialCreditColor(isDark: Boolean): Color = if (isDark) CreditGreenDark else CreditGreen
 fun financialDebtColor(isDark: Boolean): Color = if (isDark) DebtRedDark else DebtRed
 fun financialCreditBg(isDark: Boolean): Color = if (isDark) CreditContainerDark else CreditContainerLight
@@ -282,27 +221,21 @@ fun financialDebtBg(isDark: Boolean): Color = if (isDark) DebtContainerDark else
 fun financialCreditBorder(isDark: Boolean): Color = if (isDark) CreditBorderDark else CreditBorderLight
 fun financialDebtBorder(isDark: Boolean): Color = if (isDark) DebtBorderDark else DebtBorderLight
 
-fun whatsappColor(isDark: Boolean): Color = if (isDark) WhatsAppDarkGreen else WhatsAppLightGreen
-fun warningColor(isDark: Boolean): Color = if (isDark) WarningAmberDark else WarningAmber
-fun warningBg(isDark: Boolean): Color = if (isDark) WarningAmberBgDark else WarningAmberBg
-fun warningBorder(isDark: Boolean): Color = if (isDark) WarningAmberBorderDark else WarningAmberBorder
-fun shareSecondaryColor(isDark: Boolean): Color = if (isDark) IndigoAccent else EmeraldPrimary
-
-// 14. ألوان التصنيفات (Category Palette Tokens)
+// Category Palette Tokens for Domain Utils
 object CategoryPalette {
     val AMBER_DARK = Color(0xFF451A03)
     val AMBER_LIGHT = Color(0xFFFEF3C7)
-    val PINK_DARK = Color(0xFF4C0519)
+    val PINK_DARK = Color(0xFF4D1222)
     val PINK_LIGHT = Color(0xFFFCE7F3)
-    val GRAY_LIGHT_DARK = Color(0xFF1E293B)
-    val GRAY_LIGHT_LIGHT = Color(0xFFF1F5F9)
-    val RED_SOFT_DARK = Color(0xFF450A0A)
+    val GRAY_LIGHT_DARK = Color(0xFF262626)
+    val GRAY_LIGHT_LIGHT = Color(0xFFEFEFEF)
+    val RED_SOFT_DARK = Color(0xFF3E1F1F)
     val RED_SOFT_LIGHT = Color(0xFFFEE2E2)
-    val YELLOW_DARK = Color(0xFF422006)
+    val YELLOW_DARK = Color(0xFF3F3701)
     val YELLOW_LIGHT = Color(0xFFFEF9C3)
-    val BLUE_SOFT_DARK = Color(0xFF0C4A6E)
-    val BLUE_SOFT_LIGHT = Color(0xFFE0F2FE)
-    val SKY_DARK = Color(0xFF082F49)
+    val BLUE_SOFT_DARK = Color(0xFF172554)
+    val BLUE_SOFT_LIGHT = Color(0xFFDBEAFE)
+    val SKY_DARK = Color(0xFF0C4A6E)
     val SKY_LIGHT = Color(0xFFE0F2FE)
     val PURPLE_DARK = Color(0xFF3B0764)
     val PURPLE_LIGHT = Color(0xFFF3E8FF)
@@ -314,17 +247,11 @@ object CategoryPalette {
     val SLATE_DEFAULT_LIGHT = Slate100
 }
 
-// 15. لوحة صور رمزية عصرية (Modern Avatar Pastel Palette)
+// Avatar Pastel Palette
 val AvatarPastelPalette = listOf(
     Color(0xFFFCA5A5), Color(0xFFFDBA74), Color(0xFFFDE047),
     Color(0xFF86EFAC), Color(0xFF93C5FD), Color(0xFFC4B5FD),
     Color(0xFFF472B6), Color(0xFF2DD4BF)
-)
-
-val AvatarDarkPalette = listOf(
-    Color(0xFF881337), Color(0xFF7C2D12), Color(0xFF713F12),
-    Color(0xFF065F46), Color(0xFF1E40AF), Color(0xFF5B21B6),
-    Color(0xFF831843), Color(0xFF115E59)
 )
 
 

@@ -1,19 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * شريط ملخص المقاييس اليومية الثلاثية (Day Card Summary Bar Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شريط أفقي مصغر وأنيق يعرض الملخص الحسابي للمعاملات اليومية داخل بطاقة اليوم:
- * 1. يقسم المساحة إلى 3 أقسام متساوية مفصولة بحواجز عمودية رفيعة:
- *    - الخلية اليمنى (الوارد): إجمالي المقبوضات/الدخل اليومي باللون الأخضر المالي.
- *    - الخلية الوسطى (المنصرف): إجمالي المدفوعات/المصروفات اليومية باللون الأحمر المالي.
- *    - الخلية اليسرى (الصافي): صافي اليوم (الدخل - الصرف) بلون يتكيف مع النتيجة وإشارة موجبة/سالبة.
- * 2. يدعم تنسيق الأرقام الموحد (toWesternDigits) وملاءمة الشاشات ذات الوضع المضيء والليلي.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,11 +26,6 @@ import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -55,20 +36,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لشريط ملخص المقاييس اليومية (DayCardSummaryBar Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - dailyIncome: إجمالي الدخل المحقق في هذا اليوم.
- * - dailyExpense: إجمالي المصروفات المنفقة في هذا اليوم.
- * - dailyNet: صافي الفارق بين الدخل والمصروف لليوم.
- * - isDark: راية تفعيل الوضع الليلي.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * - modifier: مغير التنسيق والمحاذاة.
- * =====================================================================================
- */
 @Composable
 fun DayCardSummaryBar(
     dailyIncome: BigDecimal,
@@ -79,7 +46,7 @@ fun DayCardSummaryBar(
     formatCurrency: (BigDecimal, String) -> String,
     modifier: Modifier = Modifier
 ) {
-    val barBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+    val barBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF7F9FC)
     val netSummaryColor = if (dailyNet > BigDecimal.ZERO) financialCreditColor(isDark)
     else if (dailyNet < BigDecimal.ZERO) financialDebtColor(isDark)
     else MaterialTheme.colorScheme.onSurfaceVariant
@@ -97,7 +64,7 @@ fun DayCardSummaryBar(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // الخلية 1: في اليمين (RTL) -> الوارد (Income)
+            // Cell 1: Right in RTL -> الوارد (Income)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -120,7 +87,7 @@ fun DayCardSummaryBar(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             )
 
-            // الخلية 2: في الوسط -> المنصرف (Expense)
+            // Cell 2: Center -> المنصرف (Expense)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -143,7 +110,7 @@ fun DayCardSummaryBar(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             )
 
-            // الخلية 3: في اليسار (RTL) -> الصافي (Net)
+            // Cell 3: Left in RTL -> الصافي (Net)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -162,4 +129,3 @@ fun DayCardSummaryBar(
         }
     }
 }
-

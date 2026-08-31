@@ -15,8 +15,15 @@
  */
 package com.example
 
+// ---------------------------------------------------------------------
+// استيراد حزم التطبيق، مكتبة WorkManager، وقاعدة البيانات، وكوروتينات كوتلن
+// ---------------------------------------------------------------------
 import android.app.Application
 import androidx.work.Configuration
+import com.example.data.local.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * [فئة التطبيق - FinanceApplication]:
@@ -24,8 +31,26 @@ import androidx.work.Configuration
  */
 class FinanceApplication : Application(), Configuration.Provider {
 
+    /**
+     * [دالة بدء التشغيل - onCreate]:
+     * تستدعى مرة واحدة عند إقلاع التطبيق في الذاكرة.
+     */
     override fun onCreate() {
         super.onCreate()
+
+        // تنفيذ التهيئة الخلفية بشكل غير متزامن لتفادي حظر المسار الرئيسي (Main Thread)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // 1. تهيئة مدير جلسة تسجيل الدخول الموحد لحسابات Google
+                com.example.domain.GoogleAuthSessionManager.initialize(this@FinanceApplication)
+                
+                // 2. التحمية الاستباقية لقاعدة البيانات (Pre-warming) لتسريع أول استعلام على الشاشة
+                val db = AppDatabase.getDatabase(applicationContext)
+                db.settingsDao().getSettingsDirect()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     /**

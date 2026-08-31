@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * شريط رأس واجهة الالتزامات المالية (Commitment Header Clean Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومية أنيق وخفيف يعرض شريط العنوان العلوي لقسم الأهداف والالتزامات:
- * 1. يعرض العنوان الرئيسي "الأهداف والالتزامات" بوضوح وخط عريض.
- * 2. يحتوي على زر إغلاق دائري (Close Button) على الطرف الأيمن.
- * 3. يحتوي على زر مشاركة تقرير الالتزامات (Share Button) على الطرف المقابل.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -32,15 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 
-/*
- * =====================================================================================
- * دالة العرض لشريط الرأس (CommitmentHeaderClean Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - onCloseClick: رد النداء عند النقر على زر الإغلاق للعودة للشاشة السابقة.
- * - onShareClick: رد النداء عند النقر على زر مشاركة ملخص الالتزامات.
- * =====================================================================================
- */
 @Composable
 fun CommitmentHeaderClean(
     onCloseClick: () -> Unit,
@@ -53,7 +32,7 @@ fun CommitmentHeaderClean(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // زر الإغلاق ✕
+        // Close Button ✕
         IconButton(
             onClick = onCloseClick,
             modifier = Modifier
@@ -69,7 +48,7 @@ fun CommitmentHeaderClean(
             )
         }
 
-        // عنوان الواجهة
+        // Title
         Text(
             text = "الأهداف والالتزامات",
             fontWeight = FontWeight.Bold,
@@ -77,7 +56,7 @@ fun CommitmentHeaderClean(
             fontSize = 16.sp
         )
 
-        // زر المشاركة 🔗
+        // Share Button 🔗
         IconButton(
             onClick = onShareClick,
             modifier = Modifier
@@ -94,4 +73,3 @@ fun CommitmentHeaderClean(
         }
     }
 }
-

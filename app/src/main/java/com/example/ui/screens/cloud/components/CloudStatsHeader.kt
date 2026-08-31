@@ -1,17 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-/*
- * =====================================================================================
- * حزمة رأس إحصائيات السحابة (Cloud Stats Header Component Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على بطاقة ملخص الحالة السحابية في أعلى الشاشة:
- * - عرض البريد الإلكتروني المتصل بحساب Google مع نقطة حالة الاتصال الخضراء.
- * - إحصائيات عدد النسخ السحابية والمساحة التخزينية المستخدمة.
- * - زر تحديث القائمة فورياً مع دوران الأيقونة وحالة التعطيل أثناء الجلب.
- * - زر تحديد الكل وإلغاء التحديد أثناء وضع التحديد المتعدد.
- * =====================================================================================
- */
-
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.foundation.BorderStroke
@@ -37,26 +25,6 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
 
-/*
- * =====================================================================================
- * بطاقة إحصائيات ورأس السحابة (CloudStatsHeader)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * بطاقة إحصائية مدمجة أعلى قائمة النسخ السحابية:
- * 1. عرض البريد الإلكتروني للمستخدم ومؤشر النشاط اللوني.
- * 2. ملخص عدد النسخ السحابية والمساحة المشغولة.
- * 3. التبديل الذكي بين زر تحديث البيانات (Refresh) وزر تحديد الكل (Select All / Unselect All).
- *
- * [المُدخلات]:
- * - email: البريد الإلكتروني المتصل بحساب Google.
- * - backupsCount: إجمالي عدد النسخ الاحتياطية المتوفرة على السحابة.
- * - isFetching: هل عملية التحديث والاتصال جارية حالياً.
- * - onRefresh: رد نداء عند الضغط على زر التحديث.
- * - isSelectionMode: هل وضع التحديد المتعدد نشط.
- * - isAllSelected: هل جميع النسخ محددة حالياً.
- * - onToggleSelectAll: رد نداء تبديل تحديد الكل.
- * =====================================================================================
- */
 @Composable
 fun CloudStatsHeader(
     email: String,
@@ -67,9 +35,6 @@ fun CloudStatsHeader(
     isAllSelected: Boolean = false,
     onToggleSelectAll: () -> Unit = {}
 ) {
-    val iconBg = if (isSelectionMode) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.tertiaryContainer
-    val iconTint = if (isSelectionMode) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
-
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
@@ -83,7 +48,7 @@ fun CloudStatsHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // القسم الأيمن: أيقونة السحابة + البريد الإلكتروني + إحصاءات النسخ
+            // Right Section: Icon + Email + Stats Summary
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -93,13 +58,13 @@ fun CloudStatsHeader(
                     modifier = Modifier
                         .size(26.dp)
                         .clip(CircleShape)
-                        .background(iconBg),
+                        .background(if (isSelectionMode) com.example.ui.theme.InfoBlueBgLight else com.example.ui.theme.CreditContainerLight),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (isSelectionMode) Icons.Default.Checklist else Icons.Default.Backup,
                         contentDescription = null,
-                        tint = iconTint,
+                        tint = if (isSelectionMode) com.example.ui.theme.InfoBlue else com.example.ui.theme.CreditGreen,
                         modifier = Modifier.size(14.dp)
                     )
                 }
@@ -123,10 +88,10 @@ fun CloudStatsHeader(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.tertiary)
+                                .background(com.example.ui.theme.CreditGreen)
                         )
                     }
-                    /*
+                    /**
                      * نص إحصاءات السحابة يعتمد بالكامل على الموارد النصية لضمان قابلية الترجمة والتوحيد المعماري.
                      */
                     Text(
@@ -139,7 +104,7 @@ fun CloudStatsHeader(
                 }
             }
 
-            // القسم الأيسر: زر التحديث أو زر تحديد الكل
+            // Left Section: Actions
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -147,7 +112,7 @@ fun CloudStatsHeader(
                 if (isSelectionMode) {
                     TextButton(
                         onClick = onToggleSelectAll,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
+                        colors = ButtonDefaults.textButtonColors(contentColor = com.example.ui.theme.InfoBlue),
                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                         modifier = Modifier.height(26.dp)
                     ) {
@@ -168,7 +133,7 @@ fun CloudStatsHeader(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.cloud_desc_refresh),
-                            tint = if (isFetching) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                            tint = if (isFetching) Color.Gray else EmeraldPrimary,
                             modifier = Modifier.size(15.dp)
                         )
                     }
@@ -177,4 +142,3 @@ fun CloudStatsHeader(
         }
     }
 }
-

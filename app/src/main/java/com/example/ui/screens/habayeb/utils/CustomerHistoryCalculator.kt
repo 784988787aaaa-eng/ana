@@ -1,35 +1,10 @@
 package com.example.ui.screens.habayeb.utils
 
-/*
- * =====================================================================================
- * حاسبة تاريخ وحسابات العميل المالية (Customer History & Balance Calculator)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * المحرك الحسابي الموحد لإجراء كافة الحسابات المالية التراكمية لسجلات ومعاملات العميل:
- * 1. حساب الرصيد التراكمي (Running Balance) بعد كل معاملة بدقة BigDecimal ومنع أخطاء التقريب.
- * 2. تعيين الأرقام التسلسلية الزمنية الثابتة (#1, #2, ...) للمعاملات بعد ترتيبها زمنياً.
- * 3. تجميع المبالغ المالية لكل نوع معاملة (لنا / علينا / سداد منه / سداد له) مقسمة حسب العملات.
- * 4. حساب صافي المديونية الإجمالية وتحديد العملة الأولية للعرض الذكي.
- * 5. توفير دالة حساب خفيفة وسريعة (calculateSummary) لعرض بطاقات العملاء في القوائم الرئيسية.
- * =====================================================================================
- */
-
 import com.example.data.local.entities.HabayebTransaction
 import com.example.domain.model.TransactionType
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/*
- * =====================================================================================
- * نموذج ملخص حساب العميل (CustomerSummaryResult)
- * -------------------------------------------------------------------------------------
- * [الحقول]:
- * - netDebtBigDecimalMap: خريطة صافي الدين لكل رمز عملة (موجب = لنا، سالب = علينا).
- * - primaryDisplayCurrency: العملة الأساسية الأنسب لعرضها في واجهة المستخدم.
- * - netDebt: صافي الدين بالعملة الأساسية.
- * - lastTimestamp: التوقيت الزمني لآخر معاملة أو تاريخ إنشاء الحساب كبديل.
- * =====================================================================================
- */
 @androidx.compose.runtime.Immutable
 data class CustomerSummaryResult(
     val netDebtBigDecimalMap: Map<String, BigDecimal>,
@@ -38,23 +13,6 @@ data class CustomerSummaryResult(
     val lastTimestamp: Long
 )
 
-/*
- * =====================================================================================
- * نموذج النتائج الحسابية الشاملة للعميل (CustomerHistoryCalculationResult)
- * -------------------------------------------------------------------------------------
- * [الحقول]:
- * - currencyKeys: قائمة كافة العملات التي تمت بها معاملات لهذا العميل.
- * - owedByThemMap: خريطة إجمالي الديون المستحقة عليه (لنا).
- * - paymentByThemMap: خريطة إجمالي المدفوعات المستلمة منه.
- * - owedToThemMap: خريطة إجمالي الديون المستحقة له (علينا).
- * - paymentToThemMap: خريطة إجمالي المدفوعات المسددة له.
- * - netDebtMap: خريطة صافي الدين لكل عملة.
- * - runningBalances: خريطة الرصيد التراكمي اللحظي بعد كل معاملة (مفتاحها معرف المعاملة ID).
- * - txSequenceNumbers: خريطة الرقم التسلسلي الزمني لكل معاملة (#Seq).
- * - primaryDisplayCurrency: عملة العرض الرئيسية.
- * - netDebt: صافي المديونية النهائي للعملة الرئيسية.
- * =====================================================================================
- */
 @androidx.compose.runtime.Immutable
 data class CustomerHistoryCalculationResult(
     val currencyKeys: List<String>,
@@ -78,20 +36,13 @@ data class CustomerHistoryCalculationResult(
     }
 }
 
-/*
- * =====================================================================================
- * كائن حاسبة تاريخ وسجلات العميل (CustomerHistoryCalculator Object)
- * -------------------------------------------------------------------------------------
- * ينفذ الخوارزميات المالية الصارمة وفق معايير المحاسبة الدقيقة.
- * =====================================================================================
+/**
+ * حاسبة تاريخ ديون وسجلات العميل (CustomerHistoryCalculator)
+ * تُشكل المصدر الموحد المعتمد لحساب رصيد العميل التراكمي وتعيين التسلسل الزمني للمعاملات.
+ * يتم استخدام BigDecimal بدقة 4 أرقام عشرية للحفاظ على الدقة المالية التامة ومنع أخطاء التقريب المبكر،
+ * مع إرجاع القيم المنسقة بدقة حصرية عند حدود العرض النهائي.
  */
 object CustomerHistoryCalculator {
-    /*
-     * إجراء الحسابات المالية التراكمية التفصيلية لكافة معاملات العميل
-     * - allCustomerTxs: قائمة جميع المعاملات الخاصة بالعميل.
-     * - currencySymbol: رمز العملة الافتراضية للنظام.
-     * - exchangeRatesJson: بيانات أسعار الصرف المخزنة بصيغة JSON.
-     */
     fun calculate(
         allCustomerTxs: List<HabayebTransaction>,
         currencySymbol: String,
@@ -100,7 +51,7 @@ object CustomerHistoryCalculator {
         val safeRatesJson = exchangeRatesJson ?: ""
         val totalCount = allCustomerTxs.size
 
-        // الترتيب الزمني المستقر (حسب الطابع الزمني ثم المعرف لتفادي أي عشوائية)
+        // Sort chronologically once (timestamp, then id for deterministic stability)
         val chronological = if (totalCount <= 1) allCustomerTxs else allCustomerTxs.sortedWith(
             compareBy<HabayebTransaction> { it.timestamp }.thenBy { it.id }
         )
@@ -125,7 +76,7 @@ object CustomerHistoryCalculator {
             val safeBd = bdAmount.setScale(4, RoundingMode.HALF_EVEN)
             val txType = TransactionType.fromValue(tx.type)
 
-            // التجميع الدقيق حسب نوع المعاملة والعملة
+            // Accumulate by type using exact BigDecimal math
             when (txType) {
                 TransactionType.OWED_BY_THEM -> owedByThemBD[txCurrency] = (owedByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
                 TransactionType.PAYMENT_BY_THEM -> paymentByThemBD[txCurrency] = (paymentByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
@@ -134,7 +85,7 @@ object CustomerHistoryCalculator {
                 else -> {}
             }
 
-            // حساب الرصيد التراكمي اللحظي للعملة
+            // Calculate running balance using exact BigDecimal math
             var currentBalBD = currentBalBDMap[txCurrency] ?: BigDecimal.ZERO
             currentBalBD = when (txType) {
                 TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> currentBalBD.add(safeBd)
@@ -168,7 +119,7 @@ object CustomerHistoryCalculator {
             owedToThemMap[curr] = owedTo
             paymentToThemMap[curr] = payTo
 
-            // صافي الدين = (لنا - دفعة منه) - (علينا - دفعة له) = لنا - دفعة منه - علينا + دفعة له
+            // netDebt = owedBy - payBy - owedTo + payTo
             val netDebtBD = owedBy.subtract(payBy).subtract(owedTo).add(payTo).setScale(4, RoundingMode.HALF_EVEN)
             netDebtMap[curr] = netDebtBD
             netDebtBDMap[curr] = netDebtBD
@@ -177,7 +128,6 @@ object CustomerHistoryCalculator {
         val primaryDisplayCurrency: String
         val netDebt: BigDecimal
 
-        // تحديد العملة الأساسية وصافي الدين للعرض الرئيسي
         val baseNetBd = netDebtBDMap[currencySymbol] ?: BigDecimal.ZERO
         if (baseNetBd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0) {
             primaryDisplayCurrency = currencySymbol
@@ -214,9 +164,6 @@ object CustomerHistoryCalculator {
         )
     }
 
-    /*
-     * دالة الحساب السريع لملخص رصيد العميل وتاريخ آخر نشاط (للقوائم السريعة)
-     */
     fun calculateSummary(
         allCustomerTxs: List<HabayebTransaction>,
         currencySymbol: String,
@@ -295,6 +242,5 @@ object CustomerHistoryCalculator {
         )
     }
 }
-
 
 

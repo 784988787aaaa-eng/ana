@@ -4,10 +4,6 @@ import android.app.Application
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
 import androidx.lifecycle.viewModelScope
 import com.example.R
 import com.example.data.local.AppDatabase
@@ -70,28 +66,6 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
 
     // --- Search Query and Normalized Character Processing ---
     val searchQuery = MutableStateFlow("")
-
-    /**
-     * مسار العرض القابل للتوسع: يجلب صفحات صغيرة فقط، مع إعادة إنشاء المصدر عند تغيير البحث.
-     */
-    val pagedTransactionsState: StateFlow<PagingData<TransactionDb>> = searchQuery
-        .flatMapLatest { query ->
-            Pager(
-                config = PagingConfig(
-                    pageSize = 40,
-                    prefetchDistance = 10,
-                    enablePlaceholders = false,
-                    initialLoadSize = 80
-                ),
-                pagingSourceFactory = {
-                    if (query.isBlank()) transactionDao.getTransactionsPagingSource()
-                    else transactionDao.searchTransactionsPagingSource(query.trim())
-                }
-            ).flow
-        }
-        .cachedIn(viewModelScope)
-        .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty())
-
 
     val searchResultsState: StateFlow<List<TransactionDb>> = combine(
         transactionsState,
@@ -182,7 +156,7 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             getApplication(),
-                            getApplication<Application>().getString(R.string.licensing_trial_expired_toast),
+                            getApplication<Application>().getString(R.string.licensing_dialog_desc),
                             Toast.LENGTH_LONG
                         ).show()
                     }

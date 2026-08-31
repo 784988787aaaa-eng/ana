@@ -1,18 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * بطاقة معلومات الترخيص وحالة التجربة (Activation & Trial Info Components)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * حزمة من المكونات البصرية لعرض حالة ترخيص التطبيق ومزايا النسخة المفعلة:
- * 1. لافتة حالة الترخيص العلوية (ActivationStatusBanner) التي تغير ألوانها ورسالتها التوضيحية ديناميكياً.
- * 2. واجهة الحساب المفعل (ActivationActivatedBody) التي تعرض تفاصيل الحساب المربوط ونوع الترخيص وأزرار الخروج.
- * 3. شبكة المزايا المتاحة (Feature Entitlements Grid) لعرض ميزات النسخة الاحترافية (حركات غير محدودة، نسخ سحابي، تقارير PDF).
- * 4. شارة الميزة (ActivationFeatureBadge) لعرض كل ميزة بشكل مضغوط وأنيق.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -38,34 +24,26 @@ import com.example.R
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.LicenseGreenBg
 import com.example.ui.theme.LicenseGreenText
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * لافتة حالة الترخيص (ActivationStatusBanner)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - isActivated: هل النسخة مفعلة برخصة صالحة.
- * - isAutoTriggered: هل ظهر التنبيه تلقائياً لانتهاء الفترة التجريبية.
- * =====================================================================================
- */
 @Composable
 fun ActivationStatusBanner(
     isActivated: Boolean,
     isAutoTriggered: Boolean
 ) {
     val bannerBg = when {
-        isActivated -> MaterialTheme.colorScheme.tertiaryContainer
-        isAutoTriggered -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.70f)
+        isActivated -> LicenseGreenBg
+        isAutoTriggered -> SoftRed.copy(alpha = 0.08f)
         else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
     }
     val bannerBorder = when {
-        isActivated -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f)
-        isAutoTriggered -> MaterialTheme.colorScheme.error.copy(alpha = 0.35f)
+        isActivated -> EmeraldPrimary.copy(alpha = 0.3f)
+        isAutoTriggered -> SoftRed.copy(alpha = 0.25f)
         else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
     }
     val textColor = when {
-        isActivated -> MaterialTheme.colorScheme.onTertiaryContainer
-        isAutoTriggered -> MaterialTheme.colorScheme.onErrorContainer
+        isActivated -> LicenseGreenText
+        isAutoTriggered -> SoftRed
         else -> MaterialTheme.colorScheme.onSurface
     }
     val descText = when {
@@ -94,108 +72,6 @@ fun ActivationStatusBanner(
     }
 }
 
-/**
- * بطاقة عرض استهلاك الحد المجاني وشريط التقدم (Trial Quota & Usage Progress Card)
- */
-@Composable
-fun ActivationTrialQuotaCard(
-    usedCount: Int,
-    maxCount: Int = 100,
-    isExpired: Boolean = false
-) {
-    val progress = (usedCount.toFloat() / maxCount.toFloat()).coerceIn(0f, 1f)
-    val remaining = (maxCount - usedCount).coerceAtLeast(0)
-
-    val containerBg = if (isExpired) {
-        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.70f)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-    }
-
-    val borderColor = if (isExpired) {
-        MaterialTheme.colorScheme.error.copy(alpha = 0.35f)
-    } else {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
-    }
-
-    val progressColor = if (isExpired) {
-        MaterialTheme.colorScheme.error
-    } else if (progress > 0.8f) {
-        com.example.ui.theme.warningColor(MaterialTheme.colorScheme.background.luminance() < 0.5f)
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = containerBg),
-        border = BorderStroke(1.dp, borderColor),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (isExpired) {
-                        stringResource(R.string.licensing_trial_limit_reached, maxCount)
-                    } else {
-                        stringResource(R.string.licensing_trial_active_title)
-                    },
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isExpired) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = stringResource(R.string.licensing_trial_usage_summary, usedCount, maxCount),
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = progressColor,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-            )
-
-            if (!isExpired) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.licensing_trial_remaining_summary, remaining),
-                    fontSize = 9.5.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    modifier = Modifier.align(Alignment.End)
-                )
-            }
-        }
-    }
-}
-
-/*
- * =====================================================================================
- * واجهة تفاصيل النسخة المفعلة (ActivationActivatedBody)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - storedEmail: البريد الإلكتروني للحساب المربوط.
- * - activatedEmail: البريد الذي تم التفعيل به.
- * - onLogout: رد النداء لتسجيل الخروج وإلغاء الربط.
- * - onDismiss: رد النداء لإغلاق الحوار.
- * =====================================================================================
- */
 @Composable
 fun ActivationActivatedBody(
     storedEmail: String?,
@@ -208,7 +84,7 @@ fun ActivationActivatedBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // بطاقة حالة الترخيص
+        // Status Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -230,7 +106,7 @@ fun ActivationActivatedBody(
                         Icon(
                             imageVector = Icons.Default.Security,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = EmeraldPrimary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
@@ -245,12 +121,12 @@ fun ActivationActivatedBody(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                            .background(EmeraldPrimary.copy(alpha = 0.12f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.licensing_fluent_cloud_synced_badge),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = EmeraldPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -292,7 +168,7 @@ fun ActivationActivatedBody(
                                 Text(
                                     text = stringResource(R.string.licensing_fluent_license_type_digital),
                                     fontSize = 9.sp,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = EmeraldPrimary,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -305,7 +181,7 @@ fun ActivationActivatedBody(
                             Icon(
                                 imageVector = Icons.Default.Logout,
                                 contentDescription = stringResource(R.string.licensing_fluent_btn_signout),
-                                tint = MaterialTheme.colorScheme.error,
+                                tint = SoftRed,
                                 modifier = Modifier.size(15.dp)
                             )
                         }
@@ -322,7 +198,7 @@ fun ActivationActivatedBody(
                         Icon(
                             imageVector = Icons.Default.VpnKey,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = EmeraldPrimary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -337,7 +213,7 @@ fun ActivationActivatedBody(
             }
         }
 
-        // شبكة مزايا النسخة الكاملة (Entitlements Feature Grid 2x2)
+        // Entitlements Feature Grid (2x2 Compact)
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -376,10 +252,10 @@ fun ActivationActivatedBody(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // زر الإغلاق والمتابعة
+        // Close Button
         Button(
             onClick = onDismiss,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -393,7 +269,7 @@ fun ActivationActivatedBody(
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = androidx.compose.ui.graphics.Color.White,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -401,23 +277,13 @@ fun ActivationActivatedBody(
                     text = stringResource(R.string.licensing_fluent_btn_close),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = androidx.compose.ui.graphics.Color.White
                 )
             }
         }
     }
 }
 
-/*
- * =====================================================================================
- * شارة ميزة مفعلة (ActivationFeatureBadge)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - icon: أيقونة الميزة.
- * - label: اسم الميزة المعروض.
- * - modifier: مغير التنسيق لتحديد الحجم والمحاذاة.
- * =====================================================================================
- */
 @Composable
 fun ActivationFeatureBadge(
     icon: ImageVector,
@@ -435,7 +301,7 @@ fun ActivationFeatureBadge(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = EmeraldPrimary,
             modifier = Modifier.size(14.dp)
         )
         Spacer(modifier = Modifier.width(5.dp))
@@ -449,4 +315,3 @@ fun ActivationFeatureBadge(
         )
     }
 }
-

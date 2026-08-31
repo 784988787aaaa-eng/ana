@@ -1,21 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * مدير وموزع حوارات دفتر الأستاذ (Main Ledger Dialogs Manager Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكوّن تنسيقي مركزي (Centralized Dialog Dispatcher) يدير عرض وإخفاء كافة نوافذ الحوار لدفتر الأستاذ:
- * 1. حوار إضافة وتعديل المعاملات المالية (TransactionRecordDialog).
- * 2. حوار البحث في المعاملات والسجلات (SearchLedgerDialog).
- * 3. حوار عرض قائمة الالتزامات والأهداف المالية (CommitmentsListDialog).
- * 4. حوار إنشاء وتعديل التزام مالي (CommitmentEditDialog).
- * 5. حوار إعادة ترتيب الالتزامات (ReorderCommitmentDialog).
- * 6. حوار تفعيل ترخيص التطبيق والجهاز (DeviceActivationDialog).
- * 7. حوار تأكيد الحذف الجماعي للأيام المحددة (DeleteDaysConfirmDialog).
- * =====================================================================================
- */
-
 import android.content.Context
 import androidx.compose.runtime.Composable
 import com.example.data.local.entities.FixedCommitment

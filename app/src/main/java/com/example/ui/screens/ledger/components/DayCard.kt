@@ -1,19 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * بطاقة يوم المعاملات في دفتر الأستاذ (Day Card Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون رئيسي متكامل يمثل سجلاً يومياً لجميع المعاملات المالية لدفتر الأستاذ:
- * 1. يعرض شريط الرأس لليوم مع التاريخ وصافي الحركة اليومية (فائض أخضر أو عجز أحمر).
- * 2. يدعم توسيع وطي البطاقة بحركات انسيابية (Expand/Collapse Animations).
- * 3. يحتوي على قائمة الصفوف اليومية للمعاملات (DayCardTransactionRow) مع دعم التحديد المتعدد.
- * 4. يتضمن شريط المقاييس الثلاثية المدمج (الدخل، المصروف، الصافي) وزر مشاركة التقرير عبر واتساب.
- * 5. يدعم وضع تحديد الأيام وتأكيد حذف المعاملات عبر الحوار المخصص.
- * =====================================================================================
- */
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -59,11 +45,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -74,28 +55,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لبطاقة اليوم (DayCard Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - dayLedger: كائن بيانات حركة اليوم وسجل معاملاته.
- * - dayKey: المفتاح التعريفي الفريد لليوم (مثل YYYY-MM-DD).
- * - isDaySelected: راية توضح إذا ما كان اليوم محدداً في وضع تحديد الأيام.
- * - isDaySelectionMode: راية توضح تفعيل وضع تحديد الأيام الجماعي.
- * - isExpanded: راية توضح إذا ما كانت البطاقة مفتوحة لعرض المعاملات.
- * - haptic: مشغل الاهتزاز التفاعلي.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * - onDeleteTransaction: رد النداء لحذف معاملة محددة.
- * - onEditTransaction: رد النداء لبدء تعديل معاملة.
- * - onDayClick: رد النداء عند النقر على بطاقة اليوم.
- * - onDayLongClick: رد النداء عند النقر المطول على بطاقة اليوم.
- * - isSelectionMode: راية تفعيل وضع تحديد المعاملات المفردة.
- * - selectedTxIds: قائمة المعاملات المحددة حالياً.
- * - onTransactionSelectToggle: رد النداء لتبديل حالة تحديد معاملة.
- * =====================================================================================
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DayCard(
@@ -118,7 +77,7 @@ fun DayCard(
     var txIdToDelete by remember { mutableStateOf<String?>(null) }
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-    // تنسيق ترويسة التاريخ: [اسم اليوم] [اليوم/الشهر] (مثال: الأربعاء 19/08)
+    // Format: [اسم اليوم] [اليوم/الشهر] (مثال: الأربعاء 19/08)
     val formattedDateHeader = remember(dayLedger) {
         val tx = dayLedger.transactions.firstOrNull()
         if (tx != null) {
@@ -141,12 +100,10 @@ fun DayCard(
         sign + formatCurrency(dayLedger.netAmount, currencySymbol).toWesternDigits()
     }
 
-    val netHeaderColor = if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) > 0) {
-        financialCreditColor(isDark)
-    } else if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) < 0) {
-        financialDebtColor(isDark)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+    val netHeaderColor = remember(dayLedger.netAmount, isDark) {
+        if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) > 0) financialCreditColor(isDark)
+        else if (dayLedger.netAmount.compareTo(BigDecimal.ZERO) < 0) financialDebtColor(isDark)
+        else if (isDark) Color.LightGray else Color.Gray
     }
 
     Card(
@@ -154,13 +111,13 @@ fun DayCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isDaySelected) {
-                if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+                if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF3F0FF)
             } else {
                 MaterialTheme.colorScheme.surface
             }
         ),
         border = if (isDaySelected) {
-            BorderStroke(1.5.dp, MaterialTheme.colorScheme.tertiary)
+            BorderStroke(1.5.dp, SelectionGreen)
         } else {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
         },
@@ -179,7 +136,7 @@ fun DayCard(
             )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // 1. ترويسة بطاقة اليوم المدمجة
+            // 1. Sleek Day Card Header
             DayCardHeader(
                 formattedDateHeader = formattedDateHeader,
                 formattedNetAmount = formattedNetAmount,
@@ -189,7 +146,7 @@ fun DayCard(
                 isDaySelectionMode = isDaySelectionMode
             )
 
-            // 2. المحتوى القابل للتوسيع: قائمة المعاملات، ملخص المقاييس الثلاثية، وزر مشاركة واتساب
+            // 2. Expandable Body: Dense Transactions List, 3-Metric Summary Bar, and WhatsApp Share Button
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = expandVertically() + fadeIn(),
@@ -223,7 +180,7 @@ fun DayCard(
                             textAlign = TextAlign.Center
                         )
                     } else {
-                        // صفوف المعاملات المصغرة والأنيقة
+                        // High-Density Clean Transaction Rows
                         sortedTxs.forEachIndexed { index, tx ->
                             val isSelected = selectedTxIds.contains(tx.id)
 
@@ -249,7 +206,7 @@ fun DayCard(
                             )
                         }
 
-                        // العمليات الحسابية: إجماليات اليوم
+                        // Calculations: Daily Totals
                         val (dailyIncome, dailyExpense) = remember(dayLedger.transactions) {
                             var inc = BigDecimal.ZERO
                             var exp = BigDecimal.ZERO
@@ -272,7 +229,7 @@ fun DayCard(
                                 .padding(top = 2.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            // 3. شريط المقاييس الثلاثية المصغر (دخل، صرف، صافي)
+                            // 3. Compact 3-Metric Summary Bar
                             DayCardSummaryBar(
                                 dailyIncome = dailyIncome,
                                 dailyExpense = dailyExpense,
@@ -282,7 +239,7 @@ fun DayCard(
                                 formatCurrency = formatCurrency
                             )
 
-                            // 4. زر مشاركة التقرير اليومي عبر واتساب
+                            // 4. WhatsApp Share Action Button
                             DayCardWhatsAppShareButton(
                                 dayLedger = dayLedger,
                                 dailyIncome = dailyIncome,
@@ -309,4 +266,3 @@ fun DayCard(
         )
     }
 }
-

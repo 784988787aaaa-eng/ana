@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة تعديل اسم التصنيف (Micro Rename Category Dialog Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على نافذة حوارية لتعديل وإعادة تسمية التصنيفات المخصصة:
- * 1. حقل إدخال مُهيأ مسبقاً بالاسم الحالي مع وضع مؤشر الكتابة في نهاية النص تلقائياً (TextFieldValue).
- * 2. التحقق من صحة الاسم الجديد قبل الحفظ وإلغاء المسافات الزائدة.
- * 3. تركيز تلقائي وإظهار لوحة المفاتيح فور فتح الحوار مع إدارة نمط الإدخال البرمجي.
- * =====================================================================================
- */
-
 import android.util.Log
 import android.view.WindowManager
 import androidx.compose.foundation.layout.Arrangement
@@ -112,7 +101,7 @@ fun MicroRenameCategoryDialog(
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
                 .width(320.dp)

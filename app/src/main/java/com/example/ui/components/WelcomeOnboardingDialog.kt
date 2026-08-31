@@ -1,14 +1,5 @@
 package com.example.ui.components
 
-/*
- * =====================================================================================
- * حزمة نوافذ الترحيب والتهيئة التفاعلية (Welcome & Onboarding UI Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الحزمة على النوافذ المنبثقة الترحيبية والتعريفية التي تظهر للمستخدمين الجدد
- * عند أول تشغيل للتطبيق لتعريفهم بالمزايا المحاسبية والأمنية الأساسية.
- * =====================================================================================
- */
-
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -46,45 +37,21 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
 
-/*
- * =====================================================================================
- * ثوابت وسوم الحركات الانتقالية (Animation Transition Labels)
- * -------------------------------------------------------------------------------------
- * تُستخدم لتحديد وتتبع الحركات في أدوات الفحص والتطوير الخاصة بـ Jetpack Compose.
- * =====================================================================================
+/**
+ * ثوابت وسوم الحركات الانتقالية لشاشة الترحيب لتنظيم كود الحركة والواجهة.
  */
 private const val LABEL_ONBOARDING_SCALE = "onboarding_scale"
 private const val LABEL_ONBOARDING_ALPHA = "onboarding_alpha"
 private const val LABEL_PULSE = "pulse"
 private const val LABEL_BUTTON_SCALE = "button_scale"
 
-/*
- * =====================================================================================
- * نافذة الترحيب والتعريف بمزايا التطبيق (WelcomeOnboardingDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية أنيقة كاملة الشاشة تظهر للمستخدم لأول مرة لتقديم التطبيق:
- * 1. استعراض الهوية البصرية وشعار التطبيق بتأثير توهج ضوئي (Glow Effect).
- * 2. عرض المزايا الرئيسية في بطاقات قابلة للتمرير (الميزان، الحبايب، السلة، الأمان).
- * 3. تطبيق حركة دخول نابضة (Spring Physics Animation) مع نبض مستمر لزر بدء الاستخدام.
- * 4. فرض استجابة صريحة من المستخدم لمنع الإغلاق العرضي بالنقر خارج النافذة.
- *
- * [البيانات والمُدخلات]:
- * - onDismiss: الإجراء المنفذ عند نقر زر البدء لإغلاق النافذة وتحديث حالة التهيئة.
- * =====================================================================================
- */
 @Composable
 fun WelcomeOnboardingDialog(
     onDismiss: () -> Unit
 ) {
-    // التحقق من الوضع الليلي لتحديد شدة الظلال ودرجات التباين
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     
-    /*
-     * ---------------------------------------------------------------------------------
-     * إعداد حركات الظهور والتكبير (Entry Scale & Fade Animations)
-     * ---------------------------------------------------------------------------------
-     */
+    // Smooth entry scaling and fade animation
     var animationPlayed by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         animationPlayed = true
@@ -105,11 +72,7 @@ fun WelcomeOnboardingDialog(
         label = LABEL_ONBOARDING_ALPHA
     )
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * حركة النبض اللانهائية لزر بدء الاستخدام (Breathing Pulse Animation)
-     * ---------------------------------------------------------------------------------
-     */
+    // Breathing pulse for button
     val infiniteTransition = rememberInfiniteTransition(label = LABEL_PULSE)
     val buttonScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -121,18 +84,13 @@ fun WelcomeOnboardingDialog(
         label = LABEL_BUTTON_SCALE
     )
 
-    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
-    val itemBg = MaterialTheme.colorScheme.surfaceContainer
+    val cardBg = MaterialTheme.colorScheme.surface
+    val itemBg = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
     val itemBorder = MaterialTheme.colorScheme.outlineVariant
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * إنشاء نافذة الحوار المخصصة (Custom Modal Dialog)
-     * ---------------------------------------------------------------------------------
-     */
     Dialog(
-        onDismissRequest = { /* منع الإغلاق التلقائي لإلزام المستخدم بالنقر على زر البدء */ },
+        onDismissRequest = { /* Force explicit user action */ },
         properties = DialogProperties(
             dismissOnBackPress = false,
             dismissOnClickOutside = false,
@@ -163,11 +121,7 @@ fun WelcomeOnboardingDialog(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                /*
-                 * ---------------------------------------------------------------------
-                 * شارة التوهج والشعار العلوي (Glow Badge & App Icon)
-                 * ---------------------------------------------------------------------
-                 */
+                // Header Logo & Glow Badge
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -210,11 +164,7 @@ fun WelcomeOnboardingDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                /*
-                 * ---------------------------------------------------------------------
-                 * عنوان التطبيق والشعار اللفظي (Title & Slogan)
-                 * ---------------------------------------------------------------------
-                 */
+                // App Title & Tagline
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
@@ -247,11 +197,7 @@ fun WelcomeOnboardingDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                /*
-                 * ---------------------------------------------------------------------
-                 * حاوية بطاقات المزايا القابلة للتمرير (Feature Cards Scrollable List)
-                 * ---------------------------------------------------------------------
-                 */
+                // Scrollable Feature Cards Container
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -259,7 +205,6 @@ fun WelcomeOnboardingDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // بطاقة ميزة الميزان المحاسبي
                     OnboardingFeatureCard(
                         icon = Icons.Default.AccountBalanceWallet,
                         iconBg = primaryColor,
@@ -269,7 +214,6 @@ fun WelcomeOnboardingDialog(
                         borderColor = itemBorder
                     )
 
-                    // بطاقة ميزة إدارة الحبايب (العملاء)
                     OnboardingFeatureCard(
                         icon = Icons.Default.People,
                         iconBg = primaryColor,
@@ -279,7 +223,6 @@ fun WelcomeOnboardingDialog(
                         borderColor = itemBorder
                     )
 
-                    // بطاقة ميزة سلة المهملات واسترجاع السجلات
                     OnboardingFeatureCard(
                         icon = Icons.Default.DeleteOutline,
                         iconBg = primaryColor,
@@ -289,7 +232,6 @@ fun WelcomeOnboardingDialog(
                         borderColor = itemBorder
                     )
 
-                    // بطاقة ميزة الأمان والنسخ الاحتياطي
                     OnboardingFeatureCard(
                         icon = Icons.Default.Security,
                         iconBg = primaryColor,
@@ -302,11 +244,7 @@ fun WelcomeOnboardingDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                /*
-                 * ---------------------------------------------------------------------
-                 * زر بدء الاستخدام بتدرج لوني نابض (Gradient Call-To-Action Button)
-                 * ---------------------------------------------------------------------
-                 */
+                // Gradient Call-To-Action Button
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
@@ -349,13 +287,13 @@ fun WelcomeOnboardingDialog(
                                 text = stringResource(id = R.string.onboarding_start_button).replace(" 🏠", ""),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = Color.White
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -366,14 +304,6 @@ fun WelcomeOnboardingDialog(
     }
 }
 
-/*
- * =====================================================================================
- * المكون المساعد: بطاقة عرض الميزة المنفردة (OnboardingFeatureCard)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * بطاقة أفقية مدمجة تستعرض ميزة محددة بأيقونة ملونة وعنوان وشرح مبسط.
- * =====================================================================================
- */
 @Composable
 private fun OnboardingFeatureCard(
     icon: ImageVector,
@@ -395,7 +325,7 @@ private fun OnboardingFeatureCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // كبسولة الأيقونة الملونة
+            // Icon Pill
             Box(
                 modifier = Modifier
                     .size(42.dp)
@@ -413,7 +343,7 @@ private fun OnboardingFeatureCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // النصوص التوضيحية للميزة
+            // Text details
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -435,5 +365,4 @@ private fun OnboardingFeatureCard(
         }
     }
 }
-
 

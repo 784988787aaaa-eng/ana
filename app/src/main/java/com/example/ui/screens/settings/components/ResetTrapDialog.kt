@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 
 @Composable
 fun ResetTrapDialog(
@@ -41,7 +42,7 @@ fun ResetTrapDialog(
             ) {
                 Text(
                     text = stringResource(R.string.settings_trap_dialog_title),
-                    color = MaterialTheme.colorScheme.error,
+                    color = SoftRed,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
@@ -63,7 +64,7 @@ fun ResetTrapDialog(
                 // Soft Primary Safety Button
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()

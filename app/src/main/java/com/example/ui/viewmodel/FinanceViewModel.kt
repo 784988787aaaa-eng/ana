@@ -15,7 +15,6 @@ import com.example.data.local.entities.TransactionDb
 import com.example.data.repository.FinanceRepository
 import com.example.domain.DateUtils
 import com.example.domain.StringUtils
-import com.example.domain.model.SaveTransactionResult
 import com.example.domain.model.TransactionType
 import com.example.ui.state.MainLedgerUiState
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +31,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.UUID
@@ -223,20 +221,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    suspend fun addTransaction(
-        type: String,
-        category: String,
-        amount: BigDecimal,
-        description: String,
-        timestamp: Long = System.currentTimeMillis() / 1000,
-        presetId: String? = null
-    ): SaveTransactionResult = withContext(Dispatchers.IO) {
-        if (repository.isTrialExpiredDirect()) {
-            sendUiEvent(UiEvent.ShowToast(R.string.licensing_trial_expired_toast, true))
-            sendUiEvent(UiEvent.ShowActivationDialog)
-            return@withContext SaveTransactionResult.TrialExpired
-        }
-        try {
+    fun addTransaction(type: String, category: String, amount: BigDecimal, description: String, timestamp: Long = System.currentTimeMillis() / 1000, presetId: String? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (repository.isTrialExpiredDirect()) {
+                sendUiEvent(UiEvent.ShowToast(R.string.licensing_dialog_desc, true))
+                sendUiEvent(UiEvent.ShowActivationDialog)
+                return@launch
+            }
             val id = presetId ?: "tx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}"
             val tx = TransactionDb(
                 id = id,
@@ -247,25 +238,6 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 description = description
             )
             repository.saveTransaction(tx)
-            com.example.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
-            SaveTransactionResult.Success(id)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
-            SaveTransactionResult.Error(e.message)
-        }
-    }
-
-    fun addTransactionAsync(
-        type: String,
-        category: String,
-        amount: BigDecimal,
-        description: String,
-        timestamp: Long = System.currentTimeMillis() / 1000,
-        presetId: String? = null
-    ) {
-        viewModelScope.launch {
-            addTransaction(type, category, amount, description, timestamp, presetId)
         }
     }
 

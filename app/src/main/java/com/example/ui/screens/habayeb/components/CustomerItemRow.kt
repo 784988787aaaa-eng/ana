@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة صف عنصر العميل المالي (Customer Item Row Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على بطاقة عرض العميل في القائمة الرئيسية:
- * 1. زر إضافة حركة سريعة (+) / علامة الاختيار عند التحديد.
- * 2. اسم العميل الكامل بخط عريض، مع تاريخ آخر حركة، وشارة النقد الأجنبي عند وجود عملات أجنبية.
- * 3. ملخص المديونية الصافي، اتجاه الرصيد (له / عليه / مصفّى)، ومؤشر التثبيت (📌).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -66,26 +55,15 @@ import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/*
- * =====================================================================================
- * صف عنصر العميل المالي (CustomerItemRow)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * بطاقة تفاعلية تعرض تفاصيل العميل المالية، مع دعم النقر لفتح الكشف، والنقر المطول للتحديد.
- *
- * [المُدخلات]:
- * - customer: كائن حالة العميل للواجهة (CustomerUiState).
- * - isSelected: هل العميل محدد حالياً بالتحديد الجماعي.
- * - activeThemeColor / activeSubColor: ألوان السمة النشطة.
- * - isPinned: هل الحساب مثبت في أعلى القائمة.
- * - isHighlighted: هل الحساب مميز بصرياً.
- * - haptic: مشغل الاهتزاز التفاعلي عند النقر المطول.
- * - onCustomerClick: رد نداء عند النقر العادي لفتح كشف الحساب.
- * - onCustomerLongClick: رد نداء عند النقر المطول لفتح قائمة الخيارات أو التحديد.
- * - onQuickAdd: رد نداء عند النقر على زر الإضافة السريعة (+).
- * - currentActiveCategory: معرف التصنيف النشط الحالي.
- * - onRemoveFromCategory: رد نداء اختياري لإزالة العميل من التصنيف.
- * =====================================================================================
+/**
+ * Modern High-Density Customer Row (Ultra-Spacious Name & Clean Non-Breaking Badges)
+ * - Right: Quick Add Action Button (+) 36dp (transforms into Checkmark when selected)
+ * - Center (Weight 1f):
+ *     Line 1: Full Customer Name (bold, non-breaking) + Category Micro-Badge
+ *     Line 2: Short Date/Time + Non-breaking Foreign Cash Badge [🌐 نقد أجنبي]
+ * - Left:
+ *     Line 1: Dynamic Balance Amount & Currency + Direction Arrow (▲ / ▼)
+ *     Line 2: Status Text ("بقي له" / "بقي عليه" / "مصفّى")
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -120,8 +98,8 @@ fun CustomerItemRow(
 
     val containerColor = when {
         isSelected -> if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-        isHighlighted -> if (isDark) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh
-        else -> MaterialTheme.colorScheme.surfaceContainer
+        isHighlighted -> if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+        else -> MaterialTheme.colorScheme.surface
     }
 
     val cardBorder = when {
@@ -141,10 +119,10 @@ fun CustomerItemRow(
     }
 
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         border = cardBorder,
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted || isSelected) 2.5.dp else 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted || isSelected) 3.dp else 1.dp),
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -156,18 +134,18 @@ fun CustomerItemRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp, vertical = 4.5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Right: Quick Add Action Button (+) / Selection Check (40dp rounded)
+                // 1. Right: Quick Add Action Button (+) / Selection Check (40dp circle)
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(CircleShape)
                         .background(
                             if (isSelected) activeThemeColor
-                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
                         )
                         .clickable { onQuickAdd(customer) },
                     contentAlignment = Alignment.Center
@@ -176,20 +154,20 @@ fun CustomerItemRow(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(21.dp)
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = stringResource(id = R.string.habayeb_add_tx_button_clean),
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(21.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // 2. Middle (Weight 1f): Prominent Full Name (15.5sp SemiBold), Date (11sp) & Sleek Foreign Badge
                 Column(
@@ -267,7 +245,7 @@ fun CustomerItemRow(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // 3. Left: Balance Amount & Currency, Debt Status
                 CustomerDebtSummarySection(

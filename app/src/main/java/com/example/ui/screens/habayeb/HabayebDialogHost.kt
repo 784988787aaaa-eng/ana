@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb
 
-/*
- * =====================================================================================
- * حزمة مضيف حوارات شاشة الحبايب (Habayeb Dialog Host Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على المنسق المركزي لجميع النوافذ المنبثقة والورقات السفلية لشاشة الحبايب:
- * - عزل إدارة الحالات التفاعلية للنوافذ عن الشجرة البصرية الرئيسية للشاشة.
- * - دعم حوارات: إضافة عميل، إضافة عملية، تعديل عميل، تأكيد الحذف، إضافة فئة، والتعيين الجماعي.
- * - دعم القائمة السياقية (CustomerContextBottomSheet) وتفعيل الأجهزة (DeviceActivationDialog).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,20 +20,9 @@ import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/*
- * =====================================================================================
- * مضيف حوارات وقوائم شاشة الحبايب (HabayebDialogHost)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون هيكلي وسيط يستقبل حالة الحوار النشطة (`activeDialogState`) ويعرض المكون المناسب:
- * 1. حوار إضافة عميل جديد (`AddCustomerPopup`) والتمرير التلقائي لبطاقة الحساب المنشأ.
- * 2. حوار تسجيل قيد مالي جديد أو تعديله (`AddTransactionPopup`).
- * 3. حوار تعديل بيانات العميل الأساسية (`EditCustomerDialog`).
- * 4. حوار تأكيد الحذف الفردي أو الجماعي للعملاء (`DeleteConfirmDialog`).
- * 5. حوارات الفئات المخصصة (إضافة فئة وتعيين جماعي للعملاء المحددين).
- * 6. الورقة السفلية للسياق والخيارات السريعة (`CustomerContextBottomSheet`).
- * 7. حوار تفعيل ترخيص الجهاز عند طلب العمليات المحمية (`DeviceActivationDialog`).
- * =====================================================================================
+/**
+ * Coordinates all dialogs, bottom sheets, and modal flows for the Habayeb Screen.
+ * Isolates dialog state handling from the main screen layout tree.
  */
 @Composable
 fun HabayebDialogHost(
@@ -193,4 +171,3 @@ fun HabayebDialogHost(
         }
     }
 }
-

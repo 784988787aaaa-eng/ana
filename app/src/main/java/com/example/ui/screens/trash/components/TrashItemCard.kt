@@ -86,7 +86,7 @@ fun TrashItemCard(
     } else {
         parsedData.titleText
     }
-    val avatarColor = remember(avatarKey, isDark) { getInitialColor(avatarKey, isDark) }
+    val avatarColor = remember(avatarKey) { getInitialColor(avatarKey) }
     val firstLetter = remember(avatarKey) {
         avatarKey.trim().firstOrNull()?.toString()?.uppercase() ?: "؟"
     }
@@ -331,7 +331,7 @@ fun TrashItemCard(
                             Icon(
                                 imageVector = Icons.Default.RestoreFromTrash,
                                 contentDescription = stringResource(id = R.string.trash_action_restore_btn),
-                                tint = financialCreditColor(isDark),
+                                tint = CreditGreen,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -344,7 +344,7 @@ fun TrashItemCard(
                             Icon(
                                 imageVector = Icons.Default.DeleteForever,
                                 contentDescription = stringResource(id = R.string.trash_delete_permanently),
-                                tint = financialDebtColor(isDark),
+                                tint = DebtRed,
                                 modifier = Modifier.size(18.dp)
                             )
                         }

@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة خيارات المعاملة المالية السريعة (Transaction Options Dialog Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على نافذة منبثقة للتحكم السريع في الحركة المالية المحددة:
- * 1. ترويسة ذكية تتضمن قائمة المشاركة (واتساب / رسائل نصية قصيرة SMS) وبطاقة ملخص المعاملة والمبلغ الملون.
- * 2. لافتة إرشادية وتنبيهية توضح ما إذا كانت الحركة أصلاً لحركة متكررة أو تم إنشاؤها تلقائياً بالجدولة.
- * 3. صف إجراءات سريع موحد (تعديل الحركة، حذف الحركة، جدولة أو تعديل التكرار، وإلغاء التكرار).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,15 +54,9 @@ import com.example.data.local.entities.HabayebTransaction
 import com.example.domain.FormatUtils
 import com.example.domain.model.TransactionType
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
+import com.example.ui.theme.SoftGreen
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * نموذج ملخص ترويسة المعاملة (TransactionHeaderSummary)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * كائن بيانات مساعد لتجميع نصوص المبلغ المهيأ، رمز العملة، الوصف المختصر، ولون النص.
- * =====================================================================================
- */
 private data class TransactionHeaderSummary(
     val shortDesc: String,
     val formattedAmount: String,
@@ -81,28 +64,6 @@ private data class TransactionHeaderSummary(
     val amountColor: Color
 )
 
-/*
- * =====================================================================================
- * نافذة خيارات المعاملة (TransactionOptionsDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة تفاعلية تظهر عند النقر على معاملة معينة لتقديم خيارات التعديل، الحذف، المشاركة، والجدولة.
- *
- * [المُدخلات]:
- * - transaction: كائن الحركة المالية المحددة.
- * - customerName: اسم العميل صاحب المعاملة.
- * - onDismiss: رد نداء لإغلاق الحوار.
- * - onEdit: رد نداء لفتح شاشة تعديل الحركة.
- * - onDelete: رد نداء لتأكيد حذف الحركة.
- * - onAutoRepeat: رد نداء لفتح نافذة إعداد التكرار التلقائي.
- * - onWhatsAppShare: رد نداء لمشاركة كشف الحركة عبر تطبيق واتساب.
- * - onSmsShare: رد نداء لمشاركة تفاصيل الحركة عبر رسالة SMS.
- * - activeThemeColor / activeSubColor: ألوان السمة المستخدمة في التنسيق.
- * - isRecurringOriginal: مؤشر ما إذا كانت هذه الحركة أصلاً لمعاملات متكررة.
- * - onDeleteAutoRepeat: رد نداء لإلغاء وإيقاف التكرار التلقائي المرتبط.
- * - parentSeqNumber: الرقم التسلسلي للحركة الأم في حال توليد هذه المعاملة تلقائياً.
- * =====================================================================================
- */
 @Composable
 fun TransactionOptionsDialog(
     transaction: HabayebTransaction,
@@ -130,7 +91,7 @@ fun TransactionOptionsDialog(
                     .fillMaxWidth(0.95f)
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp,
                 shadowElevation = 8.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -174,7 +135,7 @@ fun TransactionOptionsDialog(
                                         Icon(
                                             imageVector = Icons.Default.Chat,
                                             contentDescription = null,
-                                            tint = if (isDark) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+                                            tint = if (isDark) SoftGreen else MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -212,11 +173,9 @@ fun TransactionOptionsDialog(
                             val defaultRial = stringResource(id = R.string.habayeb_currency_rial)
                             val primaryColor = MaterialTheme.colorScheme.primary
                             val errorColor = MaterialTheme.colorScheme.error
-                            val positiveDarkColor = MaterialTheme.colorScheme.tertiary
 
                             val headerSummary = remember(
-                                transaction, customerName, isDark, defaultRial, primaryColor, errorColor,
-                                MaterialTheme.colorScheme.tertiary
+                                transaction, customerName, isDark, defaultRial, primaryColor, errorColor
                             ) {
                                 val desc = if (transaction.description.isNotBlank()) transaction.description else customerName
                                 val cleanDesc = CurrencyConfig.getCleanDetails(desc).ifBlank { customerName }
@@ -231,9 +190,9 @@ fun TransactionOptionsDialog(
                                 val formattedAmountStr = FormatUtils.formatDouble(txAmount.toDouble())
                                 val isPositive = transaction.type == TransactionType.PAYMENT_BY_THEM.value || transaction.type == TransactionType.OWED_TO_THEM.value
                                 val color = if (isPositive) {
-                                    if (isDark) positiveDarkColor else primaryColor
+                                    if (isDark) SoftGreen else primaryColor
                                 } else {
-                                    errorColor
+                                    if (isDark) SoftRed else errorColor
                                 }
                                 TransactionHeaderSummary(shortDescStr, formattedAmountStr, currencyStr, color)
                             }
@@ -381,31 +340,8 @@ fun TransactionOptionsDialog(
     }
 }
 
-/*
- * =====================================================================================
- * فئة تجميعية رباعية (Quadruple)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * فئة مساعدة لتجميع أربع قيم ذات أنواع مختلفة في كائن واحد.
- * =====================================================================================
- */
 private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
-/*
- * =====================================================================================
- * عنصر الإجراء الدائري التفاعلي (ActionCircleItem)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * زر أيقوني دائري مخصص بتصميم أنيق يعرض أيقونة ملونة داخل حاوية وخلفها عنوان الإجراء.
- *
- * [المُدخلات]:
- * - title: النص التوضيحي للإجراء.
- * - icon: الأيقونة الشعاعية المعروضة.
- * - containerColor: لون خلفية الحاوية الدائرية / المربعة المستديرة.
- * - iconColor: لون الأيقونة.
- * - onClick: رد نداء عند الضغط على الزر.
- * =====================================================================================
- */
 @Composable
 fun ActionCircleItem(
     title: String,
@@ -450,5 +386,4 @@ fun ActionCircleItem(
         )
     }
 }
-
 

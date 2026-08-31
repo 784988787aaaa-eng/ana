@@ -147,14 +147,6 @@ class FinanceRepository(
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>> = 
         habayebDao.getTransactionsForCustomerFlow(customerId)
 
-    /** مصدر Paging 3 للمعاملات العامة دون تحميل القائمة كاملة. */
-    fun getTransactionsPagingSource(): PagingSource<Int, TransactionDb> =
-        transactionDao.getTransactionsPagingSource()
-
-    /** بحث مجزأ عبر SQL بدلاً من تصفية جميع المعاملات في الذاكرة. */
-    fun searchTransactionsPagingSource(query: String): PagingSource<Int, TransactionDb> =
-        transactionDao.searchTransactionsPagingSource(query)
-
     /** استرجاع مصدر التقسيم والصفحات (PagingSource) لمعاملات العميل */
     fun getTransactionsPagingSourceForCustomer(customerId: String): PagingSource<Int, HabayebTransaction> =
         habayebDao.getTransactionsPagingSourceForCustomer(customerId)

@@ -1,14 +1,5 @@
 package com.example.ui.components
 
-/*
- * =====================================================================================
- * حزمة المكونات المرئية لواجهة المستخدم (UI Components Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الحزمة على عناصر الواجهة القابلة لإعادة الاستخدام في مختلف شاشات التطبيق،
- * بما في ذلك مربعات الحوار، القوائم الجانبية، الأزرار المتخصصة، والمؤشرات المرئية.
- * =====================================================================================
- */
-
 import android.util.Log
 import android.view.WindowManager
 import androidx.compose.animation.animateContentSize
@@ -81,36 +72,11 @@ import com.example.ui.screens.habayeb.utils.ExchangeRateHelper
 import kotlinx.coroutines.android.awaitFrame
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * وسوم التعريف والتوثيق التشخيصي (Diagnostic Log Tags)
- * -------------------------------------------------------------------------------------
- * يُستخدم هذا الثابت كوسم (Tag) عند تسجيل الأحداث أو التحذيرات في سجلات النظام (Logcat)،
- * مما يسهل تتبع الأخطاء البرمجية الخاصة بنافذة إعدادات العملات.
- * =====================================================================================
- */
 private const val TAG = "CurrencySettingsDialog"
 
-/*
- * =====================================================================================
- * المكون الرئيسي: نافذة ضبط إعدادات وأسعار صرف العملات (CurrencySettingsDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية منبثقة (Dialog) تتيح للمستخدم:
- * 1. تعيين العملة الافتراضية للتطبيق (مثل: ريال يمني، ريال سعودي، دولار أمريكي).
- * 2. تحديد أسعار الصرف بين العملات المختلفة بدقة رياضية عالية.
- * 3. تطبيق تغييرات أسعار الصرف إما على المعاملات المستقبلية فقط، أو إعادة تقييم
- *    المعاملات السابقة والتاريخية بناءً على رغبة المستخدم.
- *
- * [البيانات والمُدخلات]:
- * - settings: كائن إعدادات التطبيق الحالية (AppSettings) المحمل من قاعدة البيانات.
- * - onSaveSettings: دالة رد النداء (Callback) تُستدعى لحفظ الإعدادات الجديدة وتطبيق خيارات إعادة التقييم.
- * - onDismiss: دالة إغلاق مربع الحوار عند الإلغاء أو الضغط خارج الإطار.
- *
- * [التدفق والترابط]:
- * يرتبط هذا المكون بـ rememberCurrencySettingsState لإدارة المنطق الداخلي والحالة،
- * كما يفتح مربع الحوار الفرعي CurrencyRevalueConfirmDialog عند تعديل سعر الصرف لتأكيد آلية التقييم.
- * =====================================================================================
+/**
+ * نافذة ضبط وتعديل أسعار صرف العملات والعملة الافتراضية للتطبيق
+ * توفر تجربة مدمجة وسلسة لضبط أزواج الصرف وإعادة تقييم العمليات السابقة أو اللاحقة بدقة متناهية.
  */
 @Composable
 fun CurrencySettingsDialog(
@@ -118,28 +84,13 @@ fun CurrencySettingsDialog(
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
-    /*
-     * ---------------------------------------------------------------------------------
-     * تهيئة الاستجابة اللمسية والنصوص المترجمة (Haptics & String Resources)
-     * ---------------------------------------------------------------------------------
-     * يتم جلب كائن التغذية اللمسية لتقديم رد فعل حسي عند النقر،
-     * واستخراج مسميات العملات الرسمية المعرفة في ملف الموارد strings.xml لدعم تعدد اللغات.
-     * ---------------------------------------------------------------------------------
-     */
     val haptic = LocalHapticFeedback.current
 
     val currencyYer = stringResource(id = R.string.currency_yer)
     val currencySar = stringResource(id = R.string.currency_sar)
     val currencyUsd = stringResource(id = R.string.currency_usd)
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * ربط الحالة التشغيلية لنافذة إعدادات العملة (Currency Settings State)
-     * ---------------------------------------------------------------------------------
-     * يتم إنشاء وتذكر كائن الحالة المتخصص (CurrencySettingsState) الذي يعزل المنطق
-     * الحسابي والتحقق من صحة المدخلات عن الرسم المباشر لواجهة المستخدم.
-     * ---------------------------------------------------------------------------------
-     */
+    // تم فصل حالة العرض عن مكونات الواجهة للحفاظ على مسؤولية واحدة دون تغيير تجربة المستخدم.
     val state = rememberCurrencySettingsState(
         settings = settings,
         currencyYer = currencyYer,
@@ -147,14 +98,6 @@ fun CurrencySettingsDialog(
         currencyUsd = currencyUsd
     )
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * إدارة التركيز ولوحة المفاتيح التلقائية (Focus & Virtual Keyboard Management)
-     * ---------------------------------------------------------------------------------
-     * يتم إعداد ملقم التركيز ومتحكم لوحة المفاتيح البرمجية ليتم تفعيل حقل إدخال سعر الصرف
-     * فور فتح النافذة أو تبديل العملة المستهدفة لتحسين سرعة الإدخال وتجربة المستخدم.
-     * ---------------------------------------------------------------------------------
-     */
     val rateFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -168,14 +111,6 @@ fun CurrencySettingsDialog(
         }
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * بناء هيكل مربع الحوار المنبثق (Dialog & Card Container)
-     * ---------------------------------------------------------------------------------
-     * يتم إنشاء الحاوية الخارجية المنبثقة مع ضبط خصائص النافذة لضمان بقاء لوحة المفاتيح
-     * ظاهرة ومراعاة الحواف وتعديل حجم الإطار بسلاسة وفق محتوى الحقول.
-     * ---------------------------------------------------------------------------------
-     */
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -199,7 +134,7 @@ fun CurrencySettingsDialog(
                 bottomStart = 6.dp
             ),
             border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
         ) {
             Column(
@@ -210,13 +145,10 @@ fun CurrencySettingsDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // شريط العنوان العلوي مع زر الإغلاق
                 CurrencyDialogHeader(onDismiss = onDismiss)
 
-                // خط فاصل رفيع لتنسيق الأقسام البصرية
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 
-                // أعمدة اختيار العملات وحقل إدخال سعر الصرف
                 CurrencySelectorColumns(
                     currenciesToDisplay = state.currenciesToDisplay,
                     localDefaultCurrency = state.localDefaultCurrency,
@@ -233,7 +165,6 @@ fun CurrencySettingsDialog(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // أزرار التحكم السفلية (حفظ التعديلات أو الإلغاء)
                 CurrencyActionButtons(
                     haptic = haptic,
                     onDismiss = onDismiss,
@@ -249,14 +180,6 @@ fun CurrencySettingsDialog(
         }
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * مربع حوار تأكيد إعادة التقييم المالي (Currency Revaluation Confirmation Dialog)
-     * ---------------------------------------------------------------------------------
-     * إذا قام المستخدم بتعديل سعر الصرف لعملة مستهدفة، يتحول المتغير activeDialogState
-     * إلى RevalueConfirm لعرض خيارات إعادة تقييم الحسابات السابقة أو المستقبلية فقط.
-     * ---------------------------------------------------------------------------------
-     */
     val revalueState = state.activeDialogState as? CurrencyDialogState.RevalueConfirm
     if (revalueState != null) {
         val targetCurrency = revalueState.targetCurrency
@@ -290,16 +213,8 @@ fun CurrencySettingsDialog(
     }
 }
 
-/*
- * =====================================================================================
- * المكون الفرعي: ترويسة نافذة إعدادات العملة (CurrencyDialogHeader)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * يعرض العنوان الرئيسي للنافذة في المنتصف مع زر إغلاق مصغر على الجانب لإتاحة الخروج السريع.
- *
- * [المُدخلات]:
- * - onDismiss: حدث إغلاق النافذة عند النقر على زر الإغلاق (X).
- * =====================================================================================
+/**
+ * شريط العنوان وزر الإغلاق المصغر لنافذة إعدادات العملة
  */
 @Composable
 private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
@@ -331,25 +246,8 @@ private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
     }
 }
 
-/*
- * =====================================================================================
- * المكون الفرعي: أعمدة اختيار العملات ومعدل الصرف (CurrencySelectorColumns)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * يُنظم عملية اختيار العملات في عمودين متجاورين:
- * 1. العمود الأيمن: قائمة اختيار العملة الافتراضية الرئيسية لكافة حسابات التطبيق.
- * 2. العمود الأيسر: أزرار التبديل السريع بين العملات الثانوية وحقل إدخال سعر الصرف المقابل.
- *
- * [المُدخلات]:
- * - currenciesToDisplay: قائمة بكافة رموز العملات المتاحة للاختيار.
- * - localDefaultCurrency: رمز العملة الافتراضية المحددة حالياً.
- * - selectedTargetCurrency: رمز العملة الثانوية المختارة لضبط سعر صرفها.
- * - rateInputStr: النص المكتوب حالياً داخل حقل سعر الصرف.
- * - rateFocusRequester: كائن توجيه التركيز إلى حقل الإدخال.
- * - haptic: كائن التغذية اللمسية.
- * - currencyYer & currencyUsd: مسميات العملات المترجمة.
- * - دوال المعالجة (onDefaultCurrencyChange, onTargetCurrencyChange, onRateInputChange).
- * =====================================================================================
+/**
+ * أعمدة الاختيار الثنائي بين العملة الافتراضية للتطبيق وأزواج الصرف المستهدفة
  */
 @Composable
 private fun CurrencySelectorColumns(
@@ -369,11 +267,7 @@ private fun CurrencySelectorColumns(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        /*
-         * -----------------------------------------------------------------------------
-         * العمود الأيمن: اختيار العملة الافتراضية للتطبيق (Default Currency)
-         * -----------------------------------------------------------------------------
-         */
+        // العمود الأيمن: العملة الافتراضية للتطبيق
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -421,11 +315,7 @@ private fun CurrencySelectorColumns(
             }
         }
 
-        /*
-         * -----------------------------------------------------------------------------
-         * العمود الأيسر: العملات المقابلة وحقل إدخال معادلة الصرف (Target Currency & Rate)
-         * -----------------------------------------------------------------------------
-         */
+        // العمود الأيسر: عملات الصرف وحقل إدخال المعادلة
         Column(
             modifier = Modifier.weight(1.3f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -439,7 +329,6 @@ private fun CurrencySelectorColumns(
                 textAlign = TextAlign.Center
             )
 
-            // استبعاد العملة الافتراضية من قائمة الأهداف لتجنب مقارنة العملة بنفسها
             val availableTargets = remember(currenciesToDisplay, localDefaultCurrency) {
                 currenciesToDisplay.filter { it != localDefaultCurrency }
             }
@@ -477,7 +366,7 @@ private fun CurrencySelectorColumns(
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // حقل إدخال سعر الصرف مع لاحقة وبادئة توضح العملة الأساسية والمستهدفة
+            // حقل إدخال معادلة الصرف بدقة
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -546,18 +435,8 @@ private fun CurrencySelectorColumns(
     }
 }
 
-/*
- * =====================================================================================
- * المكون الفرعي: أزرار إجراءات الحفظ والإلغاء (CurrencyActionButtons)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * يعرض زري "حفظ" و "إلغاء" بأسلوب بصري متميز وأبعاد مناسبة للمس السريع مع استجابة اهتزازية.
- *
- * [المُدخلات]:
- * - haptic: كائن التغذية اللمسية لتأكيد ضغط الزر.
- * - onDismiss: حدث إلغاء وإغلاق النافذة.
- * - onSave: حدث بدء فحص وتخزين إعدادات العملة.
- * =====================================================================================
+/**
+ * أزرار الحفظ والإلغاء لنافذة إعدادات العملة
  */
 @Composable
 private fun CurrencyActionButtons(
@@ -609,4 +488,3 @@ private fun CurrencyActionButtons(
         }
     }
 }
-

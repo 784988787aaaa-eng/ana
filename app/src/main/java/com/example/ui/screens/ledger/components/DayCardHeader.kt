@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * ترويسة بطاقة اليوم في دفتر الأستاذ (Day Card Header Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شريط العنوان العلوي لكل بطاقة يوم في شاشة دفتر الأستاذ:
- * 1. يعرض في الطرف الأيمن (RTL): مربع اختيار اليوم الدائري (عند تفعيل وضع التحديد) + اسم اليوم والتاريخ (مثال: الأربعاء 19/08).
- * 2. يعرض في الطرف الأيسر: صافي الحركة اليومية ملوناً ومسبوقاً بمؤشر الصعود أو الهبوط (▲ + أو ▼).
- * 3. يحتوي على سهم المؤشر (Chevron) الذي يوضح حالة الطي أو التوسيع للبطاقة.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -41,21 +29,8 @@ import com.example.ui.theme.SelectionGreen
 /**
  * لون أيقونة علامة الصح داخل مربع اختيار اليوم.
  */
+private val DAY_SELECTION_CHECK_ICON_COLOR = Color.White
 
-/*
- * =====================================================================================
- * دالة العرض لترويسة بطاقة اليوم (DayCardHeader Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - formattedDateHeader: النص المنسق لاسم اليوم وتاريخه.
- * - formattedNetAmount: النص المنسق لمبلغ الصافي مع إشارة الاتجاه.
- * - netHeaderColor: لون نص الصافي (أخضر للفائض، أحمر للعجز).
- * - isExpanded: راية توضح هل البطاقة مفتوحة حالياً.
- * - isDaySelected: راية توضح هل هذا اليوم محدد ضمن مجموعة الأيام المختارة.
- * - isDaySelectionMode: راية تفعيل وضع تحديد الأيام المتعددة.
- * - modifier: مغير التنسيق والمحاذاة.
- * =====================================================================================
- */
 @Composable
 fun DayCardHeader(
     formattedDateHeader: String,
@@ -73,7 +48,7 @@ fun DayCardHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // اليمين في RTL: اسم اليوم والتاريخ + دائرة الاختيار عند التحديد
+        // Right in RTL (Start): Day Title & Date ([اليوم] [dd/MM]) + Selection Checkbox
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -83,15 +58,15 @@ fun DayCardHeader(
                     modifier = Modifier
                         .size(18.dp)
                         .clip(CircleShape)
-                        .background(if (isDaySelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surface)
-                        .border(1.5.dp, MaterialTheme.colorScheme.tertiary, CircleShape),
+                        .background(if (isDaySelected) SelectionGreen else MaterialTheme.colorScheme.surface)
+                        .border(1.5.dp, SelectionGreen, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isDaySelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = DAY_SELECTION_CHECK_ICON_COLOR,
                             modifier = Modifier.size(11.dp)
                         )
                     }
@@ -106,7 +81,7 @@ fun DayCardHeader(
             )
         }
 
-        // اليسار في RTL: مبلغ الصافي + سهم التوسيع/الطي
+        // Left in RTL (End): Net Balance + Chevron Arrow
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -127,4 +102,3 @@ fun DayCardHeader(
         }
     }
 }
-

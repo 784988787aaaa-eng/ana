@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * حوار تأكيد حذف المعاملة المالية (Day Card Delete Dialog Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة تحذيرية تنبثق عند طلب المستخدم حذف معاملة مالية من سجل اليوم:
- * 1. تمنع الحذف العرضي أو غير المقصود للبيانات المالية وتطلب تأكيداً صريحاً.
- * 2. تبرز زر الحذف باللون الأحمر التحذيري الهادئ (SoftRed) للتنبيه على خطورة الإجراء.
- * 3. تدعم اتجاه الكتابة من اليمين لليسار (RTL) بالكامل وتلتزم بإرشادات تصميم Material 3.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,17 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * دالة العرض لحوار تأكيد الحذف (DayCardDeleteDialog Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - txId: المعرف الفريد للمعاملة المراد حذفها.
- * - onConfirm: رد النداء لتنفيذ عملية الحذف مع تمرير معرف المعاملة.
- * - onDismiss: رد النداء لإلغاء وإغلاق نافذة الحوار دون حذف.
- * =====================================================================================
- */
 @Composable
 fun DayCardDeleteDialog(
     txId: String,
@@ -78,12 +57,12 @@ fun DayCardDeleteDialog(
                     onClick = {
                         onConfirm(txId)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = stringResource(id = R.string.ledger_confirm_delete_btn),
-                        color = MaterialTheme.colorScheme.onError,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -109,4 +88,3 @@ fun DayCardDeleteDialog(
         )
     }
 }
-

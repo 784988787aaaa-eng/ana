@@ -1,18 +1,5 @@
 package com.example.ui.screens.habayeb.components.datetime
 
-/*
- * =====================================================================================
- * صف عدادات اختيار الوقت (Time Dial Pickers Row Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومي تفاعلي لاختيار الوقت بنظام 12 ساعة، يجمع بين:
- * 1. زر تبديل الفترة (صباحاً AM / مساءً PM) مع اهتزاز لمسي خفيف وتأثير بصري أنيق.
- * 2. عداد متدحرج لاختيار الدقائق (0..59) بصيغة منزلتين عشريتين (00..59).
- * 3. عداد متدحرج لاختيار الساعات (1..12) مع تحويل تلقائي دقيق لنظام 24 ساعة في كائن Calendar.
- * 4. ترتيب العناصر بتوافق تام مع اتجاه القراءة من اليمين لليسار (RTL).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,14 +27,9 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import java.util.Calendar
 
-/*
- * =====================================================================================
- * دالة صف عدادات اختيار الوقت (TimeDialPickersRow)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - timeCalendar: كائن التقويم الحالي الذي يحتوي على قيم الوقت المراد تعديلها.
- * - onTimeCalendarChange: رد نداء يُستدعى فور تعديل أي قيمة (ساعة، دقيقة، فترة) لتمرير التقويم المحدث.
- * =====================================================================================
+/**
+ * Interactive row selector for time picking (AM/PM period switch, Minutes dial, Hours dial)
+ * arranged in natural RTL layout with haptic feedback.
  */
 @Composable
 fun TimeDialPickersRow(
@@ -142,4 +124,3 @@ fun TimeDialPickersRow(
         )
     }
 }
-

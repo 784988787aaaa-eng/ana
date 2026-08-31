@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * قسم إدخال مفتاح التفعيل اليدوي (Activation Key Input Section)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومية يوفر حقل إدخال مخصص لمفتاح الترخيص والتحقق اليدوي بدون إنترنت:
- * 1. يوفر حقل إدخال منسق ومقيد بسطر واحد مع دعم لوحة المفاتيح المخصصة وزر إتمام الإدخال (IME Done).
- * 2. يدعم إظهار حالة الخطأ (isCodeError) وتغيير ألوان الحدود ورسالة التنبيه المرافقة.
- * 3. يحتوي على زر التفعيل الفوري المرتبط بالتحقق من صحة الكود ومطابقته لمعرف الجهاز.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,18 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * دالة العرض لقسم إدخال المفتاح (ActivationKeyInputSection Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - activationCodeInput: القيمة النصية الحالية المدخلة في حقل المفتاح.
- * - isCodeError: هل الرمز المدخل خاطئ أو غير متطابق.
- * - onCodeInputChange: رد النداء عند تعديل نص الحقل.
- * - onVerifyManualCode: رد النداء لبدء التحقق من صحة المفتاح وتفعيل التطبيق.
- * =====================================================================================
- */
 @Composable
 fun ActivationKeyInputSection(
     activationCodeInput: String,
@@ -87,15 +65,15 @@ fun ActivationKeyInputSection(
                         .height(48.dp)
                         .testTag("activation_code_input"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedBorderColor = EmeraldPrimary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                        errorBorderColor = MaterialTheme.colorScheme.error
+                        errorBorderColor = SoftRed
                     )
                 )
 
                 Button(
                     onClick = onVerifyManualCode,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .height(48.dp)
@@ -106,7 +84,7 @@ fun ActivationKeyInputSection(
                         text = stringResource(R.string.licensing_fluent_btn_activate_now),
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = Color.White
                     )
                 }
             }
@@ -114,7 +92,7 @@ fun ActivationKeyInputSection(
             if (isCodeError) {
                 Text(
                     text = stringResource(R.string.licensing_fluent_product_key_error),
-                    color = MaterialTheme.colorScheme.error,
+                    color = SoftRed,
                     fontSize = 10.5.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -122,4 +100,3 @@ fun ActivationKeyInputSection(
         }
     }
 }
-

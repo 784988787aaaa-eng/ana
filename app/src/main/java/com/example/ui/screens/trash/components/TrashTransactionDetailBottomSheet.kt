@@ -73,14 +73,14 @@ fun TrashTransactionDetailBottomSheet(
     val debtColor = financialDebtColor(isDark)
     val amountColor = if (parsedData.isExpense) debtColor else creditColor
 
-    val avatarColor = remember(parsedData.customerName.ifEmpty { parsedData.titleText }, isDark) {
-        getInitialColor(parsedData.customerName.ifEmpty { parsedData.titleText }, isDark)
+    val avatarColor = remember(parsedData.customerName.ifEmpty { parsedData.titleText }) {
+        getInitialColor(parsedData.customerName.ifEmpty { parsedData.titleText })
     }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         dragHandle = {
             Box(

@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.domain.StringUtils.toEnglishDigits
+import com.example.ui.theme.CoralAccent
+import com.example.ui.theme.WarningAmber
 
 /**
  * Visual content for the Recovery Phrase screen when the user forgets the PIN.
@@ -70,13 +73,13 @@ fun RecoveryPhraseContent(
             modifier = Modifier
                 .size(72.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)),
+                .background(CoralAccent.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Security,
                 contentDescription = stringResource(id = R.string.lock_recover_account),
-                tint = MaterialTheme.colorScheme.secondary,
+                tint = CoralAccent,
                 modifier = Modifier.size(36.dp)
             )
         }
@@ -87,7 +90,7 @@ fun RecoveryPhraseContent(
             text = stringResource(id = R.string.lock_recovery_title),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = Color.White,
             textAlign = TextAlign.Center
         )
 
@@ -96,7 +99,7 @@ fun RecoveryPhraseContent(
         Text(
             text = stringResource(id = R.string.lock_recovery_desc),
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = Color.White.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
             lineHeight = 18.sp
         )
@@ -109,14 +112,14 @@ fun RecoveryPhraseContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("recovery_phrase_input_lock"),
-            label = { Text(stringResource(id = R.string.lock_recovery_phrase_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            label = { Text(stringResource(id = R.string.lock_recovery_phrase_hint), color = Color.White.copy(alpha = 0.6f)) },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedLabelColor = MaterialTheme.colorScheme.secondary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                focusedBorderColor = CoralAccent,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                focusedLabelColor = CoralAccent,
+                unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
             ),
             singleLine = true,
             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
@@ -142,13 +145,13 @@ fun RecoveryPhraseContent(
                 Icon(
                     imageVector = Icons.Default.Lightbulb,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
+                    tint = WarningAmber,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (showHintText) stringResource(id = R.string.lock_hide_hint) else stringResource(id = R.string.lock_show_hint),
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = WarningAmber,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -157,7 +160,7 @@ fun RecoveryPhraseContent(
         AnimatedVisibility(visible = showHintText && !recoveryHint.isNullOrBlank()) {
             Text(
                 text = stringResource(id = R.string.lock_hint_prefix, recoveryHint ?: ""),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = Color.White,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -171,10 +174,7 @@ fun RecoveryPhraseContent(
                 .fillMaxWidth()
                 .height(52.dp)
                 .testTag("verify_recovery_unlock_btn"),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            ),
+            colors = ButtonDefaults.buttonColors(containerColor = CoralAccent),
             shape = RoundedCornerShape(16.dp),
             enabled = recoveryPhraseInput.isNotBlank()
         ) {
@@ -182,7 +182,7 @@ fun RecoveryPhraseContent(
                 text = stringResource(id = R.string.lock_verify_and_unlock),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = Color.White
             )
         }
 
@@ -198,12 +198,12 @@ fun RecoveryPhraseContent(
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = stringResource(id = R.string.lock_back_to_keypad_desc),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = Color.LightGray
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = stringResource(id = R.string.lock_return_to_keypad),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = Color.LightGray,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )

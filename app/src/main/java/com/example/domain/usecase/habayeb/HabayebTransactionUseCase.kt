@@ -33,7 +33,6 @@ import com.example.data.local.entities.DatabaseDefaults
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.repository.FinanceRepository
-import com.example.domain.model.SaveTransactionResult
 import com.example.ui.helper.VibrationHelper
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import com.example.ui.viewmodel.FinanceConstants
@@ -80,28 +79,23 @@ class HabayebTransactionUseCase(
         selectedCategoryFilter: String?,
         onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
-    ): SaveTransactionResult = withContext(Dispatchers.IO) {
+    ) = withContext(Dispatchers.IO) {
         if (transaction != null && transaction.amount > BigDecimal.ZERO && repository.isTrialExpiredDirect()) {
             onActivationRequired()
-            return@withContext SaveTransactionResult.TrialExpired
+            return@withContext
         }
         try {
             repository.insertCustomerWithOpeningTransaction(customer, transaction)
 
             if (selectedCategoryFilter != null && selectedCategoryFilter != FinanceConstants.CATEGORY_CLOSED) {
-                val prefs = sharedPrefs
-                if (prefs != null) {
-                    prefs.edit().putString("${HabayebCategoryManager.PREFIX_CAT_LINK}${customer.id}", selectedCategoryFilter).apply()
-                }
+                sharedPrefs.edit().putString("${HabayebCategoryManager.PREFIX_CAT_LINK}${customer.id}", selectedCategoryFilter).apply()
                 onCategoryUpdated()
             }
 
             VibrationHelper.triggerSuccessVibration(application)
-            SaveTransactionResult.Success(customer.id)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Error saving customer", e)
-            SaveTransactionResult.Error(e.message)
         }
     }
 
@@ -124,7 +118,7 @@ class HabayebTransactionUseCase(
         settings: AppSettings,
         onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
-    ): SaveTransactionResult {
+    ) {
         val transaction = if (initialAmount > BigDecimal.ZERO) {
             HabayebTransaction(
                 id = generateTxId(),
@@ -143,7 +137,7 @@ class HabayebTransactionUseCase(
             )
         } else null
 
-        return saveHabayebCustomer(
+        saveHabayebCustomer(
             customer = customer,
             transaction = transaction,
             selectedCategoryFilter = selectedCategoryFilter,
@@ -159,19 +153,17 @@ class HabayebTransactionUseCase(
     suspend fun addHabayebTransaction(
         transaction: HabayebTransaction,
         onActivationRequired: () -> Unit
-    ): SaveTransactionResult = withContext(Dispatchers.IO) {
+    ) = withContext(Dispatchers.IO) {
         if (repository.isTrialExpiredDirect()) {
             onActivationRequired()
-            return@withContext SaveTransactionResult.TrialExpired
+            return@withContext
         }
         try {
             repository.insertHabayebTransaction(transaction)
             VibrationHelper.triggerSuccessVibration(application)
-            SaveTransactionResult.Success(transaction.id)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e(TAG, "Error adding transaction", e)
-            SaveTransactionResult.Error(e.message)
         }
     }
 
@@ -194,7 +186,7 @@ class HabayebTransactionUseCase(
         equivalentAmount: BigDecimal = BigDecimal.ZERO,
         baseCurrencySymbol: String,
         onActivationRequired: () -> Unit
-    ): SaveTransactionResult {
+    ) {
         val txId = editingTxId ?: generateTxId()
         val candidateLinkedId = if (linkedMainTxId != null) {
             linkedMainTxId
@@ -223,7 +215,7 @@ class HabayebTransactionUseCase(
             equivalentAmount = equivalentAmount,
             baseCurrencyCode = baseCurrencySymbol
         )
-        return addHabayebTransaction(transaction, onActivationRequired)
+        addHabayebTransaction(transaction, onActivationRequired)
     }
 
     /**

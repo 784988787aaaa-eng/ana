@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة جدولة وتكرار المعاملات المالية (Recurring Transaction Popup Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على نافذة منبثقة متكاملة لإعداد، تفعيل، تعديل، أو إيقاف التكرار التلقائي للحركات المالية:
- * 1. ترويسة متدرجة أنيقة تعرض اسم العميل، المبلغ المنسق، ورمز العملة مع أيقونة التزامن.
- * 2. محدد وتيرة التكرار (يومي / أسبوعي / شهري) واختيار الأيام المناسبة.
- * 3. قسم تحديد وقت التكرار ونطاق تاريخ البداية وتاريخ الانتهاء.
- * 4. شريط الأزرار السفلية (إلغاء، إيقاف التكرار الحالي، وتفعيل أو تحديث الجدولة مع حفظ الإعدادات في HabayebRecurringManager).
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -68,30 +56,11 @@ import com.example.ui.viewmodel.FinanceConstants
 import java.util.Calendar
 import java.util.UUID
 
-/*
- * =====================================================================================
- * ثابت اللون الأبيض شبه الشفاف (headerPillColor)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * لون أبيض شفاف بنسبة 22% مخصص لتبطين الكبسولات والأيقونات فوق الترويسة المتدرجة.
- * =====================================================================================
+/**
+ * لون شفاف مخصص لبطاقات وخلفيات شريط العنوان داخل نافذة المعاملات المتكررة.
  */
+private val TRANSLUCENT_WHITE_PILL = Color.White.copy(alpha = 0.22f)
 
-/*
- * =====================================================================================
- * نافذة تكرار المعاملة المالية (RecurringTransactionPopup)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * حوار كامل لإدارة جدولة حركة مالية معينة للعميل، واسترجاع إعداداتها السابقة إن وُجدت.
- *
- * [المُدخلات]:
- * - transaction: كائن الحركة المالية الأصلية المطلوب جدولتها.
- * - customerName: اسم العميل المرتبط بالحركة.
- * - onDismiss: رد نداء لإغلاق النافذة المنبثقة.
- * - activeThemeColor: لون السمة الأساسي للتدرج والأزرار.
- * - activeSubColor: لون السمة الثانوي لتدرج خلفية الترويسة.
- * =====================================================================================
- */
 @Composable
 fun RecurringTransactionPopup(
     transaction: HabayebTransaction,
@@ -101,7 +70,6 @@ fun RecurringTransactionPopup(
     activeSubColor: Color
 ) {
     val context = LocalContext.current
-    val headerPillColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f)
 
     val existingConfigs = remember(transaction.id) { HabayebRecurringManager.getAllConfigs(context) }
     val existingConfig = remember(transaction.id) { existingConfigs.find { it.originalTxId == transaction.id } }
@@ -135,9 +103,9 @@ fun RecurringTransactionPopup(
                     .heightIn(max = 520.dp)
                     .imePadding(),
                 shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
@@ -165,7 +133,7 @@ fun RecurringTransactionPopup(
                                 Box(
                                     modifier = Modifier
                                         .size(28.dp)
-                                        .background(headerPillColor, CircleShape),
+                                        .background(TRANSLUCENT_WHITE_PILL, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -190,7 +158,7 @@ fun RecurringTransactionPopup(
                             val currStr = transaction.currencyCode.ifEmpty { fallbackCurrency }
                             Box(
                                 modifier = Modifier
-                                    .background(headerPillColor, RoundedCornerShape(12.dp))
+                                    .background(TRANSLUCENT_WHITE_PILL, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(
@@ -257,25 +225,6 @@ fun RecurringTransactionPopup(
     }
 }
 
-/*
- * =====================================================================================
- * شريط أزرار الإجراءات للجدولة (RecurringActionsRow)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * أزرار التحكم السفلية لتنفيذ حفظ الإعدادات، إيقاف التكرار الحالي، أو إلغاء الحوار.
- *
- * [المُدخلات]:
- * - existingConfig: إعدادات الجدولة السابقة إن وُجدت.
- * - transaction: كائن الحركة المالية الحالية.
- * - customerName: اسم العميل.
- * - frequency: وتيرة التكرار (يومي / أسبوعي / شهري).
- * - selectedDaysOfWeek / selectedDaysOfMonth: الأيام المحددة.
- * - hour / minute: وقت تنفيذ الجدولة.
- * - startDateMillis / endDateMillis: النطاق الزمني لسريان التكرار.
- * - activeThemeColor: لون السمة النشط لزر الحفظ.
- * - onDismiss: رد نداء لإغلاق الحوار.
- * =====================================================================================
- */
 @Composable
 private fun RecurringActionsRow(
     existingConfig: RecurringConfig?,
@@ -292,7 +241,6 @@ private fun RecurringActionsRow(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val headerPillColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -398,4 +346,3 @@ private fun RecurringActionsRow(
         }
     }
 }
-

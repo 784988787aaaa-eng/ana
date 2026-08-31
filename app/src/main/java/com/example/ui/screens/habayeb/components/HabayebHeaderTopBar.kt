@@ -1,15 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة الشريط العلوي لترويسة الحبايب (Habayeb Header Top Bar Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على عناصر الشريط العلوي المتخصص:
- * 1. وضع البحث (HabayebSearchHeaderBar): حقل إدخال فوري للبحث مع زر إغلاق ومسح النص.
- * 2. الوضع القياسي (HabayebNormalHeaderBar): زر القائمة، صافي الرصيد مع تأثيرات حركية، زر الخصوصية، وزر البحث.
- * =====================================================================================
- */
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -135,7 +125,7 @@ private fun HabayebSearchHeaderBar(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .height(46.dp)
-            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f), RoundedCornerShape(23.dp))
+            .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(23.dp))
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -242,7 +232,7 @@ private fun HabayebNormalHeaderBar(
             },
             modifier = Modifier
                 .size(38.dp)
-                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f), CircleShape)
+                .background(Color.White.copy(alpha = 0.15f), CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Menu,
@@ -362,7 +352,7 @@ private fun HabayebNormalHeaderBar(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
+                    .background(Color.White.copy(alpha = 0.15f))
             ) {
                 Icon(
                     imageVector = Icons.Default.Search,

@@ -1,15 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نوافذ اختيار التاريخ والوقت المخصصة (Custom Date & Time Picker Dialogs Package)
- * -------------------------------------------------------------------------------------
- * توفر هذه الفئة واجهات حوارية تفاعلية لاختيار التواريخ والأوقات بالتقويمين الهجري والميلادي:
- * 1. نافذة اختيار تاريخ ووقت مفرد (CustomDateTimePickerDialog) للمعاملات والحسابات.
- * 2. نافذة اختيار نطاق زمني وفترة محددة (CustomDateRangePickerDialog) لتقارير الفترات والجدولة.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,23 +32,12 @@ import com.example.ui.screens.habayeb.components.datetime.DialogActionButtons
 import com.example.ui.screens.habayeb.components.datetime.RangeTab
 import java.util.Calendar
 
-// إعادة تصدير تعداد RangeTab لضمان توافق واستقرار الاستدعاءات عبر الشاشات
+// Re-export RangeTab enum for zero broken references across callers
 typealias RangeTab = RangeTab
 
-/*
- * =====================================================================================
- * نافذة اختيار تاريخ ووقت مفرد (CustomDateTimePickerDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوار موحدة تتيح اختيار تاريخ محدد مع إمكانية تفعيل أو تعطيل اختيار الوقت (الساعة/الدقيقة).
- *
- * [المُدخلات]:
- * - initialMillis: التوقيت المبدئي بالمللي ثانية.
- * - onDismiss: رد نداء عند إغلاق أو إلغاء النافذة.
- * - onDateTimeSelected: رد نداء عند تأكيد التوقيت المختار.
- * - showTime: مؤشر إظهار أو إخفاء قسم اختيار الوقت.
- * - title: عنوان مخصص للنافذة (اختياري).
- * =====================================================================================
+/**
+ * Standard Single Date/Time Picker Dialog for Accounts, Transactions and general entry.
+ * Acts as the unified stable Facade entry point for single date & time selection.
  */
 @Composable
 fun CustomDateTimePickerDialog(
@@ -79,14 +58,14 @@ fun CustomDateTimePickerDialog(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .padding(horizontal = 4.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
             ) {
                 Column(
@@ -95,7 +74,7 @@ fun CustomDateTimePickerDialog(
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // عنوان النافذة (Header Title)
+                    // Header Title
                     Text(
                         text = title ?: stringResource(id = R.string.datetime_picker_title),
                         fontSize = 15.sp,
@@ -104,7 +83,7 @@ fun CustomDateTimePickerDialog(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    // قسم التاريخ والوقت المفرد (Single Date & Time section)
+                    // Single Date & Time section
                     DateAndTimeSection(
                         calendar = calendarState,
                         onCalendarChange = { calendarState = it },
@@ -113,7 +92,7 @@ fun CustomDateTimePickerDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // أزرار العمليات (إلغاء وموافق)
+                    // Action Buttons (إلغاء وموافق)
                     DialogActionButtons(
                         onDismiss = onDismiss,
                         onConfirm = { onDateTimeSelected(calendarState.timeInMillis) }
@@ -124,23 +103,10 @@ fun CustomDateTimePickerDialog(
     }
 }
 
-/*
- * =====================================================================================
- * نافذة اختيار النطاق الزمني والتاريخ الذكي (CustomDateRangePickerDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة مخصصة لاختيار فترات زمنية (من تاريخ - إلى تاريخ) مع وقت التنفيذ، وتستخدم في الجدولة والتقارير.
- *
- * [المُدخلات]:
- * - initialStartMillis: بداية النطاق بالمللي ثانية.
- * - initialEndMillis: نهاية النطاق بالمللي ثانية.
- * - initialHour / initialMinute: ساعة ودقيقة البدء.
- * - includeTime: هل يتضمن النطاق تحديد الوقت بدقة.
- * - initialSelectedTab: التبويب المحدد مبدئياً (بداية/نهاية).
- * - title: عنوان مخصص للنافذة.
- * - onDismiss: رد نداء عند الإلغاء.
- * - onRangeSelected: رد نداء تأكيد النطاق والوقت المختار.
- * =====================================================================================
+/**
+ * Intelligent Date Range and Time Picker Dialog.
+ * Used for Scheduling/Recurring transactions (From, To, Execution Time)
+ * and History Filtering (From, To).
  */
 @Composable
 fun CustomDateRangePickerDialog(
@@ -166,4 +132,3 @@ fun CustomDateRangePickerDialog(
         onRangeSelected = onRangeSelected
     )
 }
-

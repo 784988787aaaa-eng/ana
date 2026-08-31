@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة إعداد وضبط سعر الصرف (Exchange Rate Setup Dialog Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على نافذة ومكونات إدخال وتأكيد سعر الصرف للعملات الأجنبية:
- * 1. حقل إدخال رقمي لسعر الصرف مع تنظيف الأرقام ودعم الفاصلة العشرية.
- * 2. مربع اختيار إلزامي لتأكيد سعر الصرف من قبل المستخدم لتجنب أخطاء التحويل المالي العرضية.
- * 3. التحقق من صحة القيمة المدخلة وأزرار الإلغاء والحفظ.
- * 4. إدارة لوحة المفاتيح والتركيز التلقائي داخل حوار الـ Compose Dialog.
- * =====================================================================================
- */
-
 import android.widget.Toast
 import java.math.BigDecimal
 import androidx.compose.animation.animateColorAsState
@@ -83,22 +71,6 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 
-/*
- * =====================================================================================
- * محتوى إعداد سعر الصرف (ExchangeRateSetupContent)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * واجهة تفاعلية تحتوي على حقل إدخال سعر الصرف، مربع التحقق، وأزرار الحفظ والإلغاء.
- *
- * [المُدخلات]:
- * - selectedCurrency: رمز العملة المحددة للتحويل.
- * - initialRateStr: قيمة سعر الصرف المبدئية كنص.
- * - activeThemeColor: لون السمة النشط للحدود والأزرار.
- * - onDismiss: رد نداء عند إلغاء أو إغلاق النافذة.
- * - onConfirm: رد نداء عند تأكيد وحفظ سعر الصرف الجديد (BigDecimal).
- * - modifier: مغير التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun ExchangeRateSetupContent(
     selectedCurrency: String,
@@ -282,7 +254,7 @@ fun ExchangeRateSetupContent(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = Color.White,
                             modifier = Modifier.size(10.dp)
                         )
                     }
@@ -348,7 +320,7 @@ fun ExchangeRateSetupContent(
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = statusColor,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        contentColor = Color.White
                     )
                 ) {
                     Text(stringResource(id = R.string.habayeb_save), fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -380,8 +352,8 @@ fun ExchangeRateSetupDialog(
                 .imePadding()
                 .shadow(8.dp, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.12f))
         ) {
             ExchangeRateSetupContent(
                 selectedCurrency = selectedCurrency,

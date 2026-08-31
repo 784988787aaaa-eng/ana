@@ -1,18 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * حوار إنشاء وتعديل الالتزامات المالية (Commitment Edit & Creation Dialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية منبثقة تفاعلية تتيح للمستخدم إضافة التزام مالي جديد أو تعديل هدف قائم:
- * 1. تسمح بتسجيل اسم الالتزام (مثال: إيجار، قسط، ديون مستحقة) والمبلغ المطلوب وتوفير إمكانية تتبع المدخر له.
- * 2. تدير تدفق التركيز (Keyboard Focus Flow) وتفتح لوحة المفاتيح تلقائياً لتسريع الإدخال.
- * 3. تستخدم الحسابات المالية الدقيقة BigDecimal للتحقق من صحة المبالغ وتفادي الكسور العشرية العائمة غير المنضبطة.
- * 4. تدعم التغذية اللمسية الاهتزازية (Haptic Vibration) عند الحفظ الناجح.
- * =====================================================================================
- */
-
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -80,19 +67,8 @@ private const val TAG = "CommitmentEditDialog"
 /**
  * لون محتوى زر الحفظ المميز للالتزام المالي.
  */
+private val COMMITMENT_SAVE_BUTTON_TEXT_COLOR = Color.White
 
-/*
- * =====================================================================================
- * دالة العرض لحوار إضافة/تعديل الالتزام (CommitmentEditDialog Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - showCommitmentDialog: راية للتحكم في ظهور الحوار المنبثق.
- * - editingCommitment: كائن الالتزام المراد تعديله (إذا كان null فإن الحوار في وضع الإضافة).
- * - onDismissRequest: رد النداء عند إغلاق أو إلغاء الحوار.
- * - onSaveCommitment: رد النداء لتمرير بيانات الالتزام بعد التحقق لحفظها بالداتابيز.
- * - onDeleteCommitment: رد النداء لحذف الالتزام.
- * =====================================================================================
- */
 @Composable
 fun CommitmentEditDialog(
     showCommitmentDialog: Boolean,
@@ -182,7 +158,7 @@ fun CommitmentEditDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // عنوان الحوار
+                    // 1. Clean Title without emoji
                     Text(
                         text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_title_edit) else stringResource(id = R.string.ledger_commitment_dialog_title_add),
                         fontWeight = FontWeight.Bold,
@@ -194,7 +170,7 @@ fun CommitmentEditDialog(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // حقل اسم الالتزام المالي
+                    // 2. Goal Name Input Field (Full Width, Sleek)
                     OutlinedTextField(
                         value = obligationNameTfv,
                         onValueChange = { if (editingCommitment == null) obligationNameTfv = it },
@@ -209,7 +185,7 @@ fun CommitmentEditDialog(
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedBorderColor = EmeraldPrimary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                             disabledBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -231,12 +207,12 @@ fun CommitmentEditDialog(
                         )
                     )
 
-                    // حقول المبالغ: المبلغ المستهدف والمبلغ المتوفر حالياً
+                    // 3. Amount Inputs: Target (Right) & Current (Left) Side-by-Side
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // حقل المبلغ المستهدف
+                        // Target Amount Field (Right in RTL)
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
                                 value = targetAmtTfv,
@@ -258,7 +234,7 @@ fun CommitmentEditDialog(
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedBorderColor = EmeraldPrimary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -277,7 +253,7 @@ fun CommitmentEditDialog(
                             )
                         }
 
-                        // حقل المبلغ المتوفر حالياً (اختياري)
+                        // Current Available Amount Field (Left in RTL, Optional)
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
                                 value = progressAmtTfv,
@@ -299,7 +275,7 @@ fun CommitmentEditDialog(
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedBorderColor = EmeraldPrimary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -321,13 +297,13 @@ fun CommitmentEditDialog(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // أزرار الإجراءات: حفظ وإلغاء
+                    // 4. Sleek Actions: Save & Cancel Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // زر الإلغاء
+                        // Cancel Button (Soft & Minimalist)
                         OutlinedButton(
                             onClick = onDismissRequest,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
@@ -347,7 +323,7 @@ fun CommitmentEditDialog(
                             )
                         }
 
-                        // زر الحفظ
+                        // Save Button (Luxurious Capsule)
                         Button(
                             onClick = {
                                 val tar = targetAmtStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -357,7 +333,7 @@ fun CommitmentEditDialog(
                                     onSaveCommitment(obligationName, tar, prg)
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1.3f)
@@ -366,7 +342,7 @@ fun CommitmentEditDialog(
                         ) {
                             Text(
                                 text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_save_edit) else stringResource(id = R.string.ledger_commitment_dialog_save_goal),
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                color = COMMITMENT_SAVE_BUTTON_TEXT_COLOR,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.5.sp
                             )
@@ -377,4 +353,3 @@ fun CommitmentEditDialog(
         }
     }
 }
-

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.CloudSyncState
+import com.example.ui.theme.SoftRed
 import com.example.ui.viewmodel.BackupSyncViewModel
 import com.example.ui.screens.CloudBackupsBottomSheet
 import com.google.android.gms.auth.api.signin.GoogleSignInClient

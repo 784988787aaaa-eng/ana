@@ -78,8 +78,8 @@ fun TrashFilterToolbar(
                     onFilterSelected(if (isSelected && type != TrashFilterType.ALL) TrashFilterType.ALL else type)
                 },
                 shape = RoundedCornerShape(10.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = if (isSelected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = if (isSelected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 modifier = Modifier.height(30.dp)
             ) {
                 Box(
@@ -90,7 +90,7 @@ fun TrashFilterToolbar(
                         text = label,
                         fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -101,8 +101,8 @@ fun TrashFilterToolbar(
             Surface(
                 onClick = { showSortMenu = true },
                 shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 modifier = Modifier.height(30.dp)
             ) {
                 Row(
@@ -129,10 +129,10 @@ fun TrashFilterToolbar(
                 expanded = showSortMenu,
                 onDismissRequest = { showSortMenu = false },
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
-                        MaterialTheme.colorScheme.outlineVariant,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                         RoundedCornerShape(12.dp)
                     )
             ) {
@@ -192,8 +192,8 @@ fun TrashFilterToolbar(
             Surface(
                 onClick = { showCleanupMenu = true },
                 shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 modifier = Modifier.height(30.dp)
             ) {
                 Row(
@@ -216,7 +216,7 @@ fun TrashFilterToolbar(
                     Text(
                         text = "▾",
                         fontSize = 9.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -226,10 +226,10 @@ fun TrashFilterToolbar(
                 onDismissRequest = { showCleanupMenu = false },
                 modifier = Modifier
                     .width(160.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
-                        MaterialTheme.colorScheme.outlineVariant,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                         RoundedCornerShape(12.dp)
                     )
             ) {

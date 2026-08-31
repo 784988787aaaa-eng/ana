@@ -1,15 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نوافذ سجل الحركات والعمليات المالية (Customer History Dialogs Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على النوافذ الحوارية لإدارة الحركات في شاشة كشف حساب العميل:
- * 1. نافذة تأكيد الحذف الجماعي للحركات (DeleteBulkTxConfirmDialog).
- * 2. نافذة تعديل وضبط سعر الصرف للحركة (ExchangeRateModifyDialog) مع دعم التبديل التفاعلي والتفعيل/التعطيل.
- * =====================================================================================
- */
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
@@ -32,20 +22,6 @@ import com.example.data.local.entities.HabayebTransaction
 import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * نافذة تأكيد الحذف الجماعي للحركات (DeleteBulkTxConfirmDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية تحذيرية تطلب تأكيد المستخدم قبل مسح المعاملات والحركات المحددة جماعياً.
- *
- * [المُدخلات]:
- * - show: مؤشر ظهور النافذة.
- * - selectedCount: عدد الحركات المحددة للحذف.
- * - onDismiss: رد نداء عند الإلغاء.
- * - onConfirm: رد نداء عند تأكيد الحذف.
- * =====================================================================================
- */
 @Composable
 fun DeleteBulkTxConfirmDialog(
     show: Boolean,
@@ -61,10 +37,10 @@ fun DeleteBulkTxConfirmDialog(
             confirmButton = {
                 Button(
                     onClick = onConfirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(id = R.string.habayeb_delete), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.habayeb_delete), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -78,25 +54,6 @@ fun DeleteBulkTxConfirmDialog(
     }
 }
 
-/*
- * =====================================================================================
- * نافذة تعديل وتفعيل سعر الصرف (ExchangeRateModifyDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة تتيح تعديل سعر تحويل العملة الأجنبية للحركة أو تفعيل/تعطيل الحساب بسعر الصرف.
- *
- * [المُدخلات]:
- * - show: مؤشر ظهور النافذة.
- * - tx: كائن الحركة المالية المراد تعديل سعر صرفها.
- * - currencySymbol: رمز العملة الأساسية للتطبيق.
- * - activeThemeColor: لون السمة النشط.
- * - onDismissRequest: رد نداء لإغلاق النافذة.
- * - onConfirmRateSetup: رد نداء لتثبيت سعر الصرف الجديد للعملة.
- * - onDeactivateExchange: رد نداء لتعطيل تطبيق سعر الصرف على الحركة.
- * - hasStoredRateForCurrency: فحص وجود سعر صرف محفوظ مسبقاً.
- * - getStoredRateForCurrency: جلب سعر الصرف المحفوظ مسبقاً للعملة.
- * =====================================================================================
- */
 @Composable
 fun ExchangeRateModifyDialog(
     show: Boolean,
@@ -182,7 +139,7 @@ fun ExchangeRateModifyDialog(
                                                 showRateSetupOverlay = true
                                             }
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary, contentColor = MaterialTheme.colorScheme.onTertiary),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -193,7 +150,7 @@ fun ExchangeRateModifyDialog(
                                             text = stringResource(id = R.string.habayeb_activate_exchange),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onTertiary
+                                            color = Color.White
                                         )
                                     }
                                 } else {
@@ -201,7 +158,7 @@ fun ExchangeRateModifyDialog(
                                         onClick = {
                                             onDeactivateExchange()
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -212,7 +169,7 @@ fun ExchangeRateModifyDialog(
                                             text = stringResource(id = R.string.habayeb_deactivate_exchange),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onTertiary
+                                            color = Color.White
                                         )
                                     }
                                 }

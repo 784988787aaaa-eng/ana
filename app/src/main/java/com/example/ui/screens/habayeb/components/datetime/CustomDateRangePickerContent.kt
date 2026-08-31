@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components.datetime
 
-/*
- * =====================================================================================
- * حزمة منتقي النطاق الزمني والتاريخ الذكي (Custom Date Range & Time Picker Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على محرك اختيار نطاق التاريخ والوقت الذكي:
- * 1. دعم التبديل السلس بين تاريخ البداية (من) وتاريخ النهاية (إلى) عبر لسانين تبويب تفاعليين.
- * 2. دعم اختياري لتحديد وقت التنفيذ اليومي (ساعة ودقيقة) لجدولة المعاملات المتكررة.
- * 3. أزرار إجراءات سريعة لتحديد اليوم الحالي أو إضافة شهر (+30 يوم) تلقائياً.
- * 4. التحقق التلقائي لمنع تحديد تاريخ نهاية يسبق تاريخ البداية.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,34 +42,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-/*
- * =====================================================================================
- * تبويبات النطاق الزمني (RangeTab)
- * -------------------------------------------------------------------------------------
- * [الوصف]:
- * تعداد يحدد التبويب النشط حالياً في الحوار (START = تاريخ البداية، END = تاريخ النهاية).
- * =====================================================================================
- */
 enum class RangeTab { START, END }
 
-/*
- * =====================================================================================
- * محتوى منتقي النطاق الزمني والوقت (CustomDateRangePickerContent)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوار مخصصة لاختيار نطاق زمني (من تاريخ إلى تاريخ) مع إمكانية تحديد وقت التنفيذ (ساعة ودقيقة)،
- * وتُستخدم في شاشات تصفية الكشوفات وجدولة المعاملات المالية الدورية.
- *
- * [المُدخلات]:
- * - initialStartMillis: الطابع الزمني المبدئي لتاريخ البداية.
- * - initialEndMillis: الطابع الزمني المبدئي لتاريخ النهاية.
- * - initialHour / initialMinute: ساعة ودقيقة التنفيذ المبدئية (اختياري).
- * - includeTime: تفعيل أو تعطيل قسم اختيار وقت التنفيذ.
- * - initialSelectedTab: التبويب المحدد مبدئياً (بداية أو نهاية).
- * - title: عنوان مخصص للحوار (إن وُجد).
- * - onDismiss: رد نداء عند إلغاء أو إغلاق الحوار.
- * - onRangeSelected: رد نداء عند تأكيد الاختيار لتمرير القيم المختارة.
- * =====================================================================================
+/**
+ * Intelligent Date Range and Time Picker Dialog Engine.
+ * Used for Scheduling/Recurring transactions (From, To, Execution Time)
+ * and History Filtering (From, To).
  */
 @Composable
 fun CustomDateRangePickerContent(
@@ -136,14 +102,14 @@ fun CustomDateRangePickerContent(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.94f)
                     .padding(horizontal = 4.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
             ) {
                 Column(
@@ -377,4 +343,3 @@ fun CustomDateRangePickerContent(
         }
     }
 }
-

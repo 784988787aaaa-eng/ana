@@ -1,19 +1,5 @@
 package com.example.ui.screens.habayeb.utils
 
-/*
- * =====================================================================================
- * إعدادات وإدارة العملات المالية والتحويلات (Currency Configuration & Conversion Utility)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * ملف مركزي شامل لإدارة العملات في نظام "حبايب":
- * 1. تعريف نموذج العملة (Currency Data Class) برموزها وأسمائها وأعلامها.
- * 2. توفير قائمة العملات الافتراضية المدعومة (ريال يمني YER، ريال سعودي SAR، دولار أمريكي USD).
- * 3. تحليل وسوم العملات المضمنة في نصوص الملاحظات واستخراج التفاصيل النظيفة مع التخزين المؤقت (LRU Cache).
- * 4. إجراء عمليات التحويل المالي الدقيقة وحسابات أسعار الصرف باستخدام BigDecimal وتقريب HALF_EVEN.
- * 5. استخراج العملة والمبلغ الفعلي للمعاملة المالية مع دعم المعاملات القديمة والحديثة.
- * =====================================================================================
- */
-
 import android.content.Context
 import com.example.R
 import com.example.data.local.BigDecimalConverter
@@ -25,17 +11,6 @@ import java.util.Collections
 import java.util.LinkedHashMap
 import java.util.Locale
 
-/*
- * =====================================================================================
- * نموذج العملة (Currency Data Class)
- * -------------------------------------------------------------------------------------
- * [الحقول]:
- * - code: الرمز الدولي للعملة (مثل: "YER", "SAR", "USD").
- * - symbol: الرمز المختصر أو الشائع للعملة (مثل: "ر.ي", "ر.س", "$").
- * - arabicName: الاسم الكامل للعملة باللغة العربية (مثل: "ريال يمني").
- * - flagEmoji: رمز تعبيري لعلم الدولة التابعة لها العملة.
- * =====================================================================================
- */
 data class Currency(
     val code: String,
     val symbol: String,
@@ -43,38 +18,22 @@ data class Currency(
     val flagEmoji: String
 )
 
-/*
- * =====================================================================================
- * كائن إدارة العملات (CurrencyConfig Object)
- * -------------------------------------------------------------------------------------
- * يوفر كافة العمليات الحسابية والتحليلية المتعلقة بالعملات وأسعار الصرف.
- * =====================================================================================
- */
 object CurrencyConfig {
     
-    // محول الأرقام العشرية الدقيقة
     private val converter = BigDecimalConverter()
 
-    /*
-     * تحويل النص إلى BigDecimal بأمان
-     */
     fun parseBigDecimal(value: String): BigDecimal {
         return converter.fromString(value) ?: BigDecimal.ZERO
     }
 
-    // القائمة الافتراضية الثابتة للعملات الأساسية
     private val DEFAULT_CURRENCY_DEFINITIONS = listOf(
         Currency("YER", "ر.ي", "ريال يمني", "🇾🇪"),
         Currency("SAR", "ر.س", "ريال سعودي", "🇸🇦"),
         Currency("USD", "$", "دولار أمريكي", "🇺🇸")
     )
 
-    // قائمة العملات العامة المتاحة
     val currencies: List<Currency> = DEFAULT_CURRENCY_DEFINITIONS
 
-    /*
-     * استرجاع قائمة العملات مع تحديث النصوص من ملفات الموارد (Strings) وفق لغة الجهاز
-     */
     fun getCurrencies(context: Context? = null): List<Currency> {
         if (context == null) return currencies
         val yerSym = context.getString(R.string.currency_yer)
@@ -103,22 +62,13 @@ object CurrencyConfig {
         }
     }
 
-    /*
-     * البحث عن عملة بواسطة رمزها المختصر أو كودها الدولي
-     */
     fun getBySymbol(symbol: String): Currency? =
         currencies.find { it.symbol == symbol || it.code == symbol }
 
-    /*
-     * البحث عن عملة بواسطة الكود الدولي (ISO Code)
-     */
     fun getByCode(code: String): Currency? =
         currencies.find { it.code == code }
 
-    // الحد الأقصى لحجم ذاكرة التخزين المؤقت لتحليل وسوم العملات
     private const val MAX_CACHE_SIZE = 500
-
-    // خريطة تخزين مؤقت متزامنة لتفادي تكرار تحليل النصوص المتطابقة
     private val parseCache: MutableMap<String, Pair<String, String>> = Collections.synchronizedMap(
         object : LinkedHashMap<String, Pair<String, String>>(MAX_CACHE_SIZE, 0.75f, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<String, String>>?): Boolean {
@@ -128,8 +78,8 @@ object CurrencyConfig {
     )
 
     /**
-     * تنظيف تفاصيل ووصف المعاملة بإزالة وسوم العملات المخفية مثل [ر.س] أو [SAR]
-     * وإرجاع النص الأصلي الصافي بدون المسافات الزائدة.
+     * Cleans transaction description by stripping hidden currency tags like [$currencyCode] or [$currencySymbol]
+     * and trimming whitespace. Returns an empty string if description is empty or contained only currency tags.
      */
     fun getCleanDetails(description: String): String {
         if (description.isBlank()) return ""
@@ -154,15 +104,15 @@ object CurrencyConfig {
     }
 
     /**
-     * استخراج رمز العملة والوصف النظيف من حقل وصف المعاملة.
-     * في حال عدم وجود وسم عملة، يتم إرجاع رمز العملة الافتراضية الممرر.
+     * Extracts the currency symbol and clean description from a transaction's description.
+     * If no currency is tagged, returns the provided defaultCurrencySymbol.
      */
     fun parseTransactionCurrency(description: String, defaultCurrencySymbol: String): Pair<String, String> {
         val cacheKey = "$description::$defaultCurrencySymbol"
         val cached = parseCache[cacheKey]
         if (cached != null) return cached
 
-        // البحث عن نمط [الرمز] في بداية الوصف
+        // Look for [Symbol] pattern at the beginning
         for (currency in currencies) {
             val tag = "[${currency.symbol}]"
             if (description.startsWith(tag)) {
@@ -177,16 +127,13 @@ object CurrencyConfig {
         return res
     }
 
-    /**
-     * تحديد رتبة وقوة العملة مقارنة بالعملات الأخرى لتحديد اتجاه الضرب أو القسمة في الصرف.
-     */
     fun getCurrencyRank(symbol: String): Int {
         val sym = symbol.uppercase(Locale.ENGLISH).trim()
         return when {
             sym == "ر.ي" || sym == "YER" || sym.contains("يمن") -> 1
             sym == "ر.س" || sym == "SAR" || sym.contains("سعود") -> 2
             sym == "$" || sym == "USD" || sym.contains("دولار") -> 3
-            else -> 2 // القيمة الافتراضية لمتوسط القوة
+            else -> 2 // default to medium strength
         }
     }
 
@@ -205,9 +152,6 @@ object CurrencyConfig {
         }
     }
 
-    /*
-     * تحويل المبلغ باستخدام كائن زوج العملات (CurrencyPair)
-     */
     fun convertWithCurrencyPair(
         amount: BigDecimal,
         currencyPair: com.example.domain.model.CurrencyPair
@@ -220,9 +164,6 @@ object CurrencyConfig {
         )
     }
 
-    /*
-     * تحويل المبالغ المالية الدقيقة باستخدام BigDecimal مع التحقق من رتب العملات
-     */
     fun convertAmountBigDecimal(
         amount: BigDecimal,
         baseCurrencySymbol: String,
@@ -249,9 +190,6 @@ object CurrencyConfig {
         }
     }
 
-    /*
-     * تحويل المبالغ المالية بنوع Double (للتوافق العام)
-     */
     fun convertAmount(
         amount: Double,
         baseCurrencySymbol: String,
@@ -264,8 +202,9 @@ object CurrencyConfig {
     }
 
     /**
-     * استخراج العملة الحقيقية والمبلغ الفعلي للمعاملة بصيغة BigDecimal بدقة 4 خانات عشرية،
-     * مع معالجة حقول قاعدة البيانات الحديثة والوسوم القديمة وحسابات الصرف.
+     * Resolves the true currency code and transaction amount for a given transaction as BigDecimal with scale 4,
+     * handling both modern schema fields and legacy description tags,
+     * fully taking into account base currency shifts dynamically without relying on is_foreign.
      */
     fun getTransactionCurrencyAndAmountBigDecimal(
         tx: HabayebTransaction,
@@ -305,7 +244,9 @@ object CurrencyConfig {
     }
 
     /**
-     * استخراج العملة والمبلغ بصيغة Double للتوافق مع شاشات العرض القديمة.
+     * Resolves the true currency code and transaction amount for a given transaction,
+     * handling both modern schema fields and legacy description tags,
+     * fully taking into account base currency shifts dynamically without relying on is_foreign.
      */
     fun getTransactionCurrencyAndAmount(
         tx: HabayebTransaction,
@@ -317,16 +258,16 @@ object CurrencyConfig {
     }
 
     /**
-     * تغليف وصف المعاملة بوسم العملة لتخزينها في حال تطلب الأمر.
+     * Helper to wrap a transaction description with a currency tag.
      */
     fun formatDescriptionWithCurrency(description: String, symbol: String): String {
         return "[$symbol] $description"
     }
 
     /**
-     * توحيد وتطبيع الأرقام المكتوبة بالأرقام العربية أو الفارسية إلى الأرقام الإنجليزية القياسية.
+     * Normalizes Arabic and Farsi digits to Western Arabic (English) digits, and replaces commas with dots.
+     * Centralized via StringUtils.normalizeDigits.
      */
     fun normalizeDigits(input: String): String = com.example.domain.StringUtils.normalizeDigits(input)
 }
-
 

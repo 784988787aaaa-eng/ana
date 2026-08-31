@@ -61,7 +61,7 @@ fun TrashDetailDeleteConfirmDialog(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp)
     )
 }

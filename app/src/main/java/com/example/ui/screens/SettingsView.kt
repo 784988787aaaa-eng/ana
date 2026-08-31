@@ -1,17 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة شاشة الإعدادات العامة (Settings View Screen Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الشاشة الرئيسية لإعدادات وتفضيلات التطبيق (SettingsView):
- * - اختيار العملة الأساسية وضبط أسعار الصرف المرتبطة.
- * - التوقيع الرقمي وترويسة المنشأة.
- * - إعدادات النسخ الاحتياطي الرباعي (Quad Backup) والنسخ التلقائي المجدول.
- * - بوابة الأمان وإعادة تعيين البيانات (منطقة الخطر).
- * =====================================================================================
- */
-
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -55,19 +43,6 @@ import com.example.ui.viewmodel.FinanceViewModel
 import com.example.ui.viewmodel.HabayebFinanceViewModel
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * واجهة حالات حوارات الإعدادات (SettingsDialogState)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * حالات النوافذ المنبثقة التابعة لشاشة الإعدادات:
- * - None: لا توجد نوافذ مفتوحة.
- * - PermissionExplanation: شرح الصلاحيات اللازمة للنسخ الاحتياطي.
- * - ResetDataTrap: حوار تأكيد الأمان لمسح وتصفير كافة البيانات.
- * - CurrencySetup: معالج ضبط أسعار صرف العملات عند تغيير العملة الافتراضية.
- * - RevalueConfirm: حوار تأكيد إعادة تقييم الأرصدة الحالية بالعملات الأخرى.
- * =====================================================================================
- */
 sealed interface SettingsDialogState {
     object None : SettingsDialogState
     object PermissionExplanation : SettingsDialogState
@@ -76,21 +51,6 @@ sealed interface SettingsDialogState {
     data class RevalueConfirm(val targetCurrency: String, val newRate: BigDecimal = BigDecimal.ZERO) : SettingsDialogState
 }
 
-/*
- * =====================================================================================
- * شاشة إعدادات التطبيق (SettingsView)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * واجهة قائمة الخيارات والإعدادات التفضيلية:
- * 1. بطاقة الترويسة التعريفية.
- * 2. بطاقة التفضيلات العامة وتغيير العملة الأساسية وإعادة ضبط أسعار الصرف.
- * 3. بطاقة التوقيع الرقمي وبيانات النشاط التجاري.
- * 4. بوابة الأمان للدخول لإعدادات رمز المرور (PIN).
- * 5. نظام النسخ الاحتياطي الرباعي (محلي، سحابي، مشاركة، فوري).
- * 6. جدولة النسخ الاحتياطي التلقائي اليومي.
- * 7. منطقة الحذف وتصفير البيانات مع تأكيد أمني.
- * =====================================================================================
- */
 @Composable
 fun SettingsView(
     viewModel: FinanceViewModel,
@@ -307,6 +267,7 @@ fun SettingsView(
                     } else {
                         isAutoBackupEnabled = false
                         saveAllSettings()
+                        com.example.AutoBackupWorker.cancelDailyBackupWorker(context)
                         Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_disabled), Toast.LENGTH_SHORT).show()
                     }
                 }

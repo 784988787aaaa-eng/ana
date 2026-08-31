@@ -78,12 +78,12 @@ fun TrashTopBarSection(
                         .fillMaxWidth()
                         .height(52.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(26.dp)
                         )
                         .border(
                             width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(26.dp)
                         )
                         .padding(horizontal = 12.dp),

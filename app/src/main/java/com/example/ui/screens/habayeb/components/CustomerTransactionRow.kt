@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة صف الحركة المالية للعميل (Customer Transaction Row Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على بطاقة عرض الحركة المالية داخل كشف الحساب:
- * 1. شريط عمودي لوني جانبي يوضح نوع الحركة (له / عليه / تسديد / دفعة).
- * 2. قسم التاريخ ورقم التسلسل وشارة التكرار الدوري.
- * 3. قسم التفاصيل والبيان، العملات الأجنبية، وأسعار الصرف.
- * 4. قسم المبلغ الصافي مع سهم الاتجاه اللوني.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -37,27 +25,6 @@ import com.example.ui.screens.habayeb.components.row.TransactionRowAmountSection
 import com.example.ui.screens.habayeb.components.row.TransactionRowDateSection
 import com.example.ui.screens.habayeb.components.row.TransactionRowDetailsSection
 
-/*
- * =====================================================================================
- * صف الحركة المالية للعميل (CustomerTransactionRow)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * عنصر واجهة يعرض تفاصيل عملية مالية واحدة مع دعم التحديد المتعدد والنقر المطول.
- *
- * [المُدخلات]:
- * - tx: كائن الحركة المالية (HabayebTransaction).
- * - isDark: مؤشر تفعيل النمط الليلي.
- * - currencySymbol: رمز العملة الأساسية.
- * - initialType: نوع الحساب الافتراضي للعميل.
- * - isSelected: هل الحركة محددة في وضع التحديد المتعدد.
- * - isTxMultiSelectActive: هل وضع التحديد المتعدد مفعل حالياً.
- * - hasActiveRecurring: هل الحركة مرتبطة بجدولة تكرار نشطة.
- * - txSeqNo: رقم تسلسل الحركة المعروض.
- * - parentTxSeq: رقم تسلسل الحركة الأصلية في حال كانت حركة فرعية.
- * - activeThemeColor: لون السمة النشط للحدود والتحديد.
- * - onSelectToggle / onLongClick / onOptionsClick / onScheduleClick / onExchangeRateClick: ردود نداء التفاعل مع الحركة.
- * =====================================================================================
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CustomerTransactionRow(
@@ -83,11 +50,11 @@ fun CustomerTransactionRow(
     }
 
     val rowBgColor = if (isSelected) {
-        if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+        activeThemeColor.copy(alpha = if (isDark) 0.20f else 0.12f)
     } else {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surface
     }
-    val borderColor = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
+    val borderColor = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 
     val onCardClick = remember(tx, isTxMultiSelectActive, onSelectToggle, onOptionsClick) {
         {

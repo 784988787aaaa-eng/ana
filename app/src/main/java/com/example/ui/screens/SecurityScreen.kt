@@ -1,16 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة شاشة وإعدادات الأمان وقفل التطبيق (Security & Passcode Screen Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على واجهات تكوين الحماية ورمز المرور (PIN) وعبارة الاسترداد السريّة:
- * - شاشة الأمان المستقلة (SecurityScreen).
- * - نافذة حوار الأمان المنبثقة (SecurityDialog).
- * - حفظ وتشفير رمز المرور وعبارة الاسترداد (SHA-256).
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -63,15 +52,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/*
- * =====================================================================================
- * دالة حفظ وتشفير رمز المرور وعبارة الاسترداد (saveSecurityPasscode)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * دالة معلقة لتشفير رمز الـ PIN المكون من 4 أرقام وعبارة الاسترداد باستخدام خوارزمية التجزئة
- * الآمنة وحفظها في إعدادات التطبيق بقاعدة البيانات المحلية.
- * =====================================================================================
- */
 private suspend fun saveSecurityPasscode(
     passcode: String,
     recoveryPhrase: String,
@@ -94,16 +74,6 @@ private suspend fun saveSecurityPasscode(
     }
 }
 
-/*
- * =====================================================================================
- * شاشة إعدادات الأمان (SecurityScreen)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شاشة متكاملة لعرض وتعديل إعدادات أمان التطبيق وقفل رمز المرور:
- * 1. نموذج إعداد رمز مرور جديد مع تأكيد الرمز وتعيين عبارة وتلميح الاسترداد.
- * 2. لوحة تحكم الأمان النشط لتغيير الرمز أو نسخه أو إلغاء تفعيل الحماية.
- * =====================================================================================
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecurityScreen(
@@ -154,12 +124,12 @@ fun SecurityScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface
                 ),
                 modifier = Modifier.border(
                     width = 0.5.dp, 
-                    color = MaterialTheme.colorScheme.outlineVariant
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                 )
             )
         },
@@ -246,15 +216,6 @@ fun SecurityScreen(
     }
 }
 
-/*
- * =====================================================================================
- * نافذة حوار إعدادات الأمان وقفل المرور (SecurityDialog)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * حوار منبثق مخصص للتحكم السريع في رمز المرور وعبارة الاسترداد من داخل القوائم المنبثقة
- * دون الحاجة لمغادرة الشاشة الحالية.
- * =====================================================================================
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecurityDialog(
@@ -289,7 +250,7 @@ fun SecurityDialog(
                 .imePadding()
                 .animateContentSize(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(24.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)

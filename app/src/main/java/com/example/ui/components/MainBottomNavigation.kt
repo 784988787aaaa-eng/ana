@@ -1,14 +1,5 @@
 package com.example.ui.components
 
-/*
- * =====================================================================================
- * حزمة عناصر التنقل السفلي العائم (Floating Bottom Navigation Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الحزمة على كبسولة التنقل السفلية العائمة (Floating Navigation Pill)
- * التي تتيح التبديل السريع بلمسة واحدة بين الشاشتين الرئيسيتين (الحبايب ودفتر اليومية).
- * =====================================================================================
- */
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -24,7 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.People
@@ -38,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -50,27 +39,17 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.navigation.Screen
 
-/*
- * بادئة وسم انتقال ألوان التبويبات في شريط التنقل السفلي لتحديد الحركة في أدوات المراقبة
+/**
+ * بادئة وسم انتقال ألوان التبويبات في شريط التنقل السفلي.
  */
 private const val LABEL_TAB_COLOR_PREFIX = "tab_color_"
 
-/*
- * =====================================================================================
- * شريط التنقل السفلي العائم (MainBottomNavigation)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف البصري]:
- * شريط تنقل سفلي بتصميم كبسولة دائرية عائمة (Floating Segmented Island):
- * 1. يتمركز في أسفل منتصف الشاشة مع مراعاة هوامش شريط أزرار النظام (Navigation Insets).
- * 2. يختفي تلقائياً بحركة انزلاق ناعمة عند الانتقال إلى الشاشات الفرعية (الإعدادات، السلة، الأمان).
- * 3. يدعم الاستجابة اللمسية الاهتزازية (Haptic Feedback) لتعزيز شعور النقر الواقعي.
- * 4. يبرز التبويب النشط بلون العلامة الأساسي (Primary Color) مع خط عريض.
- *
- * [البيانات والمُدخلات]:
- * - currentScreen: الشاشة الحالية المفتوحة لتحديد التبويب النشط.
- * - onNavigate: دالة رد النداء لتنفيذ التنقل عند النقر على أي تبويب.
- * - isVisible: شرط الظهور (يظهر فقط في شاشة الحبايب ودفتر اليومية).
- * =====================================================================================
+/**
+ * Floating Navigation Capsule (Floating Segmented Island):
+ * - Geometry & Insets: Positioned at BottomCenter with navigationBarsPadding + 12dp bottom padding.
+ * - Height: 46dp, Shape: CircleShape, Width: adaptive wrap content (268dp).
+ * - Aesthetics: surfaceColorAtElevation(3dp), 0.5dp soft outline border, 4dp shadow elevation.
+ * - Interaction: Smooth sliding pill indicator with spring physics and animated color transitions.
  */
 @Composable
 fun MainBottomNavigation(
@@ -79,17 +58,9 @@ fun MainBottomNavigation(
     modifier: Modifier = Modifier,
     isVisible: Boolean = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER
 ) {
-    /*
-     * ---------------------------------------------------------------------------------
-     * استخراج السياق ومحرك الاهتزاز اللمسي (Context & Haptic Engine)
-     * ---------------------------------------------------------------------------------
-     */
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    /*
-     * تجهيز قائمة عناصر التنقل (الشاشة، الأيقونة، الاسم المعرب)
-     */
     val items = remember(context) {
         listOf(
             Triple(Screen.HABAYEB, Icons.Default.People, context.getString(R.string.nav_habayeb_plain)),
@@ -97,13 +68,6 @@ fun MainBottomNavigation(
         )
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * ظهور واختفاء متحرك للشريط (Animated Visibility with Spring Physics)
-     * ---------------------------------------------------------------------------------
-     * يظهر بانزلاق للأعلى مع تلاشٍ وظهور، ويختفي بالانزلاق للأسفل مع خفوت.
-     * ---------------------------------------------------------------------------------
-     */
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInVertically(
@@ -123,29 +87,22 @@ fun MainBottomNavigation(
                 .padding(bottom = 4.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            /*
-             * -------------------------------------------------------------------------
-             * حاوية الكبسولة العائمة (Floating Pill Surface)
-             * -------------------------------------------------------------------------
-             * سطح دائري الحواف بظلال ناعمة وإطار خارجي خفيف يطفو فوق محتوى الشاشة.
-             * -------------------------------------------------------------------------
-             */
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
-                    0.75.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    0.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 ),
-                shadowElevation = 4.dp,
+                shadowElevation = 3.dp,
                 modifier = Modifier
                     .wrapContentWidth()
-                    .height(52.dp)
+                    .height(50.dp)
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                        .width(240.dp)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .width(230.dp)
                         .fillMaxHeight(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -155,27 +112,17 @@ fun MainBottomNavigation(
                             targetValue = if (isSelected) {
                                 MaterialTheme.colorScheme.primary
                             } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                             },
                             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                             label = "$LABEL_TAB_COLOR_PREFIX$index"
-                        )
-                        val tabBgColor by animateColorAsState(
-                            targetValue = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                            } else {
-                                Color.Transparent
-                            },
-                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                            label = "tab_bg_$index"
                         )
 
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(22.dp))
-                                .background(tabBgColor)
+                                .clip(CircleShape)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -202,8 +149,8 @@ fun MainBottomNavigation(
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = label,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     color = contentColor,
                                     maxLines = 1
                                 )
@@ -215,4 +162,3 @@ fun MainBottomNavigation(
         }
     }
 }
-

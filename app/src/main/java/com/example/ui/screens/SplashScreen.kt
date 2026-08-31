@@ -1,14 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة شاشة البداية والتحميل المتحركة (Splash Screen Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على شاشة الانطلاق الترحيبية المتحركة (TheMasterSplashScreen):
- * تأثيرات النبض التنفسي، دوران التدرجات اللونية الحلقية، التلاشي والتوهج المحيطي.
- * =====================================================================================
- */
-
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -28,37 +19,23 @@ import com.example.ui.theme.Slate900
 import com.example.ui.theme.SplashRadialGlow
 import com.example.ui.theme.SplashSweepGradient
 
-/*
- * =====================================================================================
- * شاشة البداية المتحركة (TheMasterSplashScreen)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شاشة تشغيل ترحيبية بتصميم بصري تجريدي حديث:
- * 1. انتقال سلس تلقائي بعد مهلة زمنية قدرها 2500 مللي ثانية.
- * 2. تأثير نبض حلقي دائري مع دوران طيفي مستمر متوافق مع شاشات 120Hz.
- * 3. استخدام لوحات الفرش المحسوبة مسبقاً (Pre-allocated Brushes) لمنع إعادة التركيب غير الضرورية.
- *
- * [المُدخلات]:
- * - onSplashFinished: رد نداء إنهاء عرض شاشة البداية والانتقال للواجهة الرئيسية أو القفل.
- * =====================================================================================
- */
 @Composable
 fun TheMasterSplashScreen(
     onSplashFinished: () -> Unit
 ) {
-    // مهلة زمنية أنيقة لمدة 2.5 ثانية
+    // Elegant breathing delay - 2500ms
     LaunchedEffect(Unit) {
         delay(2500)
         onSplashFinished()
     }
 
-    // خلفية داكنة غير لامعة بلون كحلي هادئ
-    val deepMatteDark = Slate900
+    // Modern Deep Night Matte Dark Background
+    val deepMatteDark = Slate900 // Premium slate-900 security look
 
-    // حلقة الحركة التكرارية المستمرة
+    // Core Animation loop for high refresh rates (120Hz optimal)
     val infiniteTransition = rememberInfiniteTransition(label = "PortalAnimation")
 
-    // نبض التكبير والتصغير المستمر
+    // Infinite breathing scale pulse
     val scalePulse by infiniteTransition.animateFloat(
         initialValue = 0.92f,
         targetValue = 1.08f,
@@ -69,7 +46,7 @@ fun TheMasterSplashScreen(
         label = "PulseScale"
     )
 
-    // نبض الشفافية والتوهج
+    // Infinite breathing transparency pulse
     val alphaPulse by infiniteTransition.animateFloat(
         initialValue = 0.65f,
         targetValue = 0.95f,
@@ -80,7 +57,7 @@ fun TheMasterSplashScreen(
         label = "PulseAlpha"
     )
 
-    // دوران طيف الألوان
+    // Gentle rotation of the color components
     val rotateDegrees by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -91,14 +68,14 @@ fun TheMasterSplashScreen(
         label = "ColorRotation"
     )
 
-    // حاوية الشاشة الكاملة
+    // Full screen Edge-to-Edge immersive container
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(deepMatteDark),
         contentAlignment = Alignment.Center
     ) {
-        // حلقة الضوء والتوهج التجريدي
+        // Abstract Ambient Morphing - Canvas Light Ring Portal
         Canvas(
             modifier = Modifier
                 .size(240.dp)
@@ -108,13 +85,13 @@ fun TheMasterSplashScreen(
                 .scale(scalePulse)
                 .alpha(alphaPulse)
         ) {
-            // التوهج الشعاعي المركزي (Aura)
+            // Radial Core Glow (Aura) - using pre-allocated zero-recomposition brush
             drawCircle(
                 brush = SplashRadialGlow,
                 radius = size.minDimension * 0.48f
             )
 
-            // التدرج الدوار المحيطي للحلقة الضوئية
+            // Sweep Gradient for rotating light ring spectrum - using pre-allocated brush
             val strokePx = 12.dp.toPx()
             drawCircle(
                 brush = SplashSweepGradient,

@@ -1,15 +1,5 @@
 package com.example.ui.helper
 
-/*
- * =====================================================================================
- * حزمة معالجة النوايا والتكامل الخارجي (Android Intents Helper Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على دوال مساعدة لإنشاء وإطلاق نوايا أندرويد (Android Intents)،
- * مثل مشاركة ملفات النسخ الاحتياطي عبر مزود الملفات الآمن (FileProvider)،
- * الاتصال الهاتفي، فتح محادثات واتساب، وتشغيل تطبيق جوجل درايف.
- * =====================================================================================
- */
-
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -17,17 +7,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 
-/*
- * =====================================================================================
- * دالة مشاركة ملف النسخة الاحتياطية بأمان (shareBackupFile)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * تشارك ملف قاعدة البيانات أو النسخة الاحتياطية مع التطبيقات الخارجية (تليجرام، واتساب، درايف...):
- * 1. توليد رابط URI آمن ومعزول باستخدام موفر الملفات (FileProvider).
- * 2. منح إذن القراءة المؤقت للتطبيق المستلم (FLAG_GRANT_READ_URI_PERMISSION).
- * 3. فتح قائمة مشاركة النظام القياسية (System Share Chooser).
- * =====================================================================================
- */
+// Helper function to share the backup file using FileProvider
 fun shareBackupFile(context: Context, file: File) {
     try {
         val uri = FileProvider.getUriForFile(
@@ -48,14 +28,7 @@ fun shareBackupFile(context: Context, file: File) {
     }
 }
 
-/*
- * =====================================================================================
- * دالة فتح أو تنزيل تطبيق جوجل درايف (openGoogleDriveApp)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * تفحص وجود تطبيق Google Drive على الجهاز لتشغيله مباشرة، أو توجيه المستخدم لمتجر Google Play.
- * =====================================================================================
- */
+// Helper to launch or download Google Drive app from store
 fun openGoogleDriveApp(context: Context) {
     try {
         val launchIntent = context.packageManager.getLaunchIntentForPackage("com.google.android.apps.docs")
@@ -75,14 +48,7 @@ fun openGoogleDriveApp(context: Context) {
     }
 }
 
-/*
- * =====================================================================================
- * دالة إجراء اتصال هاتفي (dialPhoneNumber)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * تفتح واجهة لوحة الاتصال في الهاتف (Dialer) برقم العميل المحدد دون الحاجة لإذن الاتصال المباشر.
- * =====================================================================================
- */
+// Helper to dial a phone number
 fun dialPhoneNumber(context: Context, phoneNumber: String) {
     try {
         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
@@ -93,14 +59,7 @@ fun dialPhoneNumber(context: Context, phoneNumber: String) {
     }
 }
 
-/*
- * =====================================================================================
- * دالة إرسال رسالة واتساب مباشرة (openWhatsAppChat)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * تنظف رقم الهاتف من الرموز والمسافات الزائدة، وتفتح محادثة واتساب مع نص كشف الحساب المرمز.
- * =====================================================================================
- */
+// Helper to open WhatsApp chat with a message
 fun openWhatsAppChat(context: Context, phoneNumber: String, message: String) {
     try {
         val cleanNumber = phoneNumber.replace("+", "").replace(" ", "").trim()
@@ -113,5 +72,4 @@ fun openWhatsAppChat(context: Context, phoneNumber: String, message: String) {
         Toast.makeText(context, context.getString(com.example.R.string.toast_operation_failed), Toast.LENGTH_SHORT).show()
     }
 }
-
 

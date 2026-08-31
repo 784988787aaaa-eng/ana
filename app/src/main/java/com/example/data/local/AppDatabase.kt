@@ -15,7 +15,7 @@
  * 4. تطبيق نمط النسخة الأحادية الآمنة خيطياً (Thread-Safe Singleton) لمنع فتح اتصالات متعددة تستهلك موارد الجهاز.
  * 5. تفعيل نمط التدوين المسبق (WAL - Write-Ahead Logging) لتسريع القراءة والكتابة المتزامنة.
  * 6. ربط سجل الهجرات الكامل (Migrations 1 to 31) لضمان ترقية قاعدة بيانات المستخدمين بأمان دون فقدان أي بيانات تاريخية.
- * 7. تنفيذ صيانة روابط المعاملات القديمة مرة واحدة أثناء ترقية قاعدة البيانات، خارج مسار فتح التطبيق.
+ * 7. تنفيذ إجراءات الصيانة التلقائية والتحقق من سلامة واتساق المعاملات المرتبطة عند فتح القاعدة (onOpen Callback).
  */
 package com.example.data.local
 
@@ -34,6 +34,7 @@ import com.example.data.local.entities.FixedCommitment
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.local.entities.TransactionDb
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * [فئة قاعدة البيانات التجريدية - AppDatabase]:
@@ -41,7 +42,7 @@ import com.example.data.local.entities.TransactionDb
  * [شرح التعليقات التوضيحية (Annotations)]:
  * - `@Database`: تعرف الفئة كقاعدة بيانات Room مع تحديد:
  *   1. `entities`: قائمة الكيانات (الجداول) المسجلة.
- *   2. `version = 32`: رقم الإصدار الهيكلي الحالي لقاعدة البيانات بعد الهجرات المتتالية.
+ *   2. `version = 31`: رقم الإصدار الهيكلي الحالي لقاعدة البيانات بعد الهجرات المتتالية.
  *   3. `exportSchema = false`: لتعطيل تصدير مخطط JSON أثناء البناء لتقليل الحجم.
  * - `@TypeConverters`: تسجيل محول الأنواع للتعامل مع العمليات الحسابية للأرقام العشرية الكبيرة بدقة.
  */
@@ -55,7 +56,7 @@ import com.example.data.local.entities.TransactionDb
         HabayebCustomer::class,
         HabayebTransaction::class
     ],
-    version = 32,
+    version = 31,
     exportSchema = false
 )
 @TypeConverters(BigDecimalConverter::class)
@@ -103,7 +104,7 @@ abstract class AppDatabase : RoomDatabase() {
          * 3. بناء القاعدة عبر `Room.databaseBuilder` مع تمرير سياق التطبيق العام لمنع تسريب الذاكرة (Memory Leaks).
          * 4. تفعيل نمط `WRITE_AHEAD_LOGGING` للسماح بالقراءة المتزامنة أثناء عمليات الكتابة.
          * 5. تسجيل مصفوفة الهجرات الكاملة `ALL_MIGRATIONS` لترقية الجداول القديمة بأمان.
-         * 6. تسجيل الهجرة `MIGRATION_31_32` لتنظيف روابط المعاملات القديمة مرة واحدة أثناء الترقية فقط.
+         * 6. تسجيل استدعاء `onOpen Callback` لتنظيف وتصحيح أي روابط معاملات تالفة عند كل فتح للقاعدة.
          */
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -115,6 +116,30 @@ abstract class AppDatabase : RoomDatabase() {
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                 .addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)
                 .addCallback(object : RoomDatabase.Callback() {
+                    /**
+                     * [استدعاء عند فتح القاعدة - onOpen]:
+                     * يتم تنفيذه فور فتح الاتصال بقاعدة البيانات للقيام بفحص الصيانة الذاتية.
+                     * يقوم بالبحث عن المعاملات في جدول ديون الحبايب التي تحتوي على معرفات ربط خاطئة أو فارغة أو دائرية
+                     * ويقوم بتصفيرها إلى NULL لضمان اتساق البيانات وعدم حدوث انهيارات أثناء الربط المحاسبي.
+                     */
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        try {
+                            db.execSQL("""
+                                UPDATE habayeb_transactions 
+                                SET linkedMainTxId = NULL 
+                                WHERE linkedMainTxId IS NOT NULL 
+                                  AND (
+                                      TRIM(linkedMainTxId) = '' 
+                                      OR LOWER(TRIM(linkedMainTxId)) = 'null' 
+                                      OR TRIM(linkedMainTxId) = '0' 
+                                      OR linkedMainTxId = id
+                                  )
+                            """)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
                 })
                 .build().also { INSTANCE = it }
             }

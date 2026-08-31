@@ -1,22 +1,5 @@
 package com.example.ui.screens.habayeb.components.header
 
-/*
- * =====================================================================================
- * بطاقات المقاييس المالية المزدوجة (Habayeb Dual Metric Cards Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومي يعرض بطاقتين تفاعليتين في ترويسة الشاشة:
- * 1. بطاقة "لنا" (الديون المستحقة لنا على الآخرين / Owed By Them) باللون الأحمر ومؤشرات التصفية.
- * 2. بطاقة "علينا" (الالتزامات المستحقة للآخرين علينا / Owed To Them) باللون الأخضر ومؤشرات التصفية.
- *
- * [الخصائص والمزايا]:
- * - تعمل كل بطاقة كزر تصفية سريع (Filter Tab) لتبديل عرض السجلات حسب النوع (الكل = 0، لنا = 1، علينا = 2).
- * - تكيف ذكي مع ألوان السمة (الوضع الليلي والنهاري) وتغيير لون الخلفية والحدود عند التحديد.
- * - دعم تغيير حجم النص تلقائياً (AutoScaleText) ليناسب المبالغ الكبيرة دون اقتطاع أو تشويه بصري.
- * - ردود فعل لمسية (Haptic Feedback) وتأثير تموج (Ripple) ملون عند النقر.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,22 +25,6 @@ import com.example.R
 import com.example.ui.helper.AutoScaleText
 import com.example.ui.theme.*
 
-/*
- * =====================================================================================
- * دالة بطاقات المقاييس المزدوجة (HabayebDualMetricCards)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - selectedFilterTab: التبويب المحدد حالياً (0 = الكل، 1 = لنا، 2 = علينا).
- * - onFilterTabSelected: رد نداء عند النقر على إحدى البطاقات لتغيير حالة التصفية.
- * - formattedOwedByThem: إجمالي المبالغ المستحقة لنا بصيغة نصية منسقة مع العملة.
- * - formattedOwedToThem: إجمالي المبالغ المستحقة علينا بصيغة نصية منسقة مع العملة.
- * - isDark: مفتاح منطقي لتحديد ما إذا كان الوضع الليلي مفعلاً.
- * - greenColor: اللون الأخضر النشط لعناصر "علينا".
- * - redColor: اللون الأحمر النشط لعناصر "لنا".
- * - haptic: محرك الاهتزاز اللمسي لتأكيد النقر.
- * - modifier: مُعدِّل التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun HabayebDualMetricCards(
     selectedFilterTab: Int,
@@ -73,11 +40,11 @@ fun HabayebDualMetricCards(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 14.dp, end = 14.dp, bottom = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // بطاقة اليمين: "لنا" (Red Color - مبالغ مستحقة لنا)
+        // Right Card: "لنا" (Red Color - Solid Safe Background)
         val isOwedBySelected = selectedFilterTab == 1
         val owedByCardBg = if (isDark) {
             if (isOwedBySelected) ChipRedBgDarkSelected else DebtContainerDark
@@ -91,16 +58,16 @@ fun HabayebDualMetricCards(
         }
 
         Card(
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = owedByCardBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedBySelected) 2.5.dp else 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedBySelected) 3.dp else 1.dp),
             border = BorderStroke(
-                width = if (isOwedBySelected) 1.5.dp else 0.75.dp,
+                width = if (isOwedBySelected) 1.5.dp else 1.dp,
                 color = owedByBorderColor
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp)
+                .height(52.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -117,34 +84,23 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.habayeb_filter_owed_by),
-                            fontSize = 11.5.sp,
-                            fontWeight = if (isOwedBySelected) FontWeight.Bold else FontWeight.SemiBold,
-                            color = redColor,
-                            textAlign = TextAlign.Center
-                        )
-                        if (isOwedBySelected) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "●",
-                                fontSize = 8.sp,
-                                color = redColor
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(id = R.string.habayeb_filter_owed_by),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = redColor,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Spacer(modifier = Modifier.height(2.dp))
                     AutoScaleText(
                         text = formattedOwedByThem,
-                        baseFontSize = 15.sp,
+                        baseFontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = redColor,
                         maxLines = 1,
@@ -155,7 +111,7 @@ fun HabayebDualMetricCards(
             }
         }
 
-        // بطاقة اليسار: "علينا" (Emerald Green Color - مبالغ مستحقة علينا)
+        // Left Card: "علينا" (Emerald Green Color - Solid Safe Background)
         val isOwedToSelected = selectedFilterTab == 2
         val owedToCardBg = if (isDark) {
             if (isOwedToSelected) ChipGreenBgDarkSelected else CreditContainerDark
@@ -169,16 +125,16 @@ fun HabayebDualMetricCards(
         }
 
         Card(
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = owedToCardBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedToSelected) 2.5.dp else 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedToSelected) 3.dp else 1.dp),
             border = BorderStroke(
-                width = if (isOwedToSelected) 1.5.dp else 0.75.dp,
+                width = if (isOwedToSelected) 1.5.dp else 1.dp,
                 color = owedToBorderColor
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp)
+                .height(52.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -195,34 +151,23 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.habayeb_filter_owed_to),
-                            fontSize = 11.5.sp,
-                            fontWeight = if (isOwedToSelected) FontWeight.Bold else FontWeight.SemiBold,
-                            color = greenColor,
-                            textAlign = TextAlign.Center
-                        )
-                        if (isOwedToSelected) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "●",
-                                fontSize = 8.sp,
-                                color = greenColor
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(id = R.string.habayeb_filter_owed_to),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = greenColor,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Spacer(modifier = Modifier.height(2.dp))
                     AutoScaleText(
                         text = formattedOwedToThem,
-                        baseFontSize = 15.sp,
+                        baseFontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = greenColor,
                         maxLines = 1,
@@ -234,4 +179,3 @@ fun HabayebDualMetricCards(
         }
     }
 }
-

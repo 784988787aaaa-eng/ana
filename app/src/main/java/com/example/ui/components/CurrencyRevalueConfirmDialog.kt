@@ -87,7 +87,7 @@ fun CurrencyRevalueConfirmDialog(
                 .animateContentSize(animationSpec = tween(200)),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
@@ -153,7 +153,7 @@ fun CurrencyRevalueConfirmDialog(
                     ) {
                         Text(
                             text = stringResource(id = R.string.currency_update_past_future),
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = Color.White,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         )

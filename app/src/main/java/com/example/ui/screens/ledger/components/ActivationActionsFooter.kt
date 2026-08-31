@@ -1,20 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * مكونات تذييل وإجراءات شاشة التفعيل والترخيص (Activation Actions & Footer Components)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * حزمة من المكونات البصرية التفاعلية المخصصة لإدارة شاشة التفعيل والترخيص:
- * 1. شريط التبويب المقسم (Segmented Tabs) للتبديل بين التفعيل بحساب Google والتفعيل بدون إنترنت بمفتاح المنتج.
- * 2. بطاقة التفعيل عبر Google وتفاصيل النسخ الاحتياطي وحالة البريد الإلكتروني.
- * 3. شريط عرض معرّف الجهاز الفريد (Device ID) مع زر النسخ المباشر للحافظة.
- * 4. لافتة التغذية الراجعة المتحركة (Feedback Banner) لعرض رسائل التنبيه وأزرار التواصل مع الدعم.
- * 5. أزرار الإجراءات السفلية (Footer Buttons) لطلب التفعيل عبر واتساب أو الاستمرار في وضع التصفح.
- * 6. دالة فتح محادثة الدعم الفني المباشر عبر واتساب.
- * =====================================================================================
- */
-
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -38,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -48,17 +32,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.whatsappColor
+import com.example.ui.theme.SoftRed
+import com.example.ui.theme.WhatsAppGreen
 
-/*
- * =====================================================================================
- * شريط التبويب المقسم (ActivationSegmentedTabs)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - selectedTab: رقم التبويب المحدد حالياً (0: Google، 1: مفتاح الترخيص).
- * - onTabSelected: دالة رد النداء عند اختيار تبويب جديد.
- * =====================================================================================
- */
 @Composable
 fun ActivationSegmentedTabs(
     selectedTab: Int,
@@ -72,7 +48,7 @@ fun ActivationSegmentedTabs(
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // التبويب 0: حساب Google والتفعيل السحابي
+        // Tab 0: Google Account
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -101,7 +77,7 @@ fun ActivationSegmentedTabs(
             }
         }
 
-        // التبويب 1: مفتاح المنتج والتفعيل غير المتصل (Offline)
+        // Tab 1: Product Key
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -132,17 +108,6 @@ fun ActivationSegmentedTabs(
     }
 }
 
-/*
- * =====================================================================================
- * محتوى تبويب حساب Google (ActivationGoogleTabContent)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - storedEmail: البريد الإلكتروني المسجل إن وجد.
- * - isLicenseLoading: مؤشر حالة جاري التحقق من الترخيص.
- * - onGoogleSignInClick: رد النداء لبدء تسجيل الدخول بـ Google.
- * - onGoogleActivateClick: رد النداء لتفعيل الترخيص بالسيرفر للبريد المسجل.
- * =====================================================================================
- */
 @Composable
 fun ActivationGoogleTabContent(
     storedEmail: String?,
@@ -212,14 +177,14 @@ fun ActivationGoogleTabContent(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(12.dp),
                                 strokeWidth = 1.5.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = Color.White
                             )
                         } else {
                             Text(
                                 text = stringResource(R.string.licensing_fluent_btn_activate_now),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = Color.White
                             )
                         }
                     }
@@ -239,7 +204,7 @@ fun ActivationGoogleTabContent(
                         Icon(
                             imageVector = Icons.Default.CloudQueue,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = Color.White,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -247,7 +212,7 @@ fun ActivationGoogleTabContent(
                             text = stringResource(R.string.licensing_fluent_btn_google_signin),
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.5.sp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = Color.White
                         )
                     }
                 }
@@ -256,15 +221,6 @@ fun ActivationGoogleTabContent(
     }
 }
 
-/*
- * =====================================================================================
- * شريط معرف الجهاز (ActivationDeviceIdBar)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - deviceId: معرف الجهاز الفريد.
- * - onCopyClick: رد النداء لنسخ المعرف إلى الحافظة.
- * =====================================================================================
- */
 @Composable
 fun ActivationDeviceIdBar(
     deviceId: String,
@@ -321,21 +277,11 @@ fun ActivationDeviceIdBar(
     }
 }
 
-/*
- * =====================================================================================
- * لافتة التغذية الراجعة والخطأ (ActivationFeedbackBanner)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - actionFeedbackMessage: نص رسالة الخطأ أو التنبيه.
- * - onWhatsAppRequestClick: رد النداء لطلب المساعدة عبر واتساب.
- * =====================================================================================
- */
 @Composable
 fun ActivationFeedbackBanner(
     actionFeedbackMessage: String?,
     onWhatsAppRequestClick: () -> Unit
 ) {
-    val whatsappAccent = whatsappColor(MaterialTheme.colorScheme.background.luminance() < 0.5f)
     AnimatedVisibility(
         visible = actionFeedbackMessage != null,
         enter = fadeIn() + expandVertically(),
@@ -343,8 +289,8 @@ fun ActivationFeedbackBanner(
     ) {
         Column(modifier = Modifier.padding(top = 10.dp)) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.70f)),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+                colors = CardDefaults.cardColors(containerColor = SoftRed.copy(alpha = 0.08f)),
+                border = BorderStroke(1.dp, SoftRed.copy(alpha = 0.25f)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -361,13 +307,13 @@ fun ActivationFeedbackBanner(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
+                            tint = SoftRed,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = actionFeedbackMessage ?: "",
-                            color = MaterialTheme.colorScheme.error,
+                            color = SoftRed,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -379,8 +325,8 @@ fun ActivationFeedbackBanner(
                     FilledTonalButton(
                         onClick = onWhatsAppRequestClick,
                         colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = whatsappAccent.copy(alpha = 0.15f),
-                            contentColor = whatsappAccent
+                            containerColor = WhatsAppGreen.copy(alpha = 0.15f),
+                            contentColor = WhatsAppGreen
                         ),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
@@ -404,22 +350,11 @@ fun ActivationFeedbackBanner(
     }
 }
 
-/*
- * =====================================================================================
- * تذييل أزرار التفاعل والإغلاق (ActivationActionsFooter)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - onWhatsAppClick: رد النداء لفتح محادثة واتساب مع الدعم.
- * - onDismiss: رد النداء لإغلاق الحوار والمتابعة في وضع عدم التفعيل.
- * =====================================================================================
- */
 @Composable
 fun ActivationActionsFooter(
     onWhatsAppClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val whatsappAccent = whatsappColor(MaterialTheme.colorScheme.background.luminance() < 0.5f)
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -427,7 +362,7 @@ fun ActivationActionsFooter(
     ) {
         Button(
             onClick = onWhatsAppClick,
-            colors = ButtonDefaults.buttonColors(containerColor = whatsappAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .weight(1f)
@@ -442,7 +377,7 @@ fun ActivationActionsFooter(
                 Icon(
                     imageVector = Icons.Default.Chat,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = Color.White,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -450,7 +385,7 @@ fun ActivationActionsFooter(
                     text = stringResource(R.string.licensing_whatsapp_short),
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.5.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = Color.White
                 )
             }
         }
@@ -474,15 +409,6 @@ fun ActivationActionsFooter(
     }
 }
 
-/*
- * =====================================================================================
- * دالة مساعدة لفتح الدعم الفني عبر واتساب (openWhatsAppSupportDirect)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - context: سياق التطبيق لإطلاق النية (Intent).
- * - msg: الرسالة الافتراضية المرفقة بطلب الدعم.
- * =====================================================================================
- */
 fun openWhatsAppSupportDirect(context: Context, msg: String) {
     val intent = Intent(
         Intent.ACTION_VIEW,
@@ -494,4 +420,3 @@ fun openWhatsAppSupportDirect(context: Context, msg: String) {
         Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_whatsapp_missing), Toast.LENGTH_SHORT).show()
     }
 }
-

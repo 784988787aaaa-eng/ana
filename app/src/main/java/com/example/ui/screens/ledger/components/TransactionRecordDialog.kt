@@ -1,27 +1,8 @@
-/**
- * =====================================================================
- * ملف: TransactionRecordDialog.kt
- * الحزمة: com.example.ui.screens.ledger.components
- * 
- * [الوصف والمسؤولية المعمارية]:
- * يمثل هذا الملف نافذة الحوار السريعة لتسجيل وتعديل الحركات المالية في دفتر اليومية.
- * تتيح هذه النافذة للمستخدم إدخال القيود المالية المباشرة (إيراد / وارد أو مصروف / منصرف)
- * أو تعديل قيد مالي سابق، مع توفير آلة حاسبة منبثقة مدمجة لحساب المبالغ المعقدة،
- * وتكييف ألوان الواجهة ديناميكياً (الأخضر للواردات والأحمر للمصروفات).
- * 
- * [تدفق البيانات وتجربة المستخدم]:
- * - يدعم النافذة الضبط التلقائي للوحة المفاتيح والتركيز الفوري على حقل المبلغ.
- * - يدعم تطهير الأرقام وتوحيد الأرقام العربية والإنجليزية عبر `CurrencyConfig.normalizeDigits`.
- * - يمنع النقر المزدوج أو التكرار عند الحفظ ويفعل الاهتزاز اللمسي التأكيدي (Haptic Feedback).
- * =====================================================================
- */
 package com.example.ui.screens.ledger.components
 
-// ---------------------------------------------------------------------
-// استيراد الحزم الرياضية ومكونات واجهة المستخدم
-// ---------------------------------------------------------------------
 import java.math.BigDecimal
 import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,24 +39,6 @@ import com.example.ui.screens.habayeb.utils.CurrencyConfig
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 
-/**
- * =====================================================================
- * [نافذة تسجيل وتعديل القيد المالي - TransactionRecordDialog]:
- * 
- * [الهدف والغرض]:
- * توفير واجهة إدخال مبسطة وسريعة لتسجيل العمليات المالية المباشرة (وارد / منصرف)
- * في دفتر اليومية مع التحقق الفوري من صحة المبلغ وإمكانية استخدام الآلة الحاسبة.
- * 
- * [البيانات والمعاملات المستلمة]:
- * @param showTxDialog متغير منطقي يتحكم بظهور أو إخفاء نافذة الحوار.
- * @param txDialogType نوع العملية المالية ("INCOME" للوارد أو "EXPENSE" للمنصرف).
- * @param editingTransaction كائن المعاملة المُراد تعديلها (يكون null عند إضافة معاملة جديدة).
- * @param currencySymbol رمز العملة النقدية المعروض بجانب حقل المبلغ.
- * @param onDismiss دالة الاستدعاء الارتجاعي لإغلاق نافذة الحوار وإلغاء العملية.
- * @param onSave دالة حفظ القيد المالي وتمرير تفاصيله إلى الـ ViewModel لتخزينه في قاعدة البيانات.
- * @param modifier مخصصات المظهر والأبعاد.
- * =====================================================================
- */
 @Composable
 fun TransactionRecordDialog(
     showTxDialog: Boolean,
@@ -86,18 +49,12 @@ fun TransactionRecordDialog(
     onSave: (id: String?, type: String, category: String, amount: BigDecimal, description: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // التحقق المسبق: عدم بناء أي عناصر واجهة إذا كانت النافذة مخفية
     if (!showTxDialog) return
 
     val context = LocalContext.current
-
-    // -----------------------------------------------------------------
-    // تهيئة القيم الأولية وحالات الإدخال النصي
-    // -----------------------------------------------------------------
     val initialAmount = remember(editingTransaction, showTxDialog) { editingTransaction?.amount?.toPlainString() ?: "" }
     val initialDesc = remember(editingTransaction, showTxDialog) { editingTransaction?.description ?: "" }
 
-    // إدارة حقول الإدخال عبر TextFieldValue لضمان بقاء مؤشر الكتابة في نهاية النص
     var numAmountTfv by remember(editingTransaction, showTxDialog) {
         mutableStateOf(TextFieldValue(text = initialAmount, selection = TextRange(initialAmount.length)))
     }
@@ -107,32 +64,24 @@ fun TransactionRecordDialog(
     val numAmount = numAmountTfv.text
     val descriptionStr = descriptionTfv.text
 
-    // تحديد التصنيف الافتراضي (إيراد عام أو مصروف عام) في حال لم يتم تحديد تصنيف مخصص
     val categoryName = remember(editingTransaction, txDialogType) {
         editingTransaction?.category ?: if (txDialogType == "INCOME") context.getString(R.string.ledger_category_overall_income) else context.getString(R.string.ledger_category_expense)
     }
 
-    // حالات التحكم في الآلة الحاسبة ومنع الحفظ المزدوج المتزامن
     var showCalcPopup by rememberSaveable { mutableStateOf(false) }
     var isSavingTx by remember(showTxDialog) { mutableStateOf(false) }
 
-    // تنقية وتوحيد الأرقام وتحويلها إلى كائن BigDecimal بدقة عالية
     val parsedAmount = remember(numAmount) {
         val norm = CurrencyConfig.normalizeDigits(numAmount)
         try { BigDecimal(norm.trim()) } catch (_: Exception) { BigDecimal.ZERO }
     }
-    // تفعيل زر التأكيد فقط إذا كان المبلغ أكبر من الصفر والعملية غير جارية حالياً
     val isConfirmButtonEnabled = !isSavingTx && parsedAmount.compareTo(BigDecimal.ZERO) > 0
 
-    // -----------------------------------------------------------------
-    // إدارة التركيز ولوحة المفاتيح
-    // -----------------------------------------------------------------
     val focusRequester = remember { FocusRequester() }
     val descriptionFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
 
-    // ضبط نافذة الحوار لإبقاء لوحة المفاتيح ظاهرة دون إغلاق غير مقصود
     val view = androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view) {
         val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
@@ -140,7 +89,6 @@ fun TransactionRecordDialog(
         onDispose {}
     }
 
-    // التركيز البرمجي التلقائي على حقل إدخال المبلغ فور فتح الحوار
     LaunchedEffect(Unit) {
         try {
             kotlinx.coroutines.delay(150)
@@ -151,13 +99,10 @@ fun TransactionRecordDialog(
         }
     }
 
-    // -----------------------------------------------------------------
-    // الألوان الديناميكية والهوية البصرية المالية
-    // -----------------------------------------------------------------
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val isIncome = txDialogType == "INCOME"
 
-    // اختيار اللون المالي (أخضر للواردات / أحمر للمصروفات) بما يتوافق مع الوضع الليلي والنهاري
+    // Colors: Green for Income (وارد), Red for Expense (منصرف) matching action buttons
     val themeColor = if (isIncome) {
         financialCreditColor(isDark)
     } else {
@@ -165,13 +110,11 @@ fun TransactionRecordDialog(
     }
     val themeColorSub = themeColor.copy(alpha = 0.85f)
 
+    // Dialog background & inputs using MaterialTheme color scheme
     val dialogBgColor = MaterialTheme.colorScheme.surface
     val textInputBgColor = if (isDark) themeColor.copy(alpha = 0.12f) else themeColor.copy(alpha = 0.05f)
     val textColor = MaterialTheme.colorScheme.onSurface
 
-    // -----------------------------------------------------------------
-    // هيكل نافذة الحوار وبطاقة الإدخال
-    // -----------------------------------------------------------------
     Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(
@@ -182,7 +125,7 @@ fun TransactionRecordDialog(
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = dialogBgColor,
-            tonalElevation = 0.dp, // تعطيل الارتفاع النغمي لمنع ظهور تدرجات رمادية غير متناسقة
+            tonalElevation = 0.dp, // Disable tonal elevation to prevent neutral gray overlays
             border = BorderStroke(2.dp, themeColor),
             modifier = Modifier
                 .width(280.dp)
@@ -195,9 +138,7 @@ fun TransactionRecordDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // -------------------------------------------------------------
-                // عنوان نافذة الحوار (إضافة وارد / إضافة منصرف / تعديل العملية)
-                // -------------------------------------------------------------
+                // Header
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -216,14 +157,12 @@ fun TransactionRecordDialog(
                     )
                 }
 
-                // -------------------------------------------------------------
-                // حقول إدخال المبلغ والبيان
-                // -------------------------------------------------------------
+                // Compact fields column with distinct borders
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // حقل إدخال المبلغ المالي مع أيقونة تشغيل الآلة الحاسبة
+                    // Amount Input
                     OutlinedTextField(
                         value = numAmountTfv,
                         onValueChange = { numAmountTfv = it },
@@ -277,7 +216,7 @@ fun TransactionRecordDialog(
                         )
                     )
 
-                    // حقل إدخال بيان أو وصف الحركة المالية
+                    // Description Input
                     OutlinedTextField(
                         value = descriptionTfv,
                         onValueChange = { descriptionTfv = it },
@@ -317,7 +256,7 @@ fun TransactionRecordDialog(
                             onDone = {
                                 focusManager.clearFocus()
                                 softwareKeyboardController?.hide()
-                                if (isConfirmButtonEnabled && !isSavingTx && parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                                if (isConfirmButtonEnabled && parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
                                     isSavingTx = true
                                     onSave(
                                         editingTransaction?.id,
@@ -326,6 +265,7 @@ fun TransactionRecordDialog(
                                         parsedAmount,
                                         descriptionStr
                                     )
+                                    onDismiss()
                                 }
                             }
                         )
@@ -334,15 +274,13 @@ fun TransactionRecordDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // -------------------------------------------------------------
-                // أزرار التحكم والإجراءات (إلغاء / حفظ)
-                // -------------------------------------------------------------
+                // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // زر الإلغاء
+                    // Cancel button
                     TextButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
@@ -357,13 +295,14 @@ fun TransactionRecordDialog(
                         )
                     }
 
-                    // زر الحفظ والتأكيد
+                    // Save button
                     Button(
-                        enabled = isConfirmButtonEnabled && !isSavingTx,
+                        enabled = isConfirmButtonEnabled,
                         onClick = {
                             if (isSavingTx) return@Button
                             if (parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
                                 isSavingTx = true
+                                com.example.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                                 onSave(
                                     editingTransaction?.id,
                                     txDialogType,
@@ -371,6 +310,7 @@ fun TransactionRecordDialog(
                                     parsedAmount,
                                     descriptionStr
                                 )
+                                onDismiss()
                             }
                         },
                         modifier = Modifier.weight(1.2f),
@@ -379,7 +319,7 @@ fun TransactionRecordDialog(
                             containerColor = themeColor,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                             disabledContainerColor = themeColor.copy(alpha = 0.35f),
-                            disabledContentColor = if (isDark) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            disabledContentColor = if (isDark) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f) else Color.Gray.copy(alpha = 0.4f)
                         )
                     ) {
                         Text(
@@ -393,9 +333,6 @@ fun TransactionRecordDialog(
         }
     }
 
-    // -----------------------------------------------------------------
-    // نافذة الآلة الحاسبة المنبثقة لإجراء العمليات الحسابية وتمرير الناتج مباشرة
-    // -----------------------------------------------------------------
     if (showCalcPopup) {
         CalculatorDialog(
             onDismiss = { showCalcPopup = false },
@@ -413,4 +350,3 @@ fun TransactionRecordDialog(
         )
     }
 }
-

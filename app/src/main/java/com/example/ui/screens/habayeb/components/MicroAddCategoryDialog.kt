@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة إضافة تصنيف مخصص سريع (Micro Add Category Dialog Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على نافذة حوارية سريعة وخفيفة لإضافة تصنيف جديد:
- * 1. حقل إدخال اسم التصنيف مع تركيز تلقائي وإظهار لوحة المفاتيح فورياً.
- * 2. زر حفظ ذكي ينفذ الإضافة ويغلق النافذة بعد تنظيف الفراغات الزائدة.
- * 3. دعم إزاحة لوحة المفاتيح التلقائي (imePadding) لضمان عدم حجب الحقول.
- * =====================================================================================
- */
-
 import android.view.WindowManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -106,7 +95,7 @@ fun MicroAddCategoryDialog(
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
                 .width(320.dp)

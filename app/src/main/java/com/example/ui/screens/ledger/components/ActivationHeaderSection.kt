@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * قسم رأس حوار التفعيل والترخيص (Activation Header Section)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومية يعرض شريط العنوان والحالة التفاعلية لنافذة التفعيل:
- * 1. يتكيف لون وأيقونة الرأس بناءً على حالة الترخيص الحالية (مفعل، منتهي التجربة، أو عادي).
- * 2. يعرض العنوان الرئيسي والفرعي المعبر عن الوضع الحالي للنسخة.
- * 3. يوفر زر إغلاق دائري سريع ومناسب للأجهزة اللمسية.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -36,17 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * دالة العرض لقسم رأس التفعيل (ActivationHeaderSection Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - isActivated: هل التطبيق مفعل بترخيص رسمي ودائم.
- * - isAutoTriggered: هل فتح الحوار ناتج عن انتهاء المدة التجريبية تلقائياً.
- * - onDismiss: رد النداء عند النقر على زر الإغلاق.
- * =====================================================================================
- */
 @Composable
 fun ActivationHeaderSection(
     isActivated: Boolean,
@@ -59,13 +38,13 @@ fun ActivationHeaderSection(
         else -> Icons.Default.Lock
     }
     val iconTint = when {
-        isActivated -> MaterialTheme.colorScheme.tertiary
-        isAutoTriggered -> MaterialTheme.colorScheme.error
+        isActivated -> EmeraldPrimary
+        isAutoTriggered -> SoftRed
         else -> MaterialTheme.colorScheme.primary
     }
     val iconBg = when {
-        isActivated -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f)
-        isAutoTriggered -> MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+        isActivated -> EmeraldPrimary.copy(alpha = 0.12f)
+        isAutoTriggered -> SoftRed.copy(alpha = 0.12f)
         else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
     }
     val titleText = when {
@@ -111,7 +90,7 @@ fun ActivationHeaderSection(
                     Text(
                         text = stringResource(R.string.licensing_fluent_subtitle_active),
                         fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = EmeraldPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -135,4 +114,3 @@ fun ActivationHeaderSection(
         }
     }
 }
-

@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة التحكم وسياق العميل (Customer Context Bottom Sheet / Dialog Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على قائمة الإدارة السريعة الشاملة لبطاقة العميل:
- * - أزرار الحذف والتعديل السريع في الرأس العلوي للنافذة.
- * - خيارات تثبيت الحساب (Pin/Unpin)، وإضافته أو إزالته من التصنيفات والمجلدات.
- * - خيار تفعيل التحديد المتعدد للحسابات، وتغيير نوع الحساب (له/عليه/مغلق).
- * - انتقال متحرك فائق النعومة بين قائمة الخيارات وقسم اختيار التصنيفات.
- * =====================================================================================
- */
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
@@ -64,27 +52,9 @@ import com.example.data.local.entities.CustomCategory
 import com.example.ui.state.CustomerUiState
 import com.example.ui.viewmodel.FinanceConstants
 
-/*
- * =====================================================================================
- * نافذة تحكم الحساب وقائمته السياقية (CustomerContextBottomSheet)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة تحكم سياقية تظهر عند الضغط المطول أو النقر على خيارات بطاقة العميل لتقديم إجراءات سريعة.
- *
- * [المُدخلات]:
- * - customer: حالة العميل المعروض في الواجهة.
- * - customCategories: قائمة التصنيفات المخصصة المتاحة.
- * - isPinned: هل الحساب مثبت في رأس القائمة حالياً.
- * - activeThemeColor: لون السمة الأساسي.
- * - onDismiss: رد نداء لإغلاق النافذة.
- * - onTogglePin: رد نداء لتثبيت أو فك تثبيت الحساب.
- * - onAssignCategory: رد نداء لتعيين العميل لتصنيف معين.
- * - onEnableMultiSelect: رد نداء لتفعيل وضع التحديد الجماعي.
- * - onDelete: رد نداء لحذف العميل.
- * - onEditClick: رد نداء لتعديل بيانات العميل.
- * - onUpdateCustomerType: رد نداء لتحديث نوع الحساب.
- * - currentActiveCategory: اسم التصنيف النشط المعروض حالياً.
- * =====================================================================================
+/**
+ * نافذة تحكم الحساب المبتكرة والأنيقة للغاية:
+ * تم تصميمها لتعبر عن طابع عصري رشيق، وتضم خيار الحذف المباشر السهل والسريع.
  */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -110,7 +80,7 @@ fun CustomerContextBottomSheet(
     ) {
         Card(
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
             modifier = Modifier
                 .width(310.dp)

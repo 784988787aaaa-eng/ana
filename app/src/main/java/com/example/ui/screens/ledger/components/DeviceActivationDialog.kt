@@ -1,19 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * حوار تفعيل ترخيص التطبيق والجهاز (Device Activation Dialog Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية مجمعة ورئيسية (Unified Facade Dialog) لإدارة وتفعيل تراخيص التطبيق:
- * 1. تدعم التفعيل السحابي عبر حساب Google وربطه بقاعدة بيانات Firebase.
- * 2. تدعم التفعيل اليدوي المباشر عبر إدخال مفتاح الترخيص (Product Key).
- * 3. تعرض حالة التفعيل الحالية، البريد الإلكتروني المفعل، ومعرف الجهاز الفريد (Device ID).
- * 4. توفر مساراً مباشراً لنسخ معرف الجهاز، وطلب الدعم أو الترخيص عبر رسائل WhatsApp الفورية.
- * 5. تجمع كافة المكونات الفرعية الموديلية (Header, Banner, Tabs, DeviceIdBar, Footer).
- * =====================================================================================
- */
-
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -63,9 +49,6 @@ fun DeviceActivationDialog(
     val activatedEmail by viewModel.activatedEmailState.collectAsStateWithLifecycle()
     val isLicenseLoading by viewModel.isLicenseLoading.collectAsStateWithLifecycle()
     val storedEmail by com.example.domain.GoogleAuthSessionManager.currentEmail.collectAsStateWithLifecycle()
-    val isTrialExpired by viewModel.isTrialExpiredState.collectAsStateWithLifecycle()
-    val totalTransactionsCount by viewModel.totalTransactionsCount.collectAsStateWithLifecycle()
-    val effectiveAutoTriggered = isAutoTriggered || isTrialExpired
 
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Google / Cloud, 1: Product Key
     var activationCodeInput by remember { mutableStateOf("") }
@@ -168,7 +151,7 @@ fun DeviceActivationDialog(
                 // Header
                 ActivationHeaderSection(
                     isActivated = isActivated,
-                    isAutoTriggered = effectiveAutoTriggered,
+                    isAutoTriggered = isAutoTriggered,
                     onDismiss = onDismiss
                 )
 
@@ -177,20 +160,10 @@ fun DeviceActivationDialog(
                 // Status Banner
                 ActivationStatusBanner(
                     isActivated = isActivated,
-                    isAutoTriggered = effectiveAutoTriggered
+                    isAutoTriggered = isAutoTriggered
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                if (!isActivated) {
-                    ActivationTrialQuotaCard(
-                        usedCount = totalTransactionsCount,
-                        maxCount = 100,
-                        isExpired = effectiveAutoTriggered
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
+                Spacer(modifier = Modifier.height(12.dp))
 
                 if (isActivated) {
                     // Activated State Body

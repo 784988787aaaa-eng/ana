@@ -50,7 +50,7 @@ fun TrashCustomerHistoryOverlay(
     val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
     val creditColor = financialCreditColor(isDark)
     val debtColor = financialDebtColor(isDark)
-    val avatarColor = remember(parsedData.titleText, isDark) { getInitialColor(parsedData.titleText, isDark) }
+    val avatarColor = remember(parsedData.titleText) { getInitialColor(parsedData.titleText) }
     val firstLetter = remember(parsedData.titleText) {
         parsedData.titleText.trim().firstOrNull()?.toString()?.uppercase() ?: "؟"
     }
@@ -68,7 +68,7 @@ fun TrashCustomerHistoryOverlay(
             // Header Bar
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 3.dp
             ) {
                 Row(
@@ -217,7 +217,7 @@ fun TrashCustomerHistoryOverlay(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Row(

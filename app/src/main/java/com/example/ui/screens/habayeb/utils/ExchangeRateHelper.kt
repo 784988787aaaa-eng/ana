@@ -1,36 +1,21 @@
 package com.example.ui.screens.habayeb.utils
 
-/*
- * =====================================================================================
- * مُساعد ومحرك أسعار صرف العملات (Exchange Rate Engine & Helper)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * إدارة مصفوفة أسعار صرف العملات الأجنبية وقواعد التحويل المالي بدقة محاسبية صارمة:
- * 1. العملة الواحدة المتطابقة (Same Currency) تملك دائماً معامل تحويل حتمي يساوي 1 (BigDecimal.ONE).
- * 2. رفض أي سعر صرف سالب أو يساوي صفراً لضمان سلامة الحسابات المالية.
- * 3. الحفاظ التام على الدقة المحاسبية (Scale 4) باستخدام RoundingMode.HALF_EVEN لمنع التشويه التراكمي.
- * 4. إدارة مصفوفة أزواج الصرف الثنائية (Bidirectional Currency Matrix) لضمان اتساق الحسابات عبر جميع الشاشات.
- * 5. قراءة وكتابة وتحديث كائن JSON المخزن في التفضيلات لأسعار الصرف المتعددة.
- * =====================================================================================
- */
-
 import com.example.domain.model.CurrencyPair
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/*
- * =====================================================================================
- * كائن محرك أسعار الصرف (ExchangeRateHelper Object)
- * -------------------------------------------------------------------------------------
- * يوفر العمليات الحسابية والتحويلات لمصفوفة أسعار الصرف.
- * =====================================================================================
+/**
+ * محرك وقواعد إدارة أسعار صرف العملات والتحويل المالي
+ *
+ * المبادئ الحاكمة:
+ * 1. العملة الواحدة المتطابقة (Same Currency) تملك دائماً معامل تحويل حتمي يساوي 1 (BigDecimal.ONE).
+ * 2. رفض أي سعر صرف سالب أو يساوي صفراً (Non-positive exchange rate is strictly invalid).
+ * 3. الحفاظ التام على الدقة المحاسبية (Scale 4) باستخدام RoundingMode.HALF_EVEN لضمان عدم حدوث تشويه تراكمي.
+ * 4. إدارة مصفوفة أزواج الصرف الثنائية (Bidirectional Currency Matrix) لضمان اتساق الحسابات عبر جميع الشاشات.
  */
 object ExchangeRateHelper {
     
-    /*
-     * الحصول على كائن زوج العملات مع سعر الصرف الحالي بدقة BigDecimal
-     */
     fun getCurrencyPair(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): CurrencyPair {
         val rate = getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
         return CurrencyPair(
@@ -40,17 +25,10 @@ object ExchangeRateHelper {
         )
     }
 
-    /*
-     * حفظ وتحديث زوج العملات وإرجاع سلسلة JSON المحدثة
-     */
     fun setCurrencyPair(jsonStr: String, pair: CurrencyPair): String {
         return setRate(jsonStr, pair.baseCurrency, pair.targetCurrency, pair.safeRate)
     }
 
-    /*
-     * استخراج سعر الصرف بين عملتين بدقة BigDecimal (4 خانات عشرية)
-     * يبحث عن السعر المباشر، أو السعر المعكوس، أو يرجع 1.0000 كقيمة افتراضية
-     */
     fun getRateBigDecimal(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): BigDecimal {
         val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
@@ -87,16 +65,10 @@ object ExchangeRateHelper {
         }
     }
 
-    /*
-     * استخراج سعر الصرف كقيمة Double
-     */
     fun getRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Double {
         return getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol).toDouble()
     }
 
-    /*
-     * التحقق من وجود سعر صرف مسجل ومعرف بين عملتين
-     */
     fun hasRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Boolean {
         val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
@@ -123,9 +95,6 @@ object ExchangeRateHelper {
         }
     }
 
-    /*
-     * تعيين وتحديث سعر الصرف بين عملتين بدقة BigDecimal وإكمال المصفوفة الثنائية
-     */
     fun setRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String, rate: BigDecimal): String {
         val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
@@ -161,17 +130,11 @@ object ExchangeRateHelper {
         return completeMatrix(updatedJson)
     }
 
-    /*
-     * تعيين سعر الصرف بقيمة Double
-     */
     fun setRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String, rate: Double): String {
         if (rate <= 0.0) return jsonStr
         return setRate(jsonStr, baseCurrencySymbol, foreignCurrencySymbol, BigDecimal.valueOf(rate))
     }
 
-    /*
-     * استكمال وضبط مصفوفة التناظر الكاملة لأسعار الصرف لكافة العملات
-     */
     fun completeMatrix(jsonStr: String): String {
         try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
@@ -247,14 +210,10 @@ object ExchangeRateHelper {
         }
     }
 
-    /*
-     * ترحيل أسعار الصرف عند تغيير العملة الأساسية
-     */
     fun migrateRates(jsonStr: String, oldBase: String, newBase: String): String {
         return jsonStr
     }
 }
-
 
 
 

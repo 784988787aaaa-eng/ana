@@ -1,25 +1,5 @@
-/**
- * =====================================================================
- * ملف: SecurityActivePanel.kt
- * الحزمة: com.example.ui.screens.security.components
- * 
- * [الوصف والمسؤولية المعمارية]:
- * يمثل هذا الملف لوحة التحكم الأمنية النشطة التي تظهر عندما يكون القفل الرقمي مفعلاً.
- * يعرض هذا المكون حالة الحماية الحالية للتطبيق، ويتيح للمستخدم إدارة خيارات الأمان
- * المتقدمة مثل: تفعيل أو تعطيل البصمة الحيوية (Biometrics)، تغيير رمز المرور (PIN)،
- * أو إلغاء تفعيل قفل التطبيق بالكامل بعد التحقق الأمني الإلزامي.
- * 
- * [الأمان والتحقق المسبق]:
- * - لحماية بيانات المستخدم من التعديل غير المصرح به، لا يمكن تغيير الرمز أو إلغاء القفل
- *   إلا بعد اجتياز نافذة التحقق الأمني (`VerifyOldPinDialog`) عبر إدخال الرمز القديم
- *   أو استخدام عبارة الاسترداد الاحتياطية.
- * =====================================================================
- */
 package com.example.ui.screens.security.components
 
-// ---------------------------------------------------------------------
-// استيراد أدوات أندرويد وواجهة Jetpack Compose ومكونات الأمان
-// ---------------------------------------------------------------------
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -58,36 +38,13 @@ import com.example.domain.StringUtils.toEnglishDigits
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 
-/**
- * أنواع الإجراءات الأمنية الحساسة التي تتطلب تحققاً مسبقاً قبل تنفيذها:
- * - [CHANGE_PIN]: تغيير الرمز السري الحالي إلى رمز جديد.
- * - [DEACTIVATE]: إيقاف وتعطيل نظام قفل التطبيق نهائياً.
- */
 enum class SecurityActiveAction {
     CHANGE_PIN,
     DEACTIVATE
 }
 
-/**
- * لون المقبض الدائري لمفتاح التبديل (Switch).
- */
+private val SWITCH_THUMB_COLOR = Color.White
 
-/**
- * =====================================================================
- * [لوحة الأمان النشطة - SecurityActivePanel]:
- * 
- * [الهدف والغرض]:
- * عرض الحالة الأمنية النشطة وتوفير أزرار التحكم في البصمة وتغيير أو تعطيل القفل.
- * 
- * [البيانات المستلمة]:
- * @param currentSettings كائن إعدادات التطبيق الحالية المحفوظة في قاعدة البيانات.
- * @param viewModel نموذج العرض المسؤول عن إدارة وتحديث خيارات الأمان والتحقق من الرموز.
- * @param onCopyRecoveryPhrase دالة استدعاء لنسخ عبارة الاسترداد (اختيارية).
- * @param onChangePasscode دالة بدء شاشة إنشاء رمز مرور جديد بعد اجتياز التحقق.
- * @param onDeactivateSecurity دالة تنفيذ إيقاف القفل بعد اجتياز التحقق.
- * @param modifier مخصصات الأبعاد والمحاذاة.
- * =====================================================================
- */
 @Composable
 fun SecurityActivePanel(
     currentSettings: AppSettings,
@@ -100,10 +57,8 @@ fun SecurityActivePanel(
     val context = LocalContext.current
     val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
 
-    // تتبع الإجراء الحساس المعلق بانتظار التحقق من هوية المستخدم
     var pendingAction by remember { mutableStateOf<SecurityActiveAction?>(null) }
 
-    // بطاقة الحاوية الرئيسية للوحة الأمان
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
@@ -115,17 +70,14 @@ fun SecurityActivePanel(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // تهيئة درجات ألوان الأمان والتحذير المتوافقة مع السمة
             val shieldBg = if (isDark) com.example.ui.theme.CreditContainerDark else com.example.ui.theme.CreditContainerLight
-            val shieldBorder = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.45f)
+            val shieldBorder = if (isDark) com.example.ui.theme.SelectionGreen else com.example.ui.theme.CreditBorderLight
             val shieldTint = if (isDark) com.example.ui.theme.CreditGreenDark else com.example.ui.theme.CreditGreen
             val activeText = if (isDark) com.example.ui.theme.CreditGreenDark else com.example.ui.theme.CreditGreen
             val deactivateContent = if (isDark) com.example.ui.theme.DebtRedDark else com.example.ui.theme.DebtRed
             val deactivateBorder = if (isDark) com.example.ui.theme.DebtBorderDark else com.example.ui.theme.DebtBorderLight
 
-            // -------------------------------------------------------------
-            // شارة درع الحماية المعتمدة (Shield Icon)
-            // -------------------------------------------------------------
+            // Shield Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -141,7 +93,6 @@ fun SecurityActivePanel(
                 )
             }
 
-            // نص تأكيد الحماية النشطة
             Text(
                 text = stringResource(id = R.string.sec_toast_active_success),
                 fontSize = 14.sp,
@@ -149,7 +100,6 @@ fun SecurityActivePanel(
                 color = activeText
             )
 
-            // نص الإرشادات والتحذيرات التوضيحية
             Text(
                 text = stringResource(id = R.string.sec_card_desc_warning),
                 fontSize = 11.5.sp,
@@ -159,9 +109,6 @@ fun SecurityActivePanel(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // -------------------------------------------------------------
-            // قسم المصادقة البيومترية (البصمة الحيوية) إذا كان الجهاز يدعمها
-            // -------------------------------------------------------------
             if (viewModel.isBiometricSupported) {
                 val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
                 Card(
@@ -185,7 +132,7 @@ fun SecurityActivePanel(
                             Icon(
                                 imageVector = Icons.Default.Fingerprint,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = EmeraldPrimary,
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -203,13 +150,12 @@ fun SecurityActivePanel(
                                 )
                             }
                         }
-                        // مفتاح تبديل تفعيل أو تعطيل فتح القفل بالبصمة
                         Switch(
                             checked = isBiometricEnabled,
                             onCheckedChange = { viewModel.toggleBiometric(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                                checkedThumbColor = SWITCH_THUMB_COLOR,
+                                checkedTrackColor = EmeraldPrimary
                             )
                         )
                     }
@@ -218,9 +164,7 @@ fun SecurityActivePanel(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
 
-            // -------------------------------------------------------------
-            // زر طلب تغيير رمز المرور (PIN)
-            // -------------------------------------------------------------
+            // CHANGE PIN BUTTON
             OutlinedButton(
                 onClick = { pendingAction = SecurityActiveAction.CHANGE_PIN },
                 shape = RoundedCornerShape(12.dp),
@@ -246,9 +190,7 @@ fun SecurityActivePanel(
                 }
             }
 
-            // -------------------------------------------------------------
-            // زر طلب تعطيل وإلغاء قفل التطبيق بالكامل
-            // -------------------------------------------------------------
+            // DEACTIVATE SECURITY BUTTON
             OutlinedButton(
                 onClick = { pendingAction = SecurityActiveAction.DEACTIVATE },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = deactivateContent),
@@ -278,9 +220,7 @@ fun SecurityActivePanel(
         }
     }
 
-    // -----------------------------------------------------------------
-    // حوار التحقق الأمني المشروط: يتطلب إدخال الرمز القديم أو عبارة الاسترداد
-    // -----------------------------------------------------------------
+    // Modal verification dialog requiring Old PIN or Recovery Phrase
     val activePendingAction = pendingAction
     if (activePendingAction != null) {
         VerifyOldPinDialog(
@@ -303,22 +243,6 @@ fun SecurityActivePanel(
     }
 }
 
-/**
- * =====================================================================
- * [نافذة التحقق الأمني - VerifyOldPinDialog]:
- * 
- * [الهدف والغرض]:
- * نافذة حوار تحقق تلزم المستخدم بإثبات ملكيته للتطبيق عبر إدخال الرمز السري الحالي
- * أو استخدام عبارة الاسترداد وتلميحها قبل السماح بتغيير الرمز أو تعطيل الحماية.
- * 
- * [المعاملات المستلمة]:
- * @param action الإجراء الأمني المراد تنفيذه بعد نجاح التحقق.
- * @param recoveryHint تلميح عبارة الاسترداد المسجل للمساعدة في التذكر.
- * @param onVerify دالة فحص مطابقة المدخل مع الرمز أو العبارة المخزنة في الـ ViewModel.
- * @param onSuccess استدعاء عند نجاح عملية التحقق لمتابعة تنفيذ الإجراء المطلوب.
- * @param onDismiss استدعاء عند إلغاء أو إغلاق الحوار.
- * =====================================================================
- */
 @Composable
 fun VerifyOldPinDialog(
     action: SecurityActiveAction,
@@ -328,7 +252,6 @@ fun VerifyOldPinDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.red < 0.5f
     var pinInput by remember { mutableStateOf("") }
     var recoveryInput by remember { mutableStateOf("") }
     var showRecoveryMode by remember { mutableStateOf(false) }
@@ -358,7 +281,6 @@ fun VerifyOldPinDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // شريط العنوان وزر الإغلاق
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -375,7 +297,6 @@ fun VerifyOldPinDialog(
                     )
                 }
 
-                // نص الإرشاد التوضيحي وفقاً للنمط النشط (رمز المرور أو الاسترداد)
                 Text(
                     text = if (!showRecoveryMode) stringResource(id = R.string.sec_verify_pin_prompt) else stringResource(id = R.string.sec_verify_recovery_prompt),
                     fontSize = 12.sp,
@@ -383,9 +304,6 @@ fun VerifyOldPinDialog(
                     textAlign = TextAlign.Center
                 )
 
-                // -------------------------------------------------------------
-                // نمط التحقق برمز المرور الحالي (PIN)
-                // -------------------------------------------------------------
                 if (!showRecoveryMode) {
                     OutlinedTextField(
                         value = pinInput,
@@ -422,7 +340,6 @@ fun VerifyOldPinDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // رابط التحويل إلى نمط الاسترداد في حال نسيان الرمز
                     TextButton(
                         onClick = { showRecoveryMode = true },
                         modifier = Modifier.padding(top = 2.dp)
@@ -435,9 +352,6 @@ fun VerifyOldPinDialog(
                         )
                     }
                 } else {
-                    // ---------------------------------------------------------
-                    // نمط التحقق عبر عبارة الاسترداد وتلميح الأمان
-                    // ---------------------------------------------------------
                     OutlinedTextField(
                         value = recoveryInput,
                         onValueChange = { recoveryInput = it.toEnglishDigits() },
@@ -448,7 +362,6 @@ fun VerifyOldPinDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // إظهار تلميح الأمان إن وُجد للمساعدة في تذكر عبارة الاسترداد
                     if (!recoveryHint.isNullOrBlank()) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -456,26 +369,22 @@ fun VerifyOldPinDialog(
                                 .clickable { showHint = !showHint }
                                 .padding(vertical = 4.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Lightbulb, contentDescription = null, tint = com.example.ui.theme.warningColor(isDark), modifier = Modifier.size(16.dp))
+                            Icon(imageVector = Icons.Default.Lightbulb, contentDescription = null, tint = com.example.ui.theme.WarningAmber, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = if (showHint) stringResource(id = R.string.sec_hint_display_pattern, recoveryHint) else stringResource(id = R.string.sec_hint_toggle_show),
                                 fontSize = 12.sp,
-                                color = com.example.ui.theme.warningColor(isDark),
+                                color = com.example.ui.theme.WarningAmber,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                     }
 
-                    // زر العودة إلى نمط إدخال رمز المرور
                     TextButton(onClick = { showRecoveryMode = false }) {
                         Text(stringResource(id = R.string.sec_back_to_passcode_btn), fontSize = 12.sp)
                     }
                 }
 
-                // -------------------------------------------------------------
-                // أزرار التحكم في الحوار (إلغاء / تأكيد التحقق)
-                // -------------------------------------------------------------
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -501,7 +410,7 @@ fun VerifyOldPinDialog(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
                     ) {
                         Text(stringResource(id = R.string.sec_btn_confirm), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }
@@ -510,4 +419,3 @@ fun VerifyOldPinDialog(
         }
     }
 }
-

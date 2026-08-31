@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * بطاقات ملخص الالتزامات والسيولة الصافية (Commitments Summary Cards Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومية يعرض بطاقتين إحصائيتين متجاورتين لإبراز الموقف المالي:
- * 1. بطاقة "الصافي" (Net Cash): باللون الأخضر المالي، توضح فائض السيولة المتاح بعد تغطية الالتزامات.
- * 2. بطاقة "باقي الالتزامات" (Remaining Commitments): باللون الأحمر المالي، توضح إجمالي العجز أو المبالغ المتبقية المطلوب توفيرها.
- * 3. تستخدم مكون AutoScaleText لتقليص حجم الخط تلقائياً عند زيادة خانات الأرقام تفادياً للاقتصاص.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,11 +25,6 @@ import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -52,19 +35,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لبطاقات ملخص الالتزامات (CommitmentsSummaryCards Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - commitments: قائمة كائنات الالتزامات الثابتة.
- * - computedCommitments: قائمة الالتزامات المحسوبة (الالتزام، المخصص، المتبقي).
- * - totalCash: إجمالي السيولة النقدية المتاحة.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * - modifier: مغير التنسيق والمحاذاة الخارجي.
- * =====================================================================================
- */
 @Composable
 fun CommitmentsSummaryCards(
     commitments: List<FixedCommitment>,
@@ -90,7 +60,7 @@ fun CommitmentsSummaryCards(
         Pair(remaining, net)
     }
 
-    val cardBaseBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface
+    val cardBaseBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color.White
 
     Row(
         modifier = modifier
@@ -99,7 +69,7 @@ fun CommitmentsSummaryCards(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // البطاقة 1: في اليمين (RTL) -> "الصافي" (بالأخضر)
+        // Card 1: Right in RTL -> "الصافي" (Green)
         Card(
             modifier = Modifier
                 .weight(1f)
@@ -143,7 +113,7 @@ fun CommitmentsSummaryCards(
             }
         }
 
-        // البطاقة 2: في اليسار (RTL) -> "باقي الالتزامات" (بالأحمر)
+        // Card 2: Left in RTL -> "باقي الالتزامات" (Red)
         Card(
             modifier = Modifier
                 .weight(1f)
@@ -188,4 +158,3 @@ fun CommitmentsSummaryCards(
         }
     }
 }
-

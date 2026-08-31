@@ -1,16 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-/*
- * =====================================================================================
- * حزمة واجهة عدم الاتصال بالسحابة (Cloud Not Connected View Component Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على المكون البصري الإرشادي المعروض عند عدم ربط التطبيق بحساب Google:
- * - أيقونة توضيحية لعدم توفر الاتصال السحابي.
- * - نصوص إرشادية وتثقيفية تشرح أهمية ربط الحساب السحابي لحفظ البيانات وأمانها.
- * - زر تفاعلي لبدء عملية الربط وتسجيل الدخول عبر Google.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,20 +26,6 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
 
-/*
- * =====================================================================================
- * واجهة حالة عدم الاتصال بالسحابة (CloudNotConnectedView)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شاشة إرشادية تظهر للمستخدم عندما لا يكون التطبيق مربوطاً بحساب Google Drive:
- * 1. عرض أيقونة وعنوان ورسالة توجيهية تشرح مميزات النسخ الاحتياطي السحابي.
- * 2. توفير زر ربط الحساب المباشر لبدء مصادقة Google Sign-In.
- *
- * [المُدخلات]:
- * - onConnectClick: رد نداء عند الضغط على زر ربط الحساب، أو null لإخفاء الزر.
- * - modifier: مغيرات الحجم والتموضع الخارجي.
- * =====================================================================================
- */
 @Composable
 fun CloudNotConnectedView(
     onConnectClick: (() -> Unit)? = null,
@@ -86,7 +61,7 @@ fun CloudNotConnectedView(
         if (onConnectClick != null) {
             Button(
                 onClick = onConnectClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.padding(top = 8.dp)
             ) {
@@ -111,4 +86,3 @@ fun CloudNotConnectedView(
         }
     }
 }
-

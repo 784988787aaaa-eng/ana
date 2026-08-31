@@ -1,20 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * قسم قائمة سجل دفتر الأستاذ (Main Ledger List Section Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون العرض الرأسي التمريري الرئيسي (LazyColumn) لدفتر الأستاذ:
- * 1. يعرض الحالة الفارغة الإرشادية (Empty State) إذا لم توجد أي معاملات مسجلة.
- * 2. يطبق مؤشر التحميل المرحلي الهادئ (Deferred Skeleton Loading) عند تهيئة الشاشة.
- * 3. يجمع المعاملات مقسمة ومجمعة شهرياً ويومياً (Month Ledger & Day Ledger).
- * 4. يتيح طي وتوسيع الشهور بالكامل، وطي وتوسيع بطاقات الأيام (DayCard).
- * 5. يفصل بين الشهور بخطوط الانتقال الشهرية (MonthTransitionLine).
- * 6. يدعم وضع التحديد الجماعي للأيام أو المعاملات المفردة بكفاءة تمرير عالية.
- * =====================================================================================
- */
-
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -116,7 +101,7 @@ fun MainLedgerListSection(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(32.dp),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = EmeraldPrimary,
                         strokeWidth = 3.dp
                     )
                 }
@@ -150,14 +135,14 @@ fun MainLedgerListSection(
                             Icon(
                                 imageVector = if (isCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = EmeraldPrimary,
                                 modifier = Modifier
                                     .size(20.dp)
                                     .padding(end = 4.dp)
                             )
                             Text(
                                 text = if (monthIdx == 0) stringResource(id = R.string.ledger_daily_record) else stringResource(id = R.string.ledger_monthly_record),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = EmeraldPrimary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )

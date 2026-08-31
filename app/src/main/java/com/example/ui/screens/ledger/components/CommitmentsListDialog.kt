@@ -1,18 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * حوار إدارة قائمة الالتزامات والأهداف المالية (Commitments List Dialog Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية رئيسية مجمعة (Unified Facade Dialog) تعرض وتدير كافة الالتزامات المالية:
- * 1. تجمع المكونات المستقلة: شريط الرأس، ملخص التغطية التدرجي، بطاقات الالتزامات، وحوار التأكيد.
- * 2. تدعم حركات الدخول والخروج الانسيابية (Scale & Alpha Animation) لتجربة استخدام ممتازة.
- * 3. تعرض حالة القائمة الفارغة بشكل إرشادي واضح في حال عدم وجود أهداف مسجلة.
- * 4. توفر زراً سفلياً ثابتاً لإضافة هدف أو التزام جديد بسرعة وسهولة.
- * =====================================================================================
- */
-
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -45,25 +32,9 @@ import com.example.ui.theme.EmeraldPrimary
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة العرض لحوار قائمة الالتزامات (CommitmentsListDialog Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - showCommitmentsListSheet: راية إظهار الحوار.
- * - commitments: قائمة الالتزامات المسجلة.
- * - computedCommitments: قائمة الالتزامات المحسوبة (الكائن، المخصص، المتبقي).
- * - totalCash: إجمالي السيولة النقدية المتاحة.
- * - currencySymbol: رمز العملة.
- * - formatCurrency: دالة تنسيق المبالغ.
- * - onDismissRequest: رد النداء لإغلاق الحوار.
- * - onAddCommitmentClick: رد النداء لفتح حوار إضافة التزام جديد.
- * - onEditCommitmentClick: رد النداء لفتح حوار تعديل التزام.
- * - onDeleteCommitment: رد النداء لحذف الالتزام.
- * - onReorderCommitment: رد النداء لإعادة ترتيب موضع الالتزام.
- * - onCheckedChange: رد النداء لتغيير حالة الإنجاز يدوياً.
- * - onSetReorderTarget: رد النداء لتعيين الهدف المراد إعادة ترتيبه.
- * =====================================================================================
+/**
+ * Unified Facade for Fixed Commitments & Goals Management Dialog.
+ * Beautifully modularized into independent, reusable subcomponents.
  */
 @Composable
 fun CommitmentsListDialog(
@@ -131,7 +102,7 @@ fun CommitmentsListDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // 1. شريط الرأس: [ زر الإغلاق ✕ ] - [ الأهداف والالتزامات ] - [ زر المشاركة 🔗 ]
+                    // 1. Sleek Header: [ ✕ Close ] - [ الأهداف والالتزامات ] - [ 🔗 Share ]
                     CommitmentHeaderClean(
                         onCloseClick = { closeAction() },
                         onShareClick = {
@@ -147,7 +118,6 @@ fun CommitmentsListDialog(
                     )
 
                     if (commitments.isEmpty()) {
-                        // حالة القائمة الفارغة
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -177,7 +147,7 @@ fun CommitmentsListDialog(
                             Triple(target, allocated, covered)
                         }
 
-                        // 2. بطاقة الملخص الإحصائي بالتدرج اللوني
+                        // 2. Matching Gradient Overview Card
                         CommitmentSummaryGradientCard(
                             totalTargetSum = totalTargetSum,
                             totalAllocatedSum = totalAllocatedSum,
@@ -187,7 +157,7 @@ fun CommitmentsListDialog(
                             formatCurrency = formatCurrency
                         )
 
-                        // 3. قائمة عناصر الالتزامات القابلة للتمرير والتفاعل
+                        // 3. Goal Items (3-layer sleek cards)
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
@@ -219,10 +189,10 @@ fun CommitmentsListDialog(
                         }
                     }
 
-                    // 4. الزر الرئيسي في الأسفل: [ + إضافة التزام / هدف جديد ]
+                    // 4. Primary Bottom Action Button: [ + إضافة التزام / هدف جديد ]
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = EmeraldPrimary,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(46.dp)
@@ -239,7 +209,7 @@ fun CommitmentsListDialog(
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = Color.White,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -247,13 +217,13 @@ fun CommitmentsListDialog(
                                 text = "+ إضافة التزام / هدف جديد",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = Color.White
                             )
                         }
                     }
                 }
 
-                // حوار تأكيد الحذف
+                // Delete Confirmation Dialog
                 CommitmentDeleteConfirmationDialog(
                     commitmentName = commitmentToDelete,
                     onConfirmDelete = { name ->
@@ -267,4 +237,3 @@ fun CommitmentsListDialog(
         }
     }
 }
-

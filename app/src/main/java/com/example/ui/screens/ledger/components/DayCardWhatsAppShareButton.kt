@@ -1,17 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * زر ومساعد مشاركة كشف حساب اليوم عبر واتساب (Day Card WhatsApp Share Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون واجهة رسومية ودالة مشاركة لإرسال تقرير مالي منسق بحركة معاملات اليوم:
- * 1. يعرض زراً أنيقاً بهوية واتساب مع لون هادئ يتكيف مع الوضع الليلي.
- * 2. يبني نص التقرير المالي مع ترويسة اليوم وإجمالي الدخل وإجمالي الصرف وقائمة المعاملات المنسقة برموز توضيحية.
- * 3. يرسل التقرير مباشرة إلى تطبيق واتساب الرسمي، أو واتساب الأعمال (WhatsApp Business)، أو محاكي المشاركة العام.
- * =====================================================================================
- */
-
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -25,13 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,15 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.domain.model.TransactionType
-import com.example.ui.theme.whatsappColor
+import com.example.ui.theme.WhatsAppLightGreen
 import com.example.ui.viewmodel.DayLedger
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -58,19 +39,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لزر مشاركة التقرير عبر واتساب (DayCardWhatsAppShareButton Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - dayLedger: كائن بيانات حركة اليوم وسجل معاملاته.
- * - dailyIncome: إجمالي الدخل اليومي.
- * - dailyExpense: إجمالي المصروف اليومي.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * - modifier: مغير التنسيق والمحاذاة.
- * =====================================================================================
- */
 @Composable
 fun DayCardWhatsAppShareButton(
     dayLedger: DayLedger,
@@ -81,13 +49,11 @@ fun DayCardWhatsAppShareButton(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val whatsapp = whatsappColor(isDark)
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = whatsapp.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, whatsapp.copy(alpha = 0.28f)),
+        color = WhatsAppLightGreen.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, WhatsAppLightGreen.copy(alpha = 0.28f)),
         modifier = modifier
             .fillMaxWidth()
             .height(34.dp)
@@ -113,20 +79,12 @@ fun DayCardWhatsAppShareButton(
                 text = stringResource(id = R.string.ledger_whatsapp_whatsapp),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = whatsapp
+                color = WhatsAppLightGreen
             )
         }
     }
 }
 
-/*
- * =====================================================================================
- * دالة توليد التقرير المالي ومشاركته عبر واتساب (shareDayLedgerViaWhatsApp)
- * -------------------------------------------------------------------------------------
- * تقوم بتجهيز نص التقرير وإرساله لتطبيق WhatsApp أو WhatsApp Business، وتتراجع
- * لنافذة مشاركة النظام إذا لم تكن التطبيقات مثبتة.
- * =====================================================================================
- */
 private fun shareDayLedgerViaWhatsApp(
     context: Context,
     dayLedger: DayLedger,
@@ -173,4 +131,3 @@ private fun shareDayLedgerViaWhatsApp(
         }
     }
 }
-

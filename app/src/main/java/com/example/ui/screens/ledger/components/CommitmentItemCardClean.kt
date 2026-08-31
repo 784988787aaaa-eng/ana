@@ -1,18 +1,5 @@
 package com.example.ui.screens.ledger.components
 
-/*
- * =====================================================================================
- * بطاقة عرض عنصر الالتزام المالي (Commitment Item Card Clean Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * بطاقة تفاعلية تعرض بيانات الالتزام المالي ونسبة الإنجاز بتصميم متقن وخفيف:
- * 1. تعرض اسم الالتزام المالي مع مؤشر دائري يتيح للمستخدم تحديد الالتزام كمكتمل يدوياً.
- * 2. شريط تقدم بتدرج لوني انسيابي (Gradient Progress Bar) يوضح نسبة تغطية المبلغ المستهدف.
- * 3. شارة ديناميكية للمبلغ المتبقي أو حالة الاكتمال بالنسبة المئوية.
- * 4. أزرار التحكم السريع: التعديل، الحذف، ومقبض تفاعلي لإعادة ترتيب الأولويات بالسحب أو النقر.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,15 +33,10 @@ import com.example.data.local.entities.FixedCommitment
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonGreen
-import com.example.ui.theme.financialCreditColor
-import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.SoftGreen
+import com.example.ui.theme.SoftRed
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * دالة مساعدة لتحويل الأرقام المشرقية إلى غربية (toWesternDigits)
- * =====================================================================================
- */
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -65,26 +47,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/*
- * =====================================================================================
- * دالة العرض لبطاقة الالتزام المالي (CommitmentItemCardClean Composable)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - index: الترتيب الحالي للعنصر في القائمة.
- * - fc: كائن الالتزام المالي (FixedCommitment).
- * - allocated: المبلغ المخصص والمغطى حالياً لهذا الالتزام.
- * - remaining: المبلغ المتبقي لاكتمال تغطية الالتزام.
- * - totalCash: إجمالي النقد المتاح للتغطية.
- * - currencySymbol: رمز العملة المعتمد.
- * - formatCurrency: دالة تنسيق المبالغ المالية.
- * - totalCommitmentsCount: إجمالي عدد الالتزامات في القائمة.
- * - onCheckedChange: رد النداء عند تغيير حالة التغطية اليدوية.
- * - onSetReorderTarget: رد النداء عند النقر على مقبض إعادة الترتيب.
- * - onReorderCommitment: رد النداء لنقل الالتزام لموقع ترتيبي جديد.
- * - onEditCommitmentClick: رد النداء لفتح حوار التعديل.
- * - onDeleteClick: رد النداء لطلب حذف الالتزام.
- * =====================================================================================
- */
 @Composable
 fun CommitmentItemCardClean(
     index: Int,
@@ -110,15 +72,12 @@ fun CommitmentItemCardClean(
     } else 0f
     val progressPercent = (progressFraction * 100).toInt()
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val creditColor = financialCreditColor(isDark)
-    val debtColor = financialDebtColor(isDark)
-    val secondaryColor = MaterialTheme.colorScheme.secondary
 
-    val itemGradient = remember(isDark, creditColor, secondaryColor) {
+    val itemGradient = remember {
         Brush.horizontalGradient(
             colors = listOf(
-                creditColor,
-                secondaryColor
+                NeonGreen,
+                NeonCyan
             )
         )
     }
@@ -126,11 +85,11 @@ fun CommitmentItemCardClean(
     Card(
         shape = RoundedCornerShape(13.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isCovered) creditColor.copy(alpha = if (isDark) 0.10f else 0.04f) else MaterialTheme.colorScheme.surface
+            containerColor = if (isCovered) SoftGreen.copy(alpha = if (isDark) 0.10f else 0.04f) else MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             1.dp,
-            if (isCovered) creditColor.copy(alpha = 0.28f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            if (isCovered) SoftGreen.copy(alpha = 0.28f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -140,13 +99,13 @@ fun CommitmentItemCardClean(
                 .padding(horizontal = 11.dp, vertical = 9.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // الطبقة 1: اسم الالتزام وحالة الإنجاز والنسبة
+            // Layer 1: Title & Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // زر التأشير الدائري + اسم الالتزام
+                // Checkbox + Goal Name
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -156,10 +115,10 @@ fun CommitmentItemCardClean(
                         modifier = Modifier
                             .size(20.dp)
                             .clip(CircleShape)
-                            .background(if (isCovered) creditColor else Color.Transparent)
+                            .background(if (isCovered) SoftGreen else Color.Transparent)
                             .border(
                                 1.5.dp,
-                                if (isCovered) creditColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                if (isCovered) SoftGreen else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                                 CircleShape
                             )
                             .clickable {
@@ -172,7 +131,7 @@ fun CommitmentItemCardClean(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiary,
+                                tint = Color.White,
                                 modifier = Modifier.size(12.dp)
                             )
                         }
@@ -182,12 +141,12 @@ fun CommitmentItemCardClean(
                         text = fc.name.toWesternDigits(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.5.sp,
-                        color = if (isCovered) creditColor else MaterialTheme.colorScheme.onSurface,
+                        color = if (isCovered) SoftGreen else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
                 }
 
-                // شارة المتبقي أو المكتمل + النسبة المئوية
+                // Remaining Badge + Progress %
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -195,26 +154,26 @@ fun CommitmentItemCardClean(
                     if (isCovered) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = creditColor.copy(alpha = 0.14f)
+                            color = SoftGreen.copy(alpha = 0.14f)
                         ) {
                             Text(
                                 text = "مكتمل",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                color = creditColor,
+                                color = SoftGreen,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     } else {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = debtColor.copy(alpha = 0.10f)
+                            color = SoftRed.copy(alpha = 0.10f)
                         ) {
                             Text(
                                 text = "متبقي: ${formatCurrency(remaining, currencySymbol)}".toWesternDigits(),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                color = debtColor,
+                                color = SoftRed,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -224,12 +183,12 @@ fun CommitmentItemCardClean(
                         text = "$progressPercent%",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isCovered) creditColor else MaterialTheme.colorScheme.primary
+                        color = if (isCovered) SoftGreen else EmeraldPrimary
                     )
                 }
             }
 
-            // الطبقة 2: شريط التقدم بتدرج لوني انسيابي (Progress Bar 5dp)
+            // Layer 2: Sleek Goal Gradient Progress Bar (5dp)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -247,18 +206,18 @@ fun CommitmentItemCardClean(
                             .fillMaxWidth(progressFraction)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(2.5.dp))
-                            .background(if (isCovered) Brush.horizontalGradient(listOf(creditColor, creditColor)) else itemGradient)
+                            .background(if (isCovered) Brush.horizontalGradient(listOf(SoftGreen, SoftGreen)) else itemGradient)
                     )
                 }
             }
 
-            // الطبقة 3: المبلغ المستهدف وأزرار الإجراءات السريعة
+            // Layer 3: Target Amount + Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // المبلغ المستهدف
+                // Target Amount
                 Text(
                     text = "المستهدف: ${formatCurrency(fc.targetAmount, currencySymbol)}".toWesternDigits(),
                     fontSize = 11.5.sp,
@@ -266,12 +225,12 @@ fun CommitmentItemCardClean(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
 
-                // أزرار التحكم المصغرة (تعديل، حذف، مقبض ترتيب)
+                // Micro Action Controls
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    // زر التعديل ✏️
+                    // Edit Button ✏️
                     IconButton(
                         onClick = { onEditCommitmentClick(fc) },
                         modifier = Modifier.size(26.dp)
@@ -284,7 +243,7 @@ fun CommitmentItemCardClean(
                         )
                     }
 
-                    // زر الحذف 🗑️
+                    // Delete Button 🗑️
                     IconButton(
                         onClick = {
                             onDeleteClick(fc)
@@ -295,12 +254,12 @@ fun CommitmentItemCardClean(
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(id = R.string.ledger_commitment_delete),
-                            tint = debtColor.copy(alpha = 0.65f),
+                            tint = SoftRed.copy(alpha = 0.65f),
                             modifier = Modifier.size(13.dp)
                         )
                     }
 
-                    // مقبض إعادة الترتيب بالسحب ☰
+                    // Reorder Handle ☰
                     var dragOffset by remember { mutableFloatStateOf(0f) }
                     Box(
                         modifier = Modifier
@@ -347,4 +306,3 @@ fun CommitmentItemCardClean(
         }
     }
 }
-

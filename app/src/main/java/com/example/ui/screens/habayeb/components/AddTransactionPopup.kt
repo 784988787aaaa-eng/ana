@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة نافذة إضافة وتعديل المعاملة المالية (Add/Edit Transaction Popup Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الحاوية التفاعلية الكاملة لتسجيل حركة مالية جديدة أو تعديل حركة قائمة:
- * - إدارة نموذج الإدخال الكامل (المبلغ، البيان، التاريخ المخصص، العملة، وسعر الصرف).
- * - التحقق من صحة المدخلات المالية، التحويل الآلي بين العملات الأجنبية والمحلية.
- * - دعم التنقل السلس عبر Crossfade بين نموذج المعاملة وشاشة ضبط سعر الصرف.
- * - أزرار العمليات المزدوجة (قيد/سداد) المتكيفة ديناميكياً مع طبيعة حساب العميل (له/عليه).
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
@@ -38,8 +26,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import com.example.domain.model.SaveTransactionResult
-import kotlinx.coroutines.launch
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
 import androidx.compose.ui.text.TextRange
@@ -65,29 +51,6 @@ import java.math.BigDecimal
  */
 private const val INITIAL_EMPTY_TEXT = ""
 
-/*
- * =====================================================================================
- * نافذة الحوار المنبثقة لإضافة وتعديل المعاملة (AddTransactionPopup)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * نافذة حوارية شاملة تتيح للمستخدم إضافة أو تعديل معاملة مالية مرتبطة بعميل محدد.
- * تتولى النافذة ما يلي:
- * 1. تهيئة الحقول من بيانات المعاملة السابقة في حال التعديل أو تجهيز قيم افتراضية جديدة.
- * 2. دعم فتح نوافذ فرعية مثل منتقي التاريخ والوقت المخصص (CustomDateTimePickerDialog) والآلة الحاسبة (CalculatorDialog).
- * 3. التحقق المالي وتطبيق أسعار الصرف وتحويل العملات عبر `ExchangeRateHelper` و `CurrencyConfig`.
- * 4. حفظ المعاملة عبر `HabayebFinanceViewModel` وتقديم تغذية راجعة للمستخدم عبر Toast وإغلاق النافذة.
- *
- * [المُدخلات]:
- * - customer: كائن العميل المستهدف بالمعاملة.
- * - viewModel: نموذج العرض المالي لتنفيذ عمليات الحفظ والتحديث.
- * - initialSelectedType: النوع الافتراضي المحدد للمعاملة.
- * - editingTransaction: المعاملة الحالية قيد التعديل (أو null في حالة الإضافة الجديدة).
- * - onDismiss: رد نداء لإغلاق النافذة المنبثقة.
- * - onTransactionSaved: رد نداء عند نجاح حفظ المعاملة.
- * - activeThemeColor: لون السمة الأساسي للواجهة.
- * - activeSubColor: لون السمة الفرعي للواجهة.
- * =====================================================================================
- */
 @Composable
 fun AddTransactionPopup(
     customer: HabayebCustomer,
@@ -223,6 +186,7 @@ fun AddTransactionPopup(
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
                 isSaving = false
             } else {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
                     CurrencyConfig.convertAmountBigDecimal(amountBd, currencySymbol, selectedTransactionCurrency, effectiveRateBd)
                 } else {
@@ -233,38 +197,26 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
-                scope.launch {
-                    val result = viewModel.addHabayebTransaction(
-                        customerId = customer.id,
-                        type = finalActionType,
-                        amount = saveAmountBd,
-                        desc = saveDescStr,
-                        timestamp = saveTimestamp,
-                        editingTxId = saveEditingTxId,
-                        isForeign = isForeignSelected,
-                        currencyCode = selectedTransactionCurrency,
-                        foreignAmount = amountBd,
-                        exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
-                        isRateCalculated = isForeignSelected && applyExchangeRate,
-                        equivalentAmount = finalEquivalentAmountBd
-                    )
-                    isSaving = false
-                    when (result) {
-                        is SaveTransactionResult.Success -> {
-                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                            Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
-                            onTransactionSaved()
-                            onDismiss()
-                        }
-                        is SaveTransactionResult.TrialExpired -> {
-                            Toast.makeText(context, context.getString(R.string.licensing_trial_expired_toast), Toast.LENGTH_LONG).show()
-                            onDismiss()
-                        }
-                        is SaveTransactionResult.Error -> {
-                            Toast.makeText(context, result.message ?: context.getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                // Instant UI Dismissal & Instant Toast Feedback
+                Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
+                onTransactionSaved()
+                onDismiss()
+
+                // Execute save and licensing check asynchronously in the background
+                viewModel.addHabayebTransaction(
+                    customerId = customer.id,
+                    type = finalActionType,
+                    amount = saveAmountBd,
+                    desc = saveDescStr,
+                    timestamp = saveTimestamp,
+                    editingTxId = saveEditingTxId,
+                    isForeign = isForeignSelected,
+                    currencyCode = selectedTransactionCurrency,
+                    foreignAmount = amountBd,
+                    exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
+                    isRateCalculated = isForeignSelected && applyExchangeRate,
+                    equivalentAmount = finalEquivalentAmountBd
+                )
             }
         }
     }
@@ -279,7 +231,7 @@ fun AddTransactionPopup(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -419,10 +371,7 @@ fun AddTransactionPopup(
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = debtRedColor,
-                                        contentColor = androidx.compose.ui.graphics.Color.White
-                                    ),
+                                    colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = Color.White),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -431,17 +380,14 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = androidx.compose.ui.graphics.Color.White
+                                        color = Color.White
                                     )
                                 }
 
                                 Button(
                                     enabled = !isSaving,
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = creditGreenColor,
-                                        contentColor = androidx.compose.ui.graphics.Color.White
-                                    ),
+                                    colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = Color.White),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.weight(1f).height(42.dp)
@@ -450,7 +396,7 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = androidx.compose.ui.graphics.Color.White
+                                        color = Color.White
                                     )
                                 }
                             }

@@ -1,18 +1,6 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة الشريط العلوي لسجل حركات العميل (Customer History Top Bar Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الشريط العلوي لشاشة كشف حساب العميل:
- * 1. وضع العرض القياسي: اسم العميل (مع إمكانية النقر للتعديل السريع)، رقم الهاتف، وأزرار الإجراءات (تصفية ذكية، بحث، تصدير ومشاركة، وقائمة الخيارات الإضافية).
- * 2. وضع البحث التفاعلي: حقل إدخال فوري للبحث في الحركات مع زر مسح النص وزر إلغاء البحث وتركيز تلقائي لمؤشر الكتابة.
- * 3. مؤشر تقدم دائري يظهر عند تصدير تقرير PDF.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,30 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 
-/*
- * =====================================================================================
- * الشريط العلوي لسجل حركات العميل (CustomerHistoryTopBar)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شريط علوي يقدم أدوات التحكم، البحث، التصفية، والمشاركة في كشف حساب العميل.
- *
- * [المُدخلات]:
- * - customerName / customerPhone: اسم ورقم هاتف العميل.
- * - isSearchActive: هل وضع البحث مفعل حالياً.
- * - txSearchQuery: نص البحث المدخل.
- * - activeThemeColor: لون السمة النشط للعناصر التفاعلية ومؤشر التقدم.
- * - isPdfExporting: مؤشر جاري تصدير الـ PDF.
- * - onSearchQueryChange: رد نداء عند تغير نص البحث.
- * - onSearchClose / onSearchOpen: ردود نداء التبديل بين وضع البحث والوضع القياسي.
- * - onDeleteClick: رد نداء لفتح نافذة حذف العميل.
- * - onEditClick: رد نداء لفتح نافذة تعديل بيانات العميل.
- * - onFilterClick: رد نداء لفتح لوحة التصفية الذكية.
- * - onShareClick: رد نداء لفتح لوحة المشاركة والتصدير.
- * - onDismiss: رد نداء للرجوع وإغلاق الشاشة.
- * - isPhoneAvailable: هل يتوفر رقم هاتف مسجل للعميل.
- * - onPdfExportClick / onCsvExportClick / onWhatsAppClick / onSmsClick: ردود نداء التصدير والمراسلة.
- * =====================================================================================
- */
 @Composable
 fun CustomerHistoryTopBar(
     customerName: String,
@@ -130,8 +94,7 @@ fun CustomerHistoryTopBar(
                     .weight(1f)
                     .height(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.outlineVariant)
                     .padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

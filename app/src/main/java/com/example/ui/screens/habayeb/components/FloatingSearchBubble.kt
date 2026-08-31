@@ -1,19 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة فقاعة البحث العائمة التفاعلية (Floating Search Bubble Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على مكونات البحث العائم فائق الانسيابية:
- * 1. زر التبديل المجهري (TinyFloatingSearchToggle) في الشريط العلوي لتفعيل أو إخفاء الفقاعة.
- * 2. فقاعة البحث العائمة (FloatingSearchBubble):
- *    - إمكانية السحب والتحريك الحر في أرجاء الشاشة بعد الضغط المطول لمنع التحريك العرضي.
- *    - النقر المزدوج لتغيير حجم الفقاعة بين 3 مستويات مختلفة.
- *    - النقر لفتح نافذة البحث السريع مع اهتزاز لمسي تفاعلي (Haptic Feedback).
- *    - حفظ إحداثيات ومستوى حجم الفقاعة في التفضيلات المحلية (SharedPreferences).
- * =====================================================================================
- */
-
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -66,61 +52,45 @@ private object BubblePrefsKeys {
     const val KEY_LOCKED = "KEY_SEARCH_BUTTON_LOCKED"
 }
 
-/*
- * =====================================================================================
- * زر تبديل فقاعة البحث المصغر (TinyFloatingSearchToggle)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * زر مجهري في الشريط العلوي يتيح للمستخدم تفعيل أو تعطيل ظهور زر البحث العائم.
- *
- * [المُدخلات]:
- * - isFloatingActive: حالة تفعيل الفقاعة العائمة.
- * - activeThemeColor: لون السمة النشط.
- * - onToggleClick: رد نداء عند النقر لتبديل حالة التفعيل.
- * =====================================================================================
+/**
+ * زر التنشيط والتفعيل المجهري في شريط العنوان العلوي (The Tiny Toggle Button)
+ * - حجم مجهري وأنيق للغاية لمنع تشويه الواجهة.
  */
 @Composable
 fun TinyFloatingSearchToggle(
     isFloatingActive: Boolean,
-    activeThemeColor: Color = MaterialTheme.colorScheme.onPrimary,
+    activeThemeColor: Color,
     onToggleClick: () -> Unit
 ) {
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier = Modifier
-            .size(30.dp)
+            .size(26.dp)
             .clip(CircleShape)
             .background(
-                color = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f)
-                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
+                color = if (isFloatingActive) Color.White.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.15f),
                 shape = CircleShape
             )
             .border(
-                width = if (isFloatingActive) 1.dp else 0.75.dp,
-                color = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
-                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f),
+                width = 0.5.dp,
+                color = if (isFloatingActive) Color.White.copy(alpha = 0.45f) else Color.Transparent,
                 shape = CircleShape
             )
-            .clickable {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                onToggleClick()
-            },
+            .clickable(onClick = onToggleClick),
         contentAlignment = Alignment.Center
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = stringResource(id = R.string.floating_search_toggle),
-                tint = if (isFloatingActive) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
-                modifier = Modifier.size(14.dp)
+                tint = if (isFloatingActive) Color.White else Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.size(13.dp)
             )
             if (isFloatingActive) {
                 Box(
                     modifier = Modifier
-                        .size(5.dp)
+                        .size(4.dp)
                         .align(Alignment.TopEnd)
-                        .background(MaterialTheme.colorScheme.tertiary, CircleShape)
+                        .background(Color.White, CircleShape)
                 )
             }
         }
@@ -173,7 +143,7 @@ fun FloatingSearchBubble(
         label = "SearchBubbleScaleAnim"
     )
 
-    val effectivePrimary = MaterialTheme.colorScheme.primary
+    val effectivePrimary = if (activeThemeColor != Color.Unspecified) activeThemeColor else MaterialTheme.colorScheme.primary
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(
@@ -208,7 +178,7 @@ fun FloatingSearchBubble(
                     )
                     .border(
                         width = 1.2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = if (isInteracting) 0.9f else 0.62f),
+                        color = Color.White.copy(alpha = if (isInteracting) 0.9f else 0.45f),
                         shape = CircleShape
                     )
                     .pointerInput(screenWidthPx, screenHeightPx, maxX, maxY) {
@@ -263,7 +233,7 @@ fun FloatingSearchBubble(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(id = R.string.floating_search_icon),
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = Color.White,
                     modifier = Modifier.size(searchIconSize)
                 )
             }

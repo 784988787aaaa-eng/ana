@@ -1,36 +1,12 @@
 package com.example.ui.screens.habayeb
 
-/*
- * =====================================================================================
- * حزمة حالات حوارات شاشة الحبايب (Habayeb Dialog State Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على التسلسل الهرمي المختوم (Sealed Interface) لتمثيل حالات الحوارات
- * والورقات السفلية والنوافذ المنبثقة التابعة لشاشة الحبايب وإدارة العملاء.
- * =====================================================================================
- */
-
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.domain.model.TransactionType
 import com.example.ui.state.CustomerUiState
 
-/*
- * =====================================================================================
- * واجهة حالات الحوارات المختومة (HabayebDialogState)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * تمثل جميع الحالات الممكنة للنوافذ المنبثقة والورقات السفلية في شاشة الحبايب لضمان
- * إدارة حالة أحادية الاتجاه (UDF) وخالية من التعارض:
- * - None: لا يوجد أي حوار معروض.
- * - AddCustomer: حوار إضافة عميل جديد.
- * - AddTransaction: حوار إضافة قيد مالي جديد لعميل محدد أو تعديل قيد موجود.
- * - EditCustomer: حوار تعديل بيانات العميل الأساسية.
- * - DeleteConfirm: حوار تأكيد حذف عميل أو مجموعة عملاء محددين.
- * - AddCategory: حوار إنشاء فئة تصنيف جديدة.
- * - BulkAssignCategory: حوار إسناد وتعيين فئة لعدة عملاء محددين دفعة واحدة.
- * - ContextMenu: الورقة السفلية للخيارات السريعة لعميل محدد.
- * - DeviceActivation: حوار تفعيل ترخيص الجهاز عند طلب مزايا تتطلب التفعيل.
- * =====================================================================================
+/**
+ * Sealed hierarchy of all dialog and bottom-sheet states managed within the Habayeb subsystem.
  */
 sealed interface HabayebDialogState {
     object None : HabayebDialogState
@@ -47,4 +23,3 @@ sealed interface HabayebDialogState {
     data class ContextMenu(val customer: CustomerUiState) : HabayebDialogState
     object DeviceActivation : HabayebDialogState
 }
-

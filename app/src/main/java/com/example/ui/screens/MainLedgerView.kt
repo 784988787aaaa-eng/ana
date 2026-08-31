@@ -1,15 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة شاشة دفتر الأستاذ اليومي الرئيسي (Main Ledger View Screen Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الواجهة الأساسية لحركة الصندوق ودفتر اليومية (MainLedgerView):
- * تجميع المعاملات الشهرية واليومية، شريط الترويسة المثبت مع إجمالي النقدية وحساب الالتزامات،
- * الرصيف السفلي العائم للإضافة السريعة، وإدارة الحوارات وبحث المعاملات وربط ديون الحبايب.
- * =====================================================================================
- */
-
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
@@ -43,7 +33,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.domain.model.SaveTransactionResult
 import com.example.R
 import com.example.data.local.entities.AppSettings
 import com.example.domain.FormatUtils
@@ -59,29 +48,6 @@ import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * واجهة دفتر الأستاذ اليومي (MainLedgerView)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * الواجهة المركزية لحركة الصندوق والتدفق المالي اليومي:
- * 1. ترويسة تفاعلية مثبتة تعرض إجمالي النقدية الحالية وحساب تغطية الالتزامات والأقساط.
- * 2. قائمة مجمعة زمنياً حسب الشهور والأيام مع ميزة طي/توسيع الأيام والشهور.
- * 3. رصيف سفلي تفاعلي (Bottom Dock) للإضافة السريعة للمصروفات والمقبوضات وإدارة الالتزامات.
- * 4. إدارة أوضاع التحديد المتعدد للمعاملات أو الأيام الكاملة للحذف المجمع.
- * 5. انتقال دائري سلس لشاشة الحبايب المدمجة (Circular Reveal Transition).
- *
- * [المُدخلات]:
- * - viewModel: نموذج بيانات المعاملات المالية وحسابات اليومية.
- * - habayebViewModel: نموذج بيانات حسابات العملاء والحبايب وربط الديون.
- * - securityViewModel: نموذج بيانات الأمان والترخيص ووضع الخصوصية.
- * - settings: إعدادات التطبيق العامة والعملة.
- * - onBackIntercept: رد نداء اعتراض زر الرجوع.
- * - onMenuClick: رد نداء فتح القائمة الجانبية.
- * - isDrawerOpen: حالة فتح القائمة الجانبية لمنع التداخل.
- * - contentPadding: هوامش التباعد الداخلية من النظام.
- * =====================================================================================
- */
 @Composable
 fun MainLedgerView(
     viewModel: FinanceViewModel,
@@ -115,12 +81,12 @@ fun MainLedgerView(
         when (appSettingsState.themeMode) { 1 -> false; 2 -> true; else -> systemDark }
     }
     if (!view.isInEditMode) {
-        LaunchedEffect(isDark) {
-            val window = (context as? Activity)?.window ?: return@LaunchedEffect
+        SideEffect {
+            val window = (context as? Activity)?.window ?: return@SideEffect
             window.statusBarColor = android.graphics.Color.TRANSPARENT
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
             val insetsController = WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = !isDark
+            insetsController.isAppearanceLightStatusBars = false
             insetsController.isAppearanceLightNavigationBars = !isDark
         }
     }
@@ -299,25 +265,14 @@ fun MainLedgerView(
         onDismissTxDialog = { uiController.dismissDialog() },
         onSaveTransaction = { id, type, cat, amt, desc ->
             val editingTx = (uiController.activeDialogState as? MainLedgerDialogState.AddTransaction)?.editingTx
+            if (editingTx != null) {
+                viewModel.updateTransaction(editingTx.copy(amount = BigDecimal(amt.toString()), description = desc, category = cat))
+            } else {
+                viewModel.addTransaction(type = type, category = cat, amount = amt, description = desc)
+            }
+            uiController.dismissDialog()
             scope.launch {
-                val result = if (editingTx != null) {
-                    viewModel.updateTransaction(editingTx.copy(amount = amt, description = desc, category = cat))
-                } else {
-                    viewModel.addTransaction(type = type, category = cat, amount = amt, description = desc)
-                }
-                when (result) {
-                    is SaveTransactionResult.Success -> {
-                        uiController.dismissDialog()
-                        lazyListState.scrollToItem(0)
-                    }
-                    is SaveTransactionResult.TrialExpired -> {
-                        uiController.dismissDialog()
-                        securityViewModel.triggerActivationRequired()
-                    }
-                    is SaveTransactionResult.Error -> {
-                        // Error handled via ViewModel UI Events
-                    }
-                }
+                lazyListState.scrollToItem(0)
             }
         },
         showSearch = uiController.activeDialogState is MainLedgerDialogState.Search,

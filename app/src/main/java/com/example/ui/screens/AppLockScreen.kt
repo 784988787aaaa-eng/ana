@@ -1,14 +1,5 @@
 package com.example.ui.screens
 
-/*
- * =====================================================================================
- * حزمة شاشات قفل وحماية التطبيق (Application Security & Lock Screens Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على واجهة قفل التطبيق الرئيسية (AppLockScreen)، والتي تجمع بين
- * التحقق برمز المرور (PIN)، البصمة الحيوية (Biometrics)، وعبارة الاسترداد الآمنة (Recovery Phrase).
- * =====================================================================================
- */
-
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -21,7 +12,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,28 +35,16 @@ import com.example.ui.screens.security.lock.LockHapticHelper
 import com.example.ui.screens.security.lock.LockHapticType
 import com.example.ui.screens.security.lock.PasscodeKeypadContent
 import com.example.ui.screens.security.lock.RecoveryPhraseContent
+import com.example.ui.theme.DarkBackground
 import com.example.ui.viewmodel.SecurityAndLicenseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/*
- * =====================================================================================
- * واجهة قفل التطبيق الموحدة (AppLockScreen)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شاشة الحماية المركزية التي تعمل كبوابة أمنية صارمة تمنع الوصول إلى البيانات المالية دون توثيق:
- * 1. لوحة إدخال رمز المرور (PIN) مع اهتزازات حسية عند النقر وحركات اهتزازية (Shake) عند الخطأ.
- * 2. التحقق البيومتري الفوري (بصمة الإصبع أو الوجه) التلقائي عند فتح التطبيق.
- * 3. آلية استرداد الحساب بكلمة السر الاحتياطية (Recovery Phrase) مع تلميح الأمان.
- * 4. إدارة الذاكرة الآمنة (Zero-Leakage Memory): مسح مصفوفات الحروف `CharArray` فور انتهاء المقارنة.
- *
- * [المُدخلات]:
- * - viewModel: نموذج بيانات الأمان وإعدادات التشفير والترخيص.
- * - onUnlockSuccess: دالة إلغاء القفل بنجاح والدخول لشاشات التطبيق.
- * - onUnlockBypassedAndDisabled: دالة الاسترداد وتجاوز القفل بعد التحقق من عبارة الاسترداد.
- * =====================================================================================
+/**
+ * App Lock Screen Facade coordinating authentication (PIN Passcode, Biometrics, Recovery Phrase).
+ * Maintains a clean decoupled architecture and strict zero-leakage security lifecycle.
  */
 @Composable
 fun AppLockScreen(
@@ -80,20 +58,10 @@ fun AppLockScreen(
     val focusManager = LocalFocusManager.current
     val vibrator = remember(context) { LockHapticHelper.getVibrator(context) }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * جلب إعدادات الأمان وحالة دعم البصمة
-     * ---------------------------------------------------------------------------------
-     */
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
     val isBiometricSupported = remember(context) { BiometricAuthHelper.isBiometricAvailable(context) }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * متغيرات الحالة المحلية للإدخال والتحقق
-     * ---------------------------------------------------------------------------------
-     */
     var enteredPasscode by remember { mutableStateOf("") }
     var isCheckingPasscode by remember { mutableStateOf(false) }
     var showRecoveryView by remember { mutableStateOf(false) }
@@ -101,18 +69,12 @@ fun AppLockScreen(
     var showHintText by remember { mutableStateOf(false) }
     val recoveryHint = settings.recoveryHint
 
-    // محرك الرسوم المتحركة للاهتزاز الأفقي عند إدخال رمز خاطئ (Error Shake)
     val shakeOffset = remember { Animatable(0f) }
 
     val currentEnteredPasscode by rememberUpdatedState(enteredPasscode)
     val currentIsCheckingPasscode by rememberUpdatedState(isCheckingPasscode)
     val currentPasscodeHash by rememberUpdatedState(settings.passcodeHash.orEmpty())
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * دالة تشغيل حركة الاهتزاز والتغذية اللمسية عند الخطأ
-     * ---------------------------------------------------------------------------------
-     */
     val triggerErrorAnimationAndHaptic = {
         scope.launch {
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
@@ -126,11 +88,6 @@ fun AppLockScreen(
         Unit
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * دالة إطلاق موجه البصمة الحيوية (Biometric Prompt)
-     * ---------------------------------------------------------------------------------
-     */
     val triggerBiometricPrompt = {
         val activity = context as? FragmentActivity
         if (activity != null && isBiometricSupported) {
@@ -151,9 +108,7 @@ fun AppLockScreen(
         }
     }
 
-    /*
-     * إطلاق موجه البصمة تلقائياً بمجرد فتح الشاشة إذا كانت الميزة مفعلة ومدعومة
-     */
+    // Auto-launch Biometric prompt on screen appearance if enabled and supported
     LaunchedEffect(isBiometricSupported, isBiometricEnabled) {
         if (isBiometricSupported && isBiometricEnabled && !showRecoveryView) {
             delay(200)
@@ -161,11 +116,6 @@ fun AppLockScreen(
         }
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * معالجة النقر على أزرار لوحة الأرقام (Passcode Keypad)
-     * ---------------------------------------------------------------------------------
-     */
     val onKeyPress = remember(vibrator) {
         { key: String ->
             if (!currentIsCheckingPasscode && currentEnteredPasscode.length < 4) {
@@ -181,7 +131,6 @@ fun AppLockScreen(
                                 val hashed = HashUtils.hashString(String(passChars))
                                 DatabaseSecurityGuard.secureEqual(hashed, currentPasscodeHash)
                             } finally {
-                                // مسح الذاكرة الحساسة فوراً بعد المقارنة
                                 HashUtils.wipeCharArray(passChars)
                             }
                         }
@@ -201,7 +150,6 @@ fun AppLockScreen(
         }
     }
 
-    // زر مسح الرقم الأخير
     val onDeleteClick = {
         if (!isCheckingPasscode) {
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
@@ -211,17 +159,11 @@ fun AppLockScreen(
         }
     }
 
-    // زر الانتقال لواجهة استرداد الحساب
     val onForgotClick = {
         LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
         showRecoveryView = true
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * معالجة التحقق من عبارة الاسترداد (Recovery Phrase Verification)
-     * ---------------------------------------------------------------------------------
-     */
     val onVerifyRecoveryPhrase = {
         scope.launch {
             val recoveryChars = recoveryPhraseInput.trim().toCharArray()
@@ -249,7 +191,6 @@ fun AppLockScreen(
         Unit
     }
 
-    // العودة من واجهة الاسترداد إلى لوحة الأرقام
     val onReturnToKeypadClick = {
         LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
         keyboardController?.hide()
@@ -258,17 +199,12 @@ fun AppLockScreen(
         showRecoveryView = false
     }
 
-    /*
-     * ---------------------------------------------------------------------------------
-     * رسم واجهة القفل مع انتقال انسيابي بين لوحة الأرقام وشاشة الاسترداد
-     * ---------------------------------------------------------------------------------
-     */
     Surface(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding(),
-        color = MaterialTheme.colorScheme.background
+        color = DarkBackground
     ) {
         AnimatedContent(
             targetState = showRecoveryView,
@@ -279,7 +215,6 @@ fun AppLockScreen(
             label = "ScreenType"
         ) { isRecovery ->
             if (isRecovery) {
-                // شاشة إدخال عبارة الاسترداد والتلميح
                 RecoveryPhraseContent(
                     recoveryPhraseInput = recoveryPhraseInput,
                     onRecoveryPhraseChange = { recoveryPhraseInput = it },
@@ -290,7 +225,6 @@ fun AppLockScreen(
                     onReturnToKeypadClick = onReturnToKeypadClick
                 )
             } else {
-                // شاشة لوحة إدخال رمز المرور والأزرار البيومترية
                 PasscodeKeypadContent(
                     enteredPasscode = enteredPasscode,
                     isCheckingPasscode = isCheckingPasscode,
@@ -308,4 +242,3 @@ fun AppLockScreen(
         }
     }
 }
-

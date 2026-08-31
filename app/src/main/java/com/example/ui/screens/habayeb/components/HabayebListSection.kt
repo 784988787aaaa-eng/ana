@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة قسم قائمة حسابات الحبايب (Habayeb List Section Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على القائمة التمريرية الرئيسية (LazyColumn) لعرض حسابات العملاء:
- * 1. شريط تمرير سريع ومرئي مخصص (Custom Visual Scrollbar) مع حسابات القياس التناسبي الديناميكي.
- * 2. واجهة الحالة الفارغة التفاعلية (Empty State Placeholder) عند عدم وجود نتائج تطابق التصفية.
- * 3. رندرة عناصر صفوف العملاء (CustomerItemRow) مع دعم التثبيت، التمييز اللوني، والتحديد المتعدد.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState

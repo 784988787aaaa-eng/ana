@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة قسم جدول حركات العميل (Customer History Table Section Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على قسم عرض قائمة وسجل حركات العميل:
- * - إدارة القائمة الكسولة (LazyColumn) لعرض الحركات بكفاءة عالية.
- * - التعامل مع حالات القائمة الفارغة أو عدم وجود نتائج مطابقة للبحث.
- * - ربط الحركات الفردية بمكون الصف (CustomerTransactionRow) مع دعم التسلسل، التكرار الدوري، والتحديد المتعدد.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -32,31 +21,6 @@ import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * قسم جدول حركات العميل (CustomerHistoryTableSection)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * مكون منظم يعرض الحركات المالية المصفاة داخل جدول أو قائمة منظمة.
- *
- * [المُدخلات]:
- * - displayedTxs: قائمة الحركات المعروضة بعد تطبيق التصفية والبحث.
- * - listState: حالة التمرير للقائمة الكسولة.
- * - txSearchQuery: نص استعلام البحث الحالي.
- * - activeCustomer: بيانات العميل النشط.
- * - isDark: هل النمط الليلي مفعل.
- * - currencySymbol: رمز العملة الأساسية.
- * - runningBalances: خريطة الأرصدة التراكمية لكل حركة.
- * - activeRecurringTxIds: مجموعة المعرفات للحركات المتكررة دورياً.
- * - txSequenceNumbers: تسلسل أرقام الحركات.
- * - selectedTxIds: قائمة الحركات المحددة في وضع التحديد المتعدد.
- * - isTxMultiSelectActive: مؤشر تفعيل التحديد المتعدد.
- * - activeThemeColor: لون السمة النشط.
- * - contentPadding: هوامش التباعد الخاصة بالشاشة.
- * - onSelectToggle / onLongClick / onOptionsClick / onScheduleClick / onExchangeRateClick: ردود نداء التفاعل مع كل حركة.
- * - modifier: مغير التنسيق الخارجي.
- * =====================================================================================
- */
 @Composable
 fun CustomerHistoryTableSection(
     displayedTxs: List<HabayebTransaction>,

@@ -1,15 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-/*
- * =====================================================================================
- * حزمة شريط الإجراءات السفلي للسحابة (Cloud Bottom Action Bar Component Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على شريط الأزرار التفاعلي المثبت أسفل نافذة النسخ الاحتياطي السحابي:
- * - زر رفع وحفظ نسخة احتياطية سحابية فورية جديدة إلى Google Drive (الوضع العادي).
- * - زر حذف العناصر المحددة مع عداد العناصر المختارة (وضع التحديد المتعدد).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,23 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * شريط الإجراءات السفلي للسحابة (CloudBottomActionBar)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شريط أزرار مثبت أسفل الورقة السحابية يدعم التبديل الذكي بين وضعي العمل:
- * 1. الوضع الافتراضي: زر أخضر بارز للنسخ الاحتياطي الفوري ورفع قاعدة البيانات الحالية.
- * 2. وضع التحديد: زر أحمر بارز لحذف النسخ السحابية المحددة مع إظهار عدد العناصر.
- *
- * [المُدخلات]:
- * - isSelectionMode: هل وضع التحديد المتعدد مفعل.
- * - selectedCount: عدد النسخ السحابية المحددة حالياً.
- * - onMultiDeleteClick: رد نداء عند الضغط على زر الحذف المتعدد.
- * - onInstantBackupClick: رد نداء عند الضغط على زر النسخ الاحتياطي الفوري.
- * =====================================================================================
- */
 @Composable
 fun CloudBottomActionBar(
     isSelectionMode: Boolean,
@@ -73,10 +48,9 @@ fun CloudBottomActionBar(
             .padding(16.dp)
     ) {
         if (isSelectionMode && selectedCount > 0) {
-            // زر الحذف الجماعي للعناصر المحددة
             Button(
                 onClick = onMultiDeleteClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,20 +61,19 @@ fun CloudBottomActionBar(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                     Text(
                         text = stringResource(R.string.cloud_btn_delete_count, selectedCount),
-                        color = MaterialTheme.colorScheme.onError,
+                        color = Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
         } else {
-            // زر رفع نسخة احتياطية سحابية جديدة الآن
             Button(
                 onClick = onInstantBackupClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -111,10 +84,10 @@ fun CloudBottomActionBar(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.CloudUpload, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                     Text(
                         text = stringResource(R.string.cloud_btn_backup_now),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -123,4 +96,3 @@ fun CloudBottomActionBar(
         }
     }
 }
-

@@ -1,17 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة شريط أدوات وتصنيفات الحبايب (Habayeb Filter Toolbar Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على شريط التصفية والتصنيفات عالي الكثافة (Filter Ribbon):
- * 1. كبسولة "الكل" المثبتة في اليمين مع إجمالي عدد الحسابات النشطة.
- * 2. شريط التصنيفات القابل للتمرير الأفقي وإعادة الترتيب بالسحب والإفلات (Drag-to-Reorder).
- * 3. الأزرار الثابتة في اليسار: زر إضافة تصنيف جديد (+) وقائمة الفرز والتصفية (⇅).
- * 4. لوحة خيارات التصنيف (تعديل الاسم، الحذف، والتحريك يميناً ويساراً) مع حوار تأكيد الحذف.
- * =====================================================================================
- */
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -116,10 +104,10 @@ fun HabayebFilterToolbar(
     val itemWidths = remember { mutableStateMapOf<String, Float>() }
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val surfaceContainer = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer
-    val neutralWhite = MaterialTheme.colorScheme.surfaceContainerHigh
+    val surfaceContainer = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
+    val neutralWhite = if (isDark) MaterialTheme.colorScheme.surface else Color.White
     val textPrimary = MaterialTheme.colorScheme.onSurface
-    val backgroundLight = MaterialTheme.colorScheme.outlineVariant
+    val backgroundLight = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 
     Column(
         modifier = modifier
@@ -322,7 +310,7 @@ fun HabayebFilterToolbar(
                 Box {
                     val isSortActive = financialSortMode != 0 || historicalSortMode != 1
                     val sortBtnBg = if (isSortActive) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant
-                    val sortIconTint = if (isSortActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    val sortIconTint = if (isSortActive) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
 
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                         IconButton(

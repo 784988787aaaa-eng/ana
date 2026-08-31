@@ -566,32 +566,9 @@ object DatabaseMigrations {
         }
     }
 
-
-    /**
-     * [الهجرة من الإصدار 31 إلى 32 - MIGRATION_31_32]:
-     * تنقل صيانة روابط معاملات الحبايب من `RoomDatabase.Callback.onOpen` إلى مسار ترقية قاعدة البيانات،
-     * حتى لا يُعاد تنفيذ عملية المسح/التحديث عند كل فتح للتطبيق.
-     * تُنفذ مرة واحدة لكل قاعدة بيانات تمت ترقيتها إلى الإصدار 32.
-     */
-    val MIGRATION_31_32 = object : Migration(31, 32) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("""
-                UPDATE habayeb_transactions
-                SET linkedMainTxId = NULL
-                WHERE linkedMainTxId IS NOT NULL
-                  AND (
-                      TRIM(linkedMainTxId) = ''
-                      OR LOWER(TRIM(linkedMainTxId)) = 'null'
-                      OR TRIM(linkedMainTxId) = '0'
-                      OR linkedMainTxId = id
-                  )
-            """)
-        }
-    }
-
     /**
      * [مصفوفة كافة الهجرات - ALL_MIGRATIONS]:
-     * تجمع جميع كائنات الهجرة من 1 إلى 32 لتمريرها إلى `Room.databaseBuilder` عبر `addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)`.
+     * تجمع جميع كائنات الهجرة من 1 إلى 31 لتمريرها إلى `Room.databaseBuilder` عبر `addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)`.
      */
     val ALL_MIGRATIONS = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
@@ -601,7 +578,7 @@ object DatabaseMigrations {
         MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
         MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25,
         MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29,
-        MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32
+        MIGRATION_29_30, MIGRATION_30_31
     )
 }
 

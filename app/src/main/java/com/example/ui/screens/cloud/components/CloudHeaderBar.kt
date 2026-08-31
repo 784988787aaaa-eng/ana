@@ -1,17 +1,5 @@
 package com.example.ui.screens.cloud.components
 
-/*
- * =====================================================================================
- * حزمة شريط الترويسة للسحابة (Cloud Header Bar Component Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الشريط العلوي التفاعلي لنافذة النسخ الاحتياطي السحابي:
- * - العنوان الرئيسي مع أيقونة المزامنة السحابية.
- * - التبديل التفاعلي بين وضع العنوان العادي ووضع البحث النصي السريع.
- * - زر تفعيل وإلغاء وضع التحديد المتعدد (Multi-Select Mode).
- * - زر الإغلاق والرجوع.
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,28 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SoftRed
 
-/*
- * =====================================================================================
- * شريط الترويسة لنافذة السحابة (CloudHeaderBar)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * شريط التحكم العلوي المزدوج للورقة السحابية:
- * 1. وضع البحث: حقل نصي فوري للبحث باسم ملف النسخة مع زر مسح وإلغاء وإخفاء لوحة المفاتيح.
- * 2. الوضع الافتراضي: عنوان الصفحة وأيقونة السحابة، مع أزرار تفعيل البحث والتحديد المتعدد والإغلاق.
- *
- * [المُدخلات]:
- * - isSearchActive: هل شريط البحث مفعل حالياً.
- * - searchQuery: نص البحث الحالي.
- * - isConnected: هل الحساب السحابي متصل بحساب Google.
- * - hasBackupsOrSearch: هل توجد نسخ احتياطية أو نص بحث لإظهار أدوات التحكم.
- * - isSelectionMode: هل وضع التحديد المتعدد نشط.
- * - onToggleSearch: رد نداء لتبديل حالة البحث.
- * - onSearchQueryChange: رد نداء عند تعديل نص البحث.
- * - onToggleSelectionMode: رد نداء لتبديل وضع التحديد المتعدد.
- * - onDismiss: رد نداء لإغلاق الورقة السفلية بالكامل.
- * =====================================================================================
- */
 @Composable
 fun CloudHeaderBar(
     isSearchActive: Boolean,
@@ -91,12 +59,11 @@ fun CloudHeaderBar(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     if (isSearchActive) {
-        // شريط البحث المضمن
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(44.dp)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -173,7 +140,6 @@ fun CloudHeaderBar(
             }
         }
     } else {
-        // شريط الترويسة القياسي
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -195,7 +161,6 @@ fun CloudHeaderBar(
                 }
 
                 if (isConnected && hasBackupsOrSearch) {
-                    // زر تفعيل البحث
                     IconButton(
                         onClick = { onToggleSearch(true) },
                         modifier = Modifier.size(36.dp)
@@ -210,7 +175,6 @@ fun CloudHeaderBar(
 
                     Spacer(modifier = Modifier.width(2.dp))
 
-                    // زر التبديل لوضع التحديد المتعدد
                     TextButton(
                         onClick = onToggleSelectionMode,
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
@@ -218,7 +182,7 @@ fun CloudHeaderBar(
                         Icon(
                             imageVector = if (isSelectionMode) Icons.Default.EditOff else Icons.Default.Edit,
                             contentDescription = stringResource(R.string.cloud_desc_select),
-                            tint = if (isSelectionMode) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            tint = if (isSelectionMode) SoftRed else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -226,13 +190,12 @@ fun CloudHeaderBar(
                             text = if (isSelectionMode) stringResource(R.string.cloud_btn_cancel_back) else stringResource(R.string.cloud_btn_multi_select),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isSelectionMode) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            color = if (isSelectionMode) SoftRed else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
 
-            // العنوان الرئيسي والأيقونة
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -240,7 +203,7 @@ fun CloudHeaderBar(
                 Icon(
                     imageVector = Icons.Default.CloudSync,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = EmeraldPrimary,
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
@@ -253,4 +216,3 @@ fun CloudHeaderBar(
         }
     }
 }
-

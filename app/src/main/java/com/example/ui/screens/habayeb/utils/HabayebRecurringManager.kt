@@ -1,18 +1,5 @@
 package com.example.ui.screens.habayeb.utils
 
-/*
- * =====================================================================================
- * مُدير المعاملات المجدولة والمتكررة (Habayeb Recurring Transactions Manager)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * إدارة العمليات المجدولة والتكرار الدوري للمعاملات المالية لحسابات العملاء:
- * 1. نمذجة وتحويل إعدادات المعاملات المتكررة (Serialization & Parsing) بدقة مالية صارمة (BigDecimal).
- * 2. الحساب الزمني الحتمي لمواعيد الاستحقاق (اليومي، الأسبوعي، الشهري) وتوليد المعاملات تلقائياً عبر ViewModel.
- * 3. حماية العمليات بحصر التكرارات بحد أقصى (Sweep & Execution limit) لمنع التجميد أو إنشاء مئات المعاملات الزائدة.
- * 4. إدارة التخزين المستقل في SharedPreferences بمفتاح `mizan_recurring_prefs` لمنع تداخل الجداول.
- * =====================================================================================
- */
-
 import android.content.Context
 import android.util.Log
 import com.example.ui.viewmodel.HabayebFinanceViewModel
@@ -21,27 +8,14 @@ import org.json.JSONObject
 import java.util.Calendar
 import java.math.BigDecimal
 
-/*
- * =====================================================================================
- * نموذج إعدادات التكرار المالي (RecurringConfig Data Class)
- * -------------------------------------------------------------------------------------
- * [الحقول]:
- * - id: المعرف الفريد لإعداد التكرار.
- * - originalTxId: معرف المعاملة الأصلية المرتبطة بهذا التكرار.
- * - customerId: معرف العميل صاحب المعاملة.
- * - customerName: اسم العميل.
- * - amount: المبلغ المالي بالعملة الأساسية.
- * - type: نوع المعاملة (لنا / علينا / سداد منه / سداد له).
- * - description: بيان ووصف المعاملة المتكررة.
- * - frequency: وتيرة التكرار ("DAILY", "WEEKLY", "MONTHLY").
- * - daysOfWeek: قائمة أيام الأسبوع المحددة للتكرار الأسبوعي.
- * - daysOfMonth: قائمة أيام الشهر المحددة للتكرار الشهري.
- * - timeHour / timeMinute: ساعة ودقيقة تنفيذ المعاملة اليومية.
- * - startDateMillis / endDateMillis: تاريخ البداية والنهاية لصلاحية التكرار.
- * - lastExecutedTimestamp: الطابع الزمني لآخر تنفيذ ناجح (بالثواني).
- * - isActive: حالة تفعيل التكرار.
- * - isForeign / currencyCode / foreignAmount / exchangeRate: تفاصيل العملة الأجنبية وسعر الصرف.
- * =====================================================================================
+/**
+ * مدير المعاملات المجدولة والمتكررة (Habayeb Recurring Transactions Manager)
+ *
+ * المسؤوليات والحدود المعمارية:
+ * 1. نمذجة وتحويل إعدادات المعاملات المتكررة (Parsing & Serialization) مع دقة مالية صارمة (BigDecimal).
+ * 2. الحساب الزمني الحتمي لمواعيد الاستحقاق (اليومي، الأسبوعي، الشهري) وتوليد المعاملات عبر ViewModel.
+ * 3. حماية العمليات بحصر التكرارات بحد أقصى (Sweep & Execution limit) لمنع التجميد أو إنشاء مئات المعاملات الزائدة.
+ * 4. إدارة التخزين المستقل في SharedPreferences بمفتاح `mizan_recurring_prefs` لمنع تداخل الجداول.
  */
 data class RecurringConfig(
     val id: String,
@@ -67,9 +41,6 @@ data class RecurringConfig(
     val isRateCalculated: Boolean = false,
     val equivalentAmount: BigDecimal = BigDecimal.ZERO
 ) {
-    /*
-     * تحويل كائن التكرار إلى JSONObject للتخزين
-     */
     fun toJsonObject(): JSONObject {
         val obj = JSONObject()
         obj.put("id", id)
@@ -105,9 +76,6 @@ data class RecurringConfig(
     }
 
     companion object {
-        /*
-         * تحويل JSONObject إلى كائن RecurringConfig مع معالجة القيم المالية بدقة
-         */
         fun fromJsonObject(obj: JSONObject, context: Context? = null): RecurringConfig {
             val dowList = mutableListOf<Int>()
             val dowArray = obj.optJSONArray("daysOfWeek")
@@ -170,21 +138,11 @@ data class RecurringConfig(
     }
 }
 
-/*
- * =====================================================================================
- * كائن إدارة المعاملات المتكررة (HabayebRecurringManager Object)
- * -------------------------------------------------------------------------------------
- * يوفر دوال التخزين، الحذف، والفحص والتنفيذ الدوري للمعاملات المجدولة.
- * =====================================================================================
- */
 object HabayebRecurringManager {
     private const val TAG = "HabayebRecurringManager"
     private const val PREFS_NAME = "mizan_recurring_prefs"
     private const val KEY_CONFIGS = "recurring_configs"
 
-    /*
-     * جلب كافة إعدادات التكرار المخزنة في تفضيلات التطبيق
-     */
     fun getAllConfigs(context: Context): List<RecurringConfig> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val jsonStr = prefs.getString(KEY_CONFIGS, "[]") ?: "[]"
@@ -203,9 +161,6 @@ object HabayebRecurringManager {
         return list
     }
 
-    /*
-     * حفظ أو تحديث إعداد تكرار معاملة
-     */
     fun saveConfig(context: Context, config: RecurringConfig) {
         val configs = getAllConfigs(context).toMutableList()
         configs.removeAll { it.id == config.id || (config.originalTxId.isNotEmpty() && it.originalTxId == config.originalTxId) }
@@ -213,27 +168,18 @@ object HabayebRecurringManager {
         saveConfigsList(context, configs)
     }
 
-    /*
-     * حذف إعداد تكرار بواسطة المعرف الفريد
-     */
     fun deleteConfig(context: Context, configId: String) {
         val configs = getAllConfigs(context).toMutableList()
         configs.removeAll { it.id == configId }
         saveConfigsList(context, configs)
     }
     
-    /*
-     * حذف إعداد التكرار المرتبط بمعاملة محددة
-     */
     fun deleteConfigForTransaction(context: Context, txId: String) {
         val configs = getAllConfigs(context).toMutableList()
         configs.removeAll { it.originalTxId == txId }
         saveConfigsList(context, configs)
     }
 
-    /*
-     * كتابة قائمة التكوينات بصيغة JSON داخل SharedPreferences
-     */
     private fun saveConfigsList(context: Context, configs: List<RecurringConfig>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val array = JSONArray()
@@ -241,9 +187,6 @@ object HabayebRecurringManager {
         prefs.edit().putString(KEY_CONFIGS, array.toString()).apply()
     }
 
-    /*
-     * فحص وتوليد المعاملات المتكررة المستحقة وإضافتها إلى قاعدة البيانات عبر ViewModel
-     */
     suspend fun checkAndExecuteRecurring(context: Context, viewModel: HabayebFinanceViewModel, onExecuted: (Int) -> Unit = {}) {
         if (viewModel.isTrialExpiredDirect()) {
             return
@@ -273,7 +216,7 @@ object HabayebRecurringManager {
                 continue
             }
 
-            // فحص الأيام خطوة بخطوة
+            // Step day-by-day
             val cal = Calendar.getInstance()
             cal.timeInMillis = startCheckMillis
             
@@ -329,7 +272,7 @@ object HabayebRecurringManager {
                 matchesTimestamps.sort()
                 val finalToExecute = matchesTimestamps.take(50)
                 for (ts in finalToExecute) {
-                    val result = viewModel.addHabayebTransaction(
+                    viewModel.addHabayebTransaction(
                         customerId = config.customerId,
                         type = config.type,
                         amount = config.amount,
@@ -343,12 +286,7 @@ object HabayebRecurringManager {
                         isRateCalculated = config.isRateCalculated,
                         equivalentAmount = config.equivalentAmount
                     )
-                    if (result is com.example.domain.model.SaveTransactionResult.TrialExpired) {
-                        break
-                    }
-                    if (result is com.example.domain.model.SaveTransactionResult.Success) {
-                        executedCount++
-                    }
+                    executedCount++
                 }
 
                 val lastTs = finalToExecute.last()
@@ -364,4 +302,3 @@ object HabayebRecurringManager {
         }
     }
 }
-

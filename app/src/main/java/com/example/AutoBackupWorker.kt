@@ -84,7 +84,7 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
          * [دالة جدولة النسخ الاحتياطي اليومي]:
          * تقوم بحساب الوقت المتبقي حتى الساعة 11:59 مساءً من اليوم الحالي (أو اليوم التالي
          * إذا كان الوقت قد مضى)، ثم تنشئ طلباً دورياً يتكرر كل 24 ساعة عبر WorkManager
-         * دون أي قيود على البطارية لضمان إتمام النسخ وحماية البيانات تحت أي ظرف.
+         * مع اشتراط عدم انخفاض مستوى البطارية لضمان استقرار النظام.
          */
         fun scheduleDailyBackupWorker(context: Context) {
             val workManager = WorkManager.getInstance(context)
@@ -103,9 +103,10 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
             }
             val initialDelay = (dueDate.timeInMillis - currentDate.timeInMillis).coerceAtLeast(0L)
 
-            // ضبط قيود التشغيل: إتاحة النسخ تحت أي مستوى بطارية لضمان أمان البيانات المالية
+            // ضبط قيود التشغيل: الحفاظ على طاقة الجهاز
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                .setRequiresBatteryNotLow(true)
                 .build()
 
             // بناء طلب العمل الدوري مع استراتيجية التراجع التدريجي عند حدوث خطأ
@@ -128,6 +129,16 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 dailyWorkRequest
             )
             Log.d(TAG, "تمت جدولة النسخ الاحتياطي اليومي بنجاح بعد ${initialDelay / (1000 * 60)} دقيقة")
+        }
+
+        /**
+         * [دالة إلغاء الجدولة اليومية]:
+         * تستخدم عند قيام المستخدم بتعطيل ميزة النسخ الاحتياطي التلقائي من شاشة الإعدادات.
+         */
+        fun cancelDailyBackupWorker(context: Context) {
+            val workManager = WorkManager.getInstance(context)
+            workManager.cancelUniqueWork(WORK_NAME)
+            Log.d(TAG, "تم إلغاء مهمة النسخ الاحتياطي اليومي.")
         }
 
         /**

@@ -1,20 +1,5 @@
 package com.example.ui.screens.habayeb.components.datetime
 
-/*
- * =====================================================================================
- * عنصر العداد المتدحرج التفاعلي (Interactive Rolling Dial Picker Component)
- * -------------------------------------------------------------------------------------
- * [الوصف والهدف]:
- * عنصر واجهة مستخدم متقدم وشامل لاختيار الأرقام (مثل الأيام، الأشهر، السنين، الساعات، الدقائق).
- *
- * [طرق التفاعل المدعومة]:
- * 1. النقر على أسهم الزيادة والنقصان العلوية والسفلية مع اهتزاز لمسي خفيف (Haptic Feedback).
- * 2. السحب الرأسي (Vertical Drag Gestures) للأعلى وللأسفل مع مجمع إزاحة سلس وحد عتبة (Threshold).
- * 3. النقر المباشر على الرقم للتحويل الفوري إلى حقل إدخال نصي عبر لوحة المفاتيح الرقمية.
- * 4. التفاف دائري تلقائي عند تجاوز الحد الأدنى أو الأقصى للنطاق (Circular Wrap-around).
- * =====================================================================================
- */
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,18 +49,9 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import java.util.Locale
 
-/*
- * =====================================================================================
- * دالة العداد المتدحرج (RollingDialPicker)
- * -------------------------------------------------------------------------------------
- * [المُدخلات]:
- * - label: التسمية التوضيحية للعداد (مثل: يوم، شهر، سنة).
- * - value: القيمة العددية الحالية.
- * - range: النطاق الرقمي المسموح به (مثلاً 1..31).
- * - onValueChange: رد نداء عند تغيير القيمة.
- * - modifier: مُعدِّل التنسيق الخارجي.
- * - format: نمط تنسيق الرقم (مثلاً "%02d" للدقائق أو "%d" للسنوات).
- * =====================================================================================
+/**
+ * Universal rolling dial picker widget supporting click increments,
+ * vertical gestures with accumulator threshold, and direct inline keyboard input.
  */
 @Composable
 fun RollingDialPicker(
@@ -98,7 +74,6 @@ fun RollingDialPicker(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
-        // نص التسمية التوضيحية
         Text(
             text = label,
             fontSize = 9.sp,
@@ -108,7 +83,6 @@ fun RollingDialPicker(
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        // سهم الزيادة العلوي (Increment Button)
         Icon(
             imageVector = Icons.Default.KeyboardArrowUp,
             contentDescription = stringResource(id = R.string.datetime_picker_increase),
@@ -125,7 +99,6 @@ fun RollingDialPicker(
 
         var dragAccumulator = 0f
 
-        // مربع عرض القيمة مع دعم السحب والنقر للتحرير
         Box(
             modifier = Modifier
                 .padding(vertical = 1.dp)
@@ -165,7 +138,6 @@ fun RollingDialPicker(
             contentAlignment = Alignment.Center
         ) {
             if (isEditing) {
-                // وضع التحرير المباشر عبر لوحة المفاتيح
                 BasicTextField(
                     value = textValue,
                     onValueChange = { input ->
@@ -200,7 +172,6 @@ fun RollingDialPicker(
                     focusRequester.requestFocus()
                 }
             } else {
-                // وضع العرض العادي المنسق
                 val formattedText = remember(value, format) {
                     String.format(Locale.US, format, value)
                 }
@@ -213,7 +184,6 @@ fun RollingDialPicker(
             }
         }
 
-        // سهم النقصان السفلي (Decrement Button)
         Icon(
             imageVector = Icons.Default.KeyboardArrowDown,
             contentDescription = stringResource(id = R.string.datetime_picker_decrease),
@@ -229,4 +199,3 @@ fun RollingDialPicker(
         )
     }
 }
-

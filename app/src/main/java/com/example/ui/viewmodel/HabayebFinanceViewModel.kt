@@ -8,7 +8,6 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.entities.*
 import com.example.data.repository.FinanceRepository
 import com.example.domain.LicenseManager
-import com.example.domain.model.SaveTransactionResult
 import com.example.domain.usecase.habayeb.*
 import com.example.ui.state.CustomerUiState
 import com.example.ui.state.CustomersUiState
@@ -306,58 +305,40 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
         customTimestamp: Long = System.currentTimeMillis() / 1000, initialDetails: String = "",
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
         exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
-    ): SaveTransactionResult = withContext(Dispatchers.IO) {
+    ) = withContext(Dispatchers.IO) {
         if (isTrialExpiredDirect()) {
             _showActivationRequired.value = true
-            return@withContext SaveTransactionResult.TrialExpired
+            return@withContext
         }
         resetFiltersToDefault(resetCategory = true)
 
-        val result = transactionUseCase.saveHabayebCustomer(
+        transactionUseCase.saveHabayebCustomer(
             customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
             foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value,
             onActivationRequired = { _showActivationRequired.value = true }, onCategoryUpdated = { categoryManager.triggerUpdate() }
         )
-        if (result is SaveTransactionResult.Success) {
-            emitScrollToAccount(customer.id)
-        }
-        result
+        emitScrollToAccount(customer.id)
     }
 
-    suspend fun addHabayebTransaction(
-        customerId: String, type: String, amount: BigDecimal, desc: String,
-        timestamp: Long = System.currentTimeMillis() / 1000, editingTxId: String? = null, linkedMainTxId: String? = null,
-        isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
-        exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
-    ): SaveTransactionResult = withContext(Dispatchers.IO) {
-        if (isTrialExpiredDirect()) {
-            _showActivationRequired.value = true
-            return@withContext SaveTransactionResult.TrialExpired
-        }
-        resetFiltersToDefault(resetCategory = true)
-
-        val result = transactionUseCase.addHabayebTransaction(
-            customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol,
-            onActivationRequired = { _showActivationRequired.value = true }
-        )
-        if (result is SaveTransactionResult.Success) {
-            emitScrollToAccount(customerId)
-        }
-        result
-    }
-
-    fun addHabayebTransactionAsync(
+    fun addHabayebTransaction(
         customerId: String, type: String, amount: BigDecimal, desc: String,
         timestamp: Long = System.currentTimeMillis() / 1000, editingTxId: String? = null, linkedMainTxId: String? = null,
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
         exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
     ) {
         viewModelScope.launch {
-            addHabayebTransaction(
-                customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId,
-                isForeign, currencyCode, foreignAmount, exchangeRate, isRateCalculated, equivalentAmount
+            if (isTrialExpiredDirect()) {
+                _showActivationRequired.value = true
+                return@launch
+            }
+            resetFiltersToDefault(resetCategory = true)
+
+            transactionUseCase.addHabayebTransaction(
+                customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol,
+                onActivationRequired = { _showActivationRequired.value = true }
             )
+            emitScrollToAccount(customerId)
         }
     }
 

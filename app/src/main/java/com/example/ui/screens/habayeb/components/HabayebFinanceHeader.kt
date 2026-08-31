@@ -1,16 +1,5 @@
 package com.example.ui.screens.habayeb.components
 
-/*
- * =====================================================================================
- * حزمة الترويسة المالية لشاشة الحبايب (Habayeb Finance Header Package)
- * -------------------------------------------------------------------------------------
- * تحتوي هذه الفئة على الترويسة الرئيسية العلوية لشاشة الحبايب:
- * 1. لافتة علوية منحنية بلون السمة الأساسي تحتوي على القائمة الجانبية وزر تفعيل البحث وزر تبديل فقاعة البحث العائمة.
- * 2. عرض صافي الرصيد الإجمالي (لنا / علينا / متزن) مع تحجيم النص تلقائياً وزر إخفاء/إظهار الرصيد للخصوصية.
- * 3. بطاقات المؤشرات المالية المزدوجة الصلبة والمتباينة (HabayebDualMetricCards) لحسابات "لنا" و "علينا".
- * =====================================================================================
- */
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -48,8 +37,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.ui.theme.PrimaryHeaderGradientDark
-import com.example.ui.theme.PrimaryHeaderGradientLight
 import com.example.ui.helper.AutoScaleText
 import com.example.ui.helper.HabayebMathHelper
 import com.example.ui.screens.habayeb.components.header.HabayebDualMetricCards
@@ -117,16 +104,12 @@ fun HabayebFinanceHeader(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // 1. Curved Header Banner with Executive Royal Gradient
-        val headerBrush = remember(isDark) {
-            if (isDark) PrimaryHeaderGradientDark else PrimaryHeaderGradientLight
-        }
-
+        // 1. Curved Header Banner
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp))
-                .background(headerBrush)
+                .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
+                .background(activeThemeColor)
                 .statusBarsPadding()
                 .padding(bottom = 6.dp)
         ) {
@@ -144,11 +127,11 @@ fun HabayebFinanceHeader(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 5.dp),
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Right Action: Hamburger Menu Button with Frosted Glass Touch
+                    // Right Action: Hamburger Menu Button
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -156,14 +139,13 @@ fun HabayebFinanceHeader(
                         },
                         modifier = Modifier
                             .size(38.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f))
+                            .background(Color.White.copy(alpha = 0.16f), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = stringResource(id = R.string.ledger_nav_menu_desc),
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
@@ -191,7 +173,7 @@ fun HabayebFinanceHeader(
                             text = dynamicTitle,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                            color = Color.White.copy(alpha = 0.85f),
                             textAlign = TextAlign.Center
                         )
 
@@ -208,7 +190,7 @@ fun HabayebFinanceHeader(
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = stringResource(id = R.string.ledger_visibility_desc),
-                                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                                    tint = Color.White,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -229,9 +211,9 @@ fun HabayebFinanceHeader(
                             ) { animatedBalance ->
                                 AutoScaleText(
                                     text = animatedBalance,
-                                    baseFontSize = 23.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    baseFontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
                                     maxLines = 1,
                                     textAlign = TextAlign.Center
                                 )
@@ -246,7 +228,7 @@ fun HabayebFinanceHeader(
                     ) {
                         TinyFloatingSearchToggle(
                             isFloatingActive = isFloatingActive,
-                            activeThemeColor = MaterialTheme.colorScheme.onPrimary,
+                            activeThemeColor = Color.White,
                             onToggleClick = onToggleFloatingClick
                         )
 
@@ -258,13 +240,13 @@ fun HabayebFinanceHeader(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f))
+                                .background(Color.White.copy(alpha = 0.16f))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = stringResource(id = R.string.habayeb_search_label),
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(20.dp)
+                                tint = Color.White,
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }
