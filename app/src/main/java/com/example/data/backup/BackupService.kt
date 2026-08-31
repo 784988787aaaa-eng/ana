@@ -82,12 +82,19 @@ class BackupService(
      * تستعلم عن كافة الجداول المالية وقوائم الديون والتفضيلات المخصصة وتجمعها في كائن [BackupPayloadData].
      */
     suspend fun buildBackupPayload(): BackupPayloadData = withContext(Dispatchers.IO) {
+        // [توثيق المتغير/الخاصية: settings]: إعدادات التطبيق التي تحدد سلوك النسخ أو المزامنة.
         val settings = database.settingsDao().getSettingsDirect() ?: AppSettings()
+        // [توثيق المتغير/الخاصية: commitments]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val commitments = database.commitmentDao().getAllCommitmentsFlow().first()
+        // [توثيق المتغير/الخاصية: transactions]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val transactions = database.transactionDao().getAllTransactionsFlow().first()
+        // [توثيق المتغير/الخاصية: customers]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val customers = database.habayebDao().getAllCustomersDirect()
+        // [توثيق المتغير/الخاصية: habayebTransactions]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val habayebTransactions = database.habayebDao().getAllTransactionsDirect()
+        // [توثيق المتغير/الخاصية: deletedItems]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val deletedItems = database.trashDao().getAllDeletedItemsDirect()
+        // [توثيق المتغير/الخاصية: extraData]: البيانات الإضافية التي لا تُجمع من الجداول الأساسية مباشرة.
         val extraData = BackupExtraDataProvider.fetchExtraBackupData(context, customers)
 
         BackupPayloadData(
@@ -110,6 +117,7 @@ class BackupService(
      * تحول حزمة البيانات المجمعة إلى نص JSON موحد ومطابق لمخطط النظام.
      */
     suspend fun generateBackupJson(): String = withContext(Dispatchers.IO) {
+        // [توثيق المتغير/الخاصية: payload]: الحزمة الموحدة للبيانات المراد نسخها أو تسلسلها.
         val payload = buildBackupPayload()
         BackupPayloadSerializer.exportBackupToJson(payload)
     }
@@ -125,6 +133,7 @@ class BackupService(
         withContext(Dispatchers.IO) {
             try {
                 // 1. مرحلة تجهيز البيانات والتسلسل
+                // [توثيق المتغير/الخاصية: jsonString]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val jsonString = generateBackupJson()
                 if (jsonString.isBlank()) {
                     return@withContext BackupOperationResult.Failure(
@@ -134,15 +143,20 @@ class BackupService(
                 }
 
                 // 2. تحديد المجلد واسم الملف في المسار العام المعتمد
+                // [توثيق المتغير/الخاصية: directory]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val directory = targetDir ?: fileManager.getMonthlyBackupDirectory()
+                // [توثيق المتغير/الخاصية: fileName]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val fileName = customFileName ?: fileManager.generateStandardBackupFileName()
 
                 // 3. كتابة الملف بشكل ذري
+                // [توثيق المتغير/الخاصية: writeResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
                 val writeResult = fileManager.createBackupFile(directory, fileName, jsonString)
                 if (writeResult.isSuccess) {
+                    // [توثيق المتغير/الخاصية: file]: مرجع ملف النسخة الاحتياطية على التخزين.
                     val file = writeResult.getOrThrow()
 
                     // 4. التحقق النهائي من سلامة الملف
+                    // [توثيق المتغير/الخاصية: validationResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
                     val validationResult = fileManager.validateBackupFile(file)
                     if (validationResult.isFailure) {
                         return@withContext BackupOperationResult.Failure(
@@ -151,15 +165,18 @@ class BackupService(
                         )
                     }
 
+                    // [توثيق المتغير/الخاصية: now]: التوقيت الحالي المستخدم كأساس للحسابات الزمنية.
                     val now = System.currentTimeMillis()
 
                     // 5. حفظ وتحديث سجل آخر نسخة ناجحة
+                    // [توثيق المتغير/الخاصية: prefs]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val prefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
                     prefs.edit().putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, now).apply()
 
                     Log.d(TAG, "اكتملت دورة النسخ الاحتياطي المحلي بنجاح في المسار العام.")
                     BackupOperationResult.Success(file, now)
                 } else {
+                    // [توثيق المتغير/الخاصية: err]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val err = writeResult.exceptionOrNull()
                     Log.e(TAG, "فشل إنشاء ملف النسخة الاحتياطية: ${err?.javaClass?.simpleName}")
                     BackupOperationResult.Failure(
@@ -188,3 +205,9 @@ class BackupService(
         )
     }
 }
+
+// --- ملاحظات وتوصيات المعمارية البرمجية ---
+// - القفل Mutex مناسب لمنع تداخل عمليات النسخ داخل العملية الحالية، لكن لا يحل وحده حالات التزامن بين عمليات/عمليات تطبيق مستقلة.
+// - يفضل مستقبلاً فصل بناء payload عن الكتابة الفيزيائية لرفع قابلية الاختبار.
+// - ينبغي الحفاظ على تسجيل توقيت النجاح فقط بعد اكتمال الكتابة والتحقق من الملف.
+// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

@@ -117,8 +117,11 @@ class GoogleDriveNetworkUploader(
      * تقارن بصمة البيانات الحالية مع البصمة المسجلة لآخر رفع ناجح.
      */
     fun isPayloadIdentical(jsonContent: String): Boolean {
+        // [توثيق المتغير/الخاصية: currentHash]: قيمة بصمة بيانات تُستخدم للتحقق من التطابق أو سلامة المحتوى.
         val currentHash = BackupPayloadSerializer.calculateSha256Hash(jsonContent)
+        // [توثيق المتغير/الخاصية: storedHash]: قيمة بصمة بيانات تُستخدم للتحقق من التطابق أو سلامة المحتوى.
         val storedHash = getStoredPayloadHash()
+        // [توثيق المتغير/الخاصية: match]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val match = storedHash != null && storedHash == currentHash
         if (match) {
             Log.i(TAG, "فحص البصمة: تطابق تام مع آخر نسخة مرفوعة، سيتم تخطي الرفع غير الضروري.")
@@ -140,14 +143,18 @@ class GoogleDriveNetworkUploader(
         }
         try {
             cloudEngine.executeWithRetry(operationName = "CreateAndUploadFile", maxRetries = 2) {
+                // [توثيق المتغير/الخاصية: createMetaUrl]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
                 val createMetaUrl = DRIVE_FILES_BASE_URL
+                // [توثيق المتغير/الخاصية: metaJson]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val metaJson = JSONObject().apply {
                     put("name", filename)
                     put("parents", org.json.JSONArray().put("appDataFolder"))
                     put("mimeType", MIME_TYPE_OCTET_STREAM)
                 }
+                // [توثيق المتغير/الخاصية: metaBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val metaBody = metaJson.toString().toRequestBody(MEDIA_TYPE_JSON)
 
+                // [توثيق المتغير/الخاصية: createMetaRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val createMetaRequest = Request.Builder()
                     .url(createMetaUrl)
                     .header(HEADER_AUTHORIZATION, bearer(accessToken))
@@ -156,13 +163,19 @@ class GoogleDriveNetworkUploader(
 
                 client.newCall(createMetaRequest).execute().use { createMetaResponse ->
                     if (createMetaResponse.isSuccessful) {
+                        // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val rawBody = createMetaResponse.body?.string() ?: ""
+                        // [توثيق المتغير/الخاصية: createdFile]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val createdFile = JSONObject(rawBody)
+                        // [توثيق المتغير/الخاصية: newFileId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
                         val newFileId = createdFile.getString("id")
 
+                        // [توثيق المتغير/الخاصية: uploadMediaUrl]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
                         val uploadMediaUrl = "$DRIVE_UPLOAD_BASE_URL/$newFileId?uploadType=media"
+                        // [توثيق المتغير/الخاصية: fileBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val fileBody = backupJsonContent.toRequestBody(MEDIA_TYPE_JSON)
 
+                        // [توثيق المتغير/الخاصية: uploadMediaRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val uploadMediaRequest = Request.Builder()
                             .url(uploadMediaUrl)
                             .header(HEADER_AUTHORIZATION, bearer(accessToken))
@@ -171,6 +184,7 @@ class GoogleDriveNetworkUploader(
 
                         client.newCall(uploadMediaRequest).execute().use { uploadMediaResponse ->
                             if (uploadMediaResponse.isSuccessful) {
+                                // [توثيق المتغير/الخاصية: currentHash]: قيمة بصمة بيانات تُستخدم للتحقق من التطابق أو سلامة المحتوى.
                                 val currentHash = BackupPayloadSerializer.calculateSha256Hash(backupJsonContent)
                                 saveLastUploadedPayloadHash(currentHash)
                                 UploadResult.Success
@@ -215,9 +229,12 @@ class GoogleDriveNetworkUploader(
         }
         try {
             cloudEngine.executeWithRetry(operationName = "UpdateExistingFile", maxRetries = 2) {
+                // [توثيق المتغير/الخاصية: updateUrl]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
                 val updateUrl = "$DRIVE_UPLOAD_BASE_URL/$fileId?uploadType=media"
+                // [توثيق المتغير/الخاصية: mediaBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val mediaBody = backupJsonContent.toRequestBody(MEDIA_TYPE_JSON)
 
+                // [توثيق المتغير/الخاصية: updateRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val updateRequest = Request.Builder()
                     .url(updateUrl)
                     .header(HEADER_AUTHORIZATION, bearer(accessToken))
@@ -227,10 +244,14 @@ class GoogleDriveNetworkUploader(
                 client.newCall(updateRequest).execute().use { updateResponse ->
                     if (updateResponse.isSuccessful) {
                         // تحديث اسم الملف إذا لزم الأمر
+                        // [توثيق المتغير/الخاصية: metaUrl]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
                         val metaUrl = "$DRIVE_FILES_BASE_URL/$fileId"
+                        // [توثيق المتغير/الخاصية: metaJson]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val metaJson = JSONObject().apply { put("name", newFileName) }
+                        // [توثيق المتغير/الخاصية: metaBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val metaBody = metaJson.toString().toRequestBody(MEDIA_TYPE_JSON)
 
+                        // [توثيق المتغير/الخاصية: metaRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val metaRequest = Request.Builder()
                             .url(metaUrl)
                             .header(HEADER_AUTHORIZATION, bearer(accessToken))
@@ -239,6 +260,7 @@ class GoogleDriveNetworkUploader(
 
                         client.newCall(metaRequest).execute().use { /* ignore meta update response */ }
 
+                        // [توثيق المتغير/الخاصية: currentHash]: قيمة بصمة بيانات تُستخدم للتحقق من التطابق أو سلامة المحتوى.
                         val currentHash = BackupPayloadSerializer.calculateSha256Hash(backupJsonContent)
                         saveLastUploadedPayloadHash(currentHash)
                         UploadResult.Success
@@ -276,6 +298,7 @@ class GoogleDriveNetworkUploader(
             }
 
             if (!existingFileId.isNullOrEmpty()) {
+                // [توثيق المتغير/الخاصية: updateRes]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val updateRes = updateExistingFile(existingFileId, filename, backupJsonContent, accessToken)
                 if (updateRes is UploadResult.Success) {
                     return@withContext updateRes
@@ -295,7 +318,9 @@ class GoogleDriveNetworkUploader(
     ): DownloadResult = withContext(Dispatchers.IO) {
         try {
             cloudEngine.executeWithRetry(operationName = "DownloadFileById", maxRetries = 2) {
+                // [توثيق المتغير/الخاصية: downloadUrl]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
                 val downloadUrl = "$DRIVE_FILES_BASE_URL/$fileId?alt=media"
+                // [توثيق المتغير/الخاصية: downloadRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val downloadRequest = Request.Builder()
                     .url(downloadUrl)
                     .header(HEADER_AUTHORIZATION, bearer(accessToken))
@@ -305,8 +330,10 @@ class GoogleDriveNetworkUploader(
                 client.newCall(downloadRequest).execute().use { downloadResponse ->
                     when {
                         downloadResponse.isSuccessful -> {
+                            // [توثيق المتغير/الخاصية: content]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val content = downloadResponse.body?.string()
                             if (content != null && isValidBackupJson(content)) {
+                                // [توثيق المتغير/الخاصية: downloadedHash]: قيمة بصمة بيانات تُستخدم للتحقق من التطابق أو سلامة المحتوى.
                                 val downloadedHash = BackupPayloadSerializer.calculateSha256Hash(content)
                                 saveLastUploadedPayloadHash(downloadedHash)
                                 DownloadResult.Success(content)
@@ -346,7 +373,9 @@ class GoogleDriveNetworkUploader(
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             cloudEngine.executeWithRetry(operationName = "DeleteFileById", maxRetries = 2) {
+                // [توثيق المتغير/الخاصية: url]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
                 val url = "$DRIVE_FILES_BASE_URL/$fileId"
+                // [توثيق المتغير/الخاصية: request]: طلب HTTP أو طلب عمل مبني للتنفيذ اللاحق.
                 val request = Request.Builder()
                     .url(url)
                     .header(HEADER_AUTHORIZATION, bearer(accessToken))
@@ -370,7 +399,9 @@ class GoogleDriveNetworkUploader(
     private fun isValidBackupJson(content: String): Boolean {
         if (content.isBlank()) return false
         return try {
+            // [توثيق المتغير/الخاصية: json]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val json = JSONObject(content)
+            // [توثيق المتغير/الخاصية: sourceObj]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val sourceObj = if (json.has("mizan_al_dar_db")) json.getJSONObject("mizan_al_dar_db") else json
             sourceObj.has("settings") || sourceObj.has("transactions") || sourceObj.has("commitments") ||
                     sourceObj.has("fixed_commitments") || sourceObj.has("habayeb_debts") || sourceObj.has("habayeb_debts_db")
@@ -379,3 +410,9 @@ class GoogleDriveNetworkUploader(
         }
     }
 }
+
+// --- ملاحظات وتوصيات المعمارية البرمجية ---
+// - يُستحسن إبقاء مقارنة hash قبل الرفع لتقليل النقل غير الضروري، مع توثيق مصدر الـhash في عقد النسخة الاحتياطية.
+// - يجب التفريق بين فشل المصادقة، عدم وجود الملف، وفشل الشبكة عند استرجاع/حذف الملفات.
+// - يفضل مستقبلاً إضافة اختبارات idempotency لمسارات create/update.
+// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

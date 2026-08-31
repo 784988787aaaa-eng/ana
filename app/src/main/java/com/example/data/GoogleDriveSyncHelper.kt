@@ -74,9 +74,13 @@ sealed class CloudSyncState {
  * يحتوي على البيانات الوصفية للملفات المخزنة في مجلد التطبيق السحابي.
  */
 data class CloudBackupFile(
+    // [توثيق المتغير/الخاصية: id]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
     val id: String,
+    // [توثيق المتغير/الخاصية: name]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val name: String,
+    // [توثيق المتغير/الخاصية: size]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val size: Long,
+    // [توثيق المتغير/الخاصية: createdTime]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val createdTime: String
 )
 
@@ -109,6 +113,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
          */
         suspend fun disconnectAndSignOut(context: Context) = withContext(Dispatchers.IO) {
             try {
+                // [توثيق المتغير/الخاصية: syncHelper]: مساعد تنسيق المصادقة والمزامنة مع Google Drive.
                 val syncHelper = GoogleDriveSyncHelper(context.applicationContext)
                 syncHelper.authManager.disableCloudSyncInSettings()
                 syncHelper.authManager.clearAuthData()
@@ -125,6 +130,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
 
     // تدفق حالة المزامنة السحابية للمراقبة في واجهات Compose
     private val _syncState = MutableStateFlow<CloudSyncState>(CloudSyncState.Idle)
+    // [توثيق المتغير/الخاصية: syncState]: حالة تشغيلية تمثل المرحلة الحالية من دورة العمل.
     val syncState: StateFlow<CloudSyncState> = _syncState.asStateFlow()
 
     // المدراء والوحدات المتخصصة التابعة
@@ -135,12 +141,15 @@ class GoogleDriveSyncHelper(private val context: Context) {
     private val folderNavigator = GoogleDriveFolderNavigator(CloudNetworkEngine.getInstance(context).client)
     private val networkUploader = GoogleDriveNetworkUploader(context)
 
+    // [توثيق المتغير/الخاصية: clientId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
     val clientId: String
         get() = authManager.clientId
 
+    // [توثيق المتغير/الخاصية: clientSecret]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val clientSecret: String
         get() = authManager.clientSecret
 
+    // [توثيق المتغير/الخاصية: scope]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val scope: String
         get() = authManager.scope
 
@@ -158,19 +167,25 @@ class GoogleDriveSyncHelper(private val context: Context) {
      * تستعيد حالة الجلسة المحفوظة وتتحقق من صحة الحساب مع قاعدة البيانات المحلية عند بدء التشغيل.
      */
     init {
+        // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val email = getStoredEmail()
+        // [توثيق المتغير/الخاصية: refreshToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val refreshToken = getStoredRefreshToken()
+        // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val accessToken = getStoredAccessToken()
         if (!email.isNullOrEmpty() && (!refreshToken.isNullOrEmpty() || (!accessToken.isNullOrEmpty() && !authManager.isTokenExpired()))) {
             _syncState.value = CloudSyncState.Authenticated(email)
         }
 
         try {
+            // [توثيق المتغير/الخاصية: account]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val account = GoogleSignIn.getLastSignedInAccount(context)
             if (account != null) {
                 helperScope.launch {
                     try {
+                        // [توثيق المتغير/الخاصية: db]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val db = AppDatabase.getDatabase(context)
+                        // [توثيق المتغير/الخاصية: settings]: إعدادات التطبيق التي تحدد سلوك النسخ أو المزامنة.
                         val settings = db.settingsDao().getSettingsDirect()
                         if (getStoredRefreshToken().isNullOrEmpty() && getStoredAccessToken().isNullOrEmpty() && (settings == null || !settings.isCloudSyncEnabled)) {
                             Log.d(TAG, "اكتشاف إعادة تثبيت دون وجود جلسة سارية، جاري تسجيل الخروج الصامت.")
@@ -231,6 +246,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
      * تجدد الرمز إذا لزم الأمر، وتتعامل مع انتهاء الجلسة تلقائياً إذا فشل التجديد.
      */
     private suspend fun getValidAccessTokenOrExpired(): String? {
+        // [توثيق المتغير/الخاصية: token]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val token = authManager.refreshAccessTokenIfNeeded()
         if (token == null) {
             handleSessionExpired()
@@ -248,6 +264,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
      */
     private fun writeLocalMirrorCache(jsonContent: String) {
         try {
+            // [توثيق المتغير/الخاصية: mirrorFile]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val mirrorFile = File(context.filesDir, MIRROR_FILE_NAME)
             mirrorFile.bufferedWriter().use { writer ->
                 writer.write(jsonContent)
@@ -264,7 +281,9 @@ class GoogleDriveSyncHelper(private val context: Context) {
     suspend fun uploadBackupToDrive(backupJsonContent: String): Boolean = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
+            // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
             val accessToken = getValidAccessTokenOrExpired() ?: return@withContext false
+            // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val email = authManager.getStoredEmail() ?: DEFAULT_ACCOUNT_EMAIL
 
             // 1. كتابة المرآة المحلية
@@ -281,7 +300,9 @@ class GoogleDriveSyncHelper(private val context: Context) {
             _syncState.value = CloudSyncState.Syncing
 
             // 3. البحث عن الملف الأخير للتحديث أو الإنشاء
+            // [توثيق المتغير/الخاصية: searchResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
             val searchResult = folderNavigator.findLatestBackupFileId(accessToken)
+            // [توثيق المتغير/الخاصية: existingFileId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
             val existingFileId = when (searchResult) {
                 is GoogleDriveFolderNavigator.FileSearchResult.Success -> searchResult.fileId
                 is GoogleDriveFolderNavigator.FileSearchResult.Error -> {
@@ -294,10 +315,13 @@ class GoogleDriveSyncHelper(private val context: Context) {
                 }
             }
 
+            // [توثيق المتغير/الخاصية: dateStr]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val dateStr = formatDate(Date())
+            // [توثيق المتغير/الخاصية: fileName]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val fileName = "Mzd_$dateStr.mzd"
 
             // 4. تنفيذ الرفع عبر NetworkUploader
+            // [توثيق المتغير/الخاصية: uploadResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
             val uploadResult = networkUploader.uploadBackupSafe(
                 filename = fileName,
                 backupJsonContent = backupJsonContent,
@@ -317,7 +341,9 @@ class GoogleDriveSyncHelper(private val context: Context) {
     suspend fun uploadBackupToDriveWithFilename(filename: String, backupJsonContent: String): Boolean = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
+            // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
             val accessToken = getValidAccessTokenOrExpired() ?: return@withContext false
+            // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val email = authManager.getStoredEmail() ?: DEFAULT_ACCOUNT_EMAIL
 
             writeLocalMirrorCache(backupJsonContent)
@@ -331,6 +357,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
 
             _syncState.value = CloudSyncState.Syncing
 
+            // [توثيق المتغير/الخاصية: uploadResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
             val uploadResult = networkUploader.createAndUploadNewFile(
                 filename = filename,
                 backupJsonContent = backupJsonContent,
@@ -377,10 +404,14 @@ class GoogleDriveSyncHelper(private val context: Context) {
     suspend fun downloadBackupFromDrive(): String? = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
+            // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
             val accessToken = getValidAccessTokenOrExpired() ?: return@withContext null
+            // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val email = authManager.getStoredEmail() ?: DEFAULT_ACCOUNT_EMAIL
 
+            // [توثيق المتغير/الخاصية: searchResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
             val searchResult = folderNavigator.findLatestBackupFileId(accessToken, forceRefresh = true)
+            // [توثيق المتغير/الخاصية: fileId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
             val fileId = when (searchResult) {
                 is GoogleDriveFolderNavigator.FileSearchResult.Success -> searchResult.fileId
                 is GoogleDriveFolderNavigator.FileSearchResult.Error -> {
@@ -410,7 +441,9 @@ class GoogleDriveSyncHelper(private val context: Context) {
     suspend fun downloadBackupFromDriveById(fileId: String): String? = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
+            // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
             val accessToken = getValidAccessTokenOrExpired() ?: return@withContext null
+            // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val email = authManager.getStoredEmail() ?: DEFAULT_ACCOUNT_EMAIL
 
             _syncState.value = CloudSyncState.Syncing
@@ -427,6 +460,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         accessToken: String,
         email: String
     ): String? {
+        // [توثيق المتغير/الخاصية: downloadResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
         val downloadResult = networkUploader.downloadFileById(fileId, accessToken)
         return when (downloadResult) {
             is GoogleDriveNetworkUploader.DownloadResult.Success -> {
@@ -457,7 +491,9 @@ class GoogleDriveSyncHelper(private val context: Context) {
      * تستعلم عن كافة ملفات النسخ السحابية المتاحة في حساب المستخدم.
      */
     suspend fun listCloudBackups(): List<CloudBackupFile> = withContext(Dispatchers.IO) {
+        // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val accessToken = getValidAccessTokenOrExpired() ?: return@withContext emptyList()
+        // [توثيق المتغير/الخاصية: result]: نتيجة وسيطة أو نهائية للعملية الحالية.
         val result = folderNavigator.listCloudBackups(accessToken)
         return@withContext when (result) {
             is GoogleDriveFolderNavigator.ListBackupsResult.Success -> result.backups
@@ -475,6 +511,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
      * تحذف ملف نسخة محدد من Google Drive وتصفر الكاش المؤقت.
      */
     suspend fun deleteBackupFromDriveById(fileId: String): Boolean = withContext(Dispatchers.IO) {
+        // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val accessToken = getValidAccessTokenOrExpired() ?: return@withContext false
         folderNavigator.clearCache()
         return@withContext networkUploader.deleteFileById(fileId, accessToken)
@@ -490,3 +527,9 @@ object GoogleDriveHelper {
         GoogleDriveSyncHelper.disconnectAndSignOut(context)
     }
 }
+
+// --- ملاحظات وتوصيات المعمارية البرمجية ---
+// - الكلاس يحمل مسؤوليات متعددة؛ يمكن مستقبلاً فصل orchestration عن إدارة المصادقة وعن عمليات الملفات.
+// - يجب إبقاء حالات CloudSyncState شاملة لكل الحالات التي تحتاجها الواجهة دون تسريب تفاصيل تنفيذ الشبكة.
+// - أي توسع في المزامنة متعددة الأجهزة ينبغي أن يحافظ على idempotency ومنع الكتابة فوق نسخة أحدث.
+// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

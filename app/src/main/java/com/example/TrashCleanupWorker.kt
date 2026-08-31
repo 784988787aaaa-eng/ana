@@ -47,6 +47,7 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
      */
     companion object {
         private const val TAG = "TrashCleanupWorker"
+        // [توثيق المتغير/الخاصية: WORK_NAME]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val WORK_NAME = "MizanTrashCleanup"
         private const val PREFS_TRASH = "trash_prefs"
         private const val KEY_AUTO_CLEANUP_PERIOD = "trash_auto_cleanup_period"
@@ -72,6 +73,7 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
          * تضبط مهمة يومية عبر WorkManager لفحص سلة المهملات، أو تلغي المهمة إذا اختار المستخدم "never".
          */
         fun schedulePeriodicCleanup(context: Context, period: String) {
+            // [توثيق المتغير/الخاصية: workManager]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val workManager = WorkManager.getInstance(context)
             if (period == "never") {
                 workManager.cancelUniqueWork(WORK_NAME)
@@ -80,10 +82,12 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
             }
 
             // اشتراط عدم انخفاض البطارية
+            // [توثيق المتغير/الخاصية: constraints]: قيود WorkManager التي تحدد شروط تشغيل المهمة.
             val constraints = Constraints.Builder()
                 .setRequiresBatteryNotLow(true)
                 .build()
 
+            // [توثيق المتغير/الخاصية: periodicRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val periodicRequest = PeriodicWorkRequestBuilder<TrashCleanupWorker>(
                 1, TimeUnit.DAYS
             )
@@ -104,6 +108,7 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
      * تنسق عملية تنظيف قاعدة البيانات وملفات الكاش المؤقتة.
      */
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        // [توثيق المتغير/الخاصية: context]: سياق أندرويد المستخدم للوصول إلى الموارد والخدمات اللازمة.
         val context = applicationContext
         Log.d(TAG, "بدء عملية التنظيف الدوري في الخلفية...")
 
@@ -127,21 +132,29 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
      */
     private suspend fun cleanupDatabaseTrashItems(context: Context) {
         try {
+            // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
             val sharedPrefs = context.getSharedPreferences(PREFS_TRASH, Context.MODE_PRIVATE)
+            // [توثيق المتغير/الخاصية: period]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val period = sharedPrefs.getString(KEY_AUTO_CLEANUP_PERIOD, "never") ?: "never"
             if (period == "never") {
                 Log.d(TAG, "تنظيف سلة المهملات معطل في التفضيلات.")
                 return
             }
 
+            // [توثيق المتغير/الخاصية: durationMs]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val durationMs = getPeriodDurationMillis(period)
             if (durationMs <= 0L) return
 
+            // [توثيق المتغير/الخاصية: thresholdTime]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val thresholdTime = System.currentTimeMillis() - durationMs
+            // [توثيق المتغير/الخاصية: db]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val db = AppDatabase.getDatabase(context)
+            // [توثيق المتغير/الخاصية: trashDao]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val trashDao = db.trashDao()
 
+            // [توثيق المتغير/الخاصية: allItems]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val allItems = trashDao.getAllDeletedItemsDirect()
+            // [توثيق المتغير/الخاصية: expiredItems]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val expiredItems = allItems.filter { it.deletedAt < thresholdTime }
 
             Log.d(TAG, "عثر على ${expiredItems.size} عنصر منتهي الصلاحية للحذف من أصل ${allItems.size}")
@@ -165,7 +178,9 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
      */
     private fun cleanupTemporaryCacheFiles(context: Context) {
         try {
+            // [توثيق المتغير/الخاصية: cacheDir]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val cacheDir = context.cacheDir ?: return
+            // [توثيق المتغير/الخاصية: thresholdTime]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val thresholdTime = System.currentTimeMillis() - ONE_DAY_MS
 
             cacheDir.walkTopDown().forEach { file ->
@@ -177,6 +192,7 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
 
                     // تنظيف الملفات المؤقتة فقط التي مضى عليها أكثر من 24 ساعة
                     if (file.isFile && file.lastModified() < thresholdTime) {
+                        // [توثيق المتغير/الخاصية: isTempOrExport]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val isTempOrExport = file.name.startsWith(BackupConstants.BACKUP_TEMP_PREFIX) ||
                                 file.name.endsWith(BackupConstants.BACKUP_TEMP_SUFFIX) ||
                                 file.name.endsWith(".pdf") ||
@@ -201,6 +217,7 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
      * تتأكد من أن الملف ليس نسخة احتياطية (.mzd) أو مجلداً رئيسياً لمنع حذفه بالخطأ.
      */
     private fun isProtectedFile(file: File): Boolean {
+        // [توثيق المتغير/الخاصية: name]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val name = file.name
         if (name.endsWith(BackupConstants.BACKUP_FILE_EXTENSION, ignoreCase = true)) return true
         if (name.startsWith(BackupConstants.BACKUP_FILE_PREFIX, ignoreCase = true)) return true
@@ -209,3 +226,9 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
         return false
     }
 }
+
+// --- ملاحظات وتوصيات المعمارية البرمجية ---
+// - يُستحسن إبقاء مدة الاحتفاظ وسياسة التنظيف معرفة في ثابت مركزي قابل للتدقيق.
+// - يجب أن يبقى التنظيف غير قابل لإعادة حذف عنصر حديث بسبب خطأ في حساب الزمن أو المنطقة الزمنية.
+// - يفضل اختبار حدود المدة الزمنية عند الانتقال بين الأشهر والسنوات.
+// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

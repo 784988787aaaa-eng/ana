@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MASTER DOCUMENTATION | عقد Android: الأذونات، Application، Activity، FileProvider وWorkManager. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -66,3 +67,6 @@
     </application>
 
 </manifest>
+
+<!-- // --- ملاحظات وتوصيات المعمارية البرمجية ---
+أي تعديل مستقبلي في الأذونات أو providers أو launch mode يجب اختباره على إصدارات Android المستهدفة. -->

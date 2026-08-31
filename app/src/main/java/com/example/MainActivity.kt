@@ -1,3 +1,4 @@
+/** MASTER DOCUMENTATION | محور Single-Activity وCompose ودورة الإقلاع والأمان والنسخ الاحتياطي؛ التوثيق فقط. */
 /**
  * =====================================================================
  * ملف: النشاط الرئيسي للتطبيق (MainActivity.kt)
@@ -51,13 +52,16 @@ import androidx.lifecycle.lifecycleScope
  * [فئة النشاط الرئيسي - MainActivity]:
  * ترث من `FragmentActivity` لدعم دوال التوافق والمصادقة الحيوية ونظام Compose.
  */
+// [توثيق الصنف] MainActivity: نقطة دخول Compose وربط ViewModels ودورة حياة Activity.
 class MainActivity : FragmentActivity() {
+    // [توثيق المتغير] مرجع ViewModel للنسخ الاحتياطي طوال عمر Activity.
     private lateinit var backupSyncViewModel: BackupSyncViewModel
 
     /**
      * [دالة دورة الحياة - onCreate]:
      * تهيئ شاشة البداية، ونماذج العرض، وتبني شجرة واجهات Compose.
      */
+    // [توثيق الدالة] onCreate: تهيئة Splash وViewModels والمهام الخلفية وشجرة Compose.
     override fun onCreate(savedInstanceState: Bundle?) {
         // تثبيت شاشة البداية الرسمية
         val splashScreen = installSplashScreen()
@@ -262,6 +266,7 @@ class MainActivity : FragmentActivity() {
      * [دالة دورة الحياة - onStop]:
      * تستدعى عندما ينتقل التطبيق إلى الخلفية. تنفذ نسخة احتياطية صامتة وسريعة للحفاظ على البيانات.
      */
+    // [توثيق الدالة] onStop: إطلاق النسخة المحلية الصامتة عند الانتقال للخلفية.
     override fun onStop() {
         super.onStop()
         try {
@@ -277,6 +282,7 @@ class MainActivity : FragmentActivity() {
      * [دالة مساعدة لطباعة توقيع التطبيق]:
      * تستخرج وتطبع بصمة SHA-1 في سجلات التصحيح.
      */
+    // [توثيق الدالة] logAppSignatureSHA1: حساب بصمة SHA-1 لشهادة توقيع الحزمة لأغراض التشخيص.
     private fun logAppSignatureSHA1(context: android.content.Context) {
         try {
             val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
@@ -308,3 +314,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 }
+/**
+ * // --- ملاحظات وتوصيات المعمارية البرمجية ---
+ * التوثيق الحالي لا يغيّر أي تعبير تنفيذي. أي تطوير مستقبلي يجب أن يحافظ على الفصل بين التهيئة ومسار الواجهة ويُثبت بالاختبارات.
+ */

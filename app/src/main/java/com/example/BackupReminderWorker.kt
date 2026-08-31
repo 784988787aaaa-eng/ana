@@ -51,6 +51,7 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
      */
     companion object {
         private const val TAG = "BackupReminderWorker"
+        // [توثيق المتغير/الخاصية: UNIQUE_WORK_NAME]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val UNIQUE_WORK_NAME = "MizanBackupReminder"
         private const val NOTIFICATION_ID = 1003
         private const val THIRTY_SIX_HOURS_MS = 36 * 60 * 60 * 1000L
@@ -62,20 +63,27 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
          */
         fun scheduleReminder(context: Context) {
             try {
+                // [توثيق المتغير/الخاصية: workManager]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val workManager = WorkManager.getInstance(context)
 
+                // [توثيق المتغير/الخاصية: now]: التوقيت الحالي المستخدم كأساس للحسابات الزمنية.
                 val now = Calendar.getInstance()
+                // [توثيق المتغير/الخاصية: target]: التوقيت المستهدف لتنفيذ المهمة.
                 val target = Calendar.getInstance().apply {
                     add(Calendar.DAY_OF_YEAR, 1) // ضبط اليوم ليكون غداً
+                    // [توثيق المتغير/الخاصية: randomHour]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val randomHour = (14..20).random() // اختيار ساعة نشاط مناسبة
+                    // [توثيق المتغير/الخاصية: randomMinute]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val randomMinute = (0..59).random()
                     set(Calendar.HOUR_OF_DAY, randomHour)
                     set(Calendar.MINUTE, randomMinute)
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }
+                // [توثيق المتغير/الخاصية: delayMs]: الفاصل الزمني المحسوب قبل تشغيل المهمة القادمة.
                 val delayMs = (target.timeInMillis - now.timeInMillis).coerceAtLeast(0L)
 
+                // [توثيق المتغير/الخاصية: reminderRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val reminderRequest = OneTimeWorkRequestBuilder<BackupReminderWorker>()
                     .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
                     .build()
@@ -98,11 +106,13 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
      * تستدعى في الخلفية عندما يحين وقت التنفيذ المحدد.
      */
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        // [توثيق المتغير/الخاصية: context]: سياق أندرويد المستخدم للوصول إلى الموارد والخدمات اللازمة.
         val context = applicationContext
         try {
             // 1. تقييم قرار الحاجة للتذكير عبر التحقق من تاريخ آخر نسخة
             if (isReminderNeeded(context)) {
                 // 2. اختيار نص التذكير من الموارد المترجمة
+                // [توثيق المتغير/الخاصية: reminderMessage]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val reminderMessage = getRandomReminderMessage(context)
 
                 // 3. بناء وإرسال إشعار التذكير للمستخدم
@@ -125,8 +135,11 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
      * تعيد `false` إذا كانت النسخة أحدث من 36 ساعة، و `true` إذا كانت قديمة أو غير موجودة.
      */
     private fun isReminderNeeded(context: Context): Boolean {
+        // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
         val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
+        // [توثيق المتغير/الخاصية: lastBackupTimestamp]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val lastBackupTimestamp = sharedPrefs.getLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, 0L)
+        // [توثيق المتغير/الخاصية: now]: التوقيت الحالي المستخدم كأساس للحسابات الزمنية.
         val now = System.currentTimeMillis()
 
         // لا داعي لإزعاج المستخدم إذا تم إجراء نسخة في آخر 36 ساعة
@@ -141,6 +154,7 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
      * تختار عبارة تنبيهية عشوائية من ملف النصوص `strings.xml` لتنويع أسلوب التذكير.
      */
     private fun getRandomReminderMessage(context: Context): String {
+        // [توثيق المتغير/الخاصية: reminderMessages]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val reminderMessages = listOf(
             context.getString(R.string.backup_reminder_msg_1),
             context.getString(R.string.backup_reminder_msg_2),
@@ -156,11 +170,14 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
      * تنشئ قناة الإشعارات (لإصدارات أندرويد 8+) وتجهز Intent لنقل المستخدم لشاشة النسخ الاحتياطي.
      */
     private fun sendReminderNotification(context: Context, message: String) {
+        // [توثيق المتغير/الخاصية: channelId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
         val channelId = AutoBackupWorker.CHANNEL_ID
+        // [توثيق المتغير/الخاصية: notificationManager]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // [توثيق المتغير/الخاصية: channel]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val channel = NotificationChannel(
                 channelId,
                 context.getString(R.string.autobackup_channel_name),
@@ -173,11 +190,13 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
         }
 
         // توجيه المستخدم مباشرة إلى تبويب النسخ الاحتياطي عند النقر
+        // [توثيق المتغير/الخاصية: openIntent]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val openIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("navigate_to", "backup_settings")
         }
 
+        // [توثيق المتغير/الخاصية: pendingIntent]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val pendingIntent = PendingIntent.getActivity(
             context,
             2001,
@@ -185,6 +204,7 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // [توثيق المتغير/الخاصية: notification]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(context.getString(R.string.backup_reminder_title))
@@ -198,3 +218,9 @@ class BackupReminderWorker(context: Context, params: WorkerParameters) : Corouti
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 }
+
+// --- ملاحظات وتوصيات المعمارية البرمجية ---
+// - الجدولة العشوائية مفيدة لتقليل الإزعاج، لكن يمكن مستقبلاً فصل سياسة التوقيت عن تنفيذ الإشعار لتسهيل الاختبار.
+// - يُستحسن جعل نافذة 36 ساعة ثابتة في طبقة إعدادات مركزية إذا أصبحت سياسة المنتج قابلة للتكوين.
+// - ينبغي الحفاظ على إعادة الجدولة في finally لضمان استمرارية دورة التذكير.
+// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.
