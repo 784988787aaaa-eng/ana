@@ -50,9 +50,7 @@ class BackupFileManager(private val context: Context) {
      * Documents/الدفتر الذكي
      */
     fun getBaseBackupDirectory(): File {
-        // [توثيق المتغير/الخاصية: rootDir]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val rootDir = BackupPathResolver.getPublicBackupRoot()
-        // [توثيق المتغير/الخاصية: ensureResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
         val ensureResult = BackupPathResolver.ensureDirectory(rootDir)
         return ensureResult.getOrDefault(rootDir)
     }
@@ -62,9 +60,7 @@ class BackupFileManager(private val context: Context) {
      * تنشئ وترجع مجلداً فرعياً بصيغة (yyyy-MM) في المسار العام المعتمد لتصنيف النسخ حسب شهر الإنشاء.
      */
     fun getMonthlyBackupDirectory(): File {
-        // [توثيق المتغير/الخاصية: monthlyDir]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val monthlyDir = BackupPathResolver.getCurrentMonthlyDirectory()
-        // [توثيق المتغير/الخاصية: ensureResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
         val ensureResult = BackupPathResolver.ensureDirectory(monthlyDir)
         return ensureResult.getOrDefault(monthlyDir)
     }
@@ -75,7 +71,6 @@ class BackupFileManager(private val context: Context) {
      * وترتبها تنازلياً حسب تاريخ التعديل (للاستخدام البرمجي مثل استدراك الرفع السحابي).
      */
     fun getAllBackupFiles(): List<File> {
-        // [توثيق المتغير/الخاصية: baseDir]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val baseDir = getBaseBackupDirectory()
         if (!baseDir.exists()) return emptyList()
         return try {
@@ -115,7 +110,6 @@ class BackupFileManager(private val context: Context) {
         targetFileName: String,
         content: String
     ): Result<File> = withContext(Dispatchers.IO) {
-        // [توثيق المتغير/الخاصية: tempFile]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         var tempFile: File? = null
         try {
             if (content.isBlank()) {
@@ -126,14 +120,12 @@ class BackupFileManager(private val context: Context) {
             BackupPathResolver.validateFileName(targetFileName)
 
             // ضمان وجود وصلاحية المجلد المستهدف
-            // [توثيق المتغير/الخاصية: dirResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
             val dirResult = BackupPathResolver.ensureDirectory(targetDirectory)
             if (dirResult.isFailure) {
                 return@withContext Result.failure(
                     dirResult.exceptionOrNull() ?: IOException("فشل تجهيز مجلد النسخ الاحتياطي: ${targetDirectory.path}")
                 )
             }
-            // [توثيق المتغير/الخاصية: validTargetDir]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val validTargetDir = dirResult.getOrThrow()
 
             tempFile = File.createTempFile(
@@ -144,7 +136,6 @@ class BackupFileManager(private val context: Context) {
 
             // كتابة المحتوى بأمان مع إغلاق التيار ومزامنة القرص الفيزيائي (fsync)
             java.io.FileOutputStream(tempFile).use { fos ->
-                // [توثيق المتغير/الخاصية: writer]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val writer = fos.bufferedWriter(Charsets.UTF_8)
                 writer.write(content)
                 writer.flush()
@@ -156,7 +147,6 @@ class BackupFileManager(private val context: Context) {
             }
 
             // التحقق من صحة واكتمال الملف المؤقت
-            // [توثيق المتغير/الخاصية: tempValidation]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val tempValidation = validateBackupFile(tempFile)
             if (tempValidation.isFailure) {
                 tempFile.delete()
@@ -165,10 +155,8 @@ class BackupFileManager(private val context: Context) {
                 )
             }
 
-            // [توثيق المتغير/الخاصية: finalFile]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val finalFile = File(validTargetDir, targetFileName)
 
-            // [توثيق المتغير/الخاصية: renameSuccess]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val renameSuccess = tempFile.renameTo(finalFile)
             if (renameSuccess) {
                 validateBackupFile(finalFile)
@@ -195,9 +183,7 @@ class BackupFileManager(private val context: Context) {
      * تنشئ اسماً موحداً يدمج البادئة مع الطابع الزمني والامتداد القياسي.
      */
     fun generateStandardBackupFileName(prefix: String = BackupConstants.BACKUP_FILE_PREFIX): String {
-        // [توثيق المتغير/الخاصية: sdfName]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val sdfName = SimpleDateFormat(BackupConstants.BACKUP_DATE_FORMAT, Locale.US)
-        // [توثيق المتغير/الخاصية: dateStr]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val dateStr = sdfName.format(Date())
         return "$prefix$dateStr${BackupConstants.BACKUP_FILE_EXTENSION}"
     }
@@ -207,13 +193,11 @@ class BackupFileManager(private val context: Context) {
      * تقرأ نصوص المحتوى بعد التأكد من سلامة وصلاحية الملف الفيزيائي.
      */
     suspend fun readBackupFile(file: File): Result<String> = withContext(Dispatchers.IO) {
-        // [توثيق المتغير/الخاصية: validation]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val validation = validateBackupFile(file)
         if (validation.isFailure) {
             return@withContext Result.failure(validation.exceptionOrNull() ?: IOException("الملف غير صالح للقراءة"))
         }
         try {
-            // [توثيق المتغير/الخاصية: content]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val content = file.readText(Charsets.UTF_8)
             if (content.isBlank()) {
                 Result.failure(IOException("محتوى الملف المقروء فارغ"))
@@ -235,7 +219,6 @@ class BackupFileManager(private val context: Context) {
             if (!file.exists()) {
                 Result.success(true)
             } else {
-                // [توثيق المتغير/الخاصية: deleted]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val deleted = file.delete()
                 if (deleted) {
                     Result.success(true)
@@ -260,9 +243,3 @@ class BackupFileManager(private val context: Context) {
 
     suspend fun readBackupContent(file: File): Result<String> = readBackupFile(file)
 }
-
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// - الكتابة الذرية هي الضمان الأساسي ضد ملفات النسخ الجزئية، ويجب الحفاظ عليها في جميع مسارات الكتابة.
-// - يُستحسن مستقبلاً توحيد التحقق من الاسم والمسار في نقطة دخول واحدة لمنع أي bypass لسياسة المسار.
-// - ينبغي أن تبقى عمليات القراءة/الكتابة الثقيلة على IO dispatcher في الطبقات المستدعية.
-// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

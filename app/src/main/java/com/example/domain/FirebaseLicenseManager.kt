@@ -225,6 +225,12 @@ object FirebaseLicenseManager {
                 return@addSnapshotListener
             }
 
+            val securityManager = AppSecurityManager.getInstance(context)
+            if (!securityManager.isActivatedCached()) {
+                // لا يتم طرد أي جهاز إلا إذا كان مفعلاً ومسجلاً رسمياً بالترخيص
+                return@addSnapshotListener
+            }
+
             if (snapshot != null && snapshot.exists()) {
                 val isActivated = snapshot.getBoolean("is_activated") ?: false
                 @Suppress("UNCHECKED_CAST")
@@ -341,10 +347,3 @@ object FirebaseLicenseManager {
     }
 }
 
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// هذا القسم توثيقي فقط؛ لا يغيّر أي تعليمة تنفيذية في الملف الأصلي.
-// - الحفاظ على المعاملة الذرية في تحديثات Firestore وعدم تحويلها إلى قراءات ثم كتابات منفصلة.
-// - مراجعة قواعد Firestore بالتوازي مع أي تغيير في نموذج الترخيص.
-// - اختبار التعارض بين جهازين وحالات انقطاع الشبكة وإعادة الاتصال.
-// - عدم اعتبار البيانات المحلية المخبأة بديلاً غير محدود للتحقق السحابي.
-// - أي تنفيذ فعلي لهذه التوصيات يُرحّل إلى مهمة هندسية مستقلة ولا يُجرى داخل هذا الملف أثناء التوثيق.

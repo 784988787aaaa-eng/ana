@@ -32,7 +32,6 @@ object BackupPathResolver {
     private const val TAG = "BackupPathResolver"
 
     /** اسم المجلد الجذري العام المعتمد رسمياً */
-    // [توثيق المتغير/الخاصية: PUBLIC_BACKUP_FOLDER_NAME]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     const val PUBLIC_BACKUP_FOLDER_NAME = "الدفتر الذكي"
 
     /**
@@ -40,10 +39,8 @@ object BackupPathResolver {
      * يرجع المجلد المركزي: /storage/emulated/0/Documents/الدفتر الذكي
      */
     fun getPublicBackupRoot(): File {
-        // [توثيق المتغير/الخاصية: publicDocs]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val publicDocs = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
             ?: File("/storage/emulated/0/Documents")
-        // [توثيق المتغير/الخاصية: rootDir]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val rootDir = File(publicDocs, PUBLIC_BACKUP_FOLDER_NAME)
         return rootDir
     }
@@ -54,9 +51,7 @@ object BackupPathResolver {
      * /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
      */
     fun getCurrentMonthlyDirectory(now: Date = Date()): File {
-        // [توثيق المتغير/الخاصية: sdf]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val sdf = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US)
-        // [توثيق المتغير/الخاصية: monthStr]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val monthStr = sdf.format(now)
         return getMonthlyDirectory(monthStr)
     }
@@ -68,7 +63,6 @@ object BackupPathResolver {
      */
     fun getMonthlyDirectory(yearMonth: String): File {
         validateYearMonthString(yearMonth)
-        // [توثيق المتغير/الخاصية: root]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val root = getPublicBackupRoot()
         return File(root, yearMonth)
     }
@@ -79,12 +73,9 @@ object BackupPathResolver {
      */
     fun ensureDirectory(directory: File): Result<File> {
         return try {
-            // [توثيق المتغير/الخاصية: root]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val root = getPublicBackupRoot()
             // تدقيق الأمان: التأكد من أن المجلد يقع تحت المجلد الجذري الرسمي
-            // [توثيق المتغير/الخاصية: rootCanonical]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val rootCanonical = root.canonicalPath
-            // [توثيق المتغير/الخاصية: dirCanonical]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val dirCanonical = directory.canonicalPath
             if (!dirCanonical.startsWith(rootCanonical)) {
                 return Result.failure(
@@ -93,7 +84,6 @@ object BackupPathResolver {
             }
 
             if (!directory.exists()) {
-                // [توثيق المتغير/الخاصية: created]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val created = directory.mkdirs()
                 if (!created && !directory.exists()) {
                     Log.e(TAG, "فشل إنشاء المجلد الفيزيائي للمسار: ${directory.path}")
@@ -137,9 +127,3 @@ object BackupPathResolver {
         }
     }
 }
-
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// - يجب إبقاء التحقق من year-month واسم الملف صارماً لمنع مسارات غير متوقعة.
-// - يفضل مستقبلاً جعل مصدر الجذر العام قابلاً للاختبار عبر abstraction بدلاً من ربط الاختبارات مباشرة بنظام الملفات.
-// - أي تعديل في بنية المجلدات يجب أن يراعي النسخ الموجودة مسبقاً.
-// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

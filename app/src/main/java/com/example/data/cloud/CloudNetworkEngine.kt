@@ -68,7 +68,6 @@ class CloudNetworkEngine private constructor(private val context: Context) {
      * [عميل OkHttpClient المهيأ - client]:
      * عميل شبكي مشترك مع ضبط المهلات وسياسة إعادة المحاولة التلقائية عند فشل المسار.
      */
-    // [توثيق المتغير/الخاصية: client]: عميل HTTP المشترك لتنفيذ الاتصالات الشبكية.
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -106,9 +105,7 @@ class CloudNetworkEngine private constructor(private val context: Context) {
         factor: Double = 2.0,
         block: suspend () -> T
     ): T = withContext(Dispatchers.IO) {
-        // [توثيق المتغير/الخاصية: currentDelay]: قيمة التأخير الحالية المستخدمة في آلية إعادة المحاولة التدريجية.
         var currentDelay = initialDelayMs
-        // [توثيق المتغير/الخاصية: lastException]: آخر استثناء مسجل أثناء محاولات التنفيذ الفاشلة.
         var lastException: Exception? = null
 
         for (attempt in 1..maxRetries) {
@@ -142,11 +139,9 @@ class CloudNetworkEngine private constructor(private val context: Context) {
         try {
             executeWithRetry(operationName = operationName) {
                 client.newCall(request).execute().use { response ->
-                    // [توثيق المتغير/الخاصية: code]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val code = response.code
                     when {
                         response.isSuccessful -> {
-                            // [توثيق المتغير/الخاصية: parsedData]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val parsedData = responseParser(response)
                             NetworkCallResult.Success(parsedData, code)
                         }
@@ -181,8 +176,3 @@ class CloudNetworkEngine private constructor(private val context: Context) {
     }
 }
 
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// - Singleton الشبكي يقلل إنشاء العملاء المتكرر؛ يجب مراقبة lifecycle وعدم الاحتفاظ بسياق Activity.
-// - سياسة retry الحالية مناسبة للأخطاء الشبكية المؤقتة، ويجب عدم إعادة محاولة أخطاء HTTP غير القابلة للإصلاح.
-// - يجب استمرار حظر Authorization headers والرموز من Log.
-// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

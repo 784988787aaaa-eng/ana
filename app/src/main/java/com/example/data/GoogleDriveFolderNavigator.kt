@@ -48,8 +48,8 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         private const val SPACE_APP_DATA_FOLDER = "appDataFolder"
         private const val QUERY_LATEST_BACKUP = "name contains 'Mzd_' and name contains '.mzd' and trashed = false"
         private const val QUERY_ALL_MZD_BACKUPS = "name contains '.mzd' and trashed = false"
-        private const val ORDER_BY_CREATED_TIME_DESC = "createdTime desc"
-        private const val FIELDS_BACKUPS_LIST = "files(id,name,size,createdTime)"
+        private const val ORDER_BY_MODIFIED_TIME_DESC = "modifiedTime desc"
+        private const val FIELDS_BACKUPS_LIST = "files(id,name,size,createdTime,modifiedTime)"
 
         private const val JSON_KEY_FILES = "files"
         private const val JSON_KEY_ID = "id"
@@ -112,10 +112,8 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
      * تبحث في مساحة appDataFolder في Google Drive عن أحدث ملف .mzd غير محذوف ومرتب تنازلياً حسب وقت الإنشاء.
      */
     suspend fun findLatestBackupFileId(accessToken: String, forceRefresh: Boolean = false): FileSearchResult = withContext(Dispatchers.IO) {
-        // [توثيق المتغير/الخاصية: now]: التوقيت الحالي المستخدم كأساس للحسابات الزمنية.
         val now = System.currentTimeMillis()
         if (!forceRefresh) {
-            // [توثيق المتغير/الخاصية: cached]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val cached = cachedLatestFileId
             if (cached != null && (now - cached.first) < CACHE_EXPIRY_MS) {
                 return@withContext FileSearchResult.Success(cached.second)
@@ -123,23 +121,17 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         }
 
         try {
-            // [توثيق المتغير/الخاصية: searchUrl]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
             val searchUrl = "$DRIVE_FILES_API_URL?spaces=$SPACE_APP_DATA_FOLDER" +
-                    "&orderBy=${URLEncoder.encode(ORDER_BY_CREATED_TIME_DESC, ENCODING_UTF8)}" +
+                    "&orderBy=${URLEncoder.encode(ORDER_BY_MODIFIED_TIME_DESC, ENCODING_UTF8)}" +
                     "&q=${URLEncoder.encode(QUERY_LATEST_BACKUP, ENCODING_UTF8)}"
 
-            // [توثيق المتغير/الخاصية: searchRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val searchRequest = buildAuthorizedRequest(searchUrl, accessToken)
 
             client.newCall(searchRequest).execute().use { searchResponse ->
                 if (searchResponse.isSuccessful) {
-                    // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val rawBody = searchResponse.body?.string() ?: ""
-                    // [توثيق المتغير/الخاصية: searchResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
                     val searchResult = JSONObject(rawBody)
-                    // [توثيق المتغير/الخاصية: files]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val files = searchResult.optJSONArray(JSON_KEY_FILES)
-                    // [توثيق المتغير/الخاصية: existingFileId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
                     val existingFileId = if (files != null && files.length() > 0) {
                         files.getJSONObject(0).getString(JSON_KEY_ID)
                     } else {
@@ -163,36 +155,25 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
      */
     suspend fun listCloudBackups(accessToken: String): ListBackupsResult = withContext(Dispatchers.IO) {
         try {
-            // [توثيق المتغير/الخاصية: url]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
             val url = "$DRIVE_FILES_API_URL?spaces=$SPACE_APP_DATA_FOLDER" +
                     "&fields=${URLEncoder.encode(FIELDS_BACKUPS_LIST, ENCODING_UTF8)}" +
                     "&q=${URLEncoder.encode(QUERY_ALL_MZD_BACKUPS, ENCODING_UTF8)}" +
-                    "&orderBy=${URLEncoder.encode(ORDER_BY_CREATED_TIME_DESC, ENCODING_UTF8)}" +
+                    "&orderBy=${URLEncoder.encode(ORDER_BY_MODIFIED_TIME_DESC, ENCODING_UTF8)}" +
                     "&pageSize=1000"
 
-            // [توثيق المتغير/الخاصية: request]: طلب HTTP أو طلب عمل مبني للتنفيذ اللاحق.
             val request = buildAuthorizedRequest(url, accessToken)
 
             client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val rawBody = response.body?.string() ?: ""
-                    // [توثيق المتغير/الخاصية: json]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val json = JSONObject(rawBody)
-                    // [توثيق المتغير/الخاصية: filesArray]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val filesArray = json.optJSONArray(JSON_KEY_FILES) ?: return@use ListBackupsResult.Success(emptyList())
-                    // [توثيق المتغير/الخاصية: list]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val list = mutableListOf<CloudBackupFile>()
                     for (i in 0 until filesArray.length()) {
-                        // [توثيق المتغير/الخاصية: obj]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val obj = filesArray.getJSONObject(i)
-                        // [توثيق المتغير/الخاصية: id]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
                         val id = obj.getString(JSON_KEY_ID)
-                        // [توثيق المتغير/الخاصية: name]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val name = obj.getString(JSON_KEY_NAME)
-                        // [توثيق المتغير/الخاصية: size]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val size = obj.optLong(JSON_KEY_SIZE, 0L)
-                        // [توثيق المتغير/الخاصية: createdTime]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val createdTime = obj.optString(JSON_KEY_CREATED_TIME, "")
                         list.add(CloudBackupFile(id, name, size, createdTime))
                     }
@@ -207,9 +188,3 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         }
     }
 }
-
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// - يُستحسن توحيد سياسة Cache invalidation مع دورة الرفع والحذف حتى لا تظهر نسخ قديمة للمستخدم.
-// - يفضل مستقبلاً تعريف ترتيب النسخ الاحتياطية بمعيار زمني/اسم ملف موثق وثابت.
-// - يجب الحفاظ على عدم اعتبار فشل الشبكة مساوياً لعدم وجود ملفات.
-// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

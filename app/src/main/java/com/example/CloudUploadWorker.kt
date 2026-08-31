@@ -60,11 +60,8 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
      */
     companion object {
         private const val TAG = "CloudUploadWorker"
-        // [توثيق المتغير/الخاصية: WORK_NAME]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val WORK_NAME = "MizanDelayedCloudUpload"
-        // [توثيق المتغير/الخاصية: KEY_FILE_PATH]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val KEY_FILE_PATH = "backup_file_path"
-        // [توثيق المتغير/الخاصية: KEY_FILE_NAME]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val KEY_FILE_NAME = "backup_file_name"
         private const val NOTIFICATION_ID = 1004
 
@@ -73,7 +70,6 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
          * تحفظ معلومات الملف المعلق وتنشئ طلباً لمرة واحدة (OneTimeWorkRequest) مقترناً بشرط الاتصال بالشبكة.
          */
         fun enqueueUpload(context: Context, filePath: String, fileName: String) {
-            // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
             val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
             sharedPrefs.edit()
                 .putBoolean(BackupConstants.KEY_PENDING_CLOUD_UPLOAD, true)
@@ -82,19 +78,16 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
                 .apply()
 
             // اشتراط توفر اتصال بالإنترنت لبدء المهمة
-            // [توثيق المتغير/الخاصية: constraints]: قيود WorkManager التي تحدد شروط تشغيل المهمة.
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             // تمرير مسار واسم الملف كبيانات دخل للعامل
-            // [توثيق المتغير/الخاصية: data]: بيانات الإدخال التي تُمرر إلى Worker.
             val data = Data.Builder()
                 .putString(KEY_FILE_PATH, filePath)
                 .putString(KEY_FILE_NAME, fileName)
                 .build()
 
-            // [توثيق المتغير/الخاصية: uploadWorkRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val uploadWorkRequest = OneTimeWorkRequestBuilder<CloudUploadWorker>()
                 .setConstraints(constraints)
                 .setInputData(data)
@@ -119,24 +112,18 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
          * تستخدم عند استدراك النسخ المعلقة تلقائياً عند فتح التطبيق.
          */
         fun enqueueUploadLatest(context: Context) {
-            // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
             val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
-            // [توثيق المتغير/الخاصية: path]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val path = sharedPrefs.getString("pending_cloud_file_path", null)
-            // [توثيق المتغير/الخاصية: name]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val name = sharedPrefs.getString("pending_cloud_file_name", null)
 
-            // [توثيق المتغير/الخاصية: constraints]: قيود WorkManager التي تحدد شروط تشغيل المهمة.
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-            // [توثيق المتغير/الخاصية: dataBuilder]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val dataBuilder = Data.Builder()
             if (!path.isNullOrEmpty()) dataBuilder.putString(KEY_FILE_PATH, path)
             if (!name.isNullOrEmpty()) dataBuilder.putString(KEY_FILE_NAME, name)
 
-            // [توثيق المتغير/الخاصية: uploadWorkRequest]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val uploadWorkRequest = OneTimeWorkRequestBuilder<CloudUploadWorker>()
                 .setConstraints(constraints)
                 .setInputData(dataBuilder.build())
@@ -161,16 +148,12 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
      * تنفذ خطوات الفحص، وقراءة الملف، والرفع الفعلي لـ Google Drive.
      */
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        // [توثيق المتغير/الخاصية: context]: سياق أندرويد المستخدم للوصول إلى الموارد والخدمات اللازمة.
         val context = applicationContext
-        // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
         val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
 
         try {
             // 1. التحقق من أن المستخدم قام بربط حسابه في Google Drive مسبقاً
-            // [توثيق المتغير/الخاصية: syncHelper]: مساعد تنسيق المصادقة والمزامنة مع Google Drive.
             val syncHelper = GoogleDriveSyncHelper(context)
-            // [توثيق المتغير/الخاصية: isLinked]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val isLinked = !syncHelper.getStoredRefreshToken().isNullOrEmpty()
             if (!isLinked) {
                 Log.d(TAG, "Google Drive غير مربوط. تم تخطي الرفع السحابي وإلغاء التعليق.")
@@ -179,7 +162,6 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             }
 
             // 2. تحديد وتجهيز الملف المستهدف للرفع من التخزين المحلي
-            // [توثيق المتغير/الخاصية: targetFile]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val targetFile = resolveTargetBackupFile(context)
             if (targetFile == null || !targetFile.exists() || targetFile.length() == 0L) {
                 Log.w(TAG, "لم يتم العثور على ملف نسخة احتياطية صالح للرفع السحابي.")
@@ -188,7 +170,6 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             }
 
             // 3. التحقق الاستباقي من سلامة وصحة بنية الملف وتشفيره قبل بدء استهلاك الإنترنت
-            // [توثيق المتغير/الخاصية: integrityResult]: نتيجة وسيطة أو نهائية للعملية الحالية.
             val integrityResult = BackupIntegrityManager.validateBackupFileIntegrity(targetFile)
             if (integrityResult !is BackupIntegrityManager.IntegrityCheckResult.Valid) {
                 Log.e(TAG, "ملف النسخة الاحتياطية تالف وغير صالح للرفع السحابي.")
@@ -197,11 +178,8 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             }
 
             // 4. قراءة البيانات المشفرة وإرسالها لخوادم Google Drive عبر REST API
-            // [توثيق المتغير/الخاصية: jsonStr]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val jsonStr = targetFile.readText(Charsets.UTF_8)
-            // [توثيق المتغير/الخاصية: uploadName]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val uploadName = targetFile.name
-            // [توثيق المتغير/الخاصية: success]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val success = syncHelper.uploadBackupToDriveWithFilename(uploadName, jsonStr)
 
             // 5. معالجة نتيجة الرفع وتحديث سجلات النظام
@@ -231,14 +209,11 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
      * تبحث عن المسار الممرر في دخل المهمة، أو المسجل في التفضيلات، أو أحدث ملف محلي صالح.
      */
     private fun resolveTargetBackupFile(context: Context): File? {
-        // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
         val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
-        // [توثيق المتغير/الخاصية: pathFromInput]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val pathFromInput = inputData.getString(KEY_FILE_PATH)
             ?: sharedPrefs.getString("pending_cloud_file_path", null)
 
         if (!pathFromInput.isNullOrBlank()) {
-            // [توثيق المتغير/الخاصية: file]: مرجع ملف النسخة الاحتياطية على التخزين.
             val file = File(pathFromInput)
             if (file.exists() && file.isFile && file.length() > 0L) {
                 return file
@@ -246,9 +221,7 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
         }
 
         // في حال عدم توفر مسار صالح، البحث عن أحدث ملف .mzd متاح محلياً
-        // [توثيق المتغير/الخاصية: fileManager]: مدير الملفات المسؤول عن عمليات النسخ على التخزين.
         val fileManager = BackupFileManager(context)
-        // [توثيق المتغير/الخاصية: backups]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val backups = fileManager.getAllBackupFiles()
         return backups.firstOrNull()
     }
@@ -258,12 +231,10 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
      * تخطر المستخدم بأن النسخة المعلقة قد تم رفعها وحفظها بنجاح على Google Drive.
      */
     private fun sendDelayedUploadNotification(context: Context, fileName: String) {
-        // [توثيق المتغير/الخاصية: notificationManager]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // [توثيق المتغير/الخاصية: channel]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val channel = NotificationChannel(
                 AutoBackupWorker.CHANNEL_ID,
                 context.getString(R.string.autobackup_channel_name),
@@ -276,11 +247,9 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             notificationManager.createNotificationChannel(channel)
         }
 
-        // [توثيق المتغير/الخاصية: openIntent]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val openIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        // [توثيق المتغير/الخاصية: pendingIntent]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val pendingIntent = PendingIntent.getActivity(
             context,
             0,
@@ -288,12 +257,9 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // [توثيق المتغير/الخاصية: title]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val title = context.getString(R.string.autobackup_notification_title_cloud_delayed)
-        // [توثيق المتغير/الخاصية: text]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val text = context.getString(R.string.autobackup_notification_text_cloud_delayed)
 
-        // [توثيق المتغير/الخاصية: notification]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val notification = NotificationCompat.Builder(context, AutoBackupWorker.CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_upload_done)
             .setContentTitle(title)
@@ -304,12 +270,12 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             .setAutoCancel(true)
             .build()
 
+        // تنظيف وإلغاء أي إشعار تقدم معلق متبقي
+        try {
+            notificationManager.cancel(1001)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Notice clearing progress notification: ${t.message}")
+        }
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 }
-
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// - يفضل مستقبلاً توحيد مفاتيح حالة الرفع المعلق بين Worker وGoogleDriveSyncHelper في عقد واحد.
-// - سياسة Exponential Backoff مناسبة للأخطاء المؤقتة، ويجب عدم تطبيقها على أخطاء المصادقة الدائمة دون تمييز.
-// - ينبغي استمرار التحقق من سلامة الملف قبل الرفع وعدم تسجيل محتوى النسخة في السجلات.
-// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.

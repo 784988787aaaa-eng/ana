@@ -1,4 +1,3 @@
-/** MASTER DOCUMENTATION | نقطة تهيئة عملية Android على مستوى Application؛ التوثيق فقط ولا تعديل تنفيذي. */
 /**
  * =====================================================================
  * ملف: فئة التطبيق الرئيسية (FinanceApplication.kt)
@@ -30,14 +29,12 @@ import kotlinx.coroutines.launch
  * [فئة التطبيق - FinanceApplication]:
  * ترث من فئة `Application` وتطبق واجهة `Configuration.Provider`.
  */
-// [توثيق الصنف] FinanceApplication: مالك دورة حياة العملية وConfiguration لـ WorkManager.
 class FinanceApplication : Application(), Configuration.Provider {
 
     /**
      * [دالة بدء التشغيل - onCreate]:
      * تستدعى مرة واحدة عند إقلاع التطبيق في الذاكرة.
      */
-    // [توثيق الدالة] onCreate: تهيئة Splash وViewModels والمهام الخلفية وشجرة Compose.
     override fun onCreate() {
         super.onCreate()
 
@@ -65,7 +62,3 @@ class FinanceApplication : Application(), Configuration.Provider {
             .setMinimumLoggingLevel(android.util.Log.INFO)
             .build()
 }
-/**
- * // --- ملاحظات وتوصيات المعمارية البرمجية ---
- * التوثيق الحالي لا يغيّر أي تعبير تنفيذي. أي تطوير مستقبلي يجب أن يحافظ على الفصل بين التهيئة ومسار الواجهة ويُثبت بالاختبارات.
- */

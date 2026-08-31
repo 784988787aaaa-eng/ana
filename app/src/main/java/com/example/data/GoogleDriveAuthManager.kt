@@ -77,37 +77,23 @@ class GoogleDriveAuthManager(
         private const val PREFS_NAME = "secure_google_drive_sync_prefs"
         private const val FALLBACK_PREFS_NAME = "google_drive_sync_prefs"
 
-        // [توثيق المتغير/الخاصية: KEY_ACCESS_TOKEN]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         const val KEY_ACCESS_TOKEN = "access_token"
-        // [توثيق المتغير/الخاصية: KEY_REFRESH_TOKEN]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         const val KEY_REFRESH_TOKEN = "refresh_token"
-        // [توثيق المتغير/الخاصية: KEY_TOKEN_EXPIRY]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         const val KEY_TOKEN_EXPIRY = "token_expiry"
-        // [توثيق المتغير/الخاصية: KEY_EMAIL]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val KEY_EMAIL = "email"
-        // [توثيق المتغير/الخاصية: KEY_CLIENT_ID_OVERRIDE]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val KEY_CLIENT_ID_OVERRIDE = "client_id_override"
-        // [توثيق المتغير/الخاصية: KEY_CLIENT_SECRET_OVERRIDE]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val KEY_CLIENT_SECRET_OVERRIDE = "client_secret_override"
 
         // نطاقات الصلاحيات المطلوبة (مجلد التطبيق المعزول وملفات التطبيق والبريد)
-        // [توثيق المتغير/الخاصية: SCOPE_DRIVE_APPDATA]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val SCOPE_DRIVE_APPDATA = "https://www.googleapis.com/auth/drive.appdata"
-        // [توثيق المتغير/الخاصية: SCOPE_DRIVE_FILE]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val SCOPE_DRIVE_FILE = "https://www.googleapis.com/auth/drive.file"
-        // [توثيق المتغير/الخاصية: SCOPE_USERINFO_EMAIL]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val SCOPE_USERINFO_EMAIL = "https://www.googleapis.com/auth/userinfo.email"
-        // [توثيق المتغير/الخاصية: FULL_OAUTH_SCOPES]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val FULL_OAUTH_SCOPES = "$SCOPE_DRIVE_APPDATA $SCOPE_DRIVE_FILE $SCOPE_USERINFO_EMAIL"
 
         // روابط نقاط نهاية خوادم Google OAuth 2.0
-        // [توثيق المتغير/الخاصية: AUTH_ENDPOINT_URL]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
         const val AUTH_ENDPOINT_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-        // [توثيق المتغير/الخاصية: TOKEN_ENDPOINT_URL]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         const val TOKEN_ENDPOINT_URL = "https://oauth2.googleapis.com/token"
-        // [توثيق المتغير/الخاصية: USERINFO_ENDPOINT_URL]: عنوان URI/URL المستخدم في مسار المصادقة أو الاتصال الخارجي.
         const val USERINFO_ENDPOINT_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
-        // [توثيق المتغير/الخاصية: REDIRECT_URI_LOCAL]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         const val REDIRECT_URI_LOCAL = "http://localhost/oauth2callback"
 
         private const val GRANT_TYPE_REFRESH_TOKEN = "refresh_token"
@@ -134,10 +120,8 @@ class GoogleDriveAuthManager(
      * [خاصية التخزين المشفر - sharedPrefs]:
      * تستخدم MasterKey بنظام تشفير AES256 لحفظ الرموز، مع التبديل الآمن في حال عدم توفر التشفير العتادي.
      */
-    // [توثيق المتغير/الخاصية: sharedPrefs]: واجهة تخزين التفضيلات المحلية لحالات النسخ والمزامنة.
     val sharedPrefs: SharedPreferences by lazy {
         try {
-            // [توثيق المتغير/الخاصية: masterKeyAlias]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
             EncryptedSharedPreferences.create(
                 PREFS_NAME,
@@ -153,15 +137,12 @@ class GoogleDriveAuthManager(
     }
 
     // قراءة معرف العميل وسر العميل مع دعم التجاوز المخصص (Override)
-    // [توثيق المتغير/الخاصية: clientId]: معرّف مرجعي يميز العنصر أو المهمة المرتبطة به.
     val clientId: String
         get() = sharedPrefs.getString(KEY_CLIENT_ID_OVERRIDE, null)?.takeIf { it.isNotEmpty() } ?: BuildConfig.GOOGLE_CLIENT_ID
 
-    // [توثيق المتغير/الخاصية: clientSecret]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val clientSecret: String
         get() = sharedPrefs.getString(KEY_CLIENT_SECRET_OVERRIDE, null)?.takeIf { it.isNotEmpty() } ?: BuildConfig.GOOGLE_CLIENT_SECRET
 
-    // [توثيق المتغير/الخاصية: scope]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
     val scope: String
         get() = FULL_OAUTH_SCOPES
 
@@ -173,7 +154,6 @@ class GoogleDriveAuthManager(
      * تتيح للمستخدم إدخال بيانات اعتماد مخصصة في حال الرغبة بمشروع Google خاص به.
      */
     fun saveClientCredentialsOverride(clientIdStr: String?, clientSecretStr: String?) {
-        // [توثيق المتغير/الخاصية: editor]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val editor = sharedPrefs.edit()
         if (clientIdStr.isNullOrEmpty()) {
             editor.remove(KEY_CLIENT_ID_OVERRIDE)
@@ -194,7 +174,6 @@ class GoogleDriveAuthManager(
      */
     fun getAppSignatureSHA1(): String {
         try {
-            // [توثيق المتغير/الخاصية: info]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val info = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 context.packageManager.getPackageInfo(
                     context.packageName,
@@ -208,7 +187,6 @@ class GoogleDriveAuthManager(
                 )
             }
 
-            // [توثيق المتغير/الخاصية: signatures]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 info.signingInfo?.apkContentsSigners
             } else {
@@ -217,11 +195,8 @@ class GoogleDriveAuthManager(
             }
 
             if (signatures != null && signatures.isNotEmpty()) {
-                // [توثيق المتغير/الخاصية: sig]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val sig = signatures[0]
-                // [توثيق المتغير/الخاصية: md]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val md = java.security.MessageDigest.getInstance("SHA-1")
-                // [توثيق المتغير/الخاصية: publicKey]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val publicKey = md.digest(sig.toByteArray())
                 return publicKey.joinToString(":") { String.format("%02X", it) }
             }
@@ -236,9 +211,7 @@ class GoogleDriveAuthManager(
      * تفحص حساب Google المسجل ومطابقة الصلاحيات الممنوحة مع نطاق Google Drive.
      */
     fun isUserTrulySignedIn(): Boolean {
-        // [توثيق المتغير/الخاصية: account]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val account = GoogleSignIn.getLastSignedInAccount(context)
-        // [توثيق المتغير/الخاصية: requiredScope]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val requiredScope = Scope(SCOPE_DRIVE_FILE)
         return account != null && GoogleSignIn.hasPermissions(account, requiredScope)
     }
@@ -248,7 +221,6 @@ class GoogleDriveAuthManager(
      * تجهز إعدادات GoogleSignInOptions مع طلب الصلاحيات ورمز التفويض من الخادم.
      */
     fun getGoogleSignInClient(): GoogleSignInClient {
-        // [توثيق المتغير/الخاصية: builder]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestScopes(
@@ -286,7 +258,6 @@ class GoogleDriveAuthManager(
      * تحفظ رمز الوصول ورمز التجديد ووقت الانتهاء في التفضيلات المشفرة بأمان.
      */
     fun storeTokens(accessToken: String, refreshToken: String?, expiresInSec: Long) {
-        // [توثيق المتغير/الخاصية: editor]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val editor = sharedPrefs.edit()
         editor.putString(KEY_ACCESS_TOKEN, accessToken)
         if (!refreshToken.isNullOrEmpty()) {
@@ -314,7 +285,6 @@ class GoogleDriveAuthManager(
      * تتحقق مما إذا كان رمز الوصول قريباً من الانتهاء ضمن مهلة الأمان (5 دقائق).
      */
     fun isTokenExpired(): Boolean {
-        // [توثيق المتغير/الخاصية: expiry]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val expiry = sharedPrefs.getLong(KEY_TOKEN_EXPIRY, 0)
         return System.currentTimeMillis() >= (expiry - TOKEN_EXPIRY_BUFFER_MS)
     }
@@ -343,7 +313,6 @@ class GoogleDriveAuthManager(
      */
     fun logoutAsync(onComplete: (() -> Unit)? = null) {
         try {
-            // [توثيق المتغير/الخاصية: signInClient]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val signInClient = getGoogleSignInClient()
             signInClient.revokeAccess().addOnCompleteListener {
                 signInClient.signOut().addOnCompleteListener {
@@ -366,9 +335,7 @@ class GoogleDriveAuthManager(
      */
     suspend fun disableCloudSyncInSettings() = withContext(Dispatchers.IO) {
         try {
-            // [توثيق المتغير/الخاصية: db]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val db = AppDatabase.getDatabase(context)
-            // [توثيق المتغير/الخاصية: settings]: إعدادات التطبيق التي تحدد سلوك النسخ أو المزامنة.
             val settings = db.settingsDao().getSettingsDirect()
             if (settings != null && settings.isCloudSyncEnabled) {
                 db.settingsDao().insertOrUpdateSettings(settings.copy(isCloudSyncEnabled = false))
@@ -384,9 +351,7 @@ class GoogleDriveAuthManager(
      * تفحص حالة تسجيل الدخول وصلاحية الرموز وتنفذ التجديد تلقائياً إذا لزم الأمر.
      */
     suspend fun checkAuthState(): GoogleDriveAuthState = withContext(Dispatchers.IO) {
-        // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val email = getStoredEmail() ?: ""
-        // [توثيق المتغير/الخاصية: currentToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val currentToken = getStoredAccessToken()
 
         // 1. إذا كان رمز الوصول الحالي صالحاً وغير منتهي الصلاحية، الجلسة مصادقة فوراً دون الحاجة لطلب شبكي
@@ -395,10 +360,8 @@ class GoogleDriveAuthManager(
         }
 
         // 2. إذا كان الرمز منتهياً أو غير موجود، نحاول التجديد عبر Refresh Token
-        // [توثيق المتغير/الخاصية: refreshToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
         val refreshToken = getStoredRefreshToken()
         if (!refreshToken.isNullOrEmpty()) {
-            // [توثيق المتغير/الخاصية: refreshed]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
             val refreshed = refreshAccessTokenIfNeeded()
             if (refreshed != null) {
                 return@withContext GoogleDriveAuthState.Authenticated(email, refreshed)
@@ -419,7 +382,6 @@ class GoogleDriveAuthManager(
         withContext(Dispatchers.IO) {
             // 1. التحقق أولاً من صلاحية رمز الوصول الحالي لتجنب استدعاء الشبكة دون داعٍ
             if (!isTokenExpired()) {
-                // [توثيق المتغير/الخاصية: currentToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
                 val currentToken = getStoredAccessToken()
                 if (!currentToken.isNullOrEmpty()) {
                     return@withContext currentToken
@@ -427,7 +389,6 @@ class GoogleDriveAuthManager(
             }
 
             // 2. إذا لم يكن هناك رمز وصول صالح، يلزم وجود Refresh Token للتجديد
-            // [توثيق المتغير/الخاصية: refreshToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
             val refreshToken = getStoredRefreshToken()
             if (refreshToken.isNullOrEmpty()) {
                 Log.w(TAG, "لا يوجد رمز تجديد محفوظ لتجديد الجلسة")
@@ -440,7 +401,6 @@ class GoogleDriveAuthManager(
                     maxRetries = 2,
                     initialDelayMs = 250L
                 ) {
-                    // [توثيق المتغير/الخاصية: formBuilder]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val formBuilder = FormBody.Builder()
                         .add(PARAM_CLIENT_ID, clientId)
                         .add(PARAM_REFRESH_TOKEN, refreshToken)
@@ -449,7 +409,6 @@ class GoogleDriveAuthManager(
                         formBuilder.add(PARAM_CLIENT_SECRET, clientSecret)
                     }
 
-                    // [توثيق المتغير/الخاصية: request]: طلب HTTP أو طلب عمل مبني للتنفيذ اللاحق.
                     val request = Request.Builder()
                         .url(TOKEN_ENDPOINT_URL)
                         .post(formBuilder.build())
@@ -457,20 +416,15 @@ class GoogleDriveAuthManager(
 
                     cloudEngine.client.newCall(request).execute().use { response ->
                         if (response.isSuccessful) {
-                            // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val rawBody = response.body?.string() ?: ""
-                            // [توثيق المتغير/الخاصية: json]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val json = JSONObject(rawBody)
-                            // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
                             val accessToken = json.getString(RESPONSE_ACCESS_TOKEN)
-                            // [توثيق المتغير/الخاصية: expiresIn]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
 
                             storeTokens(accessToken, refreshToken, expiresIn)
                             Log.d(TAG, "تم تجديد رمز الوصول بنجاح.")
                             accessToken
                         } else {
-                            // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val rawBody = response.body?.string() ?: ""
                             Log.w(TAG, "استجابة غير ناجحة عند تجديد رمز الوصول (رمز الحالة: ${response.code})")
                             if (response.code == 400 || response.code == 401) {
@@ -499,7 +453,6 @@ class GoogleDriveAuthManager(
         redirectUri: String = ""
     ): Boolean = withContext(Dispatchers.IO) {
         updateState?.invoke(CloudSyncState.Authenticating)
-        // [توثيق المتغير/الخاصية: sanitizedCode]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
         val sanitizedCode = code.trim()
             .replace("\\s".toRegex(), "")
             .filter { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it in listOf('-', '_', '/', '.') }
@@ -510,13 +463,11 @@ class GoogleDriveAuthManager(
                 maxRetries = 2,
                 initialDelayMs = 500L
             ) {
-                // [توثيق المتغير/الخاصية: builder]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val builder = FormBody.Builder()
                     .add(PARAM_CODE, sanitizedCode)
                     .add(PARAM_CLIENT_ID, clientId.trim())
                     .add(PARAM_GRANT_TYPE, GRANT_TYPE_AUTH_CODE)
 
-                // [توثيق المتغير/الخاصية: trimmedSecret]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                 val trimmedSecret = clientSecret.trim()
                 if (trimmedSecret.isNotEmpty() && trimmedSecret != "YOUR_GOOGLE_CLIENT_SECRET") {
                     builder.add(PARAM_CLIENT_SECRET, trimmedSecret)
@@ -525,7 +476,6 @@ class GoogleDriveAuthManager(
                     builder.add(PARAM_REDIRECT_URI, redirectUri.trim())
                 }
 
-                // [توثيق المتغير/الخاصية: request]: طلب HTTP أو طلب عمل مبني للتنفيذ اللاحق.
                 val request = Request.Builder()
                     .url(TOKEN_ENDPOINT_URL)
                     .post(builder.build())
@@ -533,38 +483,27 @@ class GoogleDriveAuthManager(
 
                 cloudEngine.client.newCall(request).execute().use { response ->
                     if (response.isSuccessful) {
-                        // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val rawBody = response.body?.string() ?: ""
-                        // [توثيق المتغير/الخاصية: json]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val json = JSONObject(rawBody)
-                        // [توثيق المتغير/الخاصية: accessToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
                         val accessToken = json.getString(RESPONSE_ACCESS_TOKEN)
-                        // [توثيق المتغير/الخاصية: refreshToken]: قيمة اعتماد/جلسة تُستخدم للوصول إلى خدمة Google Drive ويجب التعامل معها كبيانات حساسة.
                         val refreshToken = json.optString(RESPONSE_REFRESH_TOKEN, "").takeIf { it.isNotEmpty() } ?: getStoredRefreshToken()
-                        // [توثيق المتغير/الخاصية: expiresIn]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
 
                         storeTokens(accessToken, refreshToken, expiresIn)
 
-                        // [توثيق المتغير/الخاصية: email]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val email = inputEmail ?: fetchUserEmail(accessToken) ?: "account@google.com"
                         storeEmail(email)
 
                         updateState?.invoke(CloudSyncState.Authenticated(email))
                         true
                     } else {
-                        // [توثيق المتغير/الخاصية: errorMsg]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         val errorMsg = response.body?.string() ?: "Authorization code exchange error"
                         Log.e(TAG, "فشل تبادل رمز التفويض (رمز الحالة: ${response.code})")
 
-                        // [توثيق المتغير/الخاصية: detailedError]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                         var detailedError = ""
                         try {
-                            // [توثيق المتغير/الخاصية: json]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val json = JSONObject(errorMsg)
-                            // [توثيق المتغير/الخاصية: err]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val err = json.optString("error")
-                            // [توثيق المتغير/الخاصية: desc]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                             val desc = json.optString("error_description")
                             detailedError = if (err.isNotEmpty() && desc.isNotEmpty()) {
                                 "$err: $desc"
@@ -603,7 +542,6 @@ class GoogleDriveAuthManager(
      */
     private suspend fun fetchUserEmail(accessToken: String): String? = withContext(Dispatchers.IO) {
         try {
-            // [توثيق المتغير/الخاصية: request]: طلب HTTP أو طلب عمل مبني للتنفيذ اللاحق.
             val request = Request.Builder()
                 .url(USERINFO_ENDPOINT_URL)
                 .header("Authorization", "Bearer $accessToken")
@@ -612,9 +550,7 @@ class GoogleDriveAuthManager(
 
             cloudEngine.client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    // [توثيق المتغير/الخاصية: rawBody]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val rawBody = response.body?.string() ?: ""
-                    // [توثيق المتغير/الخاصية: json]: متغير/خاصية تحمل قيمة تشغيلية ضمن هذا النطاق، ويُحدد معناها من سياق العملية التي تستخدمها.
                     val json = JSONObject(rawBody)
                     if (json.has("email")) json.getString("email") else null
                 } else {
@@ -627,9 +563,3 @@ class GoogleDriveAuthManager(
         }
     }
 }
-
-// --- ملاحظات وتوصيات المعمارية البرمجية ---
-// - يجب عزل أسرار OAuth والرموز عن السجلات تماماً، مع تفضيل تخزينها في قناة آمنة ومحدودة الصلاحيات.
-// - يفضل مستقبلاً فصل إدارة دورة الجلسة عن إنشاء عنوان OAuth لتقليل مسؤوليات الكلاس.
-// - ينبغي أن تكون حالات انتهاء الجلسة والفشل في التجديد قابلة للتمييز بوضوح لدى طبقة العرض.
-// - هذه الملاحظات توصيات مستقبلية فقط ولا تغيّر التنفيذ الحالي أو عقده البرمجي.
