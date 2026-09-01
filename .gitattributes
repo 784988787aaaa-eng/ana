@@ -1,0 +1,11 @@
+# Ensure binary files are strictly treated as binary to prevent corruption
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.keystore binary
+*.so binary
+
+# Force LF line endings for shell scripts and Gradle wrapper
+gradlew text eol=lf
+*.sh text eol=lf
