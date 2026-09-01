@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    قواعد النسخ الاحتياطي التلقائي لمنع تصدير بيانات المستخدم والملفات المشفرة عبر خدمات النظام العامة
+-->
+<full-backup-content>
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+</full-backup-content>
+

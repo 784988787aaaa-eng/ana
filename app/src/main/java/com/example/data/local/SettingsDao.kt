@@ -1,0 +1,58 @@
+/**
+ * =====================================================================
+ * ملف: كائن الوصول لبيانات إعدادات التطبيق (SettingsDao.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الملف واجهة الوصول للبيانات (DAO) المسؤولة عن قراءة وتحديث
+ * سجل الإعدادات العام للتطبيق في جدول `app_settings`.
+ * 
+ * [النمط المعماري - Singleton Row Pattern]:
+ * 1. يعتمد التطبيق على سجل إعدادات وحيد يحمل المعرف الثابت (`id = 1`).
+ * 2. يحتوي هذا السجل على: العملة الافتراضية، خيارات المظهر، إعدادات الأمان والقفل،
+ *    حالات التفعيل، أسعار الصرف المتعددة بصيغة JSON، وجدولة المزامنة والنسخ التلقائي.
+ * 3. يوفر تدفقاً حياً [Flow] لتحديث السمات والعملات في واجهات Compose لحظياً،
+ *    ودالة معلقة مباشرة [suspend] لعمال الخلفية (WorkManager).
+ */
+package com.example.data.local
+
+// ---------------------------------------------------------------------
+// استيراد حزم عمليات قاعدة البيانات Room وكيان الإعدادات وتدفقات الكوروتين
+// ---------------------------------------------------------------------
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.example.data.local.entities.AppSettings
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * [واجهة الوصول لبيانات الإعدادات - SettingsDao]:
+ * تترجمها مكتبة Room تلقائياً إلى استعلامات SQL لإدارة تفضيلات النظام.
+ */
+@Dao
+interface SettingsDao {
+
+    /**
+     * [استعلام جلب الإعدادات كتدفق تفاعلي - getSettingsFlow]:
+     * يستعلم عن سجل الإعدادات الرئيسي ذي المعرف `id = 1`.
+     * يُصدر تدفق [Flow] ينبه كافة الشاشات المعتمدة على العملة أو السمة بأي تغيير فوراً.
+     */
+    @Query("SELECT * FROM app_settings WHERE id = 1 LIMIT 1")
+    fun getSettingsFlow(): Flow<AppSettings?>
+
+    /**
+     * [استعلام جلب الإعدادات المباشر - getSettingsDirect]:
+     * دالة معلقة تجلب نسخة فورية من الإعدادات لاستخدامها في معالجات الخلفية والنسخ الاحتياطي.
+     */
+    @Query("SELECT * FROM app_settings WHERE id = 1 LIMIT 1")
+    suspend fun getSettingsDirect(): AppSettings?
+
+    /**
+     * [دالة حفظ أو تحديث الإعدادات - insertOrUpdateSettings]:
+     * تحفظ كائن الإعدادات المحدث وتستبدل السجل القديم باستراتيجية `OnConflictStrategy.REPLACE`.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateSettings(settings: AppSettings)
+}
+
