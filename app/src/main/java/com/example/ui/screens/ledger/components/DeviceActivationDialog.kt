@@ -87,6 +87,7 @@ fun DeviceActivationDialog(
                                         is LicenseCheckResult.Success -> null
                                         is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
                                         is LicenseCheckResult.NotLicensed -> res.message
+                                        is LicenseCheckResult.NetworkOutage -> res.message
                                         is LicenseCheckResult.Error -> res.message
                                     }
                                     if (res is LicenseCheckResult.Success) {
@@ -105,6 +106,7 @@ fun DeviceActivationDialog(
                             is LicenseCheckResult.Success -> null
                             is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
                             is LicenseCheckResult.NotLicensed -> res.message
+                            is LicenseCheckResult.NetworkOutage -> res.message
                             is LicenseCheckResult.Error -> res.message
                         }
                         if (res is LicenseCheckResult.Success) {
@@ -220,6 +222,7 @@ fun DeviceActivationDialog(
                                                 is LicenseCheckResult.Success -> null
                                                 is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
                                                 is LicenseCheckResult.NotLicensed -> res.message
+                                                is LicenseCheckResult.NetworkOutage -> res.message
                                                 is LicenseCheckResult.Error -> res.message
                                             }
                                             if (res is LicenseCheckResult.Success) {

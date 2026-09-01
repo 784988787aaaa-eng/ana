@@ -27,13 +27,20 @@ android {
 
   signingConfigs {
     create("release") {
-      storeFile = file("mizan.keystore")
-      storePassword = providers.gradleProperty("RELEASE_STORE_PASSWORD").getOrElse("123456")
-      keyAlias = providers.gradleProperty("RELEASE_KEY_ALIAS").getOrElse("mizan")
-      keyPassword = providers.gradleProperty("RELEASE_KEY_PASSWORD").getOrElse("123456")
-      enableV1Signing = true
-      enableV2Signing = true
-      enableV3Signing = true
+      val keystorePath = providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "mizan.keystore"
+      val storePwd = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
+      val keyAli = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull
+      val keyPwd = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
+
+      if (storePwd != null && keyAli != null && keyPwd != null) {
+        storeFile = file(keystorePath)
+        storePassword = storePwd
+        keyAlias = keyAli
+        keyPassword = keyPwd
+        enableV1Signing = true
+        enableV2Signing = true
+        enableV3Signing = true
+      }
     }
   }
 
@@ -43,14 +50,15 @@ android {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      val relConfig = signingConfigs.getByName("release")
+      if (relConfig.storePassword != null) {
+        signingConfig = relConfig
+      }
     }
     debug {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      // توحيد البصمة محلياً لتفادي كود 10 أثناء وضع التجربة والتطوير
-      signingConfig = signingConfigs.getByName("release")
     }
   }
   packaging {

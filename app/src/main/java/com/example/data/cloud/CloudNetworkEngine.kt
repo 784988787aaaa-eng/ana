@@ -10,9 +10,12 @@
  * [المسؤوليات المعمارية والتقنية]:
  * 1. عميل OkHttpClient أحادي التكوين (Singleton) لإعادة استخدام قنوات الاتصال وتقليل استهلاك الذاكرة والمعالج.
  * 2. ضبط أوقات المهلة المعيارية (Timeouts): مهلة الاتصال (15s)، ومهلة القراءة والكتابة (30s).
- * 3. آلية إعادة المحاولة الذكية (Exponential Backoff Retry Strategy) للتعامل مع التذبذبات المؤقتة في الشبكة.
+ * 3. آلية إعادة المحاولة الذكية (Exponential Backoff + Jitter Retry Strategy):
+ *    - إعادة المحاولة للأخطاء العابرة فقط (5xx، مهلات الاتصال، انقطاع Socket).
+ *    - عدم إعادة المحاولة لأخطاء المصادقة والصلاحيات (401، 403) أو الأخطاء الإلغائية (CancellationException).
+ *    - مراعاة حدود مهلة إعادة المحاولة وتطبيق التشويش العشوائي (Jitter).
  * 4. نموذج النتائج الشبكية الموحد [NetworkCallResult] لتصنيف حالات النجاح، انتهاء الجلسة، المهلة، وانقطاع الإنترنت.
- * 5. حماية الخصوصية: حظر كامل لتسجيل أي رموز وصول (Tokens) أو ترويسات حساسة في سجلات التطبيق.
+ * 5. حماية الخصوصية ومنع تسريب الرموز: حظر كامل لتسجيل أي رموز وصول (Tokens) أو ترويسات حساسة في سجلات التطبيق مع دالة تعتيم آمنة (Redaction).
  */
 package com.example.data.cloud
 
@@ -21,6 +24,7 @@ package com.example.data.cloud
 // ---------------------------------------------------------------------
 import android.content.Context
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -31,6 +35,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 /**
  * [فئة المحرك الشبكي السحابي - CloudNetworkEngine]:
@@ -62,6 +67,24 @@ class CloudNetworkEngine private constructor(private val context: Context) {
                 instance ?: CloudNetworkEngine(context.applicationContext).also { instance = it }
             }
         }
+
+        /**
+         * [تعتيم البيانات الحساسة - redactSensitiveString]:
+         * يضمن إخفاء أي رمز وصول أو كلمة مرور أو ترويسة تفويض من السجلات.
+         */
+        fun redactSensitiveString(input: String?): String {
+            if (input.isNullOrBlank()) return ""
+            return "[REDACTED]"
+        }
+
+        /**
+         * [فحص قابلية رمز الحالة لإعادة المحاولة - isRetryableStatusCode]:
+         * 5xx و 429 أخطاء عابرة تقبل إعادة المحاولة المحدودة.
+         * 400 و 401 و 403 أخطاء غير قابلة لإعادة المحاولة.
+         */
+        fun isRetryableStatusCode(code: Int): Boolean {
+            return code == 429 || code in 500..599
+        }
     }
 
     /**
@@ -84,6 +107,7 @@ class CloudNetworkEngine private constructor(private val context: Context) {
      * - Unauthorized: خطأ صلاحيات أو انتهاء الجلسة (401/403).
      * - Timeout: انتهاء مهلة الاتصال بالخادم.
      * - NoConnection: انقطاع تام للإنترنت أو فشل الوصول لنظام أسماء النطاقات (DNS).
+     * - RateLimited: استجابة خنق الطلبات (429) مع مهلة إعادة المحاولة إن وجدت.
      * - Error: أخطاء الخادم أو الطلبات غير الصالحة.
      */
     sealed class NetworkCallResult<out T> {
@@ -91,12 +115,32 @@ class CloudNetworkEngine private constructor(private val context: Context) {
         data class Unauthorized(val statusCode: Int, val message: String) : NetworkCallResult<Nothing>()
         data class Timeout(val message: String) : NetworkCallResult<Nothing>()
         data class NoConnection(val message: String) : NetworkCallResult<Nothing>()
+        data class RateLimited(val statusCode: Int, val retryAfterSeconds: Long?) : NetworkCallResult<Nothing>()
         data class Error(val statusCode: Int, val message: String) : NetworkCallResult<Nothing>()
     }
 
     /**
-     * [دالة التنفيذ مع إعادة المحاولة التدريجية - executeWithRetry]:
-     * تعيد محاولة تنفيذ العمليات الشبكية المعرضة للانقطاع المؤقت مع مضاعفة وقت الانتظار تصاعدياً.
+     * [فحص قابلية الخطأ لإعادة المحاولة - isRetryableException]:
+     * يصنف الأخطاء لتحديد ما إذا كانت عابرة وتقبل إعادة المحاولة.
+     */
+    private fun isRetryableException(e: Throwable): Boolean {
+        if (e is CancellationException) return false
+        return e is IOException || e is SocketTimeoutException || e is UnknownHostException
+    }
+
+    /**
+     * [فحص قابلية رمز الحالة لإعادة المحاولة - isRetryableStatusCode]:
+     * 5xx و 429 أخطاء عابرة تقبل إعادة المحاولة المحدودة.
+     * 400 و 401 و 403 أخطاء غير قابلة لإعادة المحاولة.
+     */
+    fun isRetryableStatusCode(code: Int): Boolean {
+        return code == 429 || code in 500..599
+    }
+
+    /**
+     * [دالة التنفيذ مع إعادة المحاولة التدريجية والتشويش - executeWithRetry]:
+     * تعيد محاولة تنفيذ العمليات الشبكية المعرضة للانقطاع المؤقت مع Exponential Backoff و Jitter.
+     * تحترم إلغاء Coroutine تماماً ولا تعيد المحاولة في حال الإلغاء أو الأخطاء غير القابلة للتكرار.
      */
     suspend fun <T> executeWithRetry(
         operationName: String = "NetworkOperation",
@@ -111,12 +155,19 @@ class CloudNetworkEngine private constructor(private val context: Context) {
         for (attempt in 1..maxRetries) {
             try {
                 return@withContext block()
+            } catch (e: CancellationException) {
+                // الكوروتين أُلغي: توقف فوري دون أي إعادة محاولة
+                Log.d(TAG, "[$operationName] العملية أُلغيت بنجاح.")
+                throw e
             } catch (e: IOException) {
                 lastException = e
                 Log.w(TAG, "[$operationName] فشل مؤقت في محاولة الاتصال ($attempt من $maxRetries): ${e.javaClass.simpleName}")
                 if (attempt < maxRetries) {
-                    delay(currentDelay)
-                    currentDelay = (currentDelay * factor).toLong()
+                    // إضافة تشويش عشوائي (Jitter: ±20%) لمنع تزامن الطلبات المتكررة
+                    val jitter = Random.nextDouble(0.8, 1.2)
+                    val delayTime = (currentDelay * jitter).toLong().coerceIn(100L, 30_000L)
+                    delay(delayTime)
+                    currentDelay = (currentDelay * factor).toLong().coerceAtMost(30_000L)
                 }
             } catch (e: Exception) {
                 // الأخطاء غير الشبكية لا تتطلب إعادة المحاولة
@@ -146,12 +197,21 @@ class CloudNetworkEngine private constructor(private val context: Context) {
                             NetworkCallResult.Success(parsedData, code)
                         }
                         code == 401 || code == 403 -> {
-                            Log.w(TAG, "[$operationName] خطأ في المصادقة أو الصلاحيات (رمز الحالة: $code)")
+                            Log.w(TAG, "[$operationName] خطأ في المصادقة أو الصلاحيات (رمز الحالة: $code) - لن تتم إعادة المحاولة")
                             NetworkCallResult.Unauthorized(code, "Authentication failed with status $code")
+                        }
+                        code == 429 -> {
+                            val retryAfter = response.header("Retry-After")?.toLongOrNull()
+                            Log.w(TAG, "[$operationName] خنق معدل الطلبات 429 - Retry-After: $retryAfter")
+                            NetworkCallResult.RateLimited(code, retryAfter)
                         }
                         code in 400..499 -> {
                             Log.w(TAG, "[$operationName] خطأ في الطلب (رمز الحالة: $code)")
                             NetworkCallResult.Error(code, "Client request error: $code")
+                        }
+                        code in 500..599 -> {
+                            Log.w(TAG, "[$operationName] خطأ في الخادم (رمز الحالة: $code)")
+                            throw IOException("Server responded with error code $code")
                         }
                         else -> {
                             Log.w(TAG, "[$operationName] استجابة الخادم غير ناجحة (رمز الحالة: $code)")
@@ -160,6 +220,8 @@ class CloudNetworkEngine private constructor(private val context: Context) {
                     }
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: SocketTimeoutException) {
             Log.e(TAG, "[$operationName] انتهاء مهلة الاتصال بالشبكة: ${e.javaClass.simpleName}")
             NetworkCallResult.Timeout("انتهت مهلة الاتصال بالشبكة")
@@ -175,4 +237,3 @@ class CloudNetworkEngine private constructor(private val context: Context) {
         }
     }
 }
-

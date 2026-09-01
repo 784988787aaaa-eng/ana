@@ -36,11 +36,14 @@ import com.example.data.local.entities.FixedCommitment
 import com.example.data.local.entities.HabayebCustomer
 import com.example.data.local.entities.HabayebTransaction
 import com.example.data.local.entities.TransactionDb
+import com.example.data.serialization.BackupPayloadValidator
+import com.example.data.serialization.BackupValidationResult
 import com.example.data.serialization.MzdBackupSerializer
 import com.example.domain.model.TransactionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.IOException
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -254,6 +257,12 @@ class FinanceRestoreService(
      * @return [FinanceRestoreResult] يحتوي على نتيجة وإعدادات الاستعادة.
      */
     suspend fun executeMasterRestore(rawJsonString: String): FinanceRestoreResult = withContext(Dispatchers.IO) {
+        // 0. التدقيق الاستباقي الصارم للبنية وسلامة التشفير قبل لمس قاعدة البيانات
+        val preValidation = BackupPayloadValidator.validateBackupPayload(rawJsonString, verifyHashStrictly = false)
+        if (preValidation is BackupValidationResult.Invalid) {
+            throw IOException("فشل تدقيق سلامة النسخة الاحتياطية (${preValidation.errorCode}): ${preValidation.reason}", preValidation.cause)
+        }
+
         val root = JSONObject(rawJsonString)
         val currentLocalSettings = settingsDao.getSettingsDirect() ?: AppSettings()
 

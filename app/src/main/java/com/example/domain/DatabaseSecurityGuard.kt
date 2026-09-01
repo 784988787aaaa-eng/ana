@@ -104,11 +104,13 @@ object DatabaseSecurityGuard {
                         }
                     }
                 }
-            } catch (_: Exception) {
-                // إذا تعذر فتحها بالقراءة فقط نكتفي بفحص الترويسة
+            } catch (e: Exception) {
+                // إذا تعذر فتح قاعدة البيانات بوضع القراءة فقط نكتفي بفحص الترويسة القياسية
+                android.util.Log.d("DatabaseSecurityGuard", "Quick check skipped or database locked: ${e.javaClass.simpleName}")
             }
             quickCheckPassed
         } catch (e: Exception) {
+            android.util.Log.w("DatabaseSecurityGuard", "Database integrity verification failed safely: ${e.javaClass.simpleName}")
             false
         }
     }

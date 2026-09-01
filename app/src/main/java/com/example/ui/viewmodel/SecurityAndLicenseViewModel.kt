@@ -19,6 +19,7 @@ import com.example.domain.GoogleAuthSessionManager
 import com.example.domain.HashUtils
 import com.example.domain.LicenseCheckResult
 import com.example.domain.LicenseManager
+import com.example.domain.LicenseState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -153,6 +154,17 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     .flowOn(Dispatchers.IO)
     .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    /**
+     * حالة الترخيص الصريحة والمهيكلة المعتمدة على [LicenseState].
+     */
+    val licenseState: StateFlow<LicenseState> = combine(isActivatedState, activatedEmailState, deviceIdState) { isActivated, email, deviceId ->
+        when {
+            isActivated && email.isNotBlank() -> LicenseState.Valid(email = email, deviceId = deviceId)
+            isActivated -> LicenseState.Valid(email = "", deviceId = deviceId)
+            else -> LicenseState.Invalid(message = "App is not activated")
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, LicenseState.Unknown)
+
     fun activateLicense(code: String): Boolean {
         return try {
             val isValid = licenseAndTrialManager.activateLicenseWithCode(code)
@@ -166,7 +178,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
-    fun isNetworkAvailable(): Boolean {
+    private fun isNetworkAvailable(): Boolean {
         return try {
             val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
             if (cm != null) {
