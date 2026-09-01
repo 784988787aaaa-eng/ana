@@ -226,7 +226,7 @@ object FormatUtils {
      */
     private fun formatNumberInternal(value: BigDecimal): String {
         return runCatching {
-            val rounded = value.setScale(2, RoundingMode.HALF_UP)
+            val rounded = value.setScale(2, RoundingMode.HALF_EVEN)
             val hasFraction = rounded.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) != 0
             val formatter = if (hasFraction) formatterDecimal.get() else formatterInteger.get()
             formatter.format(rounded)

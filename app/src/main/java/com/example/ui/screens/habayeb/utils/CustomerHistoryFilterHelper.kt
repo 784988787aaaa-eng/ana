@@ -103,7 +103,7 @@ fun rememberFilteredCustomerTransactions(
                 }
 
                 val matchesCurrency = if (selectedCurrencyFilter != null) {
-                    val (txCurrency, _) = CurrencyConfig.getTransactionCurrencyAndAmount(tx, currencySymbol, safeRatesJson)
+                    val (txCurrency, _) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, currencySymbol, safeRatesJson)
                     txCurrency == selectedCurrencyFilter
                 } else {
                     true

@@ -266,7 +266,7 @@ fun MainLedgerView(
         onSaveTransaction = { id, type, cat, amt, desc ->
             val editingTx = (uiController.activeDialogState as? MainLedgerDialogState.AddTransaction)?.editingTx
             if (editingTx != null) {
-                viewModel.updateTransaction(editingTx.copy(amount = BigDecimal(amt.toString()), description = desc, category = cat))
+                viewModel.updateTransaction(editingTx.copy(amount = amt, description = desc, category = cat))
             } else {
                 viewModel.addTransaction(type = type, category = cat, amount = amt, description = desc)
             }

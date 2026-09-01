@@ -111,7 +111,7 @@ object ExchangeRateHelper {
                 JSONObject()
             }
             val rateBD = rate.setScale(4, RoundingMode.HALF_EVEN)
-            baseObj.put(foreignNorm, rateBD.toDouble())
+            baseObj.put(foreignNorm, rateBD.toPlainString())
             root.put(baseNorm, baseObj)
             
             // 2. مزامنة الزوج المقابل لضمان ثنائية الاتجاه
@@ -120,7 +120,7 @@ object ExchangeRateHelper {
             } else {
                 JSONObject()
             }
-            foreignObj.put(baseNorm, rateBD.toDouble())
+            foreignObj.put(baseNorm, rateBD.toPlainString())
             root.put(foreignNorm, foreignObj)
             
             root.toString()
@@ -199,7 +199,7 @@ object ExchangeRateHelper {
                 val srcRates = rates[src] ?: continue
                 for ((dst, r) in srcRates) {
                     if (src != dst && r.compareTo(BigDecimal.ZERO) > 0) {
-                        obj.put(dst, r.toDouble())
+                        obj.put(dst, r.toPlainString())
                     }
                 }
                 root.put(src, obj)

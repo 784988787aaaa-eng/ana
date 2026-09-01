@@ -145,7 +145,7 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     fun addTransaction(
         type: String,
         category: String,
-        amount: Double,
+        amount: BigDecimal,
         description: String,
         timestamp: Long = System.currentTimeMillis() / 1000,
         presetId: String? = null
@@ -168,7 +168,7 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
                     timestamp = timestamp,
                     type = type,
                     category = category,
-                    amount = BigDecimal(amount.toString()),
+                    amount = amount,
                     description = description
                 )
                 repository.saveTransaction(tx)

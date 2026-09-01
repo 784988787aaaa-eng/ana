@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
+import java.math.RoundingMode
+
 private fun String.toWesternDigits(): String {
     var result = this
     val eastern = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
@@ -43,7 +45,7 @@ fun CommitmentSummaryGradientCard(
     val mizanColors = MaterialTheme.mizanColors
     val primaryColor = MaterialTheme.colorScheme.primary
     val overallPercentFloat = if (totalTargetSum > BigDecimal.ZERO) {
-        (totalAllocatedSum.toDouble() / totalTargetSum.toDouble()).coerceIn(0.0, 1.0).toFloat()
+        totalAllocatedSum.divide(totalTargetSum, 4, RoundingMode.HALF_EVEN).toFloat().coerceIn(0f, 1f)
     } else 0f
     val overallPercent = (overallPercentFloat * 100).toInt()
     val isFullyCovered = totalAllocatedSum >= totalTargetSum && totalTargetSum > BigDecimal.ZERO

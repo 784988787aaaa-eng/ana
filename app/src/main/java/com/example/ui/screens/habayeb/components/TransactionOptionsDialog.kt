@@ -185,7 +185,7 @@ fun TransactionOptionsDialog(
                                 } else {
                                     defaultRial
                                 }
-                                val formattedAmountStr = FormatUtils.formatDouble(txAmount.toDouble())
+                                val formattedAmountStr = FormatUtils.formatBigDecimal(txAmount)
                                 val isPositive = transaction.type == TransactionType.PAYMENT_BY_THEM.value || transaction.type == TransactionType.OWED_TO_THEM.value
                                 val color = if (isPositive) creditColor else debtColor
                                 TransactionHeaderSummary(shortDescStr, formattedAmountStr, currencyStr, color)

@@ -18,6 +18,6 @@ data class MizanComputationResult(
 
 @Immutable
 data class HabayebComputationResult(
-    val profiles: List<Pair<HabayebCustomer, Double>> = emptyList(),
-    val filtered: List<Pair<HabayebCustomer, Double>> = emptyList()
+    val profiles: List<Pair<HabayebCustomer, BigDecimal>> = emptyList(),
+    val filtered: List<Pair<HabayebCustomer, BigDecimal>> = emptyList()
 )
