@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import com.example.ui.theme.isDark
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -103,7 +104,7 @@ fun HabayebFilterToolbar(
     val itemPositions = remember { mutableStateMapOf<String, Float>() }
     val itemWidths = remember { mutableStateMapOf<String, Float>() }
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = MaterialTheme.isDark
     val surfaceContainer = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
     val neutralWhite = MaterialTheme.colorScheme.surface
     val textPrimary = MaterialTheme.colorScheme.onSurface

@@ -52,6 +52,7 @@ import com.example.ui.helper.getInitialColor
 import com.example.ui.screens.trash.utils.ParsedTrashData
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.isDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +69,7 @@ fun TrashTransactionDetailBottomSheet(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
-    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
+    val isDark = MaterialTheme.isDark
     val creditColor = financialCreditColor(isDark)
     val debtColor = financialDebtColor(isDark)
     val amountColor = if (parsedData.isExpense) debtColor else creditColor

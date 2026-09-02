@@ -55,6 +55,7 @@ import com.example.ui.theme.CreditGreen
 import com.example.ui.theme.DebtRed
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.isDark
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -74,7 +75,7 @@ fun TrashItemCard(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = MaterialTheme.isDark
     val creditColor = financialCreditColor(isDark)
     val debtColor = financialDebtColor(isDark)
 

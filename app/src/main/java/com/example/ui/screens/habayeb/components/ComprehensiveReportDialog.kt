@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.example.ui.theme.isDark
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -109,8 +110,7 @@ fun ComprehensiveReportDialog(
     val netPrimary = aggregateStats.third.first
     val nonZeroForeign = aggregateStats.third.second
 
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val isDark = remember(backgroundColor) { backgroundColor.run { red < 0.5f } }
+    val isDark = MaterialTheme.isDark
     val textPrimary = MaterialTheme.colorScheme.onSurface
     val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
 

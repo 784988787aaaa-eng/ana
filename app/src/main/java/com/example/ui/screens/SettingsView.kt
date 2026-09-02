@@ -63,26 +63,6 @@ fun SettingsView(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val isDark = remember(settings.themeMode, systemDark) {
-        when (settings.themeMode) {
-            1 -> false
-            2 -> true
-            else -> systemDark
-        }
-    }
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        LaunchedEffect(isDark) {
-            val window = (context as Activity).window
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            val insetsController = WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = !isDark
-            insetsController.isAppearanceLightNavigationBars = !isDark
-        }
-    }
-
     var activeDialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
     var onPermissionGrantedCallback by remember { mutableStateOf<(() -> Unit)?>(null) }
 

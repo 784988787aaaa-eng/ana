@@ -30,6 +30,7 @@ import com.example.ui.helper.getInitialColor
 import com.example.ui.screens.trash.utils.ParsedTrashData
 import com.example.ui.theme.financialCreditColor
 import com.example.ui.theme.financialDebtColor
+import com.example.ui.theme.isDark
 
 @Composable
 fun TrashCustomerHistoryOverlay(
@@ -47,7 +48,7 @@ fun TrashCustomerHistoryOverlay(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
-    val isDark = MaterialTheme.colorScheme.background.run { red < 0.5f }
+    val isDark = MaterialTheme.isDark
     val creditColor = financialCreditColor(isDark)
     val debtColor = financialDebtColor(isDark)
     val avatarColor = remember(parsedData.titleText) { getInitialColor(parsedData.titleText) }

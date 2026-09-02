@@ -24,6 +24,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import com.example.ui.theme.isDark
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,11 +59,7 @@ fun QuadBackupCard(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val isDark = when (settings.themeMode) {
-        1 -> false
-        2 -> true
-        else -> androidx.compose.foundation.isSystemInDarkTheme()
-    }
+    val isDark = MaterialTheme.isDark
 
     val googleCloudSyncState by backupSyncViewModel.googleDriveSyncState.collectAsStateWithLifecycle()
     

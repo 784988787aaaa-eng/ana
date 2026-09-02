@@ -96,10 +96,29 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private val fastThemePrefs = application.getSharedPreferences("fast_theme_prefs", Context.MODE_PRIVATE)
+    private val _themeModeState = MutableStateFlow(fastThemePrefs.getInt("key_fast_theme_mode", 0))
+    val themeModeState: StateFlow<Int> = _themeModeState.asStateFlow()
+
+    fun updateThemeMode(newMode: Int) {
+        _themeModeState.value = newMode
+        fastThemePrefs.edit().putInt("key_fast_theme_mode", newMode).apply()
+        val current = settingsState.value
+        if (current.themeMode != newMode) {
+            saveSettings(current.copy(themeMode = newMode))
+        }
+    }
+
     val isSettingsLoaded = MutableStateFlow(false)
 
     val settingsState: StateFlow<AppSettings> = repository.settingsFlow
-        .onEach { isSettingsLoaded.value = true }
+        .onEach {
+            isSettingsLoaded.value = true
+            if (it != null && _themeModeState.value != it.themeMode) {
+                _themeModeState.value = it.themeMode
+                fastThemePrefs.edit().putInt("key_fast_theme_mode", it.themeMode).apply()
+            }
+        }
         .map { it ?: AppSettings() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
@@ -216,6 +235,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveSettings(settings: AppSettings) {
+        if (_themeModeState.value != settings.themeMode) {
+            _themeModeState.value = settings.themeMode
+            fastThemePrefs.edit().putInt("key_fast_theme_mode", settings.themeMode).apply()
+        }
         viewModelScope.launch(Dispatchers.IO) {
             repository.saveSettings(settings)
         }

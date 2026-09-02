@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.example.domain.FormatUtils
 import com.example.ui.theme.AvatarPastelPalette
+import com.example.ui.theme.CairoFontFamily
 import java.math.BigDecimal
 
 // جلب لون الصورة الرمزية بالاعتماد على لوحة الألوان المركزية المعتمدة
@@ -39,6 +40,7 @@ fun AutoScaleText(
     color: Color,
     fontWeight: FontWeight,
     modifier: Modifier = Modifier,
+    minFontSize: TextUnit = 9.sp,
     textAlign: TextAlign = TextAlign.Center,
     maxLines: Int = 1
 ) {
@@ -57,6 +59,7 @@ fun AutoScaleText(
         text = text,
         color = color,
         style = TextStyle(
+            fontFamily = CairoFontFamily,
             fontSize = fontSizeState,
             fontWeight = fontWeight,
             color = color,
@@ -74,8 +77,14 @@ fun AutoScaleText(
         onTextLayout = { textLayoutResult ->
             if (textLayoutResult.hasVisualOverflow) {
                 val currentSize = fontSizeState.value
-                if (currentSize > 9f) {
-                    fontSizeState = (currentSize - 0.5f).sp
+                val minSizeVal = minFontSize.value
+                if (currentSize > minSizeVal) {
+                    val nextSize = (currentSize - 1.0f).coerceAtLeast(minSizeVal)
+                    if (nextSize != currentSize) {
+                        fontSizeState = nextSize.sp
+                    } else {
+                        readyToDraw = true
+                    }
                 } else {
                     readyToDraw = true
                 }

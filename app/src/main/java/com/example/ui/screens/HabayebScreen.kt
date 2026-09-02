@@ -11,7 +11,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -108,15 +107,6 @@ fun HabayebScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settingsState by viewModel.settingsState.collectAsStateWithLifecycle()
     val isPrivacyMode by securityViewModel.isPrivacyModeEnabled.collectAsStateWithLifecycle()
-
-    val systemDark = isSystemInDarkTheme()
-    val isDark = remember(settingsState.themeMode, systemDark) {
-        when (settingsState.themeMode) {
-            1 -> false
-            2 -> true
-            else -> systemDark
-        }
-    }
     val currencySymbol = settingsState.currencySymbol
 
     val selectedCustomerIds = remember { mutableStateListOf<String>() }

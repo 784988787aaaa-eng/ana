@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.TransactionDb
 import com.example.domain.model.TransactionType
+import com.example.ui.theme.isDark
 import com.example.ui.theme.mizanColors
 import com.example.ui.viewmodel.DayLedger
 import java.math.BigDecimal
@@ -73,7 +74,7 @@ fun DayCard(
     onTransactionSelectToggle: (String) -> Unit = {}
 ) {
     var txIdToDelete by remember { mutableStateOf<String?>(null) }
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = MaterialTheme.isDark
 
     // Format: [اسم اليوم] [اليوم/الشهر] (مثال: الأربعاء 19/08)
     val formattedDateHeader = remember(dayLedger) {

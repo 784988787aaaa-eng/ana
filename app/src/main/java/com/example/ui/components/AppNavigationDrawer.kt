@@ -26,7 +26,6 @@ package com.example.ui.components
 // ---------------------------------------------------------------------
 import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -53,6 +52,7 @@ import com.example.data.local.entities.AppSettings
 import com.example.ui.helper.dialPhoneNumber
 import com.example.ui.helper.openWhatsAppChat
 import com.example.ui.navigation.Screen
+import com.example.ui.theme.isDark
 import com.example.ui.screens.BusinessProfileDialog
 import com.example.ui.screens.SecurityDialog
 import com.example.ui.theme.mizanColors
@@ -117,14 +117,7 @@ fun AppNavigationDrawer(
             Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                val systemDark = isSystemInDarkTheme()
-                val isDark = remember(settings.themeMode, systemDark) {
-                    when (settings.themeMode) {
-                        1 -> false
-                        2 -> true
-                        else -> systemDark
-                    }
-                }
+                val isDark = MaterialTheme.isDark
 
                 IconButton(
                     onClick = {

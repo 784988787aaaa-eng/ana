@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.entities.FixedCommitment
+import com.example.ui.theme.isDark
 import com.example.ui.theme.mizanColors
 import java.math.BigDecimal
 
@@ -68,7 +69,7 @@ fun CommitmentItemCardClean(
             .toFloat()
     } else 0f
     val progressPercent = (progressFraction * 100).toInt()
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = MaterialTheme.isDark
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val itemGradient = remember(mizanColors.credit, primaryColor) {

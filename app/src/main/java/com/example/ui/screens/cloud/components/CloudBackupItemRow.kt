@@ -1,6 +1,7 @@
 package com.example.ui.screens.cloud.components
 
 import androidx.compose.material3.MaterialTheme
+import com.example.ui.theme.isDark
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -39,7 +40,7 @@ fun CloudBackupItemRow(
     onLongClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = MaterialTheme.isDark
     val (dateStr, timeStr) = remember(backup.name, backup.createdTime) {
         formatBackupDateTime(context, backup.name, backup.createdTime)
     }

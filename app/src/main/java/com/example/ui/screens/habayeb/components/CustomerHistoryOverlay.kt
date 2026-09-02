@@ -14,6 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import com.example.ui.theme.isDark
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -58,8 +59,7 @@ fun CustomerHistoryOverlay(
     onSearchActiveChanged: (Boolean) -> Unit = {},
     onTxMultiSelectActiveChanged: (Boolean) -> Unit = {}
 ) {
-    val bgColor = MaterialTheme.colorScheme.background
-    val isDark = remember(bgColor) { bgColor.luminance() < 0.5f }
+    val isDark = MaterialTheme.isDark
     val customers by viewModel.habayebCustomersState.collectAsStateWithLifecycle()
     val activeCustomer = customers.find { it.id == customer.id } ?: customer
 

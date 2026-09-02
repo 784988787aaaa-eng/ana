@@ -6,7 +6,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -75,21 +74,6 @@ fun MainLedgerView(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val view = LocalView.current
-
-    val systemDark = isSystemInDarkTheme()
-    val isDark = remember(appSettingsState.themeMode, systemDark) {
-        when (appSettingsState.themeMode) { 1 -> false; 2 -> true; else -> systemDark }
-    }
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (context as? Activity)?.window ?: return@SideEffect
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            val insetsController = WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = false
-            insetsController.isAppearanceLightNavigationBars = !isDark
-        }
-    }
 
     val lazyListState = rememberLazyListState()
     val collapseFractionProvider = remember {

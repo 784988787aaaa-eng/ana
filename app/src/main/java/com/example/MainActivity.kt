@@ -191,21 +191,14 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // احتساب السمة المرئية المختارة (فاتح / داكن / تتبع النظام)
+            // احتساب السمة المرئية المختارة (فاتح / داكن / تتبع النظام) فوراً دون أي تأخير
+            val themeMode by viewModel.themeModeState.collectAsStateWithLifecycle()
             val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-            val darkTheme = remember(isSettingsLoaded, settings.themeMode, cachedThemeMode, isSystemDark) {
-                if (isSettingsLoaded) {
-                    when (settings.themeMode) {
-                        1 -> false
-                        2 -> true
-                        else -> isSystemDark
-                    }
-                } else {
-                    when (cachedThemeMode) {
-                        1 -> false
-                        2 -> true
-                        else -> isSystemDark
-                    }
+            val darkTheme = remember(themeMode, isSystemDark) {
+                when (themeMode) {
+                    1 -> false
+                    2 -> true
+                    else -> isSystemDark
                 }
             }
 

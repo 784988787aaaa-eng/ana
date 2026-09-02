@@ -3,6 +3,7 @@ package com.example.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -710,12 +711,18 @@ val DarkMizanColors = MizanColors(
 // 4. CompositionLocal & MaterialTheme Accessor
 // ============================================================================
 
-val LocalMizanColors = staticCompositionLocalOf { LightMizanColors }
+val LocalMizanColors = compositionLocalOf { LightMizanColors }
+val LocalIsDarkTheme = compositionLocalOf { false }
 
 val MaterialTheme.mizanColors: MizanColors
     @Composable
     @ReadOnlyComposable
     get() = LocalMizanColors.current
+
+val MaterialTheme.isDark: Boolean
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalIsDarkTheme.current
 
 // ============================================================================
 // 5. Document Palette (Print-Safe Adapter Mapping for PDF / Canvas)
