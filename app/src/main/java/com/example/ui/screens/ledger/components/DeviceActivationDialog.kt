@@ -70,61 +70,39 @@ fun DeviceActivationDialog(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val intent = result.data
-        if (result.resultCode == android.app.Activity.RESULT_OK && intent != null) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val authCode = account?.serverAuthCode
-                val email = account?.email ?: ""
-                if (authCode != null && backupSyncViewModel != null) {
-                    backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { success ->
-                        if (success) {
-                            Toast.makeText(context, context.getString(R.string.backup_toast_linked_success, email), Toast.LENGTH_LONG).show()
-                            if (email.isNotEmpty()) {
-                                viewModel.activateWithFirebaseEmail(email) { res ->
-                                    actionFeedbackMessage = when (res) {
-                                        is LicenseCheckResult.Success -> null
-                                        is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
-                                        is LicenseCheckResult.NotLicensed -> res.message
-                                        is LicenseCheckResult.NetworkOutage -> res.message
-                                        is LicenseCheckResult.Error -> res.message
-                                    }
-                                    if (res is LicenseCheckResult.Success) {
-                                        Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            }
-                        } else {
-                            Toast.makeText(context, context.getString(R.string.backup_toast_connect_failed), Toast.LENGTH_LONG).show()
-                        }
+        com.example.domain.GoogleAuthSessionManager.handleSignInActivityResult(
+            resultCode = result.resultCode,
+            data = result.data,
+            context = context,
+            backupSyncViewModel = backupSyncViewModel
+        ) { outcome ->
+            when (outcome) {
+                is com.example.domain.GoogleSignInOutcome.Success -> {
+                    if (outcome.isDriveAuthorized) {
+                        Toast.makeText(context, context.getString(R.string.backup_toast_linked_success, outcome.email), Toast.LENGTH_LONG).show()
                     }
-                } else if (email.isNotEmpty()) {
-                    backupSyncViewModel?.googleDriveSyncHelper?.storeEmail(email)
-                    viewModel.activateWithFirebaseEmail(email) { res ->
-                        actionFeedbackMessage = when (res) {
-                            is LicenseCheckResult.Success -> null
-                            is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
-                            is LicenseCheckResult.NotLicensed -> res.message
-                            is LicenseCheckResult.NetworkOutage -> res.message
-                            is LicenseCheckResult.Error -> res.message
-                        }
-                        if (res is LicenseCheckResult.Success) {
-                            Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
+                    if (outcome.email.isNotEmpty()) {
+                        viewModel.activateWithFirebaseEmail(outcome.email) { res ->
+                            actionFeedbackMessage = when (res) {
+                                is LicenseCheckResult.Success -> null
+                                is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
+                                is LicenseCheckResult.NotLicensed -> res.message
+                                is LicenseCheckResult.NetworkOutage -> res.message
+                                is LicenseCheckResult.Error -> res.message
+                            }
+                            if (res is LicenseCheckResult.Success) {
+                                Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 }
-            } catch (e: Exception) {
-                if (e is ApiException && (e.statusCode == com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED || e.statusCode == 12501 || e.statusCode == 16)) {
-                    android.util.Log.i("DeviceActivationDialog", "Google sign in was cancelled by user")
+                is com.example.domain.GoogleSignInOutcome.Cancelled -> {
                     Toast.makeText(context, context.getString(R.string.backup_toast_cancelled), Toast.LENGTH_SHORT).show()
-                } else {
-                    android.util.Log.e("DeviceActivationDialog", "Google sign in error", e)
-                    Toast.makeText(context, context.getString(R.string.backup_toast_connect_error, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
+                }
+                is com.example.domain.GoogleSignInOutcome.Failed -> {
+                    Toast.makeText(context, outcome.message, Toast.LENGTH_LONG).show()
                 }
             }
-        } else if (result.resultCode == android.app.Activity.RESULT_CANCELED) {
-            Toast.makeText(context, context.getString(R.string.backup_toast_cancelled), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -207,6 +185,7 @@ fun DeviceActivationDialog(
                                     val client = googleSignInClient
                                     if (client != null) {
                                         try {
+                                            com.example.domain.GoogleAuthSessionManager.setSigningIn()
                                             googleSignInLauncher.launch(client.signInIntent)
                                         } catch (e: Exception) {
                                             Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_google_failed), Toast.LENGTH_SHORT).show()

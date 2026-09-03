@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -47,6 +48,9 @@ fun CloudBackupSection(
     var showCloudBackupsSheet by remember { mutableStateOf(false) }
     var isSyncLoggingOut by remember { mutableStateOf(false) }
 
+    val currentEmail by com.example.domain.GoogleAuthSessionManager.currentEmail.collectAsStateWithLifecycle()
+    val effectiveEmail = currentEmail ?: backupSyncViewModel.googleDriveSyncHelper.getStoredEmail()
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -54,38 +58,15 @@ fun CloudBackupSection(
         // 1. المزامنة السحابية المباشرة (Google Drive Direct Sync)
         GoogleDriveSyncCard(
             googleSyncState = googleCloudSyncState,
-            storedEmail = backupSyncViewModel.googleDriveSyncHelper.getStoredEmail(),
-            isConnected = googleCloudSyncState is CloudSyncState.Success || googleCloudSyncState is CloudSyncState.Authenticated,
+            storedEmail = effectiveEmail,
+            isConnected = (googleCloudSyncState is CloudSyncState.Success || googleCloudSyncState is CloudSyncState.Authenticated || backupSyncViewModel.googleDriveSyncHelper.isUserTrulySignedIn()) && !effectiveEmail.isNullOrBlank(),
             isDark = isDark,
             isSyncLoggingOut = isSyncLoggingOut,
             authUrlProvider = { backupSyncViewModel.googleDriveSyncHelper.getAuthUrl() },
             onSignInClick = {
                 try {
-                    val playServicesAvailable = run {
-                        try {
-                            val gmsClass = Class.forName("com.google.android.gms.common.GoogleApiAvailability")
-                            val instanceMethod = gmsClass.getMethod("getInstance")
-                            val gmsInstance = instanceMethod.invoke(null)
-                            val isAvailableMethod = gmsClass.getMethod("isGooglePlayServicesAvailable", Context::class.java)
-                            val status = isAvailableMethod.invoke(gmsInstance, context) as Int
-                            status == 0
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-
-                    if (!playServicesAvailable) {
-                        Toast.makeText(context, context.getString(R.string.settings_toast_google_missing), Toast.LENGTH_SHORT).show()
-                        return@GoogleDriveSyncCard
-                    }
-
-                    googleSignInClient.signOut().addOnCompleteListener {
-                        try {
-                            googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    com.example.domain.GoogleAuthSessionManager.setSigningIn()
+                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
                 } catch (e: Exception) {
                     Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
                 }
@@ -130,13 +111,8 @@ fun CloudBackupSection(
             onConnectClick = {
                 showCloudBackupsSheet = false
                 try {
-                    googleSignInClient.signOut().addOnCompleteListener {
-                        try {
-                            googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    com.example.domain.GoogleAuthSessionManager.setSigningIn()
+                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
                 } catch (e: Exception) {
                     Toast.makeText(context, context.getString(R.string.settings_toast_no_network), Toast.LENGTH_SHORT).show()
                 }

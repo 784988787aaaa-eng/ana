@@ -171,59 +171,31 @@ fun QuadBackupCard(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val intent = result.data
-        if (result.resultCode == Activity.RESULT_OK && intent != null) {
-            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(intent)
-            try {
-                val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                val authCode = account?.serverAuthCode
-                val email = account?.email ?: "account@google.com"
-                if (authCode != null) {
-                    backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { success ->
-                        if (success) {
-                            Toast.makeText(context, context.getString(R.string.settings_gdrive_link_success_pattern, email), Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_network), Toast.LENGTH_LONG).show()
-                        }
-                    }
-                } else {
-                    Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_invalid_code), Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e("QuadBackupCard", "Google sign in failed", e)
-                Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_error_pattern, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
-            }
-        } else {
-            var isCancelled = (result.resultCode == Activity.RESULT_CANCELED)
-            var errorCode: Int? = null
-            if (intent != null) {
-                try {
-                    val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(intent)
-                    task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                } catch (e: com.google.android.gms.common.api.ApiException) {
-                    val sc = e.statusCode
-                    if (sc == com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED || sc == 12501 || sc == 16) {
-                        isCancelled = true
-                        Log.i("QuadBackupCard", "Google sign in was cancelled by the user")
+        com.example.domain.GoogleAuthSessionManager.handleSignInActivityResult(
+            resultCode = result.resultCode,
+            data = result.data,
+            context = context,
+            backupSyncViewModel = backupSyncViewModel
+        ) { outcome ->
+            when (outcome) {
+                is com.example.domain.GoogleSignInOutcome.Success -> {
+                    if (outcome.isDriveAuthorized) {
+                        Toast.makeText(context, context.getString(R.string.settings_gdrive_link_success_pattern, outcome.email), Toast.LENGTH_LONG).show()
+                    } else if (outcome.serverAuthCode == null) {
+                        Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_invalid_code), Toast.LENGTH_SHORT).show()
                     } else {
-                        errorCode = sc
-                        Log.w("QuadBackupCard", "Google sign in returned status code $sc: ${e.message}")
+                        Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_network), Toast.LENGTH_LONG).show()
                     }
-                } catch (e: Exception) {
-                    Log.w("QuadBackupCard", "Google sign in exception on non-OK result", e)
                 }
-            }
-            if (isCancelled) {
-                Toast.makeText(context, context.getString(R.string.settings_gdrive_link_cancelled), Toast.LENGTH_SHORT).show()
-                backupSyncViewModel.updateCloudSyncState(
-                    com.example.data.CloudSyncState.Error(context.getString(R.string.settings_toast_google_missing))
-                )
-            } else if (errorCode != null) {
-                val errText = context.getString(R.string.settings_gdrive_link_failed_api_code_pattern, errorCode)
-                Toast.makeText(context, errText, Toast.LENGTH_LONG).show()
-                backupSyncViewModel.updateCloudSyncState(
-                    com.example.data.CloudSyncState.Error(errText)
-                )
+                is com.example.domain.GoogleSignInOutcome.Cancelled -> {
+                    Toast.makeText(context, context.getString(R.string.settings_gdrive_link_cancelled), Toast.LENGTH_SHORT).show()
+                }
+                is com.example.domain.GoogleSignInOutcome.Failed -> {
+                    Toast.makeText(context, outcome.message, Toast.LENGTH_LONG).show()
+                    backupSyncViewModel.updateCloudSyncState(
+                        com.example.data.CloudSyncState.Error(outcome.message)
+                    )
+                }
             }
         }
     }
