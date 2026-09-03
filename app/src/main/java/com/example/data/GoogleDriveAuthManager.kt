@@ -217,8 +217,16 @@ class GoogleDriveAuthManager(
     }
 
     /**
+     * [دالة التحقق من تكوين معرف العميل]:
+     * تفحص ما إذا كان معرف عميل الويب صالحاً وليس placeholder.
+     */
+    fun isClientIdConfigured(): Boolean {
+        return com.example.GoogleAuthConfig.isWebClientIdValid(clientId)
+    }
+
+    /**
      * [دالة بناء عميل تسجيل الدخول - GoogleSignInClient]:
-     * تجهز إعدادات GoogleSignInOptions مع طلب الصلاحيات ورمز التفويض من الخادم.
+     * تجهز إعدادات GoogleSignInOptions مع طلب الصلاحيات ورمز التفويض من الخادم فقط إذا كان معرف عميل الويب صالحاً.
      */
     fun getGoogleSignInClient(): GoogleSignInClient {
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -227,14 +235,15 @@ class GoogleDriveAuthManager(
                 Scope(SCOPE_DRIVE_APPDATA),
                 Scope(SCOPE_DRIVE_FILE)
             )
-        if (clientId.isNotBlank()) {
+        if (isClientIdConfigured()) {
             try {
                 // تفعيل forceCodeForRefreshToken = true إلزامي لضمان إرجاع Google لرمز التجديد (refresh_token)
-                // حتى في حال سبق للمستخدم الموافقة أو عند إعادة تثبيت التطبيق.
-                builder.requestServerAuthCode(clientId, true)
+                builder.requestServerAuthCode(clientId.trim(), true)
             } catch (e: Exception) {
-                Log.e(TAG, "تعذر تعيين serverAuthCode في GoogleSignInOptions", e)
+                Log.e(TAG, "تعذر تعيين serverAuthCode في GoogleSignInOptions: ${e.javaClass.simpleName}")
             }
+        } else {
+            Log.w(TAG, "Web Client ID is not configured or is placeholder. Building GoogleSignInClient without requestServerAuthCode.")
         }
         return GoogleSignIn.getClient(context, builder.build())
     }

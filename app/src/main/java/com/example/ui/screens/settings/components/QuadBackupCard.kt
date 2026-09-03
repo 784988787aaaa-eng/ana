@@ -178,7 +178,8 @@ fun QuadBackupCard(
                 val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
                 val authCode = account?.serverAuthCode
                 val email = account?.email ?: "account@google.com"
-                if (authCode != null) {
+                if (!authCode.isNullOrEmpty()) {
+                    Log.d("QuadBackupCard", "Google Sign-In successful: serverAuthCode received (length=${authCode.length})")
                     backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { success ->
                         if (success) {
                             Toast.makeText(context, context.getString(R.string.settings_gdrive_link_success_pattern, email), Toast.LENGTH_LONG).show()
@@ -187,43 +188,56 @@ fun QuadBackupCard(
                         }
                     }
                 } else {
-                    Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_invalid_code), Toast.LENGTH_SHORT).show()
+                    Log.w("QuadBackupCard", "Google Sign-In succeeded for account but serverAuthCode is null. Ensure valid Web Client ID is configured.")
+                    backupSyncViewModel.googleDriveSyncHelper.storeEmail(email)
+                    val msg = context.getString(R.string.settings_gdrive_link_success_pattern, email)
+                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                 }
+            } catch (e: com.google.android.gms.common.api.ApiException) {
+                Log.e("QuadBackupCard", "Google Sign-In ApiException: statusCode=${e.statusCode}")
+                val errText = when (e.statusCode) {
+                    12501 -> "فشل مصادقة Google (رمز 12501): لم تكتمل المصادقة. يرجى التحقق من تسجيل بصمة SHA-1 واسم الحزمة في Google Cloud Console."
+                    10 -> "خطأ في تكوين المطور (رمز 10): تحقق من تسجيل SHA-1 للشهادة في Google Cloud."
+                    7 -> context.getString(R.string.settings_gdrive_link_failed_network)
+                    else -> context.getString(R.string.settings_gdrive_link_failed_api_code_pattern, e.statusCode)
+                }
+                Toast.makeText(context, errText, Toast.LENGTH_LONG).show()
+                backupSyncViewModel.updateCloudSyncState(com.example.data.CloudSyncState.Error(errText))
             } catch (e: Exception) {
-                Log.e("QuadBackupCard", "Google sign in failed", e)
+                Log.e("QuadBackupCard", "Google Sign-In unexpected error: ${e.javaClass.simpleName}")
                 Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_error_pattern, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
+                backupSyncViewModel.updateCloudSyncState(com.example.data.CloudSyncState.Error(e.localizedMessage ?: "Sign-in error"))
             }
         } else {
-            var isCancelled = (result.resultCode == Activity.RESULT_CANCELED)
-            var errorCode: Int? = null
+            var statusCode: Int? = null
             if (intent != null) {
                 try {
                     val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(intent)
                     task.getResult(com.google.android.gms.common.api.ApiException::class.java)
                 } catch (e: com.google.android.gms.common.api.ApiException) {
-                    val sc = e.statusCode
-                    if (sc == com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED || sc == 12501 || sc == 16) {
-                        isCancelled = true
-                        Log.i("QuadBackupCard", "Google sign in was cancelled by the user")
-                    } else {
-                        errorCode = sc
-                        Log.w("QuadBackupCard", "Google sign in returned status code $sc: ${e.message}")
-                    }
+                    statusCode = e.statusCode
                 } catch (e: Exception) {
-                    Log.w("QuadBackupCard", "Google sign in exception on non-OK result", e)
+                    Log.w("QuadBackupCard", "Error parsing non-OK sign-in result", e)
                 }
             }
-            if (isCancelled) {
+
+            Log.e("QuadBackupCard", "Google Sign-In non-OK result: resultCode=${result.resultCode}, statusCode=$statusCode")
+
+            if (statusCode == null && result.resultCode == Activity.RESULT_CANCELED && intent == null) {
                 Toast.makeText(context, context.getString(R.string.settings_gdrive_link_cancelled), Toast.LENGTH_SHORT).show()
-                backupSyncViewModel.updateCloudSyncState(
-                    com.example.data.CloudSyncState.Error(context.getString(R.string.settings_toast_google_missing))
-                )
-            } else if (errorCode != null) {
-                val errText = context.getString(R.string.settings_gdrive_link_failed_api_code_pattern, errorCode)
-                Toast.makeText(context, errText, Toast.LENGTH_LONG).show()
-                backupSyncViewModel.updateCloudSyncState(
-                    com.example.data.CloudSyncState.Error(errText)
-                )
+            } else {
+                val diagnosticError = when (statusCode) {
+                    12501 -> "فشل إتمام المصادقة (رمز 12501). السبب الأرجح: عدم تطابق بصمة SHA-1 للشهادة مع عميل Android OAuth في Google Cloud Console."
+                    10 -> "خطأ تكوين المطور (رمز 10 Developer Error): يرجى تسجيل SHA-1 للشهادة واسم الحزمة com.aistudio.mizanaldar.ptwqxs في Google Cloud."
+                    7 -> context.getString(R.string.settings_gdrive_link_failed_network)
+                    12500 -> "خطأ في خدمات Google Play (رمز 12500)."
+                    12502 -> "عملية تسجيل الدخول قيد التنفيذ (رمز 12502)."
+                    16 -> "تم إيقاف عملية المصادقة من النظام (رمز 16)."
+                    null -> if (result.resultCode == Activity.RESULT_CANCELED) "تم إلغاء اختيار الحساب." else "فشل تسجيل الدخول (رمز النتيجة: ${result.resultCode})."
+                    else -> "فشل تسجيل الدخول عبر Google (رمز الحالة: $statusCode)."
+                }
+                Toast.makeText(context, diagnosticError, Toast.LENGTH_LONG).show()
+                backupSyncViewModel.updateCloudSyncState(com.example.data.CloudSyncState.Error(diagnosticError))
             }
         }
     }

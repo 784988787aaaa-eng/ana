@@ -60,19 +60,8 @@ jobs:
       # محرك التحقق الذاتي وتوليد قرادل بإصدار متوافق ومطلوب بالاسم (Gradle 9.3.1) لتجنب انهيار البناء
       - name: Auto-Generate Wrapper & Build
         run: |
-          # فحص سلامة ملف الـ jar لمنع أخطاء Invalid or corrupt jarfile
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || ! jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
-            echo "⚠️ Gradle wrapper jar is missing or corrupted! Fetching or generating valid wrapper..."
-            mkdir -p gradle/wrapper
-            if command -v gradle &> /dev/null; then
-              gradle wrapper --gradle-version 9.3.1
-            else
-              curl -sLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar || true
-            fi
-          fi
-
           if [ -f "./gradlew" ]; then
-            echo "✅ Gradle wrapper found and verified. Granting permissions and building..."
+            echo "✅ Gradle wrapper found. Granting permissions and building..."
             chmod +x gradlew
             ./gradlew assembleDebug --stacktrace --no-parallel --max-workers=1
           else
