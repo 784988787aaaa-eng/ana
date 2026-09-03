@@ -77,8 +77,7 @@ fun DeviceActivationDialog(
                 val account = task.getResult(ApiException::class.java)
                 val authCode = account?.serverAuthCode
                 val email = account?.email ?: ""
-                if (!authCode.isNullOrEmpty() && backupSyncViewModel != null) {
-                    android.util.Log.d("DeviceActivationDialog", "Google sign-in successful: serverAuthCode received (length=${authCode.length})")
+                if (authCode != null && backupSyncViewModel != null) {
                     backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { success ->
                         if (success) {
                             Toast.makeText(context, context.getString(R.string.backup_toast_linked_success, email), Toast.LENGTH_LONG).show()
@@ -115,42 +114,17 @@ fun DeviceActivationDialog(
                         }
                     }
                 }
-            } catch (e: ApiException) {
-                android.util.Log.e("DeviceActivationDialog", "Google sign-in ApiException: statusCode=${e.statusCode}")
-                val errText = when (e.statusCode) {
-                    12501 -> "فشل مصادقة Google (رمز 12501): لم تكتمل المصادقة. يرجى التحقق من تسجيل بصمة SHA-1 في Google Cloud Console."
-                    10 -> "خطأ تكوين المطور (رمز 10): تحقق من مطابقة SHA-1 واسم الحزمة."
-                    7 -> context.getString(R.string.backup_toast_connect_failed)
-                    else -> "فشل تسجيل الدخول عبر Google (رمز: ${e.statusCode})"
-                }
-                Toast.makeText(context, errText, Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                android.util.Log.e("DeviceActivationDialog", "Google sign-in error: ${e.javaClass.simpleName}")
-                Toast.makeText(context, context.getString(R.string.backup_toast_connect_error, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
-            }
-        } else {
-            var statusCode: Int? = null
-            if (intent != null) {
-                try {
-                    val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-                    task.getResult(ApiException::class.java)
-                } catch (e: ApiException) {
-                    statusCode = e.statusCode
-                } catch (_: Exception) {}
-            }
-            android.util.Log.e("DeviceActivationDialog", "Google sign-in non-OK: resultCode=${result.resultCode}, statusCode=$statusCode")
-            if (statusCode == null && result.resultCode == android.app.Activity.RESULT_CANCELED && intent == null) {
-                Toast.makeText(context, context.getString(R.string.backup_toast_cancelled), Toast.LENGTH_SHORT).show()
-            } else {
-                val diagnosticError = when (statusCode) {
-                    12501 -> "فشل إتمام تسجيل الدخول (رمز 12501). السبب الأرجح: عدم تطابق بصمة SHA-1 لشهادة التطبيق في Google Cloud."
-                    10 -> "خطأ في إعدادات Google Cloud (رمز 10 Developer Error)."
-                    7 -> context.getString(R.string.backup_toast_connect_failed)
-                    null -> if (result.resultCode == android.app.Activity.RESULT_CANCELED) "تم إلغاء اختيار الحساب." else "فشل تسجيل الدخول (رمز: ${result.resultCode})"
-                    else -> "فشل تسجيل الدخول عبر Google (رمز: $statusCode)"
+                if (e is ApiException && (e.statusCode == com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes.SIGN_IN_CANCELLED || e.statusCode == 12501 || e.statusCode == 16)) {
+                    android.util.Log.i("DeviceActivationDialog", "Google sign in was cancelled by user")
+                    Toast.makeText(context, context.getString(R.string.backup_toast_cancelled), Toast.LENGTH_SHORT).show()
+                } else {
+                    android.util.Log.e("DeviceActivationDialog", "Google sign in error", e)
+                    Toast.makeText(context, context.getString(R.string.backup_toast_connect_error, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
                 }
-                Toast.makeText(context, diagnosticError, Toast.LENGTH_LONG).show()
             }
+        } else if (result.resultCode == android.app.Activity.RESULT_CANCELED) {
+            Toast.makeText(context, context.getString(R.string.backup_toast_cancelled), Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -79,13 +79,6 @@ fun CloudBackupSection(
                         return@GoogleDriveSyncCard
                     }
 
-                    if (!backupSyncViewModel.googleDriveSyncHelper.isClientIdConfigured()) {
-                        val msg = "تنبيه: معرف عميل الويب (Web Client ID) غير مهيأ. يرجى ضبطه لإتمام المزامنة السحابية."
-                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                        backupSyncViewModel.updateCloudSyncState(CloudSyncState.Error(msg))
-                        return@GoogleDriveSyncCard
-                    }
-
                     googleSignInClient.signOut().addOnCompleteListener {
                         try {
                             googleSignInLauncher.launch(googleSignInClient.signInIntent)

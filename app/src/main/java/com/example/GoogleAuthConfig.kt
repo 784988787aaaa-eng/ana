@@ -37,35 +37,31 @@ object GoogleAuthConfig {
     val WEB_CLIENT_ID = BuildConfig.GOOGLE_CLIENT_ID
 
     /**
-     * [دالة التحقق من بنية وصلاحية معرف عميل الويب]:
-     * تفحص نص المعرف للتأكد من أنه ليس فارغاً ولا placeholder وينتهي بالامتداد القياسي (.apps.googleusercontent.com)
-     */
-    fun isWebClientIdValid(clientId: String = WEB_CLIENT_ID): Boolean {
-        val trimmed = clientId.trim()
-        if (trimmed.isEmpty() || trimmed == "YOUR_GOOGLE_CLIENT_ID" || trimmed == "none") {
-            return false
-        }
-        val suffix = ".apps.googleusercontent.com"
-        if (!trimmed.endsWith(suffix)) {
-            return false
-        }
-        val prefix = trimmed.substring(0, trimmed.length - suffix.length)
-        return prefix.isNotEmpty() && prefix.any { it.isDigit() }
-    }
-
-    /**
      * [دالة التحقق من صحة معرف العميل - validateClientId]:
      * تفحص نص المعرف للتأكد من أنه ليس فارغاً وينتهي بالامتداد القياسي (.apps.googleusercontent.com)
      * ويحتوي على أرقام تعريفية صالحة قبل بدء عملية تسجيل الدخول.
      */
     fun validateClientId(): Boolean {
-        val isValid = isWebClientIdValid(WEB_CLIENT_ID)
-        if (!isValid) {
-            Log.e(TAG, "❌ [GOOGLE_AUTH_ERROR] WEB_CLIENT_ID is invalid, empty or placeholder.")
+        if (WEB_CLIENT_ID.isEmpty()) {
+            Log.e(TAG, "❌ [GOOGLE_AUTH_ERROR] WEB_CLIENT_ID is EMPTY! Please insert your Web Client ID in GoogleAuthConfig.kt")
             return false
         }
         
-        Log.d(TAG, "✅ [GOOGLE_AUTH_SUCCESS] Google WEB_CLIENT_ID is valid and configured.")
+        val trimmed = WEB_CLIENT_ID.trim()
+        val suffix = ".apps.googleusercontent.com"
+        
+        if (!trimmed.endsWith(suffix)) {
+            Log.e(TAG, "❌ [GOOGLE_AUTH_ERROR] Invalid Web Client ID: It must end with '$suffix'. Got: '$trimmed'")
+            return false
+        }
+        
+        val prefix = trimmed.substring(0, trimmed.length - suffix.length)
+        if (prefix.isEmpty() || !prefix.any { it.isDigit() }) {
+            Log.e(TAG, "❌ [GOOGLE_AUTH_ERROR] Invalid Web Client ID prefix. Prefix must contain numeric digits. Got: '$trimmed'")
+            return false
+        }
+        
+        Log.d(TAG, "✅ [GOOGLE_AUTH_SUCCESS] Google WEB_CLIENT_ID is valid and configured: '$trimmed'")
         return true
     }
 

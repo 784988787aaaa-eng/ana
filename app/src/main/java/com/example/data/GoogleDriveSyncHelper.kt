@@ -128,11 +128,9 @@ class GoogleDriveSyncHelper(private val context: Context) {
     val syncState: StateFlow<CloudSyncState> = _syncState.asStateFlow()
 
     // المدراء والوحدات المتخصصة التابعة
-    val authManager = GoogleDriveAuthManager(context) { state ->
+    private val authManager = GoogleDriveAuthManager(context) { state ->
         _syncState.value = state
     }
-
-    fun isClientIdConfigured(): Boolean = authManager.isClientIdConfigured()
 
     private val folderNavigator = GoogleDriveFolderNavigator(CloudNetworkEngine.getInstance(context).client)
     private val networkUploader = GoogleDriveNetworkUploader(context)

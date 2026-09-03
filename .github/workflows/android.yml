@@ -29,51 +29,161 @@ jobs:
           echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
 
-      # محرك المسح الذكي وتوليد شهادة الـ Debug بالمسميات والمسارات المخصصة للمشروع تلقائياً
-      - name: Auto-Generate Debug Keystore
+      # 1. إعداد شهادة Debug القياسية لنظام أندرويد فقط في مسارها النظامي بدون أي مساس بملفات الـ Release
+      - name: Set up Standard Android Debug Keystore
         run: |
-          echo "🔑 Generating default debug keystore..."
+          echo "🔑 Preparing standard Android debug keystore..."
           mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          
-          # نسخ الملف للمسارات الافتراضية
-          cp ~/.android/debug.keystore ./debug.keystore || true
-          
-          # مسح ذكي لاستخراج أي تسمية مخصصة لملفات التوقيع في ملفات الـ Gradle وتوليدها تلقائياً بالاسم الصحيح
-          echo "🔍 Scanning build files for custom keystore names..."
-          find . -name "build.gradle*" | while read -r gradle_file; do
-            # استخراج الكلمات التي تنتهي بـ .keystore أو .jks
-            filenames=$(grep -o -E '[a-zA-Z0-9_\-]+\.(keystore|jks)' "$gradle_file" | sort -u)
-            dir_path=$(dirname "$gradle_file")
-            for fname in $filenames; do
-              target_path="$dir_path/$fname"
-              if [ ! -f "$target_path" ]; then
-                echo "🎯 Auto-generating missing custom keystore: $target_path"
-                cp ~/.android/debug.keystore "$target_path"
-              else
-                echo "ℹ️ Keystore already exists at: $target_path"
-              fi
-            done
-          done
-          echo "✅ Smart Keystore allocation completed."
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          # ممنوع منعاً باتاً نسخ debug.keystore إلى mizan.keystore أو تعويض أي release keystore
 
-      # محرك التحقق الذاتي وتوليد قرادل بإصدار متوافق ومطلوب بالاسم (Gradle 9.3.1) لتجنب انهيار البناء
-      - name: Auto-Generate Wrapper & Build
+      # 2. التحقق الصارم المسبق من وجود وسلامة مستودع mizan.keystore الأصلي ومطابقة البصمة
+      - name: Verify Release Keystore and Credentials
+        env:
+          KEYSTORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'app/mizan.keystore' }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'mizan' }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          EXPECTED_SHA1: "AEC20C0F4E48D797C87959764FB6659DC5A5FB20"
         run: |
-          if [ -f "./gradlew" ]; then
-            echo "✅ Gradle wrapper found. Granting permissions and building..."
-            chmod +x gradlew
-            ./gradlew assembleDebug --stacktrace --no-parallel --max-workers=1
-          else
-            echo "⚠️ Gradle wrapper NOT found! Auto-generating stable wrapper..."
-            # تقييد التوليد بالإصدار 9.3.1 المطلوبة رسمياً بواسطة AGP 9.1.1 في مشروعك
-            gradle wrapper --gradle-version 9.3.1
-            chmod +x gradlew
-            ./gradlew assembleDebug --stacktrace --no-parallel --max-workers=1
+          echo "===================================================="
+          echo "🔍 Pre-Build Verification: Release Keystore Integrity"
+          echo "===================================================="
+
+          # التحقق من وجود ملف الـ Keystore الأصلي
+          if [ ! -f "$KEYSTORE_FILE" ]; then
+            echo "❌ CRITICAL ERROR: Release Keystore file not found at: $KEYSTORE_FILE"
+            echo "🚨 Refusing to build or substitute with any debug/dummy keystore!"
+            exit 1
+          fi
+          echo "✅ Keystore file verified at: $KEYSTORE_FILE"
+
+          # التحقق من توفر الأسرار المطلوبة لفتح الـ Keystore
+          if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "❌ CRITICAL ERROR: RELEASE_STORE_PASSWORD or RELEASE_KEY_PASSWORD secret is missing!"
+            echo "🚨 Cannot proceed with release signing without valid credentials."
+            exit 1
           fi
 
-      - name: Upload APK Artifact
+          # التحقق من إمكانية فتح المستودع بالـ Alias المطلوب
+          echo "🔐 Verifying keystore access for alias: $KEY_ALIAS ..."
+          CERT_OUTPUT=$(keytool -list -v -keystore "$KEYSTORE_FILE" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" 2>&1) || {
+            echo "❌ CRITICAL ERROR: Failed to open keystore or alias '$KEY_ALIAS' not found!"
+            exit 1
+          }
+
+          # استخراج بصمة SHA-1 ومقارنتها بالبصمة المرجعية الأصلية
+          EXTRACTED_SHA1=$(echo "$CERT_OUTPUT" | grep -i "SHA1:" | head -n 1 | sed -e 's/.*SHA1:[[:space:]]*//' -e 's/://g' | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')
+          
+          if [ "$EXTRACTED_SHA1" != "$EXPECTED_SHA1" ]; then
+            echo "❌ CRITICAL MISMATCH: Keystore certificate SHA-1 does NOT match reference release fingerprint!"
+            echo "Expected: $EXPECTED_SHA1"
+            echo "Got:      $EXTRACTED_SHA1"
+            exit 1
+          fi
+
+          echo "✅ Pre-build Keystore verification PASSED. Certificate matches original release signature."
+
+      # 3. التحقق من سلامة Gradle Wrapper
+      - name: Verify Gradle Wrapper
+        run: |
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || ! jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+            echo "⚠️ Gradle wrapper jar is missing or corrupted! Generating valid wrapper..."
+            mkdir -p gradle/wrapper
+            if command -v gradle &> /dev/null; then
+              gradle wrapper --gradle-version 9.3.1
+            else
+              curl -sLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar || true
+            fi
+          fi
+          chmod +x gradlew || true
+
+      # 4. بناء نسخة Release مع تمرير بارامترات التوقيع الموثقة
+      - name: Build Release APK
+        env:
+          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'mizan.keystore' }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'mizan' }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "🚀 Building Release APK with verified signing configuration..."
+          ./gradlew assembleRelease \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            --stacktrace --no-parallel --max-workers=1
+
+      # 5. الفحص الإجباري لشهادة Release APK باستخدام apksigner
+      - name: Verify Release APK Signature & Fingerprint
+        env:
+          EXPECTED_SHA1_FORMATTED: "AE:C2:0C:0F:4E:48:D7:97:C8:79:59:76:4F:B6:65:9D:C5:A5:FB:20"
+          EXPECTED_SHA1_CLEAN: "AEC20C0F4E48D797C87959764FB6659DC5A5FB20"
+          SIGNING_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'mizan' }}
+        run: |
+          echo "===================================================="
+          echo "🔍 Post-Build APK Signature Verification"
+          echo "===================================================="
+          
+          # تحديد مسار Release APK
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "❌ CRITICAL ERROR: Release APK was not found at app/build/outputs/apk/release/"
+            exit 1
+          fi
+          echo "📦 Found Release APK at: $APK_PATH"
+
+          # العثور على أداة apksigner
+          APKSIGNER_BIN=""
+          if command -v apksigner &> /dev/null; then
+            APKSIGNER_BIN="apksigner"
+          elif [ -n "$ANDROID_SDK_ROOT" ] && [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
+            APKSIGNER_BIN=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          elif [ -n "$ANDROID_HOME" ] && [ -d "$ANDROID_HOME/build-tools" ]; then
+            APKSIGNER_BIN=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          fi
+
+          if [ -z "$APKSIGNER_BIN" ] || [ ! -x "$APKSIGNER_BIN" ]; then
+            echo "⚠️ apksigner not found directly, using keytool printcert on APK..."
+            SIGN_VERIFY_OUTPUT=$(keytool -printcert -jarfile "$APK_PATH" 2>&1)
+          else
+            echo "🛠️ Using apksigner: $APKSIGNER_BIN"
+            SIGN_VERIFY_OUTPUT=$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH" 2>&1) || {
+              echo "❌ CRITICAL ERROR: apksigner verification failed!"
+              echo "$SIGN_VERIFY_OUTPUT"
+              exit 1
+            }
+          fi
+
+          # استخراج بصمة SHA-1 من الشهادة الفعلية لملف APK
+          ACTUAL_SHA1_FORMATTED=$(echo "$SIGN_VERIFY_OUTPUT" | grep -iE "(SHA-1 digest|SHA1:|SHA-1:)" | head -n 1 | sed -e 's/.*SHA-1 digest:[[:space:]]*//I' -e 's/.*SHA-1:[[:space:]]*//I' -e 's/.*SHA1:[[:space:]]*//I' | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+          ACTUAL_SHA1_CLEAN=$(echo "$ACTUAL_SHA1_FORMATTED" | sed 's/://g')
+
+          # التقرير الإلزامي لـ Workflow
+          echo "----------------------------------------------------"
+          echo "Build variant: release"
+          echo "Package: com.aistudio.mizanaldar.ptwqxs"
+          echo "Signing alias: $SIGNING_ALIAS"
+          echo "Expected SHA-1: $EXPECTED_SHA1_FORMATTED"
+          echo "Actual APK SHA-1: $ACTUAL_SHA1_FORMATTED"
+          echo "----------------------------------------------------"
+
+          if [ "$ACTUAL_SHA1_CLEAN" != "$EXPECTED_SHA1_CLEAN" ]; then
+            echo "Fingerprint verification: FAIL"
+            echo "❌ CRITICAL MISMATCH: Release APK signature does NOT match the required Firebase SHA-1!"
+            echo "Expected: $EXPECTED_SHA1_FORMATTED"
+            echo "Actual:   $ACTUAL_SHA1_FORMATTED"
+            exit 1
+          fi
+
+          echo "Fingerprint verification: PASS"
+          echo "✅ Release APK is verified with the genuine original signing key."
+
+      # 6. رفع حزمة Release APK المؤكدة فقط بعد اجتياز فحص البصمة
+      - name: Upload Verified Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mizan-Al-Dar-Final-Build
-          path: app/build/outputs/apk/debug/*.apk
+          name: Mizan-Al-Dar-Release-APK
+          path: app/build/outputs/apk/release/*.apk
