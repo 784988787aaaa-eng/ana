@@ -47,7 +47,7 @@ object LocalFileSaver {
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/" + "الدفتر الذكي")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
@@ -71,16 +71,16 @@ object LocalFileSaver {
                     false
                 }
             } else {
-                // قبل Android 10 لا توجد MediaStore RELATIVE_PATH؛ نحفظ في مساحة التطبيق المعزولة
-                // دون طلب صلاحيات تخزين عامة، ثم يمكن للمستخدم مشاركة الملف عبر FileProvider أو SAF.
-                val targetDir = File(
-                    context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir,
-                    "الدفتر الذكي"
-                )
-                if (!targetDir.exists()) targetDir.mkdirs()
+                // Fallback for Android 9 and below (requires WRITE_EXTERNAL_STORAGE permission, which is declared)
+                val targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!targetDir.exists()) {
+                    targetDir.mkdirs()
+                }
                 val targetFile = File(targetDir, displayName)
                 cachedFile.inputStream().use { inputStream ->
-                    targetFile.outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
+                    targetFile.outputStream().use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
                 }
                 true
             }

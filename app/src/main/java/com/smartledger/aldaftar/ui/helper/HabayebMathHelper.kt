@@ -1,6 +1,5 @@
 package com.smartledger.aldaftar.ui.helper
 
-import com.smartledger.aldaftar.domain.finance.FinancialMath
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
@@ -40,12 +39,12 @@ object HabayebMathHelper {
         }
     }
 
-    fun add(a: BigDecimal, b: BigDecimal): BigDecimal = FinancialMath.add(a, b)
-    fun subtract(a: BigDecimal, b: BigDecimal): BigDecimal = FinancialMath.subtract(a, b)
-    fun multiply(a: BigDecimal, b: BigDecimal): BigDecimal = FinancialMath.multiply(a, b)
+    fun add(a: BigDecimal, b: BigDecimal): BigDecimal = a.add(b)
+    fun subtract(a: BigDecimal, b: BigDecimal): BigDecimal = a.subtract(b)
+    fun multiply(a: BigDecimal, b: BigDecimal): BigDecimal = a.multiply(b)
     fun divide(a: BigDecimal, b: BigDecimal): BigDecimal {
         if (b.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
-        return FinancialMath.divide(a, b)
+        return a.divide(b, 10, RoundingMode.HALF_EVEN)
     }
 
     // دالة التنسيق الذكي لجمالية الواجهات والدقة المطلقة

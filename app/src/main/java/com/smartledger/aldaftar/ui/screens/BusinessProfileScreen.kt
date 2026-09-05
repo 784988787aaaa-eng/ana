@@ -243,7 +243,7 @@ private fun BusinessProfileForm(
                         }
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("SmartLedger", "Operation failed")
+                    e.printStackTrace()
                 }
             }
         }
@@ -260,7 +260,7 @@ private fun BusinessProfileForm(
                     loadedPhones.add(jsonArray.getString(i))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("SmartLedger", "Operation failed")
+                e.printStackTrace()
             }
             if (loadedPhones.isEmpty()) {
                 val fallbackPhone = altPrefs.getString(ProfileKeys.KEY_ALT_PHONE, "").orEmpty()
@@ -293,7 +293,7 @@ private fun BusinessProfileForm(
                         }
                     }
                 } catch (t: Throwable) {
-                    android.util.Log.e("SmartLedger", "Operation failed")
+                    t.printStackTrace()
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, context.getString(R.string.biz_toast_logo_failed), Toast.LENGTH_SHORT).show()
                     }
@@ -427,7 +427,7 @@ private fun BusinessProfileForm(
                             }
                         }
                     } catch (t: Throwable) {
-                        android.util.Log.e("SmartLedger", "Operation failed")
+                        t.printStackTrace()
                     }
                 }
             },
@@ -461,7 +461,7 @@ private fun BusinessProfileForm(
                             pendingImageUri = null
                         }
                     } catch (t: Throwable) {
-                        android.util.Log.e("SmartLedger", "Operation failed")
+                        t.printStackTrace()
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, context.getString(R.string.biz_toast_logo_save_err), Toast.LENGTH_SHORT).show()
                             dialogState = BusinessProfileDialogState.None

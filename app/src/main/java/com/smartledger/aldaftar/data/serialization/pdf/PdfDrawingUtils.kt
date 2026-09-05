@@ -224,7 +224,7 @@ object PdfDrawingUtils {
                 hasLogo = true
             }
         } catch (e: Exception) {
-            android.util.Log.e("SmartLedger", "Operation failed")
+            e.printStackTrace()
         }
         return LogoResult(scaledLogo, rawBitmap, logoW, logoH, hasLogo)
     }
@@ -273,7 +273,7 @@ object PdfDrawingUtils {
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("SmartLedger", "Operation failed")
+            e.printStackTrace()
         }
         return LogoResult(scaledLogo, rawBitmap, logoW, logoH, hasLogo)
     }

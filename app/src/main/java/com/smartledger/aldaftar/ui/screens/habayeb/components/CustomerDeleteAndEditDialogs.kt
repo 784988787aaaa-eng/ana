@@ -163,7 +163,7 @@ fun CustomerEditDialog(
             editNameFocusRequester.requestFocus()
             keyboardController?.show()
         } catch (e: Exception) {
-            android.util.Log.e("SmartLedger", "Operation failed")
+            e.printStackTrace()
         }
     }
 

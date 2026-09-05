@@ -21,8 +21,6 @@ package com.smartledger.aldaftar
 import android.app.Application
 import androidx.work.Configuration
 import com.smartledger.aldaftar.data.local.AppDatabase
-import com.smartledger.aldaftar.security.PlayIntegrityGate
-import com.smartledger.aldaftar.security.SecurityEnvironmentGuard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,18 +44,11 @@ class FinanceApplication : Application(), Configuration.Provider {
                 // 1. تهيئة مدير جلسة تسجيل الدخول الموحد لحسابات Google
                 com.smartledger.aldaftar.domain.GoogleAuthSessionManager.initialize(this@FinanceApplication)
                 
-                // 2. فحص بيئة التشغيل مبكراً؛ النتيجة لا تُسجل تفصيلياً حتى لا تكشف إشارات دفاعية.
-                SecurityEnvironmentGuard.assess(this@FinanceApplication)
-
-                // 3. تجهيز Play Integrity بشكل غير حاجب للمسار الرئيسي إذا تم ضبط رقم مشروع Google.
-                PlayIntegrityGate(this@FinanceApplication).prepare()
-
-                // 4. التحمية الاستباقية لقاعدة البيانات (Pre-warming) لتسريع أول استعلام على الشاشة.
+                // 2. التحمية الاستباقية لقاعدة البيانات (Pre-warming) لتسريع أول استعلام على الشاشة
                 val db = AppDatabase.getDatabase(applicationContext)
                 db.settingsDao().getSettingsDirect()
             } catch (e: Exception) {
-                // لا نطبع stack trace في الإنتاج؛ نمنع تسريب معلومات البنية الداخلية إلى Logcat.
-                android.util.Log.e("FinanceApplication", "Background initialization failed: ${e.javaClass.simpleName}")
+                e.printStackTrace()
             }
         }
     }

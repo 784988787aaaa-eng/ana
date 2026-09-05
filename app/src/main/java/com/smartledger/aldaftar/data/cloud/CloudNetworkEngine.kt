@@ -96,7 +96,7 @@ class CloudNetworkEngine private constructor(private val context: Context) {
             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(false)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
@@ -230,10 +230,10 @@ class CloudNetworkEngine private constructor(private val context: Context) {
             NetworkCallResult.NoConnection("لا يوجد اتصال بالإنترنت")
         } catch (e: IOException) {
             Log.e(TAG, "[$operationName] تعذر الاتصال بالشبكة: ${e.javaClass.simpleName}")
-            NetworkCallResult.Error(-1, "Network I/O failure")
+            NetworkCallResult.Error(-1, e.localizedMessage ?: "Network I/O failure")
         } catch (e: Exception) {
             Log.e(TAG, "[$operationName] فشل تنفيذ الطلب: ${e.javaClass.simpleName}")
-            NetworkCallResult.Error(-1, "Unexpected network failure")
+            NetworkCallResult.Error(-1, e.localizedMessage ?: "Unexpected failure")
         }
     }
 }

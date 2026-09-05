@@ -70,7 +70,7 @@ fun DeveloperSealFooter(modifier: Modifier = Modifier) {
                         }
                         context.startActivity(intent)
                     } catch (e: Exception) {
-                        android.util.Log.e("SmartLedger", "Operation failed")
+                        e.printStackTrace()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(

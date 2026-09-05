@@ -77,6 +77,7 @@ class MainActivity : FragmentActivity() {
 
         // إطلاق مهام التهيئة الخلفية المستقلة عن مسار الواجهة
         lifecycleScope.launch(Dispatchers.IO) {
+            logAppSignatureSHA1(this@MainActivity)
             AutoBackupWorker.scheduleDailyBackupWorker(this@MainActivity)
             AutoBackupWorker.checkAndTriggerBackupIfMissed(this@MainActivity)
             BackupReminderWorker.scheduleReminder(this@MainActivity)
@@ -153,6 +154,32 @@ class MainActivity : FragmentActivity() {
             }
 
             var showOnboardingDialog by remember { mutableStateOf(false) }
+            var shouldRequestPermissions by remember { mutableStateOf(false) }
+
+            // تجهيز آلية طلب الأذونات المتعددة ديناميكياً
+            val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                contract = androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+            ) { permissions ->
+                val allGranted = permissions.values.all { it }
+                android.util.Log.d("MainActivity", "Permissions completed: allGranted=$allGranted")
+            }
+
+            LaunchedEffect(shouldRequestPermissions) {
+                if (shouldRequestPermissions) {
+                    val permissions = mutableListOf<String>()
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
+                        permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                        permissions.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    } else {
+                        permissions.add(android.Manifest.permission.READ_MEDIA_IMAGES)
+                    }
+                    permissionLauncher.launch(permissions.toTypedArray())
+                    shouldRequestPermissions = false
+                }
+            }
 
             // عرض نافذة الترحيب بالتشغيل الأول بعد جاهزية الواجهة مباشرة
             val isReallyFirstLaunch = settings.isFirstLaunch && !viewModel.hasShownOnboarding()
@@ -186,6 +213,7 @@ class MainActivity : FragmentActivity() {
                                 val updated = settings.copy(isFirstLaunch = false)
                                 viewModel.saveSettings(updated)
                                 showOnboardingDialog = false
+                                shouldRequestPermissions = true // Request storage/post permissions immediately after welcome greeting!
                             }
                         )
                     }
@@ -234,9 +262,42 @@ class MainActivity : FragmentActivity() {
                 backupSyncViewModel.triggerSilentLocalBackup()
             }
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Background backup trigger failed: ${e.javaClass.simpleName}")
+            e.printStackTrace()
         }
     }
 
-
+    /**
+     * [دالة مساعدة لطباعة توقيع التطبيق]:
+     * تستخرج وتطبع بصمة SHA-1 في سجلات التصحيح.
+     */
+    private fun logAppSignatureSHA1(context: android.content.Context) {
+        try {
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                val signingInfo = info.signingInfo
+                if (signingInfo != null) {
+                    if (signingInfo.hasMultipleSigners()) {
+                        signingInfo.apkContentsSigners
+                    } else {
+                        signingInfo.signingCertificateHistory
+                    }
+                } else null
+            } else {
+                @Suppress("DEPRECATION")
+                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES)
+                @Suppress("DEPRECATION")
+                info.signatures
+            }
+            if (signatures != null) {
+                for (signature in signatures) {
+                    val md = MessageDigest.getInstance("SHA1")
+                    val publicKey = md.digest(signature.toByteArray())
+                    val hexString = publicKey.joinToString(":") { String.format("%02X", it) }
+                    android.util.Log.d("GOOGLE_AUTH_DEBUG", "SHA-1 ACTUAL SIGNATURE: $hexString")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("GOOGLE_AUTH_DEBUG", "Error getting signature", e)
+        }
+    }
 }
