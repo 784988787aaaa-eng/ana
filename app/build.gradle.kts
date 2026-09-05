@@ -18,12 +18,6 @@ android {
     versionCode = 4
     versionName = "1.3"
 
-    // بصمة شهادة الإصدار الإنتاجي تُمرر من إعدادات البناء أو متغيرات البيئة ولا تُخمن داخل الشيفرة.
-    val expectedReleaseCert = providers.gradleProperty("RELEASE_CERT_SHA256").orNull ?: System.getenv("RELEASE_CERT_SHA256") ?: ""
-    buildConfigField("String", "EXPECTED_RELEASE_CERT_SHA256", "\"${expectedReleaseCert}\"")
-    val integrityProject = providers.gradleProperty("PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER").orNull ?: System.getenv("PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER") ?: "0"
-    buildConfigField("long", "PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER", integrityProject)
-
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
