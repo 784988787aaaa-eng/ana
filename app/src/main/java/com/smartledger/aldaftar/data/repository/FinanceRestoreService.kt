@@ -1,5 +1,29 @@
+/**
+ * =====================================================================
+ * ملف: خدمة استعادة البيانات المالية الشاملة (.)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * تمثل هذه الخدمة المحرك المسؤول عن استعادة قاعدة البيانات المالية وإعادة بنائها
+ * من النسخ الاحتياطية المشفرة أو ملفات الـ ، مع تطبيق أعلى معايير الأمان والتكامل المرجعي.
+ * 
+ * [المسؤوليات المعمارية ونمط الاستعادة على مرحلتين (- )]:
+ * 1. مرحلة الفحص والتحقق في الذاكرة (-  ):
+ *    - قراءة ملف النسخة الاحتياطية وتحليله وتدقيق سلامة جميع الكيانات والمصفوفات قبل لمس قاعدة البيانات.
+ *    - الحفاظ الصارم على أمان الجهاز المحلي (عدم استبدال الـ  أو البصمة أو معرف الجهاز الفريد ببيانات النسخة المستعادة).
+ *    - تطبيق الدقة المصرفية [] وتوحيد مقياس التقريب ( = 4, _) لجميع المبالغ وأسعار الصرف.
+ *    - التحقق من سلامة المفاتيح الأجنبية: اكتشاف المعاملات المعلقة التي لا ينتمي لها عميل وإنشاء بطاقة عميل بديلة تلقائياً لمنع انهيار التكامل المرجعي.
+ * 2. مرحلة المعاملة الذرية الشاملة (   ):
+ *    - تنفيذ عمليتي المسح الشامل وإعادة الإدراج داخل كتلة ذرية واحدة [.].
+ *    - التراجع التلقائي الكامل () في حال حدوث أي استثناء أثناء الكتابة، مما يمنع تلف البيانات أو ترك قاعدة البيانات في حالة غير متناسقة.
+ * 3. حماية الخصوصية:
+ *    - حظر تام لطباعة أي مبالغ أو محتوى مالي في سجلات التشخيص ().
+ */
 package com.smartledger.aldaftar.data.repository
 
+// ---------------------------------------------------------------------
+// استيراد حزم سياق أندرويد والسجلات ومعاملات قاعدة البيانات والكيانات والعمليات الحسابية
+// ---------------------------------------------------------------------
 import android.content.Context
 import androidx.room.withTransaction
 import com.smartledger.aldaftar.data.backup.BackupConstants
@@ -22,8 +46,28 @@ import java.io.IOException
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+/**
+ * [فئة نتيجة الاستعادة - ]:
+ * تغلف إعدادات التطبيق المستعادة ومؤشر ما إذا كانت النسخة الاحتياطية من الإصدارات القديمة ().
+ *
+ * @  إعدادات التطبيق المحدثة بعد دمج التفضيلات الأمنية المحلية.
+ * @  مؤشر ما إذا كانت النسخة تتبع هيكل البيانات القديم.
+ */
 data class FinanceRestoreResult(val settings: AppSettings, val isLegacy: Boolean)
 
+/**
+ * [وعاء البيانات المحققة للاستعادة - ]:
+ * يحتوي على كافة الكائنات المفحوصة والمطابقة في الذاكرة قبل بدء معاملة الكتابة في قاعدة البيانات.
+ *
+ * @  إعدادات التطبيق بعد الفحص والدمج.
+ * @  قائمة الالتزامات المالية الثابتة بعد ضبط الدقة الحسابية.
+ * @  قائمة قيود دفتر اليومية العام بعد تطبيع الأرقام.
+ * @  قائمة التصنيفات المخصصة المستعادة.
+ * @  قائمة عناصر سلة المهملات المستعادة.
+ * @  قائمة بطاقات عملاء الحبايب والروابط المرجعية.
+ * @  قائمة معاملات ديون الحبايب المحققة والمربوطة بالعملاء.
+ * @  هل النسخة من البنية القديمة.
+ */
 data class ValidatedRestoreData(
     val restoredSettings: AppSettings,
     val restoredCommitments: List<FixedCommitment>,
@@ -35,26 +79,41 @@ data class ValidatedRestoreData(
     val isLegacy: Boolean
 )
 
+/**
+ * [خدمة استعادة البيانات المالية - ]:
+ * مسؤولة عن تفكيك وتحليل ملفات النسخ وإعادة بناء قاعدة البيانات بالكامل بصورة ذرية وآمنة.
+ *
+ * @  كائن قاعدة بيانات التطبيق [].
+ * @  سياق التطبيق للوصول لمترجمات السلاسل النصية والموارد.
+ * @  مدير التفضيلات المشفرة لاستعادة حالات التثبيت والترتيب.
+ */
 class FinanceRestoreService(
     private val database: AppDatabase,
     private val context: Context,
     private val preferenceManager: PreferenceManager = PreferenceManager(context)
 ) {
 
+    /**
+     * [الكائن المرافق للثوابت والمقاييس المصرفية]:
+     */
     companion object {
-
+        /** المقياس العشري المعياري للعمليات المحاسبية */
         private const val FINANCIAL_SCALE = BackupConstants.FINANCIAL_SCALE
-
+        /** الحد الأعلى لحجم نص النسخة قبل تحليله في الذاكرة */
         private const val MAX_RESTORE_BYTES = 64L * 1024L * 1024L
-
+        /** نمط التقريب المصرفي المعتمد */
         private val FINANCIAL_ROUNDING = RoundingMode.HALF_EVEN
 
+        /** بادئات ومفاتيح حفظ التفضيلات المشتركة */
         private const val PREF_KEY_PINNED_PREFIX = PreferenceManager.PREF_KEY_PINNED_PREFIX
         private const val PREF_CAT_LINK_PREFIX = PreferenceManager.PREF_CAT_LINK_PREFIX
         private const val PREF_CATEGORY_ORDER_LIST_KEY = PreferenceManager.PREF_CATEGORY_ORDER_LIST_KEY
         private const val PREF_CLOSED_CUSTOM_NAME_KEY = PreferenceManager.PREF_CLOSED_CUSTOM_NAME_KEY
     }
 
+    // -----------------------------------------------------------------
+    // مراجع كائنات الوصول للبيانات المستخدمة في الاستعادة
+    // -----------------------------------------------------------------
     private val settingsDao = database.settingsDao()
     private val commitmentDao = database.commitmentDao()
     private val transactionDao = database.transactionDao()
@@ -62,6 +121,10 @@ class FinanceRestoreService(
     private val trashDao = database.trashDao()
     private val habayebDao = database.habayebDao()
 
+    /**
+     * [تصفية وحذف كافة البيانات المحاسبية - ]:
+     * تنفذ إفراغاً كاملاً وشاملاً لجميع جداول قاعدة البيانات داخل معاملة ذرية مع إعادة ضبط الإعدادات.
+     */
     suspend fun deleteAllData(): Unit = withContext(Dispatchers.IO) {
         try {
             database.withTransaction {
@@ -78,12 +141,21 @@ class FinanceRestoreService(
         }
     }
 
+    /**
+     * [التحليل والتحقق من صحة البيانات في الذاكرة - ]:
+     * تفحص بنية الـ  وتدمج الإعدادات وتضبط المقاييس المحاسبية وتتحقق من سلامة التكامل المرجعي.
+     *
+     * @  كائن  الرئيسي للنسخة الاحتياطية.
+     * @  النص الكامل للنسخة الاحتياطية.
+     * @  الإعدادات المحلية الحالية للحفاظ على تفضيلات الأمان للجهاز.
+     * @ كائن [] الجاهز للإدراج في قاعدة البيانات.
+     */
     suspend fun validateAndParseRestoreData(
         root: JSONObject,
         rawJsonString: String,
         currentLocalSettings: AppSettings
     ): ValidatedRestoreData {
-
+        // 1. استيراد وتحليل الكيانات وضمان التوافقية
         val data = MzdBackupSerializer.importBackupFromJson(rawJsonString, context)
         val restoredSettingsUnmerged = data.first
         val restoredSettings = restoredSettingsUnmerged.copy(
@@ -101,6 +173,7 @@ class FinanceRestoreService(
             isCloudSyncEnabled = currentLocalSettings.isCloudSyncEnabled
         )
 
+        // تطبيق الدقة المالية على الالتزامات الثابتة
         val restoredCommitments = data.second.map { fc ->
             fc.copy(
                 targetAmount = fc.targetAmount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING),
@@ -108,6 +181,7 @@ class FinanceRestoreService(
             )
         }
 
+        // تطبيق الدقة المالية على المعاملات الرئيسية
         val restoredTransactions = data.third.map { tx ->
             tx.copy(
                 amount = tx.amount.setScale(FINANCIAL_SCALE, FINANCIAL_ROUNDING)
@@ -119,14 +193,15 @@ class FinanceRestoreService(
         val restoredCustomerData = MzdBackupSerializer.parseHabayebCustomers(root)
         val habayebTransactions = MzdBackupSerializer.parseHabayebTransactions(root, restoredSettings.currencySymbol)
 
+        // 2. التحقق من سلامة العلاقات ومعالجة المعاملات المعلقة بدون عميل
         val customerIdSet = restoredCustomerData.map { it.customer.id }.toSet().toMutableSet()
         val allCustomerData = restoredCustomerData.toMutableList()
         val mainTxIdSet = restoredTransactions.map { it.id }.toSet()
 
         val missingCustomerIds = habayebTransactions
-        .map { it.customerId.trim() }
-        .filter { it.isNotBlank() && !customerIdSet.contains(it) }
-        .toSet()
+            .map { it.customerId.trim() }
+            .filter { it.isNotBlank() && !customerIdSet.contains(it) }
+            .toSet()
 
         for (missingId in missingCustomerIds) {
             val fallbackCustomer = HabayebCustomer(
@@ -141,6 +216,7 @@ class FinanceRestoreService(
             customerIdSet.add(missingId)
         }
 
+        // تنظيف وتدقيق معاملات الديون والعملات الأجنبية
         val validatedHabayebTransactions = habayebTransactions.map { tx ->
             val cleanLinkedId = tx.linkedMainTxId?.takeIf {
                 it.isNotBlank() && it != tx.id && it != "0" && !it.equals("null", ignoreCase = true) && mainTxIdSet.contains(it)
@@ -170,6 +246,13 @@ class FinanceRestoreService(
         )
     }
 
+    /**
+     * [تنفيذ الاستعادة الشاملة للنسخة الاحتياطية - ]:
+     * تنفذ التحليل المسبق ثم تطبق عملية الاستبدال وإعادة البناء الذرية الشاملة داخل قاعدة البيانات.
+     *
+     * @  النص الكامل لبيانات النسخة الاحتياطية بتنسيق .
+     * @ [] يحتوي على نتيجة وإعدادات الاستعادة.
+     */
     suspend fun executeMasterRestore(rawJsonString: String): FinanceRestoreResult = withContext(Dispatchers.IO) {
         val rawBytes = rawJsonString.toByteArray(Charsets.UTF_8)
         try {
@@ -180,6 +263,7 @@ class FinanceRestoreService(
             rawBytes.fill(0)
         }
 
+        // 0. التدقيق الاستباقي الصارم للبنية وسلامة التشفير قبل لمس قاعدة البيانات
         val preValidation = BackupPayloadValidator.validateBackupPayload(rawJsonString, verifyHashStrictly = true)
         if (preValidation is BackupValidationResult.Invalid) {
             throw IOException("فشل تدقيق سلامة النسخة الاحتياطية (${preValidation.errorCode}): ${preValidation.reason}", preValidation.cause)
@@ -188,10 +272,12 @@ class FinanceRestoreService(
         val root = JSONObject(rawJsonString)
         val currentLocalSettings = settingsDao.getSettingsDirect() ?: AppSettings()
 
+        // 1. مرحلة التحليل والتحقق في الذاكرة
         val validatedData = validateAndParseRestoreData(root, rawJsonString, currentLocalSettings)
 
+        // ٢. المعاملة الذرية الشاملة لقاعدة البيانات
         database.withTransaction {
-
+            // أ. التصفية المتزامنة لكافة الجداول داخل المعاملة
             transactionDao.clearAllTransactions()
             commitmentDao.clearAllCommitments()
             customCategoryDao.clearAllCustomCategories()
@@ -199,6 +285,7 @@ class FinanceRestoreService(
             habayebDao.clearAllCustomers()
             habayebDao.clearAllTransactions()
 
+            // ب. إدراج السجلات المستعادة
             settingsDao.insertOrUpdateSettings(validatedData.restoredSettings)
             for (fc in validatedData.restoredCommitments) {
                 commitmentDao.insertCommitment(fc)
@@ -207,10 +294,12 @@ class FinanceRestoreService(
                 transactionDao.insertTransaction(tx)
             }
 
+            // استعادة الفئات المخصصة
             for (cat in validatedData.customCategories) {
                 customCategoryDao.insertCategory(cat)
             }
 
+            // استعادة التفضيلات المشتركة وحالات التثبيت
             preferenceManager.writeDualPreference { sharedEdit, financeEdit ->
                 if (root.has(BackupConstants.JSON_KEY_PINNED_CUSTOMERS) && !root.isNull(BackupConstants.JSON_KEY_PINNED_CUSTOMERS)) {
                     val pinnedObj = root.optJSONObject(BackupConstants.JSON_KEY_PINNED_CUSTOMERS)
@@ -242,10 +331,12 @@ class FinanceRestoreService(
                 }
             }
 
+            // استعادة سلة المهملات
             for (item in validatedData.deletedItems) {
                 trashDao.insertDeletedItem(item)
             }
 
+            // استعادة عملاء الحبايب والروابط
             for (custData in validatedData.customerData) {
                 habayebDao.insertCustomer(custData.customer)
                 custData.categoryLink?.let { catLink ->
@@ -256,6 +347,7 @@ class FinanceRestoreService(
                 }
             }
 
+            // استعادة معاملات الحبايب المحققة
             for (tx in validatedData.habayebTransactions) {
                 habayebDao.insertTransaction(tx)
             }
@@ -264,3 +356,4 @@ class FinanceRestoreService(
         FinanceRestoreResult(validatedData.restoredSettings, validatedData.isLegacy)
     }
 }
+

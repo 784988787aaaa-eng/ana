@@ -1,4 +1,10 @@
+/**
+ * محول النسخ الاحتياطية: يحافظ على صيغ النسخ التاريخية ويقرأ القيم المالية كقيم عشرية دقيقة.
+ * الكتابة إلى القرص ذرية، والاستيراد متسامح مع أسماء الحقول القديمة دون تغيير مخطط قاعدة البيانات.
+ * لا تُسجل بيانات النسخ أو الاستثناءات الداخلية، وتبقى حدود العمل متوافقة مع مسارات الاستعادة القائمة.
+ */
 package com.smartledger.aldaftar.data.serialization
+
 
 import android.content.Context
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -18,8 +24,12 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import java.math.BigDecimal
 
+
+/** يدير التصدير والاستيراد والتحليل مع الحفاظ على توافق النسخ التاريخية. */
 object MzdBackupSerializer {
 
+    
+    /** يبني تمثيل النسخة النصي عبر المحول المركزي دون تغيير مخطط البيانات. */
     suspend fun exportBackupToJson(
         settings: AppSettings,
         commitments: List<FixedCommitment>,
@@ -32,6 +42,8 @@ object MzdBackupSerializer {
         settings, commitments, transactions, habayebCustomers, habayebTransactions, deletedItems, context
     )
 
+    
+    /** يكتب النسخة إلى ملف مؤقت ثم يستبدل الهدف بعد اكتمال الكتابة. */
     suspend fun exportBackupToFile(
         settings: AppSettings,
         commitments: List<FixedCommitment>,
@@ -78,15 +90,21 @@ object MzdBackupSerializer {
         }
     }
 
+    
+    /** يقرأ القيمة المالية كنص عشري دقيق مع قيمة بديلة عند الغياب أو التلف. */
     fun getBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal =
-    BackupPayloadSerializer.getBigDecimal(obj, key, fallback)
+        BackupPayloadSerializer.getBigDecimal(obj, key, fallback)
 
+    
+    /** يستورد النسخة عبر مسار التحقق المركزي مع إبقاء الصيغ القديمة قابلة للقراءة. */
     suspend fun importBackupFromJson(
         jsonString: String,
         context: Context? = null
     ): Triple<AppSettings, List<FixedCommitment>, List<TransactionDb>> =
-    BackupPayloadSerializer.importBackupFromJson(jsonString, context)
+        BackupPayloadSerializer.importBackupFromJson(jsonString, context)
 
+    
+    /** يحلل الفئات المخصصة مع الحفاظ على أسماء الحقول التاريخية. */
     fun parseCustomCategories(root: JSONObject): List<CustomCategory> {
         val list = mutableListOf<CustomCategory>()
         if (root.has("custom_categories") && !root.isNull("custom_categories")) {
@@ -109,6 +127,8 @@ object MzdBackupSerializer {
         return list
     }
 
+    
+    /** يحلل العناصر المحذوفة مع إبقاء الحقول القديمة قابلة للاستعادة. */
     fun parseDeletedItems(root: JSONObject): List<DeletedItemEntity> {
         val list = mutableListOf<DeletedItemEntity>()
         if (root.has("deleted_items") && !root.isNull("deleted_items")) {
@@ -131,17 +151,20 @@ object MzdBackupSerializer {
         return list
     }
 
+    
     data class RestoredHabayebCustomerData(
         val customer: HabayebCustomer,
         val categoryLink: String?
     )
 
+    
+    /** يحلل عملاء الديون ويثبت النوع الصريح عند وجوده في النسخة. */
     fun parseHabayebCustomers(root: JSONObject): List<RestoredHabayebCustomerData> {
         val jsonHabayebObj = root.optJSONObject("habayeb_debts")
-        ?: root.optJSONObject("habayeb_debts_db")
+            ?: root.optJSONObject("habayeb_debts_db")
 
         val txArr = jsonHabayebObj?.optJSONArray("debt_transactions")
-        ?: jsonHabayebObj?.optJSONArray("habayeb_transactions")
+            ?: jsonHabayebObj?.optJSONArray("habayeb_transactions")
 
         val customerIdToTxTypes = mutableMapOf<String, MutableSet<String>>()
         if (txArr != null) {
@@ -156,7 +179,7 @@ object MzdBackupSerializer {
         }
 
         val custArr = jsonHabayebObj?.optJSONArray("customers")
-        ?: jsonHabayebObj?.optJSONArray("habayeb_customers")
+            ?: jsonHabayebObj?.optJSONArray("habayeb_customers")
 
         val result = mutableListOf<RestoredHabayebCustomerData>()
         if (custArr != null) {
@@ -164,6 +187,7 @@ object MzdBackupSerializer {
                 val obj = custArr.getJSONObject(i)
                 val cId = obj.optString("id", obj.optString("customer_id", "")).trim()
 
+                
                 val explicitInitialType = when {
                     obj.has("initial_type") && !obj.isNull("initial_type") -> obj.optString("initial_type").trim()
                     obj.has("initialType") && !obj.isNull("initialType") -> obj.optString("initialType").trim()
@@ -171,10 +195,10 @@ object MzdBackupSerializer {
                 }
 
                 val determinedInitialType = if (explicitInitialType.isNotBlank()) {
-
+                    
                     explicitInitialType
                 } else {
-
+                    
                     val txTypesForCust = customerIdToTxTypes[cId]
                     if (txTypesForCust != null && txTypesForCust.isNotEmpty()) {
                         if (txTypesForCust.contains(TransactionType.OWED_TO_THEM.value) || txTypesForCust.contains(TransactionType.PAYMENT_TO_THEM.value)) {
@@ -202,21 +226,23 @@ object MzdBackupSerializer {
         return result
     }
 
+    
+    /** يحلل المعاملات ويثبت المبالغ وأسعار الصرف كقيم عشرية دقيقة. */
     fun parseHabayebTransactions(root: JSONObject, defaultCurrency: String): List<HabayebTransaction> {
         val list = mutableListOf<HabayebTransaction>()
         val jsonHabayebObj = root.optJSONObject("habayeb_debts")
-        ?: root.optJSONObject("habayeb_debts_db")
+            ?: root.optJSONObject("habayeb_debts_db")
 
         val txArr = jsonHabayebObj?.optJSONArray("debt_transactions")
-        ?: jsonHabayebObj?.optJSONArray("habayeb_transactions")
+            ?: jsonHabayebObj?.optJSONArray("habayeb_transactions")
 
         if (txArr != null) {
             for (i in 0 until txArr.length()) {
                 val obj = txArr.getJSONObject(i)
-
+                // تثبيت المبلغ كنص عشري يمنع أي فقد دقة ناتج عن تمثيل الفاصلة العائمة.
                 val amount = getBigDecimal(obj, "amount")
                 val foreignAmount = getBigDecimal(obj, "foreign_amount", getBigDecimal(obj, "foreignAmount", "0").toPlainString())
-
+                // تثبيت سعر الصرف بالطريقة العشرية نفسها لضمان اتساق التحويل المحاسبي.
                 val exchangeRate = getBigDecimal(obj, "exchange_rate", getBigDecimal(obj, "exchangeRate", "1").toPlainString())
                 val equivalentAmount = getBigDecimal(obj, "equivalent_amount", getBigDecimal(obj, "equivalentAmount", amount.toPlainString()).toPlainString())
                 val isForeign = obj.optBoolean("is_foreign", obj.optBoolean("isForeign", false))
@@ -249,3 +275,4 @@ object MzdBackupSerializer {
         return list
     }
 }
+

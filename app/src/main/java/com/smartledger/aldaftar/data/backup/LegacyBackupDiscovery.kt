@@ -4,6 +4,10 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.provider.DocumentsContract
 
+/**
+ * يمثل نسخة قديمة مرشحة للاستعادة مع الاحتفاظ بمعرّف المستند فقط.
+ * يمنع هذا النموذج الاحتفاظ بمسار تخزين مكشوف خارج واجهة المستندات.
+ */
 data class LegacyBackupCandidate(
     val uri: Uri,
     val displayName: String,
@@ -11,21 +15,33 @@ data class LegacyBackupCandidate(
     val modifiedAt: Long?
 )
 
+/**
+ * يكتشف النسخ القديمة داخل شجرة المستندات التي منح المستخدم التطبيق صلاحيتها.
+ * يدعم المجلدات الفرعية ويضع حدوداً عددية وحجمية تمنع استهلاك الذاكرة أو القراءة المفرطة.
+ */
 object LegacyBackupDiscovery {
     private const val MAX_DISCOVERY_FILES = 100
     private const val MAX_DISCOVERY_DEPTH = 16
-    private const val MAX_RESTORE_BYTES = BackupConstants.MAX_BACKUP_BYTES
+    private const val MAX_RESTORE_BYTES = 64L * 1024L * 1024L
 
+    /**
+     * يعيد النسخ المدعومة داخل الشجرة المختارة بترتيب الأحدث ثم الاسم.
+     * لا يستخدم صلاحيات التخزين الواسعة ولا يخرج من نطاق الشجرة الممنوحة.
+     */
     fun discover(resolver: ContentResolver, treeUri: Uri): List<LegacyBackupCandidate> {
         val treeDocumentId = DocumentsContract.getTreeDocumentId(treeUri) ?: return emptyList()
         val candidates = mutableListOf<LegacyBackupCandidate>()
         visitChildren(resolver, treeUri, treeDocumentId, 0, candidates)
         return candidates.sortedWith(
             compareByDescending<LegacyBackupCandidate> { it.modifiedAt ?: Long.MIN_VALUE }
-            .thenBy { it.displayName }
+                .thenBy { it.displayName }
         )
     }
 
+    /**
+     * يمسح مستوى واحداً من الشجرة ثم يتابع المجلدات الفرعية حتى الحد الآمن.
+     * يتوقف فور بلوغ العدد الأقصى للمرشحين حتى لا تتحول عملية الاكتشاف إلى حمل غير محدود.
+     */
     private fun visitChildren(
         resolver: ContentResolver,
         treeUri: Uri,

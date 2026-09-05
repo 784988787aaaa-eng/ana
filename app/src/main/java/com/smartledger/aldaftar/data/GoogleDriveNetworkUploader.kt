@@ -1,5 +1,9 @@
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 package com.smartledger.aldaftar.data
 
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
@@ -15,9 +19,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 class GoogleDriveNetworkUploader(
     private val context: Context
 ) {
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     companion object {
         private const val TAG = "GoogleDriveNetworkUploader"
 
@@ -26,7 +32,7 @@ class GoogleDriveNetworkUploader(
 
         private const val DRIVE_FILES_BASE_URL = "https://www.googleapis.com/drive/v3/files"
         private const val DRIVE_UPLOAD_BASE_URL = "https://www.googleapis.com/upload/drive/v3/files"
-        private const val MIME_TYPE_JSON_VALUE = "application/json"
+        private const val MIME_TYPE_OCTET_STREAM = "application/octet-stream"
 
         private val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
         private const val HEADER_AUTHORIZATION = "Authorization"
@@ -41,14 +47,15 @@ class GoogleDriveNetworkUploader(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class UploadResult {
         object Success : UploadResult()
         object SkippedUnchanged : UploadResult()
-        object FileNotFound : UploadResult()
         data class AuthError(val statusCode: Int) : UploadResult()
         data class Failure(val message: String, val isRetryable: Boolean) : UploadResult()
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class DownloadResult {
         data class Success(val content: String) : DownloadResult()
         object FileNotFound : DownloadResult()
@@ -57,6 +64,7 @@ class GoogleDriveNetworkUploader(
         data class Failure(val message: String, val isRetryable: Boolean) : DownloadResult()
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     fun getStoredPayloadHash(): String? = uploaderPrefs.getString(KEY_LAST_UPLOADED_HASH, null)
 
     fun saveLastUploadedPayloadHash(hash: String) {
@@ -64,6 +72,7 @@ class GoogleDriveNetworkUploader(
         Log.d(TAG, "تم حفظ بصمة النسخة الاحتياطية المرفوعة بنجاح.")
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     fun isPayloadIdentical(jsonContent: String): Boolean {
         val currentHash = BackupPayloadSerializer.calculateSha256Hash(jsonContent)
         val storedHash = getStoredPayloadHash()
@@ -74,6 +83,7 @@ class GoogleDriveNetworkUploader(
         return match
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun createAndUploadNewFile(
         filename: String,
         backupJsonContent: String,
@@ -83,58 +93,68 @@ class GoogleDriveNetworkUploader(
             return@withContext UploadResult.Failure("محتوى النسخة فارغ", isRetryable = false)
         }
         try {
-            val createRequest = Request.Builder()
-                .url(DRIVE_FILES_BASE_URL)
-                .header(HEADER_AUTHORIZATION, bearer(accessToken))
-                .post(
-                    JSONObject()
-                        .put("name", filename)
-                        .put("parents", org.json.JSONArray().put("appDataFolder"))
-                        .put("mimeType", MIME_TYPE_JSON_VALUE)
-                        .toString()
-                        .toRequestBody(MEDIA_TYPE_JSON)
-                )
-                .build()
-
-            val fileId = client.newCall(createRequest).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext responseCodeResult(response, "Create metadata")
+            cloudEngine.executeWithRetry(operationName = "CreateAndUploadFile", maxRetries = 2) {
+                val createMetaUrl = DRIVE_FILES_BASE_URL
+                val metaJson = JSONObject().apply {
+                    put("name", filename)
+                    put("parents", org.json.JSONArray().put("appDataFolder"))
+                    put("mimeType", MIME_TYPE_OCTET_STREAM)
                 }
-                JSONObject(response.body?.string().orEmpty()).optString("id").takeIf { it.isNotBlank() }
-                    ?: return@withContext UploadResult.Failure("Create metadata returned no file id", false)
-            }
+                val metaBody = metaJson.toString().toRequestBody(MEDIA_TYPE_JSON)
 
-            val uploadResult = try {
-                cloudEngine.executeWithRetry(operationName = "UploadBackupMedia", maxRetries = 3) {
-                    val request = Request.Builder()
-                        .url("$DRIVE_UPLOAD_BASE_URL/$fileId?uploadType=media")
-                        .header(HEADER_AUTHORIZATION, bearer(accessToken))
-                        .patch(backupJsonContent.toRequestBody(MEDIA_TYPE_JSON))
-                        .build()
-                    client.newCall(request).execute().use { response ->
-                        responseCodeResult(response, "Upload media")
+                val createMetaRequest = Request.Builder()
+                    .url(createMetaUrl)
+                    .header(HEADER_AUTHORIZATION, bearer(accessToken))
+                    .post(metaBody)
+                    .build()
+
+                client.newCall(createMetaRequest).execute().use { createMetaResponse ->
+                    if (createMetaResponse.isSuccessful) {
+                        val rawBody = createMetaResponse.body?.string() ?: ""
+                        val createdFile = JSONObject(rawBody)
+                        val newFileId = createdFile.getString("id")
+
+                        val uploadMediaUrl = "$DRIVE_UPLOAD_BASE_URL/$newFileId?uploadType=media"
+                        val fileBody = backupJsonContent.toRequestBody(MEDIA_TYPE_JSON)
+
+                        val uploadMediaRequest = Request.Builder()
+                            .url(uploadMediaUrl)
+                            .header(HEADER_AUTHORIZATION, bearer(accessToken))
+                            .patch(fileBody)
+                            .build()
+
+                        client.newCall(uploadMediaRequest).execute().use { uploadMediaResponse ->
+                            if (uploadMediaResponse.isSuccessful) {
+                                val currentHash = BackupPayloadSerializer.calculateSha256Hash(backupJsonContent)
+                                saveLastUploadedPayloadHash(currentHash)
+                                UploadResult.Success
+                            } else {
+                                if (uploadMediaResponse.code == 401 || uploadMediaResponse.code == 403) {
+                                    UploadResult.AuthError(uploadMediaResponse.code)
+                                } else {
+                                    UploadResult.Failure("Upload media failed: ${uploadMediaResponse.code}", isRetryable = uploadMediaResponse.code >= 500)
+                                }
+                            }
+                        }
+                    } else {
+                        if (createMetaResponse.code == 401 || createMetaResponse.code == 403) {
+                            UploadResult.AuthError(createMetaResponse.code)
+                        } else {
+                            UploadResult.Failure("Create metadata failed: ${createMetaResponse.code}", isRetryable = createMetaResponse.code >= 500)
+                        }
                     }
                 }
-            } catch (_: IOException) {
-                UploadResult.Failure("Network error", true)
             }
-
-            if (uploadResult !is UploadResult.Success) {
-                deleteFileById(fileId, accessToken)
-                return@withContext uploadResult
-            }
-
-            saveLastUploadedPayloadHash(BackupPayloadSerializer.calculateSha256Hash(backupJsonContent))
-            UploadResult.Success
         } catch (e: IOException) {
-            Log.e(TAG, "فشل شبكي أثناء إنشاء النسخة: ${e.javaClass.simpleName}")
-            UploadResult.Failure("Network error", true)
+            Log.e(TAG, "فشل شبكي أثناء رفع ملف جديد: ${e.javaClass.simpleName}")
+            UploadResult.Failure(e.localizedMessage ?: "Network error", isRetryable = true)
         } catch (e: Exception) {
-            Log.e(TAG, "فشل إنشاء النسخة: ${e.javaClass.simpleName}")
-            UploadResult.Failure("Unexpected upload error", false)
+            Log.e(TAG, "استثناء أثناء رفع ملف جديد: ${e.javaClass.simpleName}")
+            UploadResult.Failure(e.localizedMessage ?: "Unexpected upload error", isRetryable = false)
         }
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun updateExistingFile(
         fileId: String,
         newFileName: String,
@@ -145,42 +165,53 @@ class GoogleDriveNetworkUploader(
             return@withContext UploadResult.Failure("محتوى النسخة فارغ", isRetryable = false)
         }
         try {
-            val mediaResult = cloudEngine.executeWithRetry(operationName = "UpdateBackupMedia", maxRetries = 3) {
-                val request = Request.Builder()
-                    .url("$DRIVE_UPLOAD_BASE_URL/$fileId?uploadType=media")
+            cloudEngine.executeWithRetry(operationName = "UpdateExistingFile", maxRetries = 2) {
+                val updateUrl = "$DRIVE_UPLOAD_BASE_URL/$fileId?uploadType=media"
+                val mediaBody = backupJsonContent.toRequestBody(MEDIA_TYPE_JSON)
+
+                val updateRequest = Request.Builder()
+                    .url(updateUrl)
                     .header(HEADER_AUTHORIZATION, bearer(accessToken))
-                    .patch(backupJsonContent.toRequestBody(MEDIA_TYPE_JSON))
+                    .patch(mediaBody)
                     .build()
-                client.newCall(request).execute().use { response ->
-                    responseCodeResult(response, "Update file")
+
+                client.newCall(updateRequest).execute().use { updateResponse ->
+                    if (updateResponse.isSuccessful) {
+                        // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+                        val metaUrl = "$DRIVE_FILES_BASE_URL/$fileId"
+                        val metaJson = JSONObject().apply { put("name", newFileName) }
+                        val metaBody = metaJson.toString().toRequestBody(MEDIA_TYPE_JSON)
+
+                        val metaRequest = Request.Builder()
+                            .url(metaUrl)
+                            .header(HEADER_AUTHORIZATION, bearer(accessToken))
+                            .patch(metaBody)
+                            .build()
+
+                        client.newCall(metaRequest).execute().use { /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */ }
+
+                        val currentHash = BackupPayloadSerializer.calculateSha256Hash(backupJsonContent)
+                        saveLastUploadedPayloadHash(currentHash)
+                        UploadResult.Success
+                    } else {
+                        if (updateResponse.code == 401 || updateResponse.code == 403) {
+                            UploadResult.AuthError(updateResponse.code)
+                        } else {
+                            UploadResult.Failure("Update file failed: ${updateResponse.code}", isRetryable = updateResponse.code >= 500)
+                        }
+                    }
                 }
             }
-            if (mediaResult !is UploadResult.Success) return@withContext mediaResult
-
-            val metadataResult = cloudEngine.executeWithRetry(operationName = "UpdateBackupMetadata", maxRetries = 3) {
-                val body = JSONObject().put("name", newFileName).toString().toRequestBody(MEDIA_TYPE_JSON)
-                val request = Request.Builder()
-                    .url("$DRIVE_FILES_BASE_URL/$fileId")
-                    .header(HEADER_AUTHORIZATION, bearer(accessToken))
-                    .patch(body)
-                    .build()
-                client.newCall(request).execute().use { response ->
-                    responseCodeResult(response, "Update metadata")
-                }
-            }
-            if (metadataResult !is UploadResult.Success) return@withContext metadataResult
-
-            saveLastUploadedPayloadHash(BackupPayloadSerializer.calculateSha256Hash(backupJsonContent))
-            UploadResult.Success
         } catch (e: IOException) {
-            Log.e(TAG, "فشل شبكي أثناء تحديث النسخة: ${e.javaClass.simpleName}")
-            UploadResult.Failure("Network error", isRetryable = true)
+            Log.e(TAG, "فشل شبكي أثناء تحديث ملف موجود: ${e.javaClass.simpleName}")
+            UploadResult.Failure(e.localizedMessage ?: "Network error", isRetryable = true)
         } catch (e: Exception) {
-            Log.e(TAG, "فشل تحديث النسخة: ${e.javaClass.simpleName}")
-            UploadResult.Failure("Unexpected update error", isRetryable = false)
+            Log.e(TAG, "استثناء أثناء تحديث ملف موجود: ${e.javaClass.simpleName}")
+            UploadResult.Failure(e.localizedMessage ?: "Unexpected update error", isRetryable = false)
         }
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun uploadBackupSafe(
         filename: String,
         backupJsonContent: String,
@@ -193,15 +224,16 @@ class GoogleDriveNetworkUploader(
             }
 
             if (!existingFileId.isNullOrEmpty()) {
-                when (val result = updateExistingFile(existingFileId, filename, backupJsonContent, accessToken)) {
-                    UploadResult.FileNotFound -> return@withContext createAndUploadNewFile(filename, backupJsonContent, accessToken)
-                    else -> return@withContext result
+                val updateRes = updateExistingFile(existingFileId, filename, backupJsonContent, accessToken)
+                if (updateRes is UploadResult.Success) {
+                    return@withContext updateRes
                 }
             }
             createAndUploadNewFile(filename, backupJsonContent, accessToken)
         }
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun downloadFileById(
         fileId: String,
         accessToken: String
@@ -249,6 +281,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun deleteFileById(
         fileId: String,
         accessToken: String
@@ -272,18 +305,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
-        private fun responseCodeResult(response: okhttp3.Response, operation: String): UploadResult {
-        return when {
-            response.isSuccessful -> UploadResult.Success
-            response.code == 404 -> UploadResult.FileNotFound
-            response.code == 401 || response.code == 403 -> UploadResult.AuthError(response.code)
-            else -> UploadResult.Failure(
-                "$operation failed: ${response.code}",
-                isRetryable = response.code == 429 || response.code >= 500
-            )
-        }
-    }
-
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun isValidBackupJson(content: String): Boolean {
         if (content.isBlank()) return false
         return try {

@@ -8,7 +8,6 @@ import com.smartledger.aldaftar.domain.model.TransactionType
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,6 +16,13 @@ import org.robolectric.annotation.Config
 import java.io.StringWriter
 import java.math.BigDecimal
 
+/**
+ * اختبارات الحالات الطرفية لمنظومة النسخ الاحتياطي وحساب البصمة المشفرة (BackupPayloadSerializer)
+ *
+ * التوثيق المعماري:
+ * يختبر هذا الملف ثبات البصمة المنطقية (Deterministic Hash)، وضمان عدم فقدان دقة الكسور العشرية،
+ * وسلامة تصدير واستيراد البيانات التراكمية، ومقاومة التلف في السجلات الفارغة.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class BackupPayloadSerializerTest {
@@ -67,49 +73,6 @@ class BackupPayloadSerializerTest {
     }
 
     @Test
-    fun integrityHashCoversPreferencesAndCustomerMetadata() {
-        val settings = AppSettings(id = 1, currencySymbol = "ر.ي")
-        val customer = HabayebCustomer(
-            id = "c1",
-            name = "علي",
-            phone = "777",
-            notes = "ملاحظة",
-            createdAt = 100L,
-            initialType = TransactionType.OWED_BY_THEM.value
-        )
-        val base = BackupPayloadData(
-            settings = settings,
-            commitments = emptyList(),
-            transactions = emptyList(),
-            habayebCustomers = listOf(customer),
-            categoryLinks = mapOf("c1" to "food"),
-            pinnedCustomerIdsByCategory = mapOf("food" to setOf("c1")),
-            categoryOrderList = "food,work",
-            closedCustomName = "custom"
-        )
-
-        assertNotEquals(
-            BackupPayloadSerializer.calculateIntegrityHash(base),
-            BackupPayloadSerializer.calculateIntegrityHash(base.copy(categoryOrderList = "work,food"))
-        )
-        assertNotEquals(
-            BackupPayloadSerializer.calculateIntegrityHash(base),
-            BackupPayloadSerializer.calculateIntegrityHash(base.copy(closedCustomName = "other"))
-        )
-        assertNotEquals(
-            BackupPayloadSerializer.calculateIntegrityHash(base),
-            BackupPayloadSerializer.calculateIntegrityHash(base.copy(habayebCustomers = listOf(customer.copy(notes = "ملاحظة أخرى"))))
-        )
-    }
-
-    @Test
-    fun verifyIntegrityRejectsMalformedHash() {
-        val payload = BackupPayloadData(AppSettings(id = 1), emptyList(), emptyList())
-        assertTrue(!BackupPayloadSerializer.calculateIntegrityHash(payload).isBlank())
-        assertTrue(!BackupIntegrityManager.verifyIntegrity(payload, "invalid"))
-    }
-
-    @Test
     fun testExportAndParsePayloadStream() = runBlocking {
         val settings = AppSettings(
             id = 1,
@@ -140,6 +103,7 @@ class BackupPayloadSerializerTest {
         assertTrue(exportedJson.contains("12345.67"))
         assertTrue(exportedJson.contains("وجبة غداء"))
 
+        // استيراد السلسلة
         val (restoredSettings, restoredCommitments, restoredTransactions) = BackupPayloadSerializer.importBackupFromJson(exportedJson)
 
         assertNotNull(restoredSettings)

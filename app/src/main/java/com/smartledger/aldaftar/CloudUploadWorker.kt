@@ -1,3 +1,7 @@
+/**
+ * عامل خلفي لرفع النسخ الاحتياطية المعلقة إلى التخزين السحابي عند توفر الشبكة.
+ * يتحقق من سلامة الملف قبل الرفع ويحافظ على استمرار العمل المحلي دون الشبكة.
+ */
 package com.smartledger.aldaftar
 
 import android.app.NotificationChannel
@@ -38,29 +42,29 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
         fun enqueueUpload(context: Context, filePath: String, fileName: String) {
             val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
             sharedPrefs.edit()
-            .putBoolean(BackupConstants.KEY_PENDING_CLOUD_UPLOAD, true)
-            .putString("pending_cloud_file_path", filePath)
-            .putString("pending_cloud_file_name", fileName)
-            .apply()
+                .putBoolean(BackupConstants.KEY_PENDING_CLOUD_UPLOAD, true)
+                .putString("pending_cloud_file_path", filePath)
+                .putString("pending_cloud_file_name", fileName)
+                .apply()
 
             val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
             val data = Data.Builder()
-            .putString(KEY_FILE_PATH, filePath)
-            .putString(KEY_FILE_NAME, fileName)
-            .build()
+                .putString(KEY_FILE_PATH, filePath)
+                .putString(KEY_FILE_NAME, fileName)
+                .build()
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<CloudUploadWorker>()
-            .setConstraints(constraints)
-            .setInputData(data)
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                5,
-                TimeUnit.MINUTES
-            )
-            .build()
+                .setConstraints(constraints)
+                .setInputData(data)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    5,
+                    TimeUnit.MINUTES
+                )
+                .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 WORK_NAME,
@@ -76,22 +80,22 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             val name = sharedPrefs.getString("pending_cloud_file_name", null)
 
             val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
             val dataBuilder = Data.Builder()
             if (!path.isNullOrEmpty()) dataBuilder.putString(KEY_FILE_PATH, path)
             if (!name.isNullOrEmpty()) dataBuilder.putString(KEY_FILE_NAME, name)
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<CloudUploadWorker>()
-            .setConstraints(constraints)
-            .setInputData(dataBuilder.build())
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                5,
-                TimeUnit.MINUTES
-            )
-            .build()
+                .setConstraints(constraints)
+                .setInputData(dataBuilder.build())
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    5,
+                    TimeUnit.MINUTES
+                )
+                .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 WORK_NAME,
@@ -137,9 +141,9 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
             if (success) {
                 Log.d(TAG, "تم رفع النسخة السحابية بنجاح: $uploadName")
                 sharedPrefs.edit()
-                .putBoolean(BackupConstants.KEY_PENDING_CLOUD_UPLOAD, false)
-                .putLong("last_successful_cloud_backup_timestamp", System.currentTimeMillis())
-                .apply()
+                    .putBoolean(BackupConstants.KEY_PENDING_CLOUD_UPLOAD, false)
+                    .putLong("last_successful_cloud_backup_timestamp", System.currentTimeMillis())
+                    .apply()
 
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                 sendDelayedUploadNotification(context, uploadName)
@@ -159,7 +163,7 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
     private fun resolveTargetBackupFile(context: Context): File? {
         val sharedPrefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
         val pathFromInput = inputData.getString(KEY_FILE_PATH)
-        ?: sharedPrefs.getString("pending_cloud_file_path", null)
+            ?: sharedPrefs.getString("pending_cloud_file_path", null)
 
         if (!pathFromInput.isNullOrBlank()) {
             val file = File(pathFromInput)
@@ -175,7 +179,7 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
 
     private fun sendDelayedUploadNotification(context: Context, fileName: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        ?: return
+            ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -204,19 +208,19 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
         val text = context.getString(R.string.autobackup_notification_text_cloud_delayed)
 
         val notification = NotificationCompat.Builder(context, AutoBackupWorker.CHANNEL_ID)
-        .setSmallIcon(android.R.drawable.stat_sys_upload_done)
-        .setContentTitle(title)
-        .setContentText(text)
-        .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-        .setPriority(NotificationCompat.PRIORITY_HIGH)
-        .setContentIntent(pendingIntent)
-        .setAutoCancel(true)
-        .build()
+            .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
 
         try {
             notificationManager.cancel(1001)
-        } catch (e: Exception) {
-            Log.w(TAG, "تعذر تنظيف إشعار التقدم: ${e.javaClass.simpleName}")
+        } catch (t: Throwable) {
+            Log.w(TAG, "تعذر تنظيف إشعار التقدم: ${t.javaClass.simpleName}")
         }
         notificationManager.notify(NOTIFICATION_ID, notification)
     }

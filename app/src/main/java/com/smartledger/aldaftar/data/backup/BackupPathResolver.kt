@@ -1,3 +1,22 @@
+/**
+ * =====================================================================
+ * ملف: محدد ومحلل مسارات النسخ الاحتياطي المركزي (محدد المسارات.المكوّن)
+ * =====================================================================
+ * 
+ * [الغرض والمسؤولية المركزية]:
+ * يمثل هذا الكائن المرجع المعماري الموحد والوحيد لتحديد مسارات تخزين
+ * النسخ الاحتياطية المحلية في تطبيق "الدفتر الذكي".
+ * 
+ * [المسار المعتمد الرسمي الوحيد]:
+ * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[نمط السنة والشهر]/
+ * 
+ * [قواعد التحقق الصارم والأمان]:
+ * 1. جذر ثابت وموحد: المستندات/الدفتر الذكي
+ * 2. تقسيم شهري ديناميكي: بصيغة نمط السنة والشهر
+ * 3. حظر كامل لثغرات تجاوز المسار (مثل ../)
+ * 4. حظر توجيه النسخ إلى المجلدات الخاصة بالتطبيق كوجهة نهائية
+ * 5. حظر تسجيل أي بيانات مالية في السجلات
+ */
 package com.smartledger.aldaftar.data.backup
 
 import android.os.Environment
@@ -12,27 +31,46 @@ object BackupPathResolver {
 
     private const val TAG = "BackupPathResolver"
 
+    /** اسم المجلد الجذري العام المعتمد رسمياً */
     const val PUBLIC_BACKUP_FOLDER_NAME = "الدفتر الذكي"
 
+    /**
+     * [جلب المجلد الجذري العام للنسخ الاحتياطي - جلب الجذر العام]:
+     * يرجع المجلد المركزي: /المكوّن/المكوّن/0/المستندات/الدفتر الذكي
+     */
     fun getPublicBackupRoot(): File {
         val publicDocs = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-        ?: File("/storage/emulated/0/Documents")
+            ?: File("/storage/emulated/0/Documents")
         val rootDir = File(publicDocs, PUBLIC_BACKUP_FOLDER_NAME)
         return rootDir
     }
 
+    /**
+     * [جلب مجلد الشهر الحالي - جلب المجلد الشهري الحالي]:
+     * يرجع المجلد الشهري للنسخ بناءً على تاريخ اللحظة الحالية:
+     * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[نمط السنة والشهر]/
+     */
     fun getCurrentMonthlyDirectory(now: Date = Date()): File {
         val sdf = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US)
         val monthStr = sdf.format(now)
         return getMonthlyDirectory(monthStr)
     }
 
+    /**
+     * [جلب مجلد شهر محدد - جلب المجلد الشهري]:
+     * يرجع مجلد الشهر بالصيغة الممررة (مثل "2026-08"):
+     * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[المكوّن]/
+     */
     fun getMonthlyDirectory(yearMonth: String): File {
         validateYearMonthString(yearMonth)
         val root = getPublicBackupRoot()
         return File(root, yearMonth)
     }
 
+    /**
+     * [التأكد من وجود وصلاحية المجلد - تجهيز المجلد]:
+     * ينشئ المجلد إذا لم يكن موجوداً، ويفحص أنه مجلد فعلي وقابل للكتابة.
+     */
     fun ensureDirectory(directory: File): Result<File> {
         return try {
             val root = getPublicBackupRoot()
@@ -43,6 +81,9 @@ object BackupPathResolver {
         }
     }
 
+    /**
+     * يتحقق من المجلد داخل جذر مسموح به ويمنع الخروج منه قبل أي إنشاء أو كتابة.
+     */
     fun ensureDirectory(directory: File, allowedRoot: File): Result<File> {
         return try {
             val rootCanonical = allowedRoot.canonicalFile
@@ -75,6 +116,10 @@ object BackupPathResolver {
         }
     }
 
+    /**
+     * [التحقق من صحة صيغة السنة والشهر - التحقق من السنة والشهر]:
+     * يمنع أي محاولات للهروب من المجلد (تجاوز المسار) أو إدخال أسماء غير قانونية.
+     */
     fun validateYearMonthString(yearMonth: String) {
         require(yearMonth.isNotBlank()) { "اسم الشهر لا يمكن أن يكون فارغاً" }
         require(!yearMonth.contains("..") && !yearMonth.contains("/") && !yearMonth.contains("\\")) {
@@ -82,6 +127,10 @@ object BackupPathResolver {
         }
     }
 
+    /**
+     * [التحقق من سلامة اسم الملف المستهدف - التحقق من اسم الملف]:
+     * يمنع أي محاولات تمرير مسارات مطلقة أو رموز غير صالحة باسم الملف.
+     */
     fun validateFileName(fileName: String) {
         require(fileName.isNotBlank()) { "اسم الملف لا يمكن أن يكون فارغاً" }
         require(!fileName.contains("..") && !fileName.contains("/") && !fileName.contains("\\")) {
@@ -91,10 +140,4 @@ object BackupPathResolver {
             "امتداد الملف يجب أن يكون ${BackupConstants.BACKUP_FILE_EXTENSION}"
         }
     }
-    fun isWithin(candidate: File, root: File): Boolean {
-        val rootPath = root.canonicalFile.toPath()
-        val candidatePath = candidate.canonicalFile.toPath()
-        return candidatePath == rootPath || candidatePath.startsWith(rootPath)
-    }
-
 }

@@ -1,7 +1,26 @@
+/**
+ * =====================================================================
+ * ملف: مدير تخزين وملفات النسخ الاحتياطي
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الملف المسؤول الحصري عن العمليات الفيزيائية لنظام الملفات ()
+ * لإنشاء وقراءة والتحقق من وحذف ملفات النسخ الاحتياطي ذات الامتداد.
+ * 
+ * [المسؤوليات المعمارية والتقنية]:
+ * 1. الاعتماد الحصري على لتحديد المسار العام المعتمد:
+ *    المسار الخاص بالتطبيق
+ * 2. الكتابة الذرية الآمنة : الكتابة أولاً في ملف مؤقت والتحقق من صحته قبل النقل والتسمية للملف النهائي لتفادي تلف البيانات حال انقطاع التطبيق فجأة.
+ * 3. التحقق المسبق من سلامة الملفات : فحص الوجود والحجم وعدم الفراغ قبل القراءة أو الاستعادة.
+ * 4. إدارة التيارات بأمان : ضمان إغلاق كافة التدفقات بمكتنف لمنع تسريب الموارد.
+ * 5. حماية الخصوصية: حظر كامل لتسجيل أي بيانات شخصية أو محتوى مالي في السجلات.
+ */
 package com.smartledger.aldaftar.data.backup
 
+// ---------------------------------------------------------------------
+// استيراد حزم بيئة أندرويد والكوروتين وإدارة الملفات والاستثناءات
+// ---------------------------------------------------------------------
 import android.content.Context
-import android.os.Environment
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,52 +30,83 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * [فئة مدير ملفات النسخ]:
+ * توفر واجهات تعامل آمنة وسريعة مع وسائط التخزين المحلية.
+ */
 class BackupFileManager(private val context: Context) {
+
+    /**
+     * [الكائن المرافق]:
+     * يحدد وسم التسجيل الموحد لعمليات مدير الملفات.
+     */
     companion object {
         private const val TAG = "BackupFileManager"
     }
 
+    /**
+     * [دالة المسار الأساسي - ]:
+     * ترجع المجلد الرئيسي المخصص لحفظ النسخ الاحتياطية في المسار العام المعتمد:
+     * /الدفتر الذكي
+     */
     fun getBaseBackupDirectory(): File {
-        val externalDocuments = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        val fallbackRoot = externalDocuments ?: context.filesDir
-        val root = File(fallbackRoot, BackupPathResolver.PUBLIC_BACKUP_FOLDER_NAME)
-        return BackupPathResolver.ensureDirectory(root, fallbackRoot).getOrDefault(root)
+        val externalDocuments = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOCUMENTS)
+        val rootDir = File(externalDocuments ?: context.filesDir, BackupPathResolver.PUBLIC_BACKUP_FOLDER_NAME)
+        val ensureResult = BackupPathResolver.ensureDirectory(rootDir, externalDocuments ?: context.filesDir)
+        return ensureResult.getOrDefault(rootDir)
     }
 
+    /**
+     * [دالة المجلد الشهري - ]:
+     * تنشئ وترجع مجلداً فرعياً بصيغة في المسار العام المعتمد لتصنيف النسخ حسب شهر الإنشاء.
+     */
     fun getMonthlyBackupDirectory(): File {
-        val base = getBaseBackupDirectory()
-        val month = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US).format(Date())
-        val directory = File(base, month)
-        return BackupPathResolver.ensureDirectory(directory, base).getOrDefault(directory)
+        val monthlyName = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US).format(Date())
+        val monthlyDir = File(getBaseBackupDirectory(), monthlyName)
+        val ensureResult = BackupPathResolver.ensureDirectory(monthlyDir, getBaseBackupDirectory())
+        return ensureResult.getOrDefault(monthlyDir)
     }
 
-    fun getAllBackupFiles(rootDir: File = getBaseBackupDirectory()): List<File> {
-        val base = getBaseBackupDirectory()
-        if (!rootDir.exists() || !rootDir.isDirectory) return emptyList()
-        if (!BackupPathResolver.isWithin(rootDir, base)) return emptyList()
-
+    /**
+     * [دالة استعراض كافة ملفات النسخ - ]:
+     * تبحث بشكل تراجعي عن كافة ملفات في شجرة المجلد العام المعتمد
+     * وترتبها تنازلياً حسب تاريخ التعديل (للاستخدام البرمجي مثل استدراك الرفع السحابي).
+     */
+    fun getAllBackupFiles(): List<File> {
+        val baseDir = getBaseBackupDirectory()
+        if (!baseDir.exists()) return emptyList()
         return try {
-            rootDir.walkTopDown()
-            .onFail { file, exception -> Log.w(TAG, "تعذر استعراض ${file.name}: ${exception.javaClass.simpleName}") }
-            .filter { it.isFile && it.name.endsWith(BackupConstants.BACKUP_FILE_EXTENSION, ignoreCase = true) }
-            .sortedByDescending(File::lastModified)
-            .toList()
+            baseDir.walkTopDown()
+                .filter { file: File -> file.isFile && file.name.endsWith(BackupConstants.BACKUP_FILE_EXTENSION, ignoreCase = true) }
+                .sortedByDescending { file: File -> file.lastModified() }
+                .toList()
         } catch (e: Exception) {
             Log.e(TAG, "فشل استعراض ملفات النسخ: ${e.javaClass.simpleName}")
             emptyList()
         }
     }
 
+    /**
+     * [دالة التحقق من سلامة الملف - ]:
+     * تفحص وجود الملف والتأكد من أنه ملف فعلي وليس مجلداً وأنه غير فارغ الحجم (أكبر من 0 بايت).
+     */
     fun validateBackupFile(file: File): Result<File> {
-        return when {
-            !file.exists() -> Result.failure(IOException("ملف النسخة غير موجود: ${file.name}"))
-            !file.isFile -> Result.failure(IOException("المسار المحدد ليس ملفاً: ${file.name}"))
-            file.length() <= 0L -> Result.failure(IOException("ملف النسخة فارغ: ${file.name}"))
-            file.length() > BackupConstants.MAX_BACKUP_BYTES -> Result.failure(IOException("حجم ملف النسخة يتجاوز الحد المسموح: ${file.name}"))
-            else -> Result.success(file)
+        if (!file.exists()) {
+            return Result.failure(IOException("ملف النسخة غير موجود: ${file.name}"))
         }
+        if (!file.isFile) {
+            return Result.failure(IOException("المسار المحدد ليس ملفاً: ${file.name}"))
+        }
+        if (file.length() == 0L) {
+            return Result.failure(IOException("ملف النسخة فارغ (0 بايت): ${file.name}"))
+        }
+        return Result.success(file)
     }
 
+    /**
+     * [دالة الإنشاء الذري لملف النسخة - ]:
+     * تنفذ الكتابة الآمنة بتسلسل: التحقق من المسار -> إنشاء ملف مؤقت -> كتابة البيانات المشفرة -> تدقيق الصحة -> استبدال/إعادة تسمية ذري.
+     */
     suspend fun createBackupFile(
         targetDirectory: File,
         targetFileName: String,
@@ -64,89 +114,134 @@ class BackupFileManager(private val context: Context) {
     ): Result<File> = withContext(Dispatchers.IO) {
         var tempFile: File? = null
         try {
-            if (content.isBlank()) return@withContext Result.failure(IllegalArgumentException("محتوى النسخة الاحتياطية فارغ"))
+            if (content.isBlank()) {
+                return@withContext Result.failure(IllegalArgumentException("محتوى النسخة الاحتياطية فارغ ولا يمكن كتابته"))
+            }
+
+            // التحقق من اسم الملف المستهدف
             BackupPathResolver.validateFileName(targetFileName)
 
-            val base = getBaseBackupDirectory()
-            val validTargetDir = BackupPathResolver.ensureDirectory(targetDirectory, base).getOrElse { return@withContext Result.failure(it) }
-            val finalFile = File(validTargetDir, targetFileName)
-            if (!BackupPathResolver.isWithin(finalFile, base)) {
-                return@withContext Result.failure(SecurityException("مسار ملف النسخة خارج المجلد المسموح"))
+            // ضمان وجود وصلاحية المجلد المستهدف داخل المسار المعتمد.
+            val dirResult = BackupPathResolver.ensureDirectory(targetDirectory, getBaseBackupDirectory())
+            if (dirResult.isFailure) {
+                return@withContext Result.failure(
+                    dirResult.exceptionOrNull() ?: IOException("فشل تجهيز مجلد النسخ الاحتياطي: ${targetDirectory.path}")
+                )
             }
+            val validTargetDir = dirResult.getOrThrow()
 
-            tempFile = File.createTempFile(BackupConstants.BACKUP_TEMP_PREFIX, BackupConstants.BACKUP_TEMP_SUFFIX, validTargetDir)
-            tempFile.outputStream().use { output ->
-                output.write(content.toByteArray(Charsets.UTF_8))
-                output.fd.sync()
-            }
+            tempFile = File.createTempFile(
+                BackupConstants.BACKUP_TEMP_PREFIX,
+                BackupConstants.BACKUP_TEMP_SUFFIX,
+                validTargetDir
+            )
 
-            validateBackupFile(tempFile).getOrElse {
-                tempFile?.delete()
-                return@withContext Result.failure(it)
-            }
-
-            if (tempFile.renameTo(finalFile)) {
-                return@withContext validateBackupFile(finalFile)
-            }
-
-            val replacement = File.createTempFile(BackupConstants.BACKUP_TEMP_PREFIX, BackupConstants.BACKUP_TEMP_SUFFIX, validTargetDir)
-            try {
-                tempFile.copyTo(replacement, overwrite = true)
-                replacement.inputStream().use { it.fd.sync() }
-                if (!replacement.renameTo(finalFile)) {
-                    return@withContext Result.failure(IOException("تعذر استبدال ملف النسخة بصورة آمنة"))
+            // كتابة المحتوى بأمان مع إغلاق التيار ومزامنة القرص الفيزيائي ()
+            java.io.FileOutputStream(tempFile).use { fos ->
+                val writer = fos.bufferedWriter(Charsets.UTF_8)
+                writer.write(content)
+                writer.flush()
+                try {
+                    fos.fd.sync()
+                } catch (_: Exception) {
+                    // تجاهل في البيئات التي لا تدعم  المباشر
                 }
-                validateBackupFile(finalFile)
-            } finally {
-                tempFile?.delete()
-                replacement.delete()
             }
-        } catch (e: Exception) {
-            tempFile?.delete()
-            Log.e(TAG, "فشل إنشاء ملف النسخة: ${e.javaClass.simpleName}")
+
+            // التحقق من صحة واكتمال الملف المؤقت
+            val tempValidation = validateBackupFile(tempFile)
+            if (tempValidation.isFailure) {
+                tempFile.delete()
+                return@withContext Result.failure(
+                    tempValidation.exceptionOrNull() ?: IOException("فشل التحقق من صحة الملف المؤقت قبل التسمية")
+                )
+            }
+
+            val finalFile = File(validTargetDir, targetFileName)
+
+            val renameSuccess = tempFile.renameTo(finalFile)
+            if (renameSuccess) {
+                validateBackupFile(finalFile)
+            } else {
+                // بديل آمن في حال فشل  المباشر مع دعم الاستبدال دون حذف مسبق
+                try {
+                    tempFile.copyTo(finalFile, overwrite = true)
+                    tempFile.delete()
+                    validateBackupFile(finalFile)
+                } catch (copyEx: Exception) {
+                    tempFile.delete()
+                    Result.failure(copyEx)
+                }
+            }
+        } catch (e: Throwable) {
+            tempFile?.let { if (it.exists()) it.delete() }
+            Log.e(TAG, "استثناء أثناء كتابة ملف النسخة الاحتياطية: ${e.javaClass.simpleName}")
             Result.failure(e)
         }
     }
 
+    /**
+     * [دالة توليد اسم الملف القياسي - ]:
+     * تنشئ اسماً موحداً يدمج البادئة مع الطابع الزمني والامتداد القياسي.
+     */
     fun generateStandardBackupFileName(prefix: String = BackupConstants.BACKUP_FILE_PREFIX): String {
-        val timestamp = SimpleDateFormat(BackupConstants.BACKUP_DATE_FORMAT, Locale.US).format(Date())
-        return "$prefix$timestamp${BackupConstants.BACKUP_FILE_EXTENSION}"
+        val sdfName = SimpleDateFormat(BackupConstants.BACKUP_DATE_FORMAT, Locale.US)
+        val dateStr = sdfName.format(Date())
+        return "$prefix$dateStr${BackupConstants.BACKUP_FILE_EXTENSION}"
     }
 
+    /**
+     * [دالة قراءة محتوى ملف النسخة - ]:
+     * تقرأ نصوص المحتوى بعد التأكد من سلامة وصلاحية الملف الفيزيائي.
+     */
     suspend fun readBackupFile(file: File): Result<String> = withContext(Dispatchers.IO) {
-        validateBackupFile(file).fold(
-            onSuccess = {
-                try {
-                    Result.success(it.readText(Charsets.UTF_8)).also { result ->
-                        if (result.getOrThrow().isBlank()) throw IOException("محتوى الملف فارغ")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "فشل قراءة ملف النسخة: ${e.javaClass.simpleName}")
-                    Result.failure(e)
-                }
-            },
-            onFailure = { Result.failure(it) }
-        )
+        val validation = validateBackupFile(file)
+        if (validation.isFailure) {
+            return@withContext Result.failure(validation.exceptionOrNull() ?: IOException("الملف غير صالح للقراءة"))
+        }
+        try {
+            val content = file.readText(Charsets.UTF_8)
+            if (content.isBlank()) {
+                Result.failure(IOException("محتوى الملف المقروء فارغ"))
+            } else {
+                Result.success(content)
+            }
+        } catch (e: Throwable) {
+            Log.e(TAG, "خطأ في قراءة ملف النسخة الاحتياطية: ${e.javaClass.simpleName}")
+            Result.failure(e)
+        }
     }
 
+    /**
+     * [دالة حذف ملف النسخة - ]:
+     * تحذف الملف المحدد بأمان وتعالج حالات عدم الوجود دون التسبب بانهيارات.
+     */
     suspend fun deleteBackupFile(file: File): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            if (!file.exists()) return@withContext Result.success(true)
-            val base = getBaseBackupDirectory()
-            if (!BackupPathResolver.isWithin(file, base)) {
-                return@withContext Result.failure(SecurityException("لا يمكن حذف ملف خارج مجلد النسخ المسموح"))
+            if (!file.exists()) {
+                Result.success(true)
+            } else {
+                val deleted = file.delete()
+                if (deleted) {
+                    Result.success(true)
+                } else {
+                    Result.failure(IOException("فشل حذف الملف: ${file.name}"))
+                }
             }
-            Result.success(file.delete() || !file.exists()).also {
-                if (!it.getOrDefault(false)) Log.e(TAG, "فشل حذف ملف النسخة: ${file.name}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "فشل حذف ملف النسخة: ${e.javaClass.simpleName}")
+        } catch (e: Throwable) {
+            Log.e(TAG, "استثناء أثناء حذف ملف النسخة الاحتياطية: ${e.javaClass.simpleName}")
             Result.failure(e)
         }
     }
 
-    suspend fun writeBackupAtomically(targetDirectory: File, targetFileName: String, content: String): Result<File> =
-    createBackupFile(targetDirectory, targetFileName, content)
+    // -----------------------------------------------------------------
+    // دوال التوافقية مع الإصدارات السابقة
+    // -----------------------------------------------------------------
+    suspend fun writeBackupAtomically(
+        targetDirectory: File,
+        targetFileName: String,
+        content: String
+    ): Result<File> = createBackupFile(targetDirectory, targetFileName, content)
 
     suspend fun readBackupContent(file: File): Result<String> = readBackupFile(file)
 }

@@ -1,3 +1,7 @@
+/**
+ * عامل الخلفية المسؤول عن إنشاء النسخة الاحتياطية المحلية الدورية والتحقق من سلامتها،
+ * ثم محاولة المزامنة السحابية دون التأثير في عمل المحاسبة المحلية عند غياب الشبكة.
+ */
 package com.smartledger.aldaftar
 
 import android.app.NotificationChannel
@@ -64,21 +68,21 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
             val initialDelay = (dueDate.timeInMillis - currentDate.timeInMillis).coerceAtLeast(0L)
 
             val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-            .setRequiresBatteryNotLow(true)
-            .build()
+                .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                .setRequiresBatteryNotLow(true)
+                .build()
 
             val dailyWorkRequest = PeriodicWorkRequestBuilder<AutoBackupWorker>(
                 1, TimeUnit.DAYS
             )
-            .setConstraints(constraints)
-            .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                30,
-                TimeUnit.MINUTES
-            )
-            .build()
+                .setConstraints(constraints)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    30,
+                    TimeUnit.MINUTES
+                )
+                .build()
 
             workManager.enqueueUniquePeriodicWork(
                 WORK_NAME,
@@ -108,10 +112,10 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 val isFirstLaunch = sharedPrefs.getBoolean("is_first_backup_initialized", true)
                 if (isFirstLaunch) {
                     sharedPrefs.edit()
-                    .putLong("last_successful_auto_backup_timestamp", System.currentTimeMillis())
-                    .putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, System.currentTimeMillis())
-                    .putBoolean("is_first_backup_initialized", false)
-                    .apply()
+                        .putLong("last_successful_auto_backup_timestamp", System.currentTimeMillis())
+                        .putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, System.currentTimeMillis())
+                        .putBoolean("is_first_backup_initialized", false)
+                        .apply()
                     Log.d(TAG, "تمت تهيئة مؤشر النسخ الأول عند التثبيت.")
                     return@withContext
                 }
@@ -136,12 +140,12 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 if (lastBackupTimestamp < lastDueBackup.timeInMillis) {
                     Log.d(TAG, "فات موعد النسخ اليومي السابق، جاري تشغيل نسخة تعويضية فورية.")
                     val immediateWorkRequest = OneTimeWorkRequestBuilder<AutoBackupWorker>()
-                    .setBackoffCriteria(
-                        BackoffPolicy.EXPONENTIAL,
-                        10,
-                        TimeUnit.MINUTES
-                    )
-                    .build()
+                        .setBackoffCriteria(
+                            BackoffPolicy.EXPONENTIAL,
+                            10,
+                            TimeUnit.MINUTES
+                        )
+                        .build()
                     WorkManager.getInstance(context).enqueue(immediateWorkRequest)
 
                     if (isCloudLinked) {
@@ -195,9 +199,9 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
 
                     val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                     sharedPrefs.edit()
-                    .putLong("last_successful_auto_backup_timestamp", backupResult.timestamp)
-                    .putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, backupResult.timestamp)
-                    .apply()
+                        .putLong("last_successful_auto_backup_timestamp", backupResult.timestamp)
+                        .putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, backupResult.timestamp)
+                        .apply()
 
                     val syncHelper = GoogleDriveSyncHelper(context)
                     val isCloudLinked = !syncHelper.getStoredRefreshToken().isNullOrEmpty()
@@ -247,7 +251,7 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
             val network = cm.activeNetwork ?: return false
             val capabilities = cm.getNetworkCapabilities(network) ?: return false
             return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ||
-            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         } else {
             @Suppress("DEPRECATION")
             val networkInfo = cm.activeNetworkInfo ?: return false
@@ -274,12 +278,12 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         val text = context.getString(R.string.autobackup_notification_text_inprogress)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-        .setSmallIcon(android.R.drawable.stat_sys_upload)
-        .setContentTitle(title)
-        .setContentText(text)
-        .setPriority(NotificationCompat.PRIORITY_LOW)
-        .setOngoing(true)
-        .build()
+            .setSmallIcon(android.R.drawable.stat_sys_upload)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .build()
 
         notificationManager.notify(NOTIFICATION_PROGRESS_ID, notification)
     }
@@ -314,15 +318,15 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         val text = context.getString(R.string.autobackup_notification_text_success)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-        .setSmallIcon(android.R.drawable.stat_sys_upload_done)
-        .setContentTitle(title)
-        .setContentText(text)
-        .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-        .setPriority(NotificationCompat.PRIORITY_HIGH)
-        .setContentIntent(pendingIntent)
-        .setOngoing(false)
-        .setAutoCancel(true)
-        .build()
+            .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .build()
 
         notificationManager.cancel(NOTIFICATION_PROGRESS_ID)
         notificationManager.notify(NOTIFICATION_RESULT_ID, notification)
@@ -360,14 +364,14 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-        .setSmallIcon(android.R.drawable.stat_sys_warning)
-        .setContentTitle(title)
-        .setContentText(text)
-        .setPriority(NotificationCompat.PRIORITY_HIGH)
-        .setContentIntent(pendingIntent)
-        .setOngoing(false)
-        .setAutoCancel(true)
-        .build()
+            .setSmallIcon(android.R.drawable.stat_sys_warning)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .build()
 
         notificationManager.cancel(NOTIFICATION_PROGRESS_ID)
         notificationManager.notify(NOTIFICATION_RESULT_ID, notification)

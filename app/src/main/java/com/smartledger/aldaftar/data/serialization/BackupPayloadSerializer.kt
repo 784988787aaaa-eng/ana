@@ -1,7 +1,11 @@
+
+/**
+ * مسلسل حمولة النسخ؛ يصدّر ويستورد البيانات مع تمثيل عشري نصي يحافظ على القيمة المحاسبية دون تحويل عائم.
+ * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
+ */
 package com.smartledger.aldaftar.data.serialization
 
 import android.content.Context
-import com.smartledger.aldaftar.data.backup.BackupConstants
 import com.smartledger.aldaftar.data.local.BigDecimalConverter
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
@@ -33,6 +37,8 @@ data class BackupPayloadData(
 
 object BackupPayloadSerializer {
 
+    
+    
     private const val KEY_MIZAN_AL_DAR_DB = "mizan_al_dar_db"
     private const val KEY_HABAYEB_DEBTS_DB = "habayeb_debts_db"
     private const val KEY_METADATA = "metadata"
@@ -95,18 +101,30 @@ object BackupPayloadSerializer {
     private const val KEY_DISPLAY_ORDER = "display_order"
     private const val KEY_IS_SYSTEM_CLOSED = "is_system_closed"
 
+    /**
+     * يحسب بصمة تجزئة تشفيرية ويحوّلها إلى تمثيل سداسي ثابت.
+     */
     fun calculateSha256Hash(input: String): String =
-    BackupIntegrityManager.calculateSha256Hash(input)
+        BackupIntegrityManager.calculateSha256Hash(input)
 
+    /**
+     * يبني تمثيلاً حتمياً للحمولة ثم يحسب بصمتها دون تغيير القيم المالية.
+     */
     fun calculateIntegrityHash(data: BackupPayloadData): String =
-    BackupIntegrityManager.calculateIntegrityHash(data)
+        BackupIntegrityManager.calculateIntegrityHash(data)
 
+    /**
+     * يتحقق من الحد الأدنى لصحة الحمولة قبل التصدير.
+     */
     fun validatePayloadBeforeExport(data: BackupPayloadData) {
         if (data.settings.currencySymbol.isBlank()) {
             throw IllegalArgumentException("رمز العملة في الإعدادات لا يمكن أن يكون فارغاً")
         }
     }
 
+    /**
+     * يتحقق من أن النص يمثل جيسون وبنية نسخة معروفة قبل التحليل.
+     */
     fun validateJsonStructure(rawJson: String): JSONObject {
         if (rawJson.isBlank()) {
             throw IOException("نص النسخة الاحتياطية فارغ")
@@ -118,10 +136,10 @@ object BackupPayloadSerializer {
         }
 
         val hasValidSchema = root.has(KEY_METADATA) ||
-        root.has(KEY_SETTINGS) ||
-        root.has(KEY_TRANSACTIONS) ||
-        root.has(KEY_MIZAN_AL_DAR_DB) ||
-        root.has(KEY_HABAYEB_DEBTS_DB)
+                root.has(KEY_SETTINGS) ||
+                root.has(KEY_TRANSACTIONS) ||
+                root.has(KEY_MIZAN_AL_DAR_DB) ||
+                root.has(KEY_HABAYEB_DEBTS_DB)
 
         if (!hasValidSchema) {
             throw IOException("بنية ملف النسخة الاحتياطية غير معروفة أو تفتقد للعناصر الأساسية")
@@ -130,6 +148,9 @@ object BackupPayloadSerializer {
         return root
     }
 
+    /**
+     * يكتب الحمولة تدريجياً إلى الكاتب مع تمثيل المبالغ كنصوص عشرية كاملة.
+     */
     fun exportBackupToWriter(data: BackupPayloadData, writer: java.io.Writer) {
         validatePayloadBeforeExport(data)
 
@@ -139,7 +160,7 @@ object BackupPayloadSerializer {
         jsonWriter.name(KEY_METADATA)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_APP_NAME).value("Mizan Al-Dar")
-        jsonWriter.name(KEY_APP_VERSION).value(BackupConstants.CURRENT_BACKUP_VERSION)
+        jsonWriter.name(KEY_APP_VERSION).value("1.1.0")
         jsonWriter.name(KEY_BACKUP_TIMESTAMP).value(System.currentTimeMillis() / 1000)
         jsonWriter.name(KEY_SECURITY_HASH).value(calculateIntegrityHash(data))
         jsonWriter.endObject()
@@ -207,8 +228,8 @@ object BackupPayloadSerializer {
             jsonWriter.name(KEY_AMOUNT).value(t.amount.toPlainString())
             jsonWriter.name(KEY_TIMESTAMP).value(t.timestamp)
             jsonWriter.name(KEY_DESCRIPTION).value(t.description)
-            val cleanLinkedId = t.linkedMainTxId?.trim()?.takeIf {
-                it.isNotBlank() && !it.equals("null", ignoreCase = true) && it != "0" && it != t.id
+            val cleanLinkedId = t.linkedMainTxId?.trim()?.takeIf { 
+                it.isNotBlank() && !it.equals("null", ignoreCase = true) && it != "0" && it != t.id 
             }
             if (cleanLinkedId != null) {
                 jsonWriter.name(KEY_LINKED_MAIN_TX_ID).value(cleanLinkedId)
@@ -278,6 +299,9 @@ object BackupPayloadSerializer {
         jsonWriter.flush()
     }
 
+    /**
+     * ينفذ التصدير إلى تيار على خيط الإدخال والإخراج دون حجب الواجهة.
+     */
     suspend fun exportBackupToStream(
         data: BackupPayloadData,
         outputStream: java.io.OutputStream
@@ -287,6 +311,9 @@ object BackupPayloadSerializer {
         }
     }
 
+    /**
+     * ينشئ النسخة في ملف الوجهة عبر المسار التشغيلي المخصص للنسخ.
+     */
     suspend fun exportBackupToFile(
         data: BackupPayloadData,
         targetFile: java.io.File
@@ -296,6 +323,9 @@ object BackupPayloadSerializer {
         }
     }
 
+    /**
+     * ينشئ تمثيل جيسون كاملاً عند الحاجة مع الحفاظ على الدقة العشرية.
+     */
     suspend fun exportBackupToJson(
         data: BackupPayloadData
     ): String = withContext(Dispatchers.IO) {
@@ -316,7 +346,7 @@ object BackupPayloadSerializer {
         context: Context? = null
     ): String = withContext(Dispatchers.IO) {
         val extraData = context?.let { BackupExtraDataProvider.fetchExtraBackupData(it, habayebCustomers) }
-        ?: BackupExtraData()
+            ?: BackupExtraData()
         val payloadData = BackupPayloadData(
             settings = settings,
             commitments = commitments,
@@ -333,6 +363,9 @@ object BackupPayloadSerializer {
         exportBackupToJson(payloadData)
     }
 
+    /**
+     * يقرأ المبلغ من جيسون ويحوّله إلى القيمة العشرية دون المرور برقم عائم.
+     */
     fun getBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal {
         if (!obj.has(key)) return BigDecimal(fallback)
         val raw = obj.opt(key) ?: return BigDecimal(fallback)
@@ -350,6 +383,9 @@ object BackupPayloadSerializer {
         }
     }
 
+    /**
+     * يحلل النسخة ويعيد بناء الكيانات المالية مع الحفاظ على التوافق والدقة.
+     */
     suspend fun importBackupFromJson(
         jsonString: String,
         context: Context? = null
@@ -407,3 +443,4 @@ object BackupPayloadSerializer {
         Triple(settings, commitmentsList, transactionsList)
     }
 }
+

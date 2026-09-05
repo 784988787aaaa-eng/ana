@@ -1,3 +1,8 @@
+
+/**
+ * مزود البيانات الإضافية للنسخ؛ يجمع التفضيلات والتصنيفات خارج الجداول الرئيسية على خيوط الإدخال والإخراج.
+ * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
+ */
 package com.smartledger.aldaftar.data.serialization
 
 import android.content.Context
@@ -19,6 +24,7 @@ data class BackupExtraData(
 
 object BackupExtraDataProvider {
 
+    
     private const val PREF_MIZAN_SEC = "mizan_sec_prefs"
     private const val PREF_MIZAN_FINANCE = "mizan_finance_prefs"
 
@@ -27,6 +33,9 @@ object BackupExtraDataProvider {
     private const val KEY_CATEGORY_ORDER_LIST_PREF = "CATEGORY_ORDER_LIST_KEY"
     private const val KEY_CLOSED_CUSTOM_NAME_PREF = "CLOSED_CUSTOM_NAME_KEY"
 
+    /**
+     * يجمع روابط التصنيفات من المسارين مع أولوية القيمة الحديثة.
+     */
     fun getCategoryLinks(
         financePrefs: SharedPreferences?,
         sharedPrefs: SharedPreferences?,
@@ -35,7 +44,7 @@ object BackupExtraDataProvider {
         val categoryLinks = mutableMapOf<String, String>()
         for (c in habayebCustomers) {
             val catLink = financePrefs?.getString("$PREFIX_CAT_LINK${c.id}", null)
-            ?: sharedPrefs?.getString("$PREFIX_CAT_LINK${c.id}", null)
+                ?: sharedPrefs?.getString("$PREFIX_CAT_LINK${c.id}", null)
             if (catLink != null) {
                 categoryLinks[c.id] = catLink
             }
@@ -43,6 +52,9 @@ object BackupExtraDataProvider {
         return categoryLinks
     }
 
+    /**
+     * يجمع قوائم التثبيت ويمنع إسقاطها أثناء إنشاء النسخة الاحتياطية.
+     */
     fun getPinnedCategoriesMap(
         financePrefs: SharedPreferences?,
         sharedPrefs: SharedPreferences?
@@ -64,17 +76,23 @@ object BackupExtraDataProvider {
         return pinnedMap
     }
 
+    /**
+     * يجمع ترتيب التصنيفات والاسم المخصص من مسار التخزين المتاح.
+     */
     fun getUserPreferences(
         financePrefs: SharedPreferences?,
         sharedPrefs: SharedPreferences?
     ): Pair<String?, String?> {
         val catOrder = financePrefs?.getString(KEY_CATEGORY_ORDER_LIST_PREF, null)
-        ?: sharedPrefs?.getString(KEY_CATEGORY_ORDER_LIST_PREF, null)
+            ?: sharedPrefs?.getString(KEY_CATEGORY_ORDER_LIST_PREF, null)
         val closedCustomName = financePrefs?.getString(KEY_CLOSED_CUSTOM_NAME_PREF, null)
-        ?: sharedPrefs?.getString(KEY_CLOSED_CUSTOM_NAME_PREF, null)
+            ?: sharedPrefs?.getString(KEY_CLOSED_CUSTOM_NAME_PREF, null)
         return Pair(catOrder, closedCustomName)
     }
 
+    /**
+     * يقرأ التصنيفات المخصصة على خيط الإدخال والإخراج لتجنب حجب الواجهة.
+     */
     suspend fun getCustomCategoriesData(context: Context): List<CustomCategory> = withContext(Dispatchers.IO) {
         try {
             val db = AppDatabase.getDatabase(context)
@@ -84,6 +102,9 @@ object BackupExtraDataProvider {
         }
     }
 
+    /**
+     * يجمع البيانات الإضافية للنسخ على خيط الإدخال والإخراج ويعيد وعاءً موحداً.
+     */
     suspend fun fetchExtraBackupData(
         context: Context,
         habayebCustomers: List<HabayebCustomer>
@@ -105,3 +126,4 @@ object BackupExtraDataProvider {
         )
     }
 }
+
