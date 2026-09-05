@@ -158,6 +158,23 @@ jobs:
           echo "Application: الدفتر الذكي"
           echo "Application ID: com.smartledger.aldaftar"
 
+      - name: Create Google Services configuration
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GOOGLE_SERVICES_JSON:-}" ]; then
+            echo "ERROR: GOOGLE_SERVICES_JSON secret is missing or empty."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          python3 - <<'PYJSON'
+          import json
+          from pathlib import Path
+          json.loads(Path("app/google-services.json").read_text(encoding="utf-8"))
+          PYJSON
+          echo "Google Services configuration created successfully."
+
       - name: Build signed Al-Daftar release APK
         env:
           RELEASE_STORE_FILE: "aldaftar.keystore"
