@@ -1,30 +1,59 @@
-
 /**
- * مدير سلامة النسخ؛ يحسب البصمات الحتمية ويتحقق من الملفات قبل الاستعادة مع مقارنة ثابتة الزمن وحدود حجم آمنة.
- * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
+ * =====================================================================
+ * ملف: مدير سلامة وبصمة النسخ الاحتياطية (BackupIntegrityManager.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يوفر هذا الكائن الأحادي طبقة التحقق التشفيري الصارم لملفات وحزم النسخ الاحتياطي.
+ * يعتمد خوارزمية SHA-256 لحساب البصمة التشفيرية، ويبني "البصمة المنطقية الحتمية"
+ * (Deterministic Logical Integrity Hash) التي تضمن تطابق البصمة لنفس البيانات بنسبة 100%
+ * بغض النظر عن ترتيب السجلات في الذاكرة أو أنظمة التشغيل المختلفة.
+ * 
+ * [المسؤوليات المعمارية والتقنية]:
+ * 1. حساب تجزئة SHA-256 القياسية للنصوص والمصفوفات البايتية.
+ * 2. بناء التجزئة المنطقية الحتمية عبر فرز الكيانات ترتيباً تصاعدياً بالمعرفات والتواريخ:
+ *    - الإعدادات والالتزامات المالية مرتبة حسب الفهرس والاسم.
+ *    - قيود اليومية ومعاملات الحبايب مرتبة زمنياً ثم بالمعرف.
+ *    - العملاء، سلة المهملات، الفئات المخصصة، والروابط المثبتة مرتبة أبجدياً ومعرفياً.
+ * 3. التحقق الاستباقي الشامل من ملف النسخة (Validation Guard) قبل الاستعادة لمنع انهيار التطبيق.
  */
 package com.smartledger.aldaftar.data.serialization
 
+// ---------------------------------------------------------------------
+// استيراد حزم الإدخال والإخراج والتشفير ومعالجة بنية JSON
+// ---------------------------------------------------------------------
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
 import org.json.JSONObject
 
+/**
+ * [الكائن الأحادي لمدير سلامة النسخ - BackupIntegrityManager]:
+ * يتولى حساب وتدقيق البصمات التشفيرية والتأكد من سلامة ملفات النسخ قبل استيرادها.
+ */
 object BackupIntegrityManager {
 
+    /** خوارزمية التجزئة التشفيرية المستخدمة */
     private const val ALGORITHM_SHA_256 = "SHA-256"
-    
+    /** جدول الحروف الست عشرية لتحويل البايتات */
     private val HEX_CHARS = "0123456789abcdef".toCharArray()
 
+    /**
+     * [النوع المغلق لنتيجة فحص السلامة - IntegrityCheckResult]:
+     * يمثل الحالات الممكنة لفحص سلامة وصحة ملف النسخة الاحتياطية.
+     */
     sealed class IntegrityCheckResult {
-        
+        /** النسخة سليمة ومكتملة وصالحة للاستعادة */
         object Valid : IntegrityCheckResult()
-        
+        /** النسخة تالفة أو غير متوافقة مع توضيح السبب */
         data class Invalid(val reason: String, val cause: Throwable? = null) : IntegrityCheckResult()
     }
 
     /**
-     * يحسب بصمة تجزئة تشفيرية ويحوّلها إلى تمثيل سداسي ثابت.
+     * [حساب بصمة SHA-256 المعيارية لسلسلة نصية - calculateSha256Hash]:
+     *
+     * @param input النص المراد تجزئته.
+     * @return البصمة الناتجة بصيغة ست عشرية (Hexadecimal String).
      */
     fun calculateSha256Hash(input: String): String {
         val digest = MessageDigest.getInstance(ALGORITHM_SHA_256)
@@ -35,14 +64,15 @@ object BackupIntegrityManager {
             hexChars[i * 2] = HEX_CHARS[v ushr 4]
             hexChars[i * 2 + 1] = HEX_CHARS[v and 0x0F]
         }
-        val result = String(hexChars)
-        java.util.Arrays.fill(hashBytes, 0)
-        java.util.Arrays.fill(hexChars, '\u0000')
-        return result
+        return String(hexChars)
     }
 
     /**
-     * يبني تمثيلاً حتمياً للحمولة ثم يحسب بصمتها دون تغيير القيم المالية.
+     * [حساب بصمة التكامل المنطقية الحتمية - calculateIntegrityHash]:
+     * ترتب الكيانات منطقياً بأسبقية محددة وتبني نصاً تسلسلياً موحداً لتوليد البصمة الثابتة.
+     *
+     * @param data كائن حمولة النسخة الاحتياطية الكامل.
+     * @return بصمة SHA-256 الحتمية للحمولة.
      */
     fun calculateIntegrityHash(data: BackupPayloadData): String {
         val sb = StringBuilder()
@@ -111,21 +141,25 @@ object BackupIntegrityManager {
     }
 
     /**
-     * يقارن البصمة المتوقعة والمحسوبة بمقارنة ثابتة الزمن.
+     * [التحقق من مطابقة البصمة - verifyIntegrity]:
+     * يقارن البصمة المحسوبة للحمولة مع البصمة المتوقعة المسجلة في الترويسة.
+     *
+     * @param data بيانات حمولة النسخة.
+     * @param expectedHash البصمة المرفقة في ملف النسخة.
+     * @return true إذا كانت البصمتان متطابقتين تماماً.
      */
     fun verifyIntegrity(data: BackupPayloadData, expectedHash: String): Boolean {
         if (expectedHash.isBlank()) return false
         val calculated = calculateIntegrityHash(data)
-        val calculatedBytes = calculated.lowercase(java.util.Locale.ROOT).toByteArray(Charsets.UTF_8)
-        val expectedBytes = expectedHash.trim().lowercase(java.util.Locale.ROOT).toByteArray(Charsets.UTF_8)
-        val result = MessageDigest.isEqual(calculatedBytes, expectedBytes)
-        java.util.Arrays.fill(calculatedBytes, 0)
-        java.util.Arrays.fill(expectedBytes, 0)
-        return result
+        return calculated.equals(expectedHash.trim(), ignoreCase = true)
     }
 
     /**
-     * يتحقق من وجود الملف وحجمه وبنيته قبل تمرير محتواه إلى طبقة الاستعادة.
+     * [التحقق الشامل من سلامة ملف النسخة قبل الاستعادة - validateBackupFileIntegrity]:
+     * يفحص وجود الملف وحجمه وقابليته للقراءة وتوافق بنية JSON قبل محاولة فتح قاعدة البيانات.
+     *
+     * @param file ملف النسخة الاحتياطية على القرص.
+     * @return [IntegrityCheckResult.Valid] عند سلامة الملف أو [IntegrityCheckResult.Invalid] مع السبب.
      */
     fun validateBackupFileIntegrity(file: File): IntegrityCheckResult {
         if (!file.exists()) {
@@ -136,9 +170,6 @@ object BackupIntegrityManager {
         }
         if (file.length() == 0L) {
             return IntegrityCheckResult.Invalid("ملف النسخة الاحتياطية فارغ (0 بايت)")
-        }
-        if (file.length() > 64L * 1024L * 1024L) {
-            return IntegrityCheckResult.Invalid("حجم ملف النسخة الاحتياطية يتجاوز الحد المسموح")
         }
 
         val content = try {

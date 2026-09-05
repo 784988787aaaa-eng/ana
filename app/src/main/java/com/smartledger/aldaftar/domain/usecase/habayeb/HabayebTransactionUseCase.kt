@@ -1,22 +1,22 @@
 /**
  * =====================================================================
- * ملف: حالة استخدام معاملات الحبايب (.)
+ * ملف: حالة استخدام معاملات الحبايب (HabayebTransactionUseCase.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن وسيط الأعمال المركزي (   ) لإدارة وحفظ
+ * يمثل هذا الكائن وسيط الأعمال المركزي (Business Domain Use Case) لإدارة وحفظ
  * معاملات ديون العملاء (قسم الحبايب)، وإجراء عمليات الصرف وإعادة تقييم العملات الأجنبية،
  * ومعالجة الحذف الفردي والجماعي مع الحفظ في سلة المحذوفات والاهتزاز اللمسي.
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. حفظ وإنشاء العملاء والمعاملات الافتتاحية ( &   ):
+ * 1. حفظ وإنشاء العملاء والمعاملات الافتتاحية (Customer & Opening Transaction Creation):
  *    - ربط العميل بالرصيد الافتتاحي وتصنيفه، والتحقق من صلاحية الفترة التجريبية وتفعيل التطبيق.
- * 2. المعاملات متعددة العملات وأسعار الصرف (-  & ):
+ * 2. المعاملات متعددة العملات وأسعار الصرف (Multi-Currency Transactions & Conversions):
  *    - تسجيل حركات بالعملات الأجنبية، وحساب المبالغ المعادلة بدقة، وتحديث سعر الصرف للحركات الفردية.
- * 3. إعادة التقييم الشامل للعملات التاريخية (  ):
- *    - تعديل أسعار صرف العملات الأجنبية وتحديث المعاملات المرتبطة ضمن معاملة ذرية [].
- * 4. الحذف الآمن والحفظ في سلة المحذوفات (  &  ):
- *    - ترحيل الحسابات والمعاملات المحذوفة إلى سلة المحذوفات كحزم () قابلة للاسترجاع.
+ * 3. إعادة التقييم الشامل للعملات التاريخية (Historical Transaction Revaluation):
+ *    - تعديل أسعار صرف العملات الأجنبية وتحديث المعاملات المرتبطة ضمن معاملة ذرية [withTransaction].
+ * 4. الحذف الآمن والحفظ في سلة المحذوفات (Soft Delete & Trash Preservation):
+ *    - ترحيل الحسابات والمعاملات المحذوفة إلى سلة المحذوفات كحزم (Bundles) قابلة للاسترجاع.
  */
 package com.smartledger.aldaftar.domain.usecase.habayeb
 
@@ -25,6 +25,7 @@ package com.smartledger.aldaftar.domain.usecase.habayeb
 // ---------------------------------------------------------------------
 import android.app.Application
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.room.withTransaction
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -41,10 +42,10 @@ import java.math.BigDecimal
 import java.util.UUID
 
 /**
- * [فئة حالة استخدام معاملات الحبايب - ]:
- * @  سياق التطبيق العام للاهتزازات وقاعدة البيانات.
- * @  مستودع البيانات المالية لتنفيذ الاستعلامات.
- * @  التفضيلات المشتركة لتخزين روابط التصنيفات.
+ * [فئة حالة استخدام معاملات الحبايب - HabayebTransactionUseCase]:
+ * @property application سياق التطبيق العام للاهتزازات وقاعدة البيانات.
+ * @property repository مستودع البيانات المالية لتنفيذ الاستعلامات.
+ * @property sharedPrefs التفضيلات المشتركة لتخزين روابط التصنيفات.
  */
 class HabayebTransactionUseCase(
     private val application: Application,
@@ -55,21 +56,22 @@ class HabayebTransactionUseCase(
      * الثوابت والمعرفات المساعدة لتوليد المعرفات الفريدة.
      */
     companion object {
+        private const val TAG = "HabayebTxUseCase"
         private const val FALLBACK_NONE = "NONE"
 
-        /** توليد معرف فريد للمعاملة يبدأ بـ _ */
+        /** توليد معرف فريد للمعاملة يبدأ بـ dtx_ */
         private fun generateTxId(): String = "dtx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
     }
 
     /**
-     * [حفظ عميل جديد مع رصيد افتتاحي - ]:
+     * [حفظ عميل جديد مع رصيد افتتاحي - saveHabayebCustomer]:
      * يتحقق من الترخيص، ويحفظ العميل والمعاملة في قاعدة البيانات، ويربط التصنيف المختار.
      *
-     * @  بيانات العميل الجديد.
-     * @  المعاملة الافتتاحية إن وجدت.
-     * @  التصنيف المختار للعميل.
-     * @  رد نداء عند انتهاء النسخة التجريبية والحاجة للتفعيل.
-     * @  رد نداء عند تحديث التصنيف.
+     * @param customer بيانات العميل الجديد.
+     * @param transaction المعاملة الافتتاحية إن وجدت.
+     * @param selectedCategoryFilter التصنيف المختار للعميل.
+     * @param onActivationRequired رد نداء عند انتهاء النسخة التجريبية والحاجة للتفعيل.
+     * @param onCategoryUpdated رد نداء عند تحديث التصنيف.
      */
     suspend fun saveHabayebCustomer(
         customer: HabayebCustomer,
@@ -93,6 +95,7 @@ class HabayebTransactionUseCase(
             VibrationHelper.triggerSuccessVibration(application)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error saving customer", e)
         }
     }
 
@@ -144,7 +147,7 @@ class HabayebTransactionUseCase(
     }
 
     /**
-     * [إضافة معاملة جديدة للعميل - ]:
+     * [إضافة معاملة جديدة للعميل - addHabayebTransaction]:
      * يفحص الترخيص ويسجل المعاملة ويفعل الاهتزاز اللمسي للنجاح.
      */
     suspend fun addHabayebTransaction(
@@ -160,6 +163,7 @@ class HabayebTransactionUseCase(
             VibrationHelper.triggerSuccessVibration(application)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error adding transaction", e)
         }
     }
 
@@ -215,7 +219,7 @@ class HabayebTransactionUseCase(
     }
 
     /**
-     * [تحديث سعر الصرف لمعاملة أجنبية محددة - ]:
+     * [تحديث سعر الصرف لمعاملة أجنبية محددة - updateTransactionExchangeRate]:
      * يعيد احتساب القيمة المعادلة ويحدث المعاملة الرئيسية المرتبطة داخل عملية ذرية.
      */
     suspend fun updateTransactionExchangeRate(
@@ -279,11 +283,12 @@ class HabayebTransactionUseCase(
             }
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error updating transaction exchange rate", e)
         }
     }
 
     /**
-     * [إعادة التقييم الشامل للمعاملات التاريخية لعملة معينة - ]:
+     * [إعادة التقييم الشامل للمعاملات التاريخية لعملة معينة - revalueHistoricalTransactions]:
      * يمر على كافة المعاملات السابقة لعملة محددة ويعيد احتساب قيمتها وفق سعر الصرف الجديد.
      */
     suspend fun revalueHistoricalTransactions(
@@ -337,33 +342,36 @@ class HabayebTransactionUseCase(
             }
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error revaluing historical transactions", e)
         }
     }
 
     /**
-     * [تحديث اسم العميل - ]:
+     * [تحديث اسم العميل - updateCustomerName]:
      */
     suspend fun updateCustomerName(customerId: String, newName: String) = withContext(Dispatchers.IO) {
         try {
             repository.updateCustomerName(customerId, newName)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error updating customer name", e)
         }
     }
 
     /**
-     * [تحديث بيانات العميل بالكامل - ]:
+     * [تحديث بيانات العميل بالكامل - updateCustomer]:
      */
     suspend fun updateCustomer(customer: HabayebCustomer) = withContext(Dispatchers.IO) {
         try {
             repository.updateCustomer(customer)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error updating customer", e)
         }
     }
 
     /**
-     * [حذف عميل فردي مع ترحيل بياناته لسلة المحذوفات - ]:
+     * [حذف عميل فردي مع ترحيل بياناته لسلة المحذوفات - deleteCustomer]:
      */
     suspend fun deleteCustomer(customerId: String) = withContext(Dispatchers.IO) {
         try {
@@ -377,11 +385,12 @@ class HabayebTransactionUseCase(
             VibrationHelper.triggerDeleteVibration(application)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error deleting customer", e)
         }
     }
 
     /**
-     * [حذف مجموعة عملاء دفعة واحدة مع سلة المحذوفات - ]:
+     * [حذف مجموعة عملاء دفعة واحدة مع سلة المحذوفات - deleteMultipleCustomers]:
      */
     suspend fun deleteMultipleCustomers(customerIds: List<String>) = withContext(Dispatchers.IO) {
         try {
@@ -401,11 +410,12 @@ class HabayebTransactionUseCase(
             VibrationHelper.triggerDeleteVibration(application)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error deleting multiple customers", e)
         }
     }
 
     /**
-     * [حذف معاملة فردية - ]:
+     * [حذف معاملة فردية - deleteTransaction]:
      * ينقل المعاملة لسلة المحذوفات ويحذف الحركة المرتبطة بها في المعاملات الرئيسية.
      */
     suspend fun deleteTransaction(txId: String, isEdit: Boolean = false) = withContext(Dispatchers.IO) {
@@ -423,11 +433,12 @@ class HabayebTransactionUseCase(
             }
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error deleting transaction", e)
         }
     }
 
     /**
-     * [حذف مجموعة معاملات دفعة واحدة - ]:
+     * [حذف مجموعة معاملات دفعة واحدة - deleteMultipleTransactions]:
      */
     suspend fun deleteMultipleTransactions(txIds: List<String>) = withContext(Dispatchers.IO) {
         try {
@@ -447,6 +458,7 @@ class HabayebTransactionUseCase(
             VibrationHelper.triggerDeleteVibration(application)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.e(TAG, "Error deleting multiple transactions", e)
         }
     }
 }

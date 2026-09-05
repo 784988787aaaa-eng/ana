@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- * ملف: محدد ومحلل مسارات النسخ الاحتياطي المركزي (محدد المسارات.المكوّن)
+ * ملف: محدد ومحلل مسارات النسخ الاحتياطي المركزي (BackupPathResolver.kt)
  * =====================================================================
  * 
  * [الغرض والمسؤولية المركزية]:
@@ -8,12 +8,12 @@
  * النسخ الاحتياطية المحلية في تطبيق "الدفتر الذكي".
  * 
  * [المسار المعتمد الرسمي الوحيد]:
- * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[نمط السنة والشهر]/
+ * /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
  * 
  * [قواعد التحقق الصارم والأمان]:
- * 1. جذر ثابت وموحد: المستندات/الدفتر الذكي
- * 2. تقسيم شهري ديناميكي: بصيغة نمط السنة والشهر
- * 3. حظر كامل لثغرات تجاوز المسار (مثل ../)
+ * 1. جذر ثابت وموحد: Documents/الدفتر الذكي
+ * 2. تقسيم شهري ديناميكي: بصيغة yyyy-MM
+ * 3. حظر كامل لثغرات Path Traversal (مثل ../)
  * 4. حظر توجيه النسخ إلى المجلدات الخاصة بالتطبيق كوجهة نهائية
  * 5. حظر تسجيل أي بيانات مالية في السجلات
  */
@@ -35,8 +35,8 @@ object BackupPathResolver {
     const val PUBLIC_BACKUP_FOLDER_NAME = "الدفتر الذكي"
 
     /**
-     * [جلب المجلد الجذري العام للنسخ الاحتياطي - جلب الجذر العام]:
-     * يرجع المجلد المركزي: /المكوّن/المكوّن/0/المستندات/الدفتر الذكي
+     * [جلب المجلد الجذري العام للنسخ الاحتياطي - getPublicBackupRoot]:
+     * يرجع المجلد المركزي: /storage/emulated/0/Documents/الدفتر الذكي
      */
     fun getPublicBackupRoot(): File {
         val publicDocs = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
@@ -46,9 +46,9 @@ object BackupPathResolver {
     }
 
     /**
-     * [جلب مجلد الشهر الحالي - جلب المجلد الشهري الحالي]:
+     * [جلب مجلد الشهر الحالي - getCurrentMonthlyDirectory]:
      * يرجع المجلد الشهري للنسخ بناءً على تاريخ اللحظة الحالية:
-     * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[نمط السنة والشهر]/
+     * /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
      */
     fun getCurrentMonthlyDirectory(now: Date = Date()): File {
         val sdf = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US)
@@ -57,9 +57,9 @@ object BackupPathResolver {
     }
 
     /**
-     * [جلب مجلد شهر محدد - جلب المجلد الشهري]:
+     * [جلب مجلد شهر محدد - getMonthlyDirectory]:
      * يرجع مجلد الشهر بالصيغة الممررة (مثل "2026-08"):
-     * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[المكوّن]/
+     * /storage/emulated/0/Documents/الدفتر الذكي/[yearMonth]/
      */
     fun getMonthlyDirectory(yearMonth: String): File {
         validateYearMonthString(yearMonth)
@@ -68,32 +68,18 @@ object BackupPathResolver {
     }
 
     /**
-     * [التأكد من وجود وصلاحية المجلد - تجهيز المجلد]:
+     * [التأكد من وجود وصلاحية المجلد - ensureDirectory]:
      * ينشئ المجلد إذا لم يكن موجوداً، ويفحص أنه مجلد فعلي وقابل للكتابة.
      */
     fun ensureDirectory(directory: File): Result<File> {
         return try {
             val root = getPublicBackupRoot()
-            return ensureDirectory(directory, root)
-        } catch (e: Exception) {
-            Log.e(TAG, "خطأ أثناء تجهيز المجلد: ${e.javaClass.simpleName}")
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * يتحقق من المجلد داخل جذر مسموح به ويمنع الخروج منه قبل أي إنشاء أو كتابة.
-     */
-    fun ensureDirectory(directory: File, allowedRoot: File): Result<File> {
-        return try {
-            val rootCanonical = allowedRoot.canonicalFile
-            val dirCanonical = directory.canonicalFile
-            val rootPath = rootCanonical.path
-            val dirPath = dirCanonical.path
-            val insideRoot = dirPath == rootPath || dirPath.startsWith(rootPath + File.separator)
-            if (!insideRoot) {
+            // تدقيق الأمان: التأكد من أن المجلد يقع تحت المجلد الجذري الرسمي
+            val rootCanonical = root.canonicalPath
+            val dirCanonical = directory.canonicalPath
+            if (!dirCanonical.startsWith(rootCanonical)) {
                 return Result.failure(
-                    SecurityException("محاولة استخدام مجلد خارج الجذر المسموح به: $dirPath")
+                    SecurityException("محاولة إنشاء أو استخدام مجلد خارج المسار العام الرسمي المعتمد: $dirCanonical")
                 )
             }
 
@@ -117,8 +103,8 @@ object BackupPathResolver {
     }
 
     /**
-     * [التحقق من صحة صيغة السنة والشهر - التحقق من السنة والشهر]:
-     * يمنع أي محاولات للهروب من المجلد (تجاوز المسار) أو إدخال أسماء غير قانونية.
+     * [التحقق من صحة صيغة السنة والشهر - validateYearMonthString]:
+     * يمنع أي محاولات للهروب من المجلد (Path Traversal) أو إدخال أسماء غير قانونية.
      */
     fun validateYearMonthString(yearMonth: String) {
         require(yearMonth.isNotBlank()) { "اسم الشهر لا يمكن أن يكون فارغاً" }
@@ -128,7 +114,7 @@ object BackupPathResolver {
     }
 
     /**
-     * [التحقق من سلامة اسم الملف المستهدف - التحقق من اسم الملف]:
+     * [التحقق من سلامة اسم الملف المستهدف - validateFileName]:
      * يمنع أي محاولات تمرير مسارات مطلقة أو رموز غير صالحة باسم الملف.
      */
     fun validateFileName(fileName: String) {

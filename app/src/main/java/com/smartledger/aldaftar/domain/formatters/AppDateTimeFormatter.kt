@@ -1,22 +1,22 @@
 /**
  * =====================================================================
- * ملف: المنسق الموحد للتواريخ والأوقات والمدد الزمنية (.)
+ * ملف: المنسق الموحد للتواريخ والأوقات والمدد الزمنية (AppDateTimeFormatter.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المحرك المركزي والمصدر الموحد للحقيقة (   ) لكافة
+ * يمثل هذا الكائن المحرك المركزي والمصدر الموحد للحقيقة (Single Source of Truth) لكافة
  * عمليات تنسيق التواريخ، والأوقات، وأسماء الأيام والشهور، وحساب الفروق الزمنية النسبية
  * في التطبيق باللغة العربية والإنجليزية.
- * يتميز بأنه مصمم ليكون آمناً تماماً لتعدد الخيوط (-) باستخدام [].
+ * يتميز بأنه مصمم ليكون آمناً تماماً لتعدد الخيوط (Thread-Safe) باستخدام [ThreadLocal].
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. الأمان التام للخيوط في منسقات التواريخ (-  ):
- *    - عزل كافة كائنات [] و [] داخل [] لمنع أخطاء التزامن ( ).
- * 2. المعالجة والتوحيد التلقائي للطوابع الزمنية (  ):
- *    - التمييز التلقائي بين الطوابع بالثواني () والمللي ثانية () وتحويلها بدقة.
- * 3. التوطين الكامل للتواريخ العربية ( ):
+ * 1. الأمان التام للخيوط في منسقات التواريخ (Thread-Safe Date Formatters):
+ *    - عزل كافة كائنات [SimpleDateFormat] و [Calendar] داخل [ThreadLocal] لمنع أخطاء التزامن (Race Conditions).
+ * 2. المعالجة والتوحيد التلقائي للطوابع الزمنية (Automatic Timestamp Normalization):
+ *    - التمييز التلقائي بين الطوابع بالثواني (Seconds) والمللي ثانية (Milliseconds) وتحويلها بدقة.
+ * 3. التوطين الكامل للتواريخ العربية (Arabic Localization):
  *    - دعم صيغ الوقت 12 ساعة مع اللاحقة العربية (ص/م)، وتنسيق أسماء الأيام والشهور العربية.
- * 4. حساب الفروق الزمنية النسبية (  ):
+ * 4. حساب الفروق الزمنية النسبية (Relative Duration Calculation):
  *    - تحويل الفرق بين تاريخين إلى عبارات نسبية معربة ودقيقة (منذ يوم، منذ شهر، قريب جداً).
  */
 package com.smartledger.aldaftar.domain.formatters
@@ -32,7 +32,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * [الكائن الأحادي لمنسق التواريخ والأوقات - ]:
+ * [الكائن الأحادي لمنسق التواريخ والأوقات - AppDateTimeFormatter]:
  * يوفر دوال تنسيق متقدمة ومعزولة للخيوط لكافة أجزاء التطبيق.
  */
 object AppDateTimeFormatter {
@@ -41,42 +41,42 @@ object AppDateTimeFormatter {
     private val arabicLocale = Locale("ar")
 
     // =========================================================================
-    // قسم: منسقات التواريخ والأوقات المعزولة لكل خيط (- )
+    // قسم: منسقات التواريخ والأوقات المعزولة لكل خيط (THREAD-LOCAL FORMATTERS)
     // =========================================================================
 
-    /** منسق التاريخ العربي القياسي (//) */
+    /** منسق التاريخ العربي القياسي (yyyy/MM/dd) */
     private val dateArabicFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", arabicLocale) }
     /** منسق التاريخ بحسب اللغة الافتراضية للنظام */
     private val dateDefaultFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()) }
-    /** منسق التاريخ المختصر (//) */
+    /** منسق التاريخ المختصر (yy/MM/dd) */
     private val dateShortFormatter = ThreadLocal.withInitial { SimpleDateFormat("yy/MM/dd", Locale.ENGLISH) }
-    /** منسق التاريخ القياسي الدولي  (--) */
+    /** منسق التاريخ القياسي الدولي ISO (yyyy-MM-dd) */
     private val dateIsoFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH) }
-    /** منسق الوقت بنظام 12 ساعة بالعربية (: ) */
+    /** منسق الوقت بنظام 12 ساعة بالعربية (hh:mm a) */
     private val time12hFormatter = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", arabicLocale) }
     /** منسق الوقت بنظام 12 ساعة باللغة الافتراضية */
     private val time12hDefaultFormatter = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
-    /** منسق التاريخ والوقت الكامل بالعربية (// : ) */
+    /** منسق التاريخ والوقت الكامل بالعربية (yyyy/MM/dd hh:mm a) */
     private val fullDateTimeArabicFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd hh:mm a", arabicLocale) }
-    /** منسق استخراج اسم يوم الأسبوع كاملاً () */
+    /** منسق استخراج اسم يوم الأسبوع كاملاً (EEEE) */
     private val dayOfWeekFormatter = ThreadLocal.withInitial { SimpleDateFormat("EEEE", arabicLocale) }
-    /** منسق استخراج اسم الشهر كاملاً () */
+    /** منسق استخراج اسم الشهر كاملاً (MMMM) */
     private val monthNameFormatter = ThreadLocal.withInitial { SimpleDateFormat("MMMM", arabicLocale) }
-    /** منسق استخراج السنة بالأرقام اللاتينية () */
+    /** منسق استخراج السنة بالأرقام اللاتينية (yyyy) */
     private val yearOnlyFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy", Locale.ENGLISH) }
-    /** منسق مفتاح التجميع الشهري (-) */
+    /** منسق مفتاح التجميع الشهري (yyyy-MM) */
     private val yearMonthFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM", Locale.ENGLISH) }
     /** كائن التقويم المعزول لكل خيط للحسابات التقويمية */
     private val calendarLocal = ThreadLocal.withInitial { Calendar.getInstance() }
 
     // =========================================================================
-    // قسم: دوال تنسيق التواريخ (  )
+    // قسم: دوال تنسيق التواريخ (DATE FORMATTING FUNCTIONS)
     // =========================================================================
 
     /**
-     * [تنسيق كائن  بالصيغة العربية القياسية]:
-     * @  كائن التاريخ.
-     * @ التاريخ المنسق (//).
+     * [تنسيق كائن Date بالصيغة العربية القياسية]:
+     * @param date كائن التاريخ.
+     * @return التاريخ المنسق (yyyy/MM/dd).
      */
     fun formatDateArabic(date: Date): String {
         return dateArabicFormatter.get().format(date)
@@ -84,14 +84,14 @@ object AppDateTimeFormatter {
 
     /**
      * [تنسيق الطابع الزمني بالصيغة العربية القياسية]:
-     * @  الطابع الزمني بالثواني أو المللي ثانية.
+     * @param timestampSeconds الطابع الزمني بالثواني أو المللي ثانية.
      */
     fun formatDateArabic(timestampSeconds: Long): String {
         return formatDateArabic(Date(normalizeToMillis(timestampSeconds)))
     }
 
     /**
-     * [تنسيق كائن  باللغة الافتراضية للجهاز]:
+     * [تنسيق كائن Date باللغة الافتراضية للجهاز]:
      */
     fun formatDateDefault(date: Date): String {
         return dateDefaultFormatter.get().format(date)
@@ -105,7 +105,7 @@ object AppDateTimeFormatter {
     }
 
     /**
-     * [تنسيق التاريخ بصيغة السنة المختصرة (//)]:
+     * [تنسيق التاريخ بصيغة السنة المختصرة (yy/MM/dd)]:
      */
     fun formatShortDate(date: Date): String {
         return dateShortFormatter.get().format(date)
@@ -119,21 +119,21 @@ object AppDateTimeFormatter {
     }
 
     /**
-     * [تنسيق كائن التاريخ بالصيغة الدولية  (--)]:
+     * [تنسيق كائن التاريخ بالصيغة الدولية ISO (yyyy-MM-dd)]:
      */
     fun formatDateIso(date: Date): String {
         return dateIsoFormatter.get().format(date)
     }
 
     /**
-     * [تنسيق الطابع الزمني بالصيغة الدولية ]:
+     * [تنسيق الطابع الزمني بالصيغة الدولية ISO]:
      */
     fun formatDateIso(timestampSeconds: Long): String {
         return formatDateIso(Date(normalizeToMillis(timestampSeconds)))
     }
 
     // =========================================================================
-    // قسم: دوال تنسيق الأوقات (  )
+    // قسم: دوال تنسيق الأوقات (TIME FORMATTING FUNCTIONS)
     // =========================================================================
 
     /**
@@ -182,16 +182,16 @@ object AppDateTimeFormatter {
     // =========================================================================
 
     /**
-     * [جلب اسم يوم الأسبوع كاملاً بالعربية - ]:
-     * @  الطابع الزمني بالثواني.
-     * @ اسم اليوم (مثال: الجمعة، السبت).
+     * [جلب اسم يوم الأسبوع كاملاً بالعربية - getDayOfWeekArabic]:
+     * @param timestampSeconds الطابع الزمني بالثواني.
+     * @return اسم اليوم (مثال: الجمعة، السبت).
      */
     fun getDayOfWeekArabic(timestampSeconds: Long): String =
         dayOfWeekFormatter.get().format(Date(normalizeToMillis(timestampSeconds)))
 
     /**
-     * [استخراج معرف المورد النصي ليوم الأسبوع - ]:
-     * يعيد معرف المورد (  ) لليوم للوصول للترجمات المخصصة.
+     * [استخراج معرف المورد النصي ليوم الأسبوع - getDayOfWeekResId]:
+     * يعيد معرف المورد (String Resource ID) لليوم للوصول للترجمات المخصصة.
      */
     fun getDayOfWeekResId(timestampSeconds: Long): Int {
         val cal = calendarLocal.get().apply {
@@ -210,9 +210,9 @@ object AppDateTimeFormatter {
     }
 
     /**
-     * [استخراج رقم اليوم في الشهر - ]:
-     * @  الطابع الزمني بالثواني.
-     * @ رقم اليوم (1-31).
+     * [استخراج رقم اليوم في الشهر - getDayOfMonth]:
+     * @param timestampSeconds الطابع الزمني بالثواني.
+     * @return رقم اليوم (1-31).
      */
     fun getDayOfMonth(timestampSeconds: Long): Int =
         calendarLocal.get().apply {
@@ -220,7 +220,7 @@ object AppDateTimeFormatter {
         }.get(Calendar.DAY_OF_MONTH)
 
     /**
-     * [جلب اسم الشهر والسنة بالعربية - ]:
+     * [جلب اسم الشهر والسنة بالعربية - getMonthNameArabic]:
      * يعيد اسم الشهر مع السنة (مثال: أغسطس 2026).
      */
     fun getMonthNameArabic(timestampSeconds: Long): String {
@@ -229,20 +229,20 @@ object AppDateTimeFormatter {
     }
 
     /**
-     * [توليد مفتاح التجميع الشهري - ]:
-     * يولد مفتاحاً بصيغة (-) لتصنيف وتجميع المعاملات الشهرية.
+     * [توليد مفتاح التجميع الشهري - getYearMonthKey]:
+     * يولد مفتاحاً بصيغة (yyyy-MM) لتصنيف وتجميع المعاملات الشهرية.
      */
     fun getYearMonthKey(timestampSeconds: Long): String =
         yearMonthFormatter.get().format(Date(normalizeToMillis(timestampSeconds)))
 
     /**
-     * [حساب وصياغة الفرق الزمني النسبي بين تاريخين - ]:
+     * [حساب وصياغة الفرق الزمني النسبي بين تاريخين - formatDurationBetween]:
      * يحسب الفارق بالثواني ويعيد نصاً تعبيرياً معرباً (مثال: منذ يوم، منذ 5 أيام...).
      *
-     * @  الطابع الزمني الأحدث بالثواني.
-     * @  الطابع الزمني الأقدم بالثواني.
-     * @  سياق التطبيق للوصول لموارد النصوص.
-     * @ نص المدة النسبية المنسق.
+     * @param newerSec الطابع الزمني الأحدث بالثواني.
+     * @param olderSec الطابع الزمني الأقدم بالثواني.
+     * @param context سياق التطبيق للوصول لموارد النصوص.
+     * @return نص المدة النسبية المنسق.
      */
     fun formatDurationBetween(newerSec: Long, olderSec: Long, context: Context? = null): String {
         val diffSec = (newerSec - olderSec).coerceAtLeast(0)
@@ -259,7 +259,7 @@ object AppDateTimeFormatter {
     }
 
     /**
-     * [توحيد الطوابع الزمنية إلى مللي ثانية - ]:
+     * [توحيد الطوابع الزمنية إلى مللي ثانية - normalizeToMillis]:
      * إذا كان الطابع بالثواني يحوله لمللي ثانية، وإلا يبقيه كما هو.
      */
     private fun normalizeToMillis(timestamp: Long): Long {

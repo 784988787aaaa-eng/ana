@@ -3,8 +3,6 @@ package com.smartledger.aldaftar.ui.viewmodel
 import android.util.Log
 import android.app.Application
 import android.content.Context
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.data.CloudBackupFile
@@ -17,7 +15,6 @@ import com.smartledger.aldaftar.ui.viewmodel.backup.BackupPayloadBuilder
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupSearchMatcher
 import com.smartledger.aldaftar.ui.viewmodel.backup.OAuthCodeParser
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -29,7 +26,6 @@ import java.util.Date
 import java.util.Locale
 
 private const val TAG = "BackupSyncViewModel"
-private const val MAX_LOCAL_RESTORE_BYTES = 64L * 1024L * 1024L
 
 class BackupSyncViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -99,7 +95,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    // إدارة المصادقة والمزامنة السحابية
+    // مصادقة Google Drive والمزامنة
     fun getClientIdOverride(): String = googleDriveSyncHelper.getClientIdOverride()
     fun getClientSecretOverride(): String = googleDriveSyncHelper.getClientSecretOverride()
     fun getAppSignatureSHA1(): String = googleDriveSyncHelper.getAppSignatureSHA1()
@@ -162,7 +158,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         return BackupPayloadBuilder.buildBackupJson(repository, isMzd, context)
     }
 
-    // استخراج بيانات قاعدة البيانات لتصديرها كبيانات منظمة
+    // استخراج بيانات قاعدة البيانات لتصديرها كـ JSON
     fun getBackupJsonForClipboard(onComplete: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -401,8 +397,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                             }
                         }
                     }
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    // Ignore normal coroutine cancellation
                 } catch (e: Exception) {
                     Log.e(TAG, "استثناء في exportLocalBackup", e)
                     launch(Dispatchers.Main) {
@@ -426,7 +420,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         if (currentTime - lastSilentBackupTime < 600000) {
             return
         }
-        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+        viewModelScope.launch(Dispatchers.IO) {
             if (!backupRestoreMutex.tryLock()) {
                 return@launch
             }
@@ -436,8 +430,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     lastSilentBackupTime = currentTime
                     refreshLocalBackups()
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                // Ignore normal cancellation
             } catch (e: Exception) {
                 Log.e(TAG, "استثناء في triggerSilentLocalBackup", e)
             } finally {
@@ -485,66 +477,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                         onComplete(false, null)
                     }
                 }
-            }
-        }
-    }
-
-    /**
-     * يقرأ النسخة من معرّف المحتوى الذي يمنحه منتقي الملفات، ثم يتحقق من الحجم
-     * وامتداد الاسم وبنية المحتوى قبل تمرير النص إلى مسار الاستعادة الذرية.
-     */
-    fun readLocalBackupFromUri(
-        context: Context,
-        uri: Uri,
-        onComplete: (String?) -> Unit
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = runCatching {
-                val resolver = context.contentResolver
-                val displayName = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
-                    ?.use { cursor ->
-                        if (!cursor.moveToFirst()) return@use Pair<String?, Long?>(null, null)
-                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-                        Pair(
-                            if (nameIndex >= 0) cursor.getString(nameIndex) else null,
-                            if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) cursor.getLong(sizeIndex) else null
-                        )
-                    } ?: Pair(null, null)
-
-                val name = displayName.first.orEmpty()
-                val size = displayName.second
-                val supportedName = name.isBlank() ||
-                    name.endsWith(".mzd", ignoreCase = true) ||
-                    name.endsWith(".json", ignoreCase = true)
-                require(supportedName) { "امتداد ملف النسخة غير مدعوم" }
-                require(size == null || size in 1L..MAX_LOCAL_RESTORE_BYTES) { "حجم ملف النسخة غير مسموح" }
-
-                val input = resolver.openInputStream(uri) ?: error("تعذر فتح ملف النسخة")
-                input.use { stream ->
-                    val buffer = ByteArray(8192)
-                    val output = StringBuilder()
-                    var total = 0L
-                    while (true) {
-                        val count = stream.read(buffer)
-                        if (count < 0) break
-                        total += count
-                        require(total <= MAX_LOCAL_RESTORE_BYTES) { "حجم ملف النسخة يتجاوز الحد المسموح" }
-                        output.append(String(buffer, 0, count, Charsets.UTF_8))
-                    }
-                    val content = output.toString()
-                    require(content.isNotBlank()) { "محتوى ملف النسخة فارغ" }
-                    val validation = com.smartledger.aldaftar.data.serialization.BackupPayloadValidator
-                        .validateBackupPayload(content, verifyHashStrictly = true)
-                    require(validation is com.smartledger.aldaftar.data.serialization.BackupValidationResult.Valid) {
-                        "فشل التحقق من سلامة وبنية النسخة"
-                    }
-                    content
-                }
-            }
-
-            withContext(Dispatchers.Main) {
-                onComplete(result.getOrNull())
             }
         }
     }

@@ -1,19 +1,19 @@
 /**
  * =====================================================================
- * ملف: خدمة ومنسق دورة النسخ الاحتياطي (خدمة النسخ.المكوّن)
+ * ملف: خدمة ومنسق دورة النسخ الاحتياطي (BackupService.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف المنسق عالي المستوى المسؤول عن
- * استخراج البيانات المالية من قاعدة البيانات، تحويلها لصيغة بيانات منظمة معيارية،
+ * يمثل هذا الملف المنسق عالي المستوى (High-Level Backup Coordinator) المسؤول عن
+ * استخراج البيانات المالية من قاعدة البيانات، تحويلها لصيغة JSON معيارية،
  * وإدارتها عبر طبقة الملفات في المسار العام المعتمد وتحديث تواريخ النسخ في التفضيلات.
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. جمع البيانات المتكاملة: الإعدادات، المعاملات، الالتزامات، ديون الحبايب، وسلة المهملات.
- * 2. التسلسل والتحويل إلى بيانات منظمة عبر [مسلسل حزمة النسخ].
- * 3. الحماية ضد التزامن المزدوج باستخدام قفل [قفل النسخ] لمنع تداخل عمليات النسخ.
- * 4. إدارة الملفات الفيزيائية في المسار العام المعتمد عبر تفويض المهمة إلى [مدير الملفات].
- * 5. تسجيل وقت آخر عملية نسخ ناجحة بدقة في التفضيلات المشتركة.
+ * 1. جمع البيانات المتكاملة (Data Aggregation): الإعدادات، المعاملات، الالتزامات، ديون الحبايب، وسلة المهملات.
+ * 2. التسلسل والتحويل إلى JSON عبر [BackupPayloadSerializer].
+ * 3. الحماية ضد التزامن المزدوج باستخدام قفل [backupMutex] لمنع تداخل عمليات النسخ.
+ * 4. إدارة الملفات الفيزيائية في المسار العام المعتمد عبر تفويض المهمة إلى [BackupFileManager].
+ * 5. تسجيل وقت آخر عملية نسخ ناجحة بدقة في SharedPreferences.
  * 6. حماية الخصوصية: حظر كامل لتسجيل أي تفاصيل مالية في السجلات.
  */
 package com.smartledger.aldaftar.data.backup
@@ -29,7 +29,6 @@ import com.smartledger.aldaftar.data.serialization.BackupExtraDataProvider
 import com.smartledger.aldaftar.data.serialization.BackupPayloadData
 import com.smartledger.aldaftar.data.serialization.BackupPayloadSerializer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -37,10 +36,10 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * [نموذج نتائج عملية النسخ - نتيجة عملية النسخ]:
+ * [نموذج نتائج عملية النسخ - BackupOperationResult]:
  * يمثل الحالات الناتجة عن محاولة النسخ:
- * - نجاح: نجاح كتابة الملف والتحقق منه مع إرجاع مرجع الملف والطابع الزمني.
- * - فشل: فشل العملية مع رسالة واضحة للمستخدم والسبب التقني.
+ * - Success: نجاح كتابة الملف والتحقق منه مع إرجاع مرجع الملف والطابع الزمني.
+ * - Failure: فشل العملية مع رسالة واضحة للمستخدم والسبب التقني.
  */
 sealed class BackupOperationResult {
     data class Success(val file: File, val timestamp: Long) : BackupOperationResult()
@@ -48,7 +47,7 @@ sealed class BackupOperationResult {
 }
 
 /**
- * [نموذج حالات التنفيذ التفاعلية - حالة تنفيذ النسخ]:
+ * [نموذج حالات التنفيذ التفاعلية - BackupExecutionState]:
  * يفيد في مراقبة تقدم العملية في واجهات المستخدم التفاعلية.
  */
 sealed class BackupExecutionState {
@@ -59,7 +58,7 @@ sealed class BackupExecutionState {
 }
 
 /**
- * [فئة خدمة النسخ الاحتياطي - خدمة النسخ]:
+ * [فئة خدمة النسخ الاحتياطي - BackupService]:
  * تتولى تجميع البيانات وتسلسلها وحفظها في المسار العام الرسمي المعتمد.
  */
 class BackupService(
@@ -69,7 +68,7 @@ class BackupService(
 ) {
 
     /**
-     * [الكائن المرافق - الكائن المرافق]:
+     * [الكائن المرافق - Companion Object]:
      * يحدد وسم التسجيل الموحد لعمليات الخدمة.
      */
     companion object {
@@ -79,8 +78,8 @@ class BackupService(
     private val backupMutex = Mutex()
 
     /**
-     * [دالة تجميع حزمة البيانات - المكوّن]:
-     * تستعلم عن كافة الجداول المالية وقوائم الديون والتفضيلات المخصصة وتجمعها في كائن [المكوّن].
+     * [دالة تجميع حزمة البيانات - buildBackupPayload]:
+     * تستعلم عن كافة الجداول المالية وقوائم الديون والتفضيلات المخصصة وتجمعها في كائن [BackupPayloadData].
      */
     suspend fun buildBackupPayload(): BackupPayloadData = withContext(Dispatchers.IO) {
         val settings = database.settingsDao().getSettingsDirect() ?: AppSettings()
@@ -107,8 +106,8 @@ class BackupService(
     }
 
     /**
-     * [دالة توليد نص بيانات منظمة - المكوّن]:
-     * تحول حزمة البيانات المجمعة إلى نص بيانات منظمة موحد ومطابق لمخطط النظام.
+     * [دالة توليد نص JSON - generateBackupJson]:
+     * تحول حزمة البيانات المجمعة إلى نص JSON موحد ومطابق لمخطط النظام.
      */
     suspend fun generateBackupJson(): String = withContext(Dispatchers.IO) {
         val payload = buildBackupPayload()
@@ -116,34 +115,34 @@ class BackupService(
     }
 
     /**
-     * [دالة تنفيذ النسخ المحلي الكامل - المكوّن]:
-     * تنفذ دورة النسخ بالترتيب: تجهيز البيانات -> تحويل بيانات منظمة -> كتابة ذرية في المسار الشهري العام -> تدقيق الملف -> تسجيل التوقيت.
+     * [دالة تنفيذ النسخ المحلي الكامل - performLocalBackup]:
+     * تنفذ دورة النسخ بالترتيب: تجهيز البيانات -> تحويل JSON -> كتابة ذرية في المسار الشهري العام -> تدقيق الملف -> تسجيل التوقيت.
      */
     suspend fun performLocalBackup(
         customFileName: String? = null,
         targetDir: File? = null
     ): BackupOperationResult = backupMutex.withLock {
-        withContext(Dispatchers.IO + NonCancellable) {
+        withContext(Dispatchers.IO) {
             try {
-                // المرحلة الأولى: تجهيز البيانات وتحويلها إلى الصيغة المعيارية.
+                // 1. مرحلة تجهيز البيانات والتسلسل
                 val jsonString = generateBackupJson()
                 if (jsonString.isBlank()) {
                     return@withContext BackupOperationResult.Failure(
                         userMessage = "فشل إنشاء حزمة النسخ الاحتياطي: البيانات فارغة",
-                        cause = IllegalStateException("حزمة النسخ الاحتياطية فارغة")
+                        cause = IllegalStateException("Backup JSON payload is empty")
                     )
                 }
 
-                // المرحلة الثانية: تحديد المجلد واسم الملف داخل مساحة النسخ المعتمدة.
+                // 2. تحديد المجلد واسم الملف في المسار العام المعتمد
                 val directory = targetDir ?: fileManager.getMonthlyBackupDirectory()
                 val fileName = customFileName ?: fileManager.generateStandardBackupFileName()
 
-                // المرحلة الثالثة: كتابة الملف بطريقة ذرية تمنع بقاء نسخة ناقصة.
+                // 3. كتابة الملف بشكل ذري
                 val writeResult = fileManager.createBackupFile(directory, fileName, jsonString)
                 if (writeResult.isSuccess) {
                     val file = writeResult.getOrThrow()
 
-                    // المرحلة الرابعة: التحقق النهائي من سلامة الملف قبل إعلان النجاح.
+                    // 4. التحقق النهائي من سلامة الملف
                     val validationResult = fileManager.validateBackupFile(file)
                     if (validationResult.isFailure) {
                         return@withContext BackupOperationResult.Failure(
@@ -154,7 +153,7 @@ class BackupService(
 
                     val now = System.currentTimeMillis()
 
-                    // المرحلة الخامسة: حفظ وقت آخر نسخة ناجحة في التفضيلات المحلية.
+                    // 5. حفظ وتحديث سجل آخر نسخة ناجحة
                     val prefs = context.getSharedPreferences(BackupConstants.PREFS_BACKUP, Context.MODE_PRIVATE)
                     prefs.edit().putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, now).apply()
 
@@ -168,8 +167,6 @@ class BackupService(
                         cause = err
                     )
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "استثناء أثناء دورة النسخ الاحتياطي: ${e.javaClass.simpleName}")
                 BackupOperationResult.Failure(
@@ -181,7 +178,7 @@ class BackupService(
     }
 
     /**
-     * [دالة النسخ الاحتياطي الصامت - المكوّن]:
+     * [دالة النسخ الاحتياطي الصامت - performSilentBackup]:
      * تنفذ نسخة تلقائية باسم مخصص في المجلد الشهري العام دون إزعاج المستخدم.
      */
     suspend fun performSilentBackup(): BackupOperationResult = withContext(Dispatchers.IO) {

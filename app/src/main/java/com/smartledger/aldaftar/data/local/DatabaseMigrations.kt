@@ -1,31 +1,63 @@
+/**
+ * =====================================================================
+ * ملف: سجل هجرات وتحديثات هيكل قاعدة البيانات (DatabaseMigrations.kt)
+ * =====================================================================
+ * 
+ * [الغرض العام والتعليمي من الملف]:
+ * يمثل هذا الملف السجل التاريخي الحاكم والمقدس (Immutable Schema Migration Log)
+ * لكافة مراحل تطور جداول قاعدة البيانات من الإصدار الأول (Version 1) حتى
+ * الإصدار الحالي (Version 31).
+ * 
+ * [المبادئ الهندسية والمعمارية الصارمة]:
+ * 1. الحفاظ المطلق على بيانات المستخدم: كل كائن Migration هنا يعبر عن خطوة حقيقية مرت بها
+ *    قواعد بيانات المستخدمين في التحديثات؛ لذا يُحظر تماماً حذف أو تعديل أو دمج أي Migration سابقة.
+ * 2. الترقية الآمنة خطوة بخطوة: عند تحديث التطبيق من أي إصدار قديم، تطبق مكتبة Room الهجرات
+ *    المتتالية بالترتيب الدقيق لضمان وصول قاعدة البيانات للإصدار الأخير بدون فقدان سجل واحد.
+ * 3. نمط إعادة بناء الجداول (Table Recreation Pattern): عند تعديل أنواع الأعمدة في SQLite
+ *    (مثل التحول من REAL إلى TEXT لدعم BigDecimal في Migration 28_29)، يتم إنشاء جدول جديد مؤقت،
+ *    نسخ البيانات مع التحويل، حذف الجدول القديم، وإعادة تسمية الجديد وبناء الفهارس.
+ * 4. الفهارس المحسنة (Performance Indexes): إضافة فهارس على الحقول كثيرة الاستعلام
+ *    (مثل timestamp و category و customerId) لتسريع استجابة الواجهات والتقارير.
+ */
 package com.smartledger.aldaftar.data.local
 
+// ---------------------------------------------------------------------
+// استيراد حزم الهجرات لمكتبة Room ومحرك تنفيذ أوامر SQLite
+// ---------------------------------------------------------------------
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * سجل الهجرات التاريخية لقاعدة البيانات.
- * يحافظ الملف على المسار من الإصدار الأول حتى الإصدار الحادي والثلاثين دون تعديل الهجرات السابقة.
- * أي تغيير لاحق في المخطط يجب أن يضاف كهجرة جديدة ولا يجوز إعادة كتابة سجل تاريخي.
+ * [كائن سجل الهجرات - DatabaseMigrations]:
+ * يحتوي على كافة كائنات الهجرة الفردية بالإضافة إلى المصفوفة الجامعة [ALL_MIGRATIONS].
  */
 object DatabaseMigrations {
 
-
-
-    /** مسار انتقال فارغ يحافظ على قابلية الترقية من البنية الأولى. */
+    /**
+     * [الهجرة من الإصدار 1 إلى 2 - MIGRATION_1_2]:
+     * مسار أمان فارغ لدعم الترقية من الإصدار الأولي التجريبي 1 إلى 2.
+     */
     val MIGRATION_1_2 = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            // Safeguard: Empty path to support legacy version 1 installs transitioning to version 2
         }
     }
 
-    /** إضافة ترتيب الالتزامات المالية مع قيمة افتراضية متوافقة مع السجلات القديمة. */
+    /**
+     * [الهجرة من الإصدار 2 إلى 3 - MIGRATION_2_3]:
+     * إضافة عمود مؤشر الترتيب `orderIndex` إلى جدول الالتزامات المالية `fixed_commitments`
+     * لتمكين المستخدم من ترتيب أولويات سداد ديونه والتزاماته يدوياً.
+     */
     val MIGRATION_2_3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE fixed_commitments ADD COLUMN orderIndex INTEGER NOT NULL DEFAULT 0")
         }
     }
 
-    /** إضافة إعدادات حماية رمز القفل وبيانات الاسترداد. */
+    /**
+     * [الهجرة من الإصدار 3 إلى 4 - MIGRATION_3_4]:
+     * إضافة أعمدة الحماية برمز القفل (PIN) وتجزئة عبارة الاسترداد المشفرة في جدول `app_settings`.
+     */
     val MIGRATION_3_4 = object : Migration(3, 4) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN isPasscodeEnabled INTEGER NOT NULL DEFAULT 0")
@@ -34,14 +66,20 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة تلميح الاسترداد مع السماح بالقيم القديمة الفارغة. */
+    /**
+     * [الهجرة من الإصدار 4 إلى 5 - MIGRATION_4_5]:
+     * إضافة حقل تلميح كلمة المرور `recoveryHint` في جدول الإعدادات لمساعدة المستخدم عند نسيان الرمز.
+     */
     val MIGRATION_4_5 = object : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN recoveryHint TEXT")
         }
     }
 
-    /** إنشاء جدول المنتجات التاريخي مع بنية الإصدار المعتمدة. */
+    /**
+     * [الهجرة من الإصدار 5 إلى 6 - MIGRATION_5_6]:
+     * إنشاء جدول المنتجات المخزنية التجريبي التاريخي `makhzan_products`.
+     */
     val MIGRATION_5_6 = object : Migration(5, 6) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -59,7 +97,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** إعادة بناء جدول المنتجات لتحويل الكمية والوحدة إلى البنية التاريخية الجديدة. */
+    /**
+     * [الهجرة من الإصدار 6 إلى 7 - MIGRATION_6_7]:
+     * تعديل أنواع حقول الكميات في جدول المنتجات المخزنية لدعم الكسور والأوزان العشرية ونوع الوحدة.
+     */
     val MIGRATION_6_7 = object : Migration(6, 7) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -85,7 +126,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** إنشاء جدول حركات المخزن التاريخي. */
+    /**
+     * [الهجرة من الإصدار 7 إلى 8 - MIGRATION_7_8]:
+     * إنشاء جدول حركات المخزن التاريخي `makhzan_transactions`.
+     */
     val MIGRATION_7_8 = object : Migration(7, 8) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -102,20 +146,30 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة الملاحظات إلى حركات المخزن بقيمة افتراضية. */
+    /**
+     * [الهجرة من الإصدار 8 إلى 9 - MIGRATION_8_9]:
+     * إضافة عمود الملاحظات `note` لحركات المخزن.
+     */
     val MIGRATION_8_9 = object : Migration(8, 9) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE makhzan_transactions ADD COLUMN note TEXT NOT NULL DEFAULT ''")
         }
     }
 
-    /** مسار انتقال فارغ يحافظ على استمرارية الترقية. */
+    /**
+     * [الهجرة من الإصدار 9 إلى 10 - MIGRATION_9_10]:
+     * مسار أمان فارغ لدعم الترقية السلسة من الإصدار 9.
+     */
     val MIGRATION_9_10 = object : Migration(9, 10) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            // Safeguard: Empty path to support transitional version 9 installs upgrading to version 10/11
         }
     }
 
-    /** إضافة أجزاء التفعيل ومعرف الجهاز الموحد إلى الإعدادات. */
+    /**
+     * [الهجرة من الإصدار 10 إلى 11 - MIGRATION_10_11]:
+     * إضافة معرف الجهاز الموحد وأجزاء مفاتيح التفعيل في جدول الإعدادات.
+     */
     val MIGRATION_10_11 = object : Migration(10, 11) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN tempPart TEXT NOT NULL DEFAULT ''")
@@ -124,14 +178,20 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة مؤشر التشغيل الأولي مع القيمة الافتراضية التاريخية. */
+    /**
+     * [الهجرة من الإصدار 11 إلى 12 - MIGRATION_11_12]:
+     * إضافة مؤشر التشغيل لأول مرة `isFirstLaunch` لعرض شاشات التهيئة الأولية للمستخدم الجديد.
+     */
     val MIGRATION_11_12 = object : Migration(11, 12) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN isFirstLaunch INTEGER NOT NULL DEFAULT 1")
         }
     }
 
-    /** إضافة الوحدات الفرعية وأسمائها وعددها إلى المنتجات. */
+    /**
+     * [الهجرة من الإصدار 12 إلى 13 - MIGRATION_12_13]:
+     * دعم الوحدات الفرعية والتعبئة (كرتون/حبة) في المنتجات المخزنية.
+     */
     val MIGRATION_12_13 = object : Migration(12, 13) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE makhzan_products ADD COLUMN hasSubUnits INTEGER NOT NULL DEFAULT 0")
@@ -141,7 +201,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** إنشاء جدول العناصر المحذوفة لاستعادة البيانات بعد الحذف. */
+    /**
+     * [الهجرة من الإصدار 13 إلى 14 - MIGRATION_13_14]:
+     * إنشاء جدول سلة المهملات `deleted_items` لحفظ الكيانات المحذوفة بتنسيق JSON مع توقيت الحذف لاستعادتها.
+     */
     val MIGRATION_13_14 = object : Migration(13, 14) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -157,28 +220,40 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة إعداد النسخ التلقائي إلى الإعدادات. */
+    /**
+     * [الهجرة من الإصدار 14 إلى 15 - MIGRATION_14_15]:
+     * إضافة خيار تفعيل النسخ الاحتياطي التلقائي اليومي `isAutoBackupEnabled` في الإعدادات.
+     */
     val MIGRATION_14_15 = object : Migration(14, 15) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN isAutoBackupEnabled INTEGER NOT NULL DEFAULT 0")
         }
     }
 
-    /** الحفاظ على مسار الترقية التاريخي للنسخة السادسة عشرة. */
+    /**
+     * [الهجرة من الإصدار 15 إلى 16 - MIGRATION_15_16]:
+     * إضافة خيار تفعيل المزامنة السحابية `isCloudSyncEnabled` في الإعدادات.
+     */
     val MIGRATION_15_16 = object : Migration(15, 16) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN isCloudSyncEnabled INTEGER NOT NULL DEFAULT 0")
         }
     }
 
-    /** الحفاظ على مسار الترقية التاريخي للنسخة السابعة عشرة. */
+    /**
+     * [الهجرة من الإصدار 16 إلى 17 - MIGRATION_16_17]:
+     * إضافة حقل الباركود `barcode` للمنتجات.
+     */
     val MIGRATION_16_17 = object : Migration(16, 17) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE makhzan_products ADD COLUMN barcode TEXT")
         }
     }
 
-    /** إضافة فهارس الأداء للجداول كثيرة الاستعلام. */
+    /**
+     * [الهجرة من الإصدار 17 إلى 18 - MIGRATION_17_18]:
+     * إنشاء فهارس سريعة لجدول المعاملات وجداول المخزن لتسريع الاستعلامات والفلترة الزمنية.
+     */
     val MIGRATION_17_18 = object : Migration(17, 18) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_makhzan_products_category` ON `makhzan_products` (`category`)")
@@ -188,7 +263,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة بيانات العملة وسعر الصرف والمبلغ المكافئ لحركات الحبايب. */
+    /**
+     * [الهجرة من الإصدار 18 إلى 19 - MIGRATION_18_19]:
+     * إضافة حقول العملات الأجنبية وأسعار الصرف والمبالغ المكافئة لجدول ديون الحبايب `habayeb_transactions`.
+     */
     val MIGRATION_18_19 = object : Migration(18, 19) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE habayeb_transactions ADD COLUMN is_foreign INTEGER NOT NULL DEFAULT 0")
@@ -200,7 +278,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة أعمدة أسعار الصرف التاريخية التي يجب الحفاظ عليها دون تغيير. */
+    /**
+     * [الهجرة من الإصدار 19 إلى 20 - MIGRATION_19_20]:
+     * إضافة أسعار الصرف الافتراضية للريال السعودي والدولار والريال اليمني في جدول الإعدادات.
+     */
     val MIGRATION_19_20 = object : Migration(19, 20) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN exchangeRateSar REAL NOT NULL DEFAULT 1.0")
@@ -209,34 +290,50 @@ object DatabaseMigrations {
         }
     }
 
-    /** مسار انتقال فارغ يحافظ على التتابع التاريخي. */
+    /**
+     * [الهجرة من الإصدار 20 إلى 21 - MIGRATION_20_21]:
+     * مسار أمان لحفظ تتابع الترقية إلى الإصدار 21.
+     */
     val MIGRATION_20_21 = object : Migration(20, 21) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            // Version 21 didn't have a migration defined previously, this ensures a path exists.
         }
     }
 
-    /** إضافة نوع الدين الابتدائي لعملاء الحبايب. */
+    /**
+     * [الهجرة من الإصدار 21 إلى 22 - MIGRATION_21_22]:
+     * إضافة نوع الدين المبدئي `initialType` في جدول عملاء ديون الحبايب `habayeb_customers`.
+     */
     val MIGRATION_21_22 = object : Migration(21, 22) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE habayeb_customers ADD COLUMN initialType TEXT NOT NULL DEFAULT 'OWED_BY_THEM'")
         }
     }
 
-    /** إضافة بيانات أسعار الصرف المتعددة بصيغة النص. */
+    /**
+     * [الهجرة من الإصدار 22 إلى 23 - MIGRATION_22_23]:
+     * إضافة مصفوفة أسعار الصرف بصيغة JSON `exchangeRatesJson` في جدول الإعدادات لدعم مرونة تعدد العملات.
+     */
     val MIGRATION_22_23 = object : Migration(22, 23) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE app_settings ADD COLUMN exchangeRatesJson TEXT NOT NULL DEFAULT '{}'")
         }
     }
 
-    /** إضافة رمز العملة الأساسية لحركات الحبايب. */
+    /**
+     * [الهجرة من الإصدار 23 إلى 24 - MIGRATION_23_24]:
+     * إضافة رمز العملة الأساسية `base_currency_code` في معاملات ديون الحبايب.
+     */
     val MIGRATION_23_24 = object : Migration(23, 24) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE habayeb_transactions ADD COLUMN base_currency_code TEXT NOT NULL DEFAULT 'DEFAULT'")
         }
     }
 
-    /** إضافة فهارس البحث المركبة للمعاملات والتقارير. */
+    /**
+     * [الهجرة من الإصدار 24 إلى 25 - MIGRATION_24_25]:
+     * إنشاء فهارس مركبة ومتقدمة لجدول حركات اليومية لتسريع البحث والتقارير الشهرية حسب النوع والتصنيف.
+     */
     val MIGRATION_24_25 = object : Migration(24, 25) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_category` ON `transactions` (`category`)")
@@ -246,29 +343,50 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة ترتيب عرض التصنيفات المخصصة. */
+    /**
+     * [الهجرة من الإصدار 25 إلى 26 - MIGRATION_25_26]:
+     * إضافة حقل ترتيب العرض `displayOrder` لجدول التصنيفات المخصصة `custom_categories`.
+     */
     val MIGRATION_25_26 = object : Migration(25, 26) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE custom_categories ADD COLUMN displayOrder INTEGER NOT NULL DEFAULT 0")
         }
     }
 
-    /** إضافة حالة إغلاق التصنيف المحمي. */
+    /**
+     * [الهجرة من الإصدار 26 إلى 27 - MIGRATION_26_27]:
+     * إضافة عمود حالة إغلاق التصنيف النظامي `isSystemClosed` في جدول التصنيفات المخصصة.
+     */
     val MIGRATION_26_27 = object : Migration(26, 27) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE custom_categories ADD COLUMN isSystemClosed INTEGER NOT NULL DEFAULT 0")
         }
     }
 
-    /** مسار انتقال فارغ يحافظ على التوافق مع الإصدار السابق. */
+    /**
+     * [الهجرة من الإصدار 27 إلى 28 - MIGRATION_27_28]:
+     * مسار أمان للانتقال للإصدار 28.
+     */
     val MIGRATION_27_28 = object : Migration(27, 28) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            // Safeguard legacy migration to version 28
         }
     }
 
-    /** إعادة بناء الجداول المالية لتحويل المبالغ إلى نصوص دقيقة مع الحفاظ على العلاقات والفهارس. */
+    /**
+     * [الهجرة من الإصدار 28 إلى 29 - MIGRATION_28_29 - هجرة مفصلية كبرى]:
+     * التحول التاريخي الشامل في دقة الحسابات المالية من الفاصلة العائمة (REAL) إلى النصوص (TEXT)
+     * لدعم كائنات [BigDecimal] عبر محول الأنواع [BigDecimalConverter] دون أي فقدان أو تقريب.
+     * 
+     * [الخطوات المعمارية]:
+     * 1. إعادة بناء جدول حركات اليومية `transactions` وتحويل عمود `amount` إلى TEXT.
+     * 2. إعادة بناء جدول الالتزامات `fixed_commitments` وتحويل المبالغ إلى TEXT.
+     * 3. إعادة بناء جدول ديون الحبايب `habayeb_transactions` وتحويل المبالغ وأسعار الصرف إلى TEXT مع قيود المفاتيح الأجنبية.
+     * 4. إعادة بناء كافة الفهارس لضمان السرعة الفائقة.
+     */
     val MIGRATION_28_29 = object : Migration(28, 29) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            // أ) بالنسبة لجدول transactions
             db.execSQL("""
                 CREATE TABLE IF NOT EXISTS `transactions_new` (
                     `id` TEXT PRIMARY KEY NOT NULL, 
@@ -291,6 +409,8 @@ object DatabaseMigrations {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_type` ON `transactions` (`type`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_type_timestamp` ON `transactions` (`type`, `timestamp`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_category_timestamp` ON `transactions` (`category`, `timestamp`)")
+
+            // ب) بالنسبة لجدول fixed_commitments
             db.execSQL("""
                 CREATE TABLE IF NOT EXISTS `fixed_commitments_new` (
                     `name` TEXT PRIMARY KEY NOT NULL, 
@@ -305,6 +425,8 @@ object DatabaseMigrations {
             """)
             db.execSQL("DROP TABLE `fixed_commitments`")
             db.execSQL("ALTER TABLE `fixed_commitments_new` RENAME TO `fixed_commitments`")
+
+            // ج) بالنسبة لجدول habayeb_transactions
             db.execSQL("""
                 CREATE TABLE IF NOT EXISTS `habayeb_transactions_new` (
                     `id` TEXT PRIMARY KEY NOT NULL, 
@@ -348,7 +470,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** إضافة فهارس البحث لعملاء الحبايب وحركاتهم. */
+    /**
+     * [الهجرة من الإصدار 29 إلى 30 - MIGRATION_29_30]:
+     * إضافة فهارس لتسريع البحث في عملاء الحبايب حسب الاسم ورقم الهاتف وتاريخ الإنشاء ونوع الرصيد الأولي.
+     */
     val MIGRATION_29_30 = object : Migration(29, 30) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_habayeb_customers_name` ON `habayeb_customers` (`name`)")
@@ -359,7 +484,11 @@ object DatabaseMigrations {
         }
     }
 
-    /** إعادة بناء الإعدادات مع اكتشاف الأعمدة الموجودة وإعطاء قيم آمنة للأعمدة المفقودة. */
+    /**
+     * [الهجرة من الإصدار 30 إلى 31 - MIGRATION_30_31]:
+     * إعادة هيكلة جدول الإعدادات `app_settings` بأمان عالي عبر فحص الأعمدة الحالية ديناميكياً
+     * (PRAGMA table_info) وتوفير قيم افتراضية حذرة لأي عمود مفقود لضمان استقرار التطبيق بنسبة 100%.
+     */
     val MIGRATION_30_31 = object : Migration(30, 31) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -437,7 +566,10 @@ object DatabaseMigrations {
         }
     }
 
-    /** يجمع الهجرات بالترتيب الكامل من الإصدار الأول حتى الإصدار الحادي والثلاثين. */
+    /**
+     * [مصفوفة كافة الهجرات - ALL_MIGRATIONS]:
+     * تجمع جميع كائنات الهجرة من 1 إلى 31 لتمريرها إلى `Room.databaseBuilder` عبر `addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)`.
+     */
     val ALL_MIGRATIONS = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
         MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,

@@ -1,24 +1,24 @@
 /**
  * =====================================================================
- * توثيق عربي للمسار التنفيذي.
+ * ملف: النشاط الرئيسي للتطبيق (MainActivity.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف النشاط الأحادي الأساسي للتطبيق ()
- * المبني بالكامل باستخدام . يتحكم في:
- * 1. تهيئة شاشة البداية () وإبقائها معروضة ريثما تكتمل قراءة الإعدادات.
- * 2. تفعيل التصميم الممتد حتى حواف الشاشة ().
- * 3. جدولة وتشغيل العمال الخلفيين للنسخ والتذكير ().
- * 4. إدارة قفل التطبيق برمز المرور ().
- * 5. إدارة نافذة الترحيب التفاعلية () وطلب الأذونات في الوقت المناسب.
- * 6. تطبيق اتجاه الواجهة العربي الشامل من اليمين إلى اليسار ().
+ * يمثل هذا الملف النشاط الأحادي الأساسي للتطبيق (Single Activity Architecture)
+ * المبني بالكامل باستخدام Jetpack Compose. يتحكم في:
+ * 1. تهيئة شاشة البداية (Splash Screen) وإبقائها معروضة ريثما تكتمل قراءة الإعدادات.
+ * 2. تفعيل التصميم الممتد حتى حواف الشاشة (Edge-to-Edge).
+ * 3. جدولة وتشغيل العمال الخلفيين للنسخ والتذكير (Workers).
+ * 4. إدارة قفل التطبيق برمز المرور (App Lock & Security Verification).
+ * 5. إدارة نافذة الترحيب التفاعلية (Onboarding) وطلب الأذونات في الوقت المناسب.
+ * 6. تطبيق اتجاه الواجهة العربي الشامل من اليمين إلى اليسار (RTL Layout Direction).
  * 7. تطبيق السمة المرئية (الوضع الفاتح / الداكن / النظام) بسلاسة وفورية.
- * 8. إنشاء نسخة احتياطية محلية صامتة عند مغادرة التطبيق (إيقاف النشاط).
+ * 8. إنشاء نسخة احتياطية محلية صامتة عند مغادرة التطبيق (onStop).
  */
 package com.smartledger.aldaftar
 
 // ---------------------------------------------------------------------
-// استيراد حزم أندرويد و  ونماذج العرض () وإدارة الحالة
+// استيراد حزم أندرويد و Jetpack Compose ونماذج العرض (ViewModels) وإدارة الحالة
 // ---------------------------------------------------------------------
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smartledger.aldaftar.ui.components.WelcomeOnboardingDialog
+import android.content.pm.PackageManager
+import java.security.MessageDigest
 import com.smartledger.aldaftar.ui.main.MainAppLayout
 import com.smartledger.aldaftar.ui.screens.AppLockScreen
 import com.smartledger.aldaftar.ui.theme.AppTheme
@@ -46,24 +48,24 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 
 /**
- * توثيق عربي للمسار التنفيذي.
- * ترث من النشاط الأساسي لدعم دوال التوافق والمصادقة الحيوية ونظام .
+ * [فئة النشاط الرئيسي - MainActivity]:
+ * ترث من `FragmentActivity` لدعم دوال التوافق والمصادقة الحيوية ونظام Compose.
  */
 class MainActivity : FragmentActivity() {
     private lateinit var backupSyncViewModel: BackupSyncViewModel
 
     /**
-     * [دالة دورة الحياة - إنشاء النشاط]:
-     * تهيئ شاشة البداية، ونماذج العرض، وتبني شجرة واجهات .
+     * [دالة دورة الحياة - onCreate]:
+     * تهيئ شاشة البداية، ونماذج العرض، وتبني شجرة واجهات Compose.
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         // تثبيت شاشة البداية الرسمية
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        // تفعيل تصميم الحواف الشفافة الحديث 
+        // تفعيل تصميم الحواف الشفافة الحديث Edge-to-Edge
         enableEdgeToEdge()
 
-        // تهيئة نماذج العرض المركزية () المرتبطة بدورة حياة النشاط
+        // تهيئة نماذج العرض المركزية (ViewModels) المرتبطة بدورة حياة النشاط
         val viewModel = androidx.lifecycle.ViewModelProvider(this)[FinanceViewModel::class.java]
         val securityViewModel = androidx.lifecycle.ViewModelProvider(this)[com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel::class.java]
         backupSyncViewModel = androidx.lifecycle.ViewModelProvider(this)[BackupSyncViewModel::class.java]
@@ -85,9 +87,9 @@ class MainActivity : FragmentActivity() {
         val isPasscodeEnabledFast = secPrefs.getBoolean("fast_passcode_enabled", false)
 
         val sharedPrefs = getSharedPreferences("fast_theme_prefs", MODE_PRIVATE)
-        val cachedThemeMode = sharedPrefs.getInt("key_fast_theme_mode", 0) // صفر للنظام، واحد للوضع الفاتح، واثنان للوضع الداكن
+        val cachedThemeMode = sharedPrefs.getInt("key_fast_theme_mode", 0) // 0: System, 1: Light, 2: Dark
 
-        // بناء واجهة المستخدم الرسومية عبر 
+        // بناء واجهة المستخدم الرسومية عبر Jetpack Compose
         setContent {
             val habayebViewModel: HabayebFinanceViewModel = viewModel()
 
@@ -108,7 +110,7 @@ class MainActivity : FragmentActivity() {
             // فحص وتنفيذ المعاملات المتكررة (الرواتب والأقساط المستحقة) في الخلفية عند الإقلاع
             LaunchedEffect(habayebViewModel) {
                 withContext(Dispatchers.IO) {
-                    // 
+                    // Check and execute any recurring transactions on startup safely on background thread
                     HabayebRecurringManager.checkAndExecuteRecurring(context, habayebViewModel) { count ->
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                             android.widget.Toast.makeText(
@@ -120,7 +122,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                // الاستماع لأحداث الواجهة مثل رسائل رسالة مؤقتة ومربعات التفعيل
+                // الاستماع لأحداث الواجهة مثل رسائل Toast ومربعات التفعيل
                 viewModel.uiEventFlow.collect { event ->
                     when (event) {
                         is com.smartledger.aldaftar.ui.viewmodel.UiEvent.ShowToast -> {
@@ -156,7 +158,7 @@ class MainActivity : FragmentActivity() {
             val isReallyFirstLaunch = settings.isFirstLaunch && !viewModel.hasShownOnboarding()
             LaunchedEffect(isReallyFirstLaunch) {
                 if (isReallyFirstLaunch) {
-                    // توثيق عربي للمسار التنفيذي.
+                    // إتاحة فرصة قصيرة جداً (400ms) لرسم الإطار الأول بسلاسة ثم عرض دليل الترحيب
                     kotlinx.coroutines.delay(400)
                     showOnboardingDialog = true
                 }
@@ -173,14 +175,14 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // تطبيق السمة وموفر الاتجاه العربي (الاتجاه العربي)
+            // تطبيق السمة وموفر الاتجاه العربي (RTL)
             AppTheme(darkTheme = darkTheme) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     // 1. نافذة الترحيب والإعداد الأولي عند التثبيت
                     if (isReallyFirstLaunch && showOnboardingDialog) {
                         WelcomeOnboardingDialog(
                             onDismiss = {
-                                viewModel.markOnboardingShown() // حفظ الحالة أولاً في التفضيلات المحلية
+                                viewModel.markOnboardingShown() // Persist in SharedPreferences first
                                 val updated = settings.copy(isFirstLaunch = false)
                                 viewModel.saveSettings(updated)
                                 showOnboardingDialog = false
@@ -222,7 +224,7 @@ class MainActivity : FragmentActivity() {
     }
 
     /**
-     * [دالة دورة الحياة - إيقاف النشاط]:
+     * [دالة دورة الحياة - onStop]:
      * تستدعى عندما ينتقل التطبيق إلى الخلفية. تنفذ نسخة احتياطية صامتة وسريعة للحفاظ على البيانات.
      */
     override fun onStop() {
