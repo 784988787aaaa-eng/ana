@@ -2,9 +2,6 @@ package com.smartledger.aldaftar.ui.viewmodel.backup
 
 import android.net.Uri
 
-/**
- * ثوابت بروتوكولية لتحليل روابط وتفويض مصادقة OAuth.
- */
 private const val SCHEME_HTTP_PREFIX = "http://"
 private const val SCHEME_HTTPS_PREFIX = "https://"
 private const val QUERY_PARAM_CODE_KEY = "code"
@@ -20,7 +17,9 @@ object OAuthCodeParser {
             try {
                 val parsedUri = Uri.parse(trimmed)
                 extracted = parsedUri.getQueryParameter(QUERY_PARAM_CODE_KEY) ?: ""
-            } catch (e: Exception) {}
+            } catch (_: IllegalArgumentException) {
+
+            }
             if (extracted.isEmpty()) {
                 val idx = trimmed.indexOf(QUERY_PARAM_CODE_EQUALS)
                 if (idx != -1) {

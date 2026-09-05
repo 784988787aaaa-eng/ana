@@ -1,8 +1,3 @@
-
-/**
- * مدقق حمولة النسخ؛ يرفض البنية التالفة والأرقام غير الصالحة والمعرفات المتكررة ويطبق تحقق التكامل قبل الاستعادة.
- * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
- */
 package com.smartledger.aldaftar.data.serialization
 
 import com.smartledger.aldaftar.data.backup.BackupConstants
@@ -47,19 +42,16 @@ enum class ValidationErrorCode {
 
 object BackupPayloadValidator {
 
-    const val CURRENT_BACKUP_VERSION = "1.1.0"
-    val SUPPORTED_VERSIONS = setOf("1.0.0", "1.0", "1.1.0", "1.1", "1.0-legacy", "legacy")
+    const val CURRENT_BACKUP_VERSION = BackupConstants.CURRENT_BACKUP_VERSION
+    val SUPPORTED_VERSIONS = setOf("1.0.0", "1.0", "1.1.0", "1.1", CURRENT_BACKUP_VERSION, "1.0-legacy", "legacy")
 
-    /**
-     * يتحقق من أن القيمة النصية رقم عشري صالح وقابل للحساب.
-     */
     fun isValidDecimalString(raw: Any?): Boolean {
         if (raw == null) return false
         val str = raw.toString().trim()
         if (str.isEmpty() || str.equals("null", ignoreCase = true)) return false
-        if (str.equals("NaN", ignoreCase = true) || 
+        if (str.equals("NaN", ignoreCase = true) ||
             str.contains("Infinity", ignoreCase = true) ||
-            str.contains("E+", ignoreCase = true) || 
+            str.contains("E+", ignoreCase = true) ||
             str.contains("E-", ignoreCase = true)) {
             return false
         }
@@ -74,9 +66,6 @@ object BackupPayloadValidator {
         }
     }
 
-    /**
-     * يقرأ الحقل المالي مع رفض القيم الفارغة والتالفة واللانهاية.
-     */
     fun parseStrictBigDecimal(obj: JSONObject, key: String, isRequired: Boolean = true, defaultVal: String = "0"): BigDecimal {
         if (!obj.has(key) || obj.isNull(key)) {
             if (isRequired) {
@@ -92,7 +81,7 @@ object BackupPayloadValidator {
             }
             return BigDecimal(defaultVal)
         }
-        if (str.equals("NaN", ignoreCase = true) || 
+        if (str.equals("NaN", ignoreCase = true) ||
             str.contains("Infinity", ignoreCase = true)) {
             throw IllegalArgumentException("تم اكتشاف قيمة عددية تالفة (NaN / Infinity) في الحقل: $key")
         }
@@ -107,9 +96,6 @@ object BackupPayloadValidator {
         }
     }
 
-    /**
-     * يفحص البنية والمعرفات والمفاتيح والأرقام والبصمة قبل السماح بالاستعادة.
-     */
     fun validateBackupPayload(rawJsonString: String, verifyHashStrictly: Boolean = true): BackupValidationResult {
         if (rawJsonString.isBlank()) {
             return BackupValidationResult.Invalid(
@@ -128,8 +114,8 @@ object BackupPayloadValidator {
             )
         }
 
-        val isLegacyContainer = root.has(BackupConstants.JSON_KEY_MIZAN_AL_DAR_DB) || 
-                                root.has(BackupConstants.JSON_KEY_HABAYEB_DEBTS_DB)
+        val isLegacyContainer = root.has(BackupConstants.JSON_KEY_MIZAN_AL_DAR_DB) ||
+        root.has(BackupConstants.JSON_KEY_HABAYEB_DEBTS_DB)
 
         val sourceObj = if (root.has(BackupConstants.JSON_KEY_MIZAN_AL_DAR_DB)) {
             root.getJSONObject(BackupConstants.JSON_KEY_MIZAN_AL_DAR_DB)
@@ -168,14 +154,14 @@ object BackupPayloadValidator {
 
         val commitments = mutableListOf<FixedCommitment>()
         val commitmentsArr = sourceObj.optJSONArray(BackupConstants.JSON_KEY_FIXED_COMMITMENTS)
-            ?: sourceObj.optJSONArray(BackupConstants.JSON_KEY_COMMITMENTS)
+        ?: sourceObj.optJSONArray(BackupConstants.JSON_KEY_COMMITMENTS)
         if (commitmentsArr != null) {
             for (i in 0 until commitmentsArr.length()) {
                 val obj = commitmentsArr.optJSONObject(i)
-                    ?: return BackupValidationResult.Invalid(
-                        "عنصر تالف في مصفوفة الالتزامات المالية عند الفهرس $i",
-                        ValidationErrorCode.CORRUPTED_PAYLOAD_STRUCTURE
-                    )
+                ?: return BackupValidationResult.Invalid(
+                    "عنصر تالف في مصفوفة الالتزامات المالية عند الفهرس $i",
+                    ValidationErrorCode.CORRUPTED_PAYLOAD_STRUCTURE
+                )
                 val name = obj.optString("name", "").trim()
                 if (name.isBlank()) {
                     return BackupValidationResult.Invalid(
@@ -218,10 +204,10 @@ object BackupPayloadValidator {
         if (txArr != null) {
             for (i in 0 until txArr.length()) {
                 val obj = txArr.optJSONObject(i)
-                    ?: return BackupValidationResult.Invalid(
-                        "عنصر تالف في مصفوفة قيود اليومية عند الفهرس $i",
-                        ValidationErrorCode.CORRUPTED_PAYLOAD_STRUCTURE
-                    )
+                ?: return BackupValidationResult.Invalid(
+                    "عنصر تالف في مصفوفة قيود اليومية عند الفهرس $i",
+                    ValidationErrorCode.CORRUPTED_PAYLOAD_STRUCTURE
+                )
                 val id = obj.optString("id", "").trim()
                 if (id.isBlank()) {
                     return BackupValidationResult.Invalid(
@@ -347,14 +333,18 @@ object BackupPayloadValidator {
             closedCustomName = root.optString(BackupConstants.JSON_KEY_CLOSED_CUSTOM_NAME, null)
         )
 
-        if (verifyHashStrictly && !isLegacyContainer && formatVersion in setOf("1.1.0", "1.1")) {
+        if (verifyHashStrictly && !isLegacyContainer && formatVersion in setOf(BackupConstants.CURRENT_BACKUP_VERSION, "1.1.0", "1.1")) {
             if (embeddedHash.isNullOrBlank()) {
                 return BackupValidationResult.Invalid(
                     "بصمة التكامل المنطقية مفقودة من النسخة الحديثة",
                     ValidationErrorCode.INTEGRITY_HASH_MISMATCH
                 )
             }
-            val isMatch = BackupIntegrityManager.verifyIntegrity(payloadData, embeddedHash)
+            val isMatch = if (formatVersion == BackupConstants.CURRENT_BACKUP_VERSION) {
+                BackupIntegrityManager.verifyIntegrity(payloadData, embeddedHash)
+            } else {
+                BackupIntegrityManager.verifyLegacyIntegrity(payloadData, embeddedHash)
+            }
             if (!isMatch) {
                 return BackupValidationResult.Invalid(
                     "بصمة التكامل المنطقية غير متطابقة (Security Hash Mismatch)؛ قد يكون الملف قد عُدّل خارجياً",
@@ -370,9 +360,6 @@ object BackupPayloadValidator {
         )
     }
 
-    /**
-     * يقرأ الملف بعد فحص حدوده ثم يمرره إلى التحقق الشامل.
-     */
     fun validateBackupFile(file: File, verifyHashStrictly: Boolean = true): BackupValidationResult {
         if (!file.exists() || !file.isFile || file.length() == 0L) {
             return BackupValidationResult.Invalid(
@@ -380,7 +367,7 @@ object BackupPayloadValidator {
                 ValidationErrorCode.EMPTY_OR_UNREADABLE_FILE
             )
         }
-        if (file.length() > 64L * 1024L * 1024L) {
+        if (file.length() > BackupConstants.MAX_BACKUP_BYTES) {
             return BackupValidationResult.Invalid(
                 "حجم ملف النسخة الاحتياطية يتجاوز الحد المسموح",
                 ValidationErrorCode.EMPTY_OR_UNREADABLE_FILE

@@ -1,9 +1,5 @@
-/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 package com.smartledger.aldaftar.data
 
-// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
-// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
-// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,10 +9,8 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 
-/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     companion object {
         private const val TAG = "GoogleDriveFolderNavigator"
 
@@ -37,42 +31,34 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         private const val JSON_KEY_SIZE = "size"
         private const val JSON_KEY_CREATED_TIME = "createdTime"
 
-        private const val CACHE_EXPIRY_MS = 60_000L // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
-    }
+        private const val CACHE_EXPIRY_MS = 60_000L     }
 
-    // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
     private var cachedLatestFileId: Pair<Long, String?>? = null
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class FileSearchResult {
         data class Success(val fileId: String?) : FileSearchResult()
         data class Error(val isAuthError: Boolean, val code: Int) : FileSearchResult()
     }
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class ListBackupsResult {
         data class Success(val backups: List<CloudBackupFile>) : ListBackupsResult()
         data class Error(val isAuthError: Boolean, val code: Int) : ListBackupsResult()
     }
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun buildAuthorizedRequest(url: String, accessToken: String): Request {
         return Request.Builder()
-            .url(url)
-            .header(HEADER_AUTHORIZATION, "$BEARER_PREFIX$accessToken")
-            .get()
-            .build()
+        .url(url)
+        .header(HEADER_AUTHORIZATION, "$BEARER_PREFIX$accessToken")
+        .get()
+        .build()
     }
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun isAuthError(code: Int): Boolean = code == 401 || code == 403
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     fun clearCache() {
         cachedLatestFileId = null
     }
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun findLatestBackupFileId(accessToken: String, forceRefresh: Boolean = false): FileSearchResult = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (!forceRefresh) {
@@ -84,8 +70,8 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
 
         try {
             val searchUrl = "$DRIVE_FILES_API_URL?spaces=$SPACE_APP_DATA_FOLDER" +
-                    "&orderBy=${URLEncoder.encode(ORDER_BY_MODIFIED_TIME_DESC, ENCODING_UTF8)}" +
-                    "&q=${URLEncoder.encode(QUERY_LATEST_BACKUP, ENCODING_UTF8)}"
+            "&orderBy=${URLEncoder.encode(ORDER_BY_MODIFIED_TIME_DESC, ENCODING_UTF8)}" +
+            "&q=${URLEncoder.encode(QUERY_LATEST_BACKUP, ENCODING_UTF8)}"
 
             val searchRequest = buildAuthorizedRequest(searchUrl, accessToken)
 
@@ -111,14 +97,13 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         }
     }
 
-    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun listCloudBackups(accessToken: String): ListBackupsResult = withContext(Dispatchers.IO) {
         try {
             val url = "$DRIVE_FILES_API_URL?spaces=$SPACE_APP_DATA_FOLDER" +
-                    "&fields=${URLEncoder.encode(FIELDS_BACKUPS_LIST, ENCODING_UTF8)}" +
-                    "&q=${URLEncoder.encode(QUERY_ALL_MZD_BACKUPS, ENCODING_UTF8)}" +
-                    "&orderBy=${URLEncoder.encode(ORDER_BY_MODIFIED_TIME_DESC, ENCODING_UTF8)}" +
-                    "&pageSize=1000"
+            "&fields=${URLEncoder.encode(FIELDS_BACKUPS_LIST, ENCODING_UTF8)}" +
+            "&q=${URLEncoder.encode(QUERY_ALL_MZD_BACKUPS, ENCODING_UTF8)}" +
+            "&orderBy=${URLEncoder.encode(ORDER_BY_MODIFIED_TIME_DESC, ENCODING_UTF8)}" +
+            "&pageSize=1000"
 
             val request = buildAuthorizedRequest(url, accessToken)
 
@@ -146,4 +131,28 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
             ListBackupsResult.Error(false, -1)
         }
     }
+    suspend fun findBackupFileIdByName(accessToken: String, fileName: String): FileSearchResult = withContext(Dispatchers.IO) {
+        if (fileName.isBlank()) return@withContext FileSearchResult.Success(null)
+        try {
+            val escapedName = fileName.replace("\\", "\\\\").replace("'", "\\'")
+            val query = "name = '$escapedName' and trashed = false"
+            val url = "$DRIVE_FILES_API_URL?spaces=$SPACE_APP_DATA_FOLDER" +
+            "&pageSize=1" +
+            "&q=${URLEncoder.encode(query, ENCODING_UTF8)}" +
+            "&fields=${URLEncoder.encode(FIELDS_BACKUPS_LIST, ENCODING_UTF8)}"
+
+            client.newCall(buildAuthorizedRequest(url, accessToken)).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@use FileSearchResult.Error(isAuthError(response.code), response.code)
+                }
+                val files = JSONObject(response.body?.string().orEmpty()).optJSONArray(JSON_KEY_FILES)
+                val id = files?.takeIf { it.length() > 0 }?.getJSONObject(0)?.optString(JSON_KEY_ID)?.takeIf { it.isNotBlank() }
+                FileSearchResult.Success(id)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "فشل البحث عن نسخة بالاسم: ${e.javaClass.simpleName}")
+            FileSearchResult.Error(false, -1)
+        }
+    }
+
 }
