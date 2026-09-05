@@ -10,16 +10,17 @@ import kotlin.coroutines.resumeWithException
 import java.security.MessageDigest
 
 /**
- * عميل Play Integrity Standard API.
- * يحصل التطبيق على token موقّع؛ لا يتم تفسير verdict داخل APK لأن Google تنص على أن
- * فك الرمز والتحقق من verdict يجب أن يتم على خادم موثوق. لذلك لا نضع مفتاح خدمة Google داخل APK.
+ * عميل    .
+ * يحصل التطبيق على  موقّع؛ لا يتم تفسير  داخل  لأن  تنص على أن
+ * فك الرمز والتحقق من  يجب أن يتم على خادم موثوق. لذلك لا نضع مفتاح خدمة  داخل .
  */
 class PlayIntegrityGate(context: Context) {
     private val manager = IntegrityManagerFactory.createStandard(context.applicationContext)
     @Volatile private var provider: StandardIntegrityManager.StandardIntegrityTokenProvider? = null
 
     suspend fun prepare(): Boolean {
-        val projectNumber = BuildConfig.PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER
+        // يطابق رقم مشروع السحابة النوع العددي الطويل المطلوب من المكتبة.
+        val projectNumber: Long = BuildConfig.PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER
         if (projectNumber <= 0L) return false
         return try {
             provider = awaitPrepare(projectNumber)
@@ -31,7 +32,8 @@ class PlayIntegrityGate(context: Context) {
 
     suspend fun requestToken(requestPayload: String): String? {
         val current = provider ?: return null
-        val requestHash = MessageDigest.getInstance("SHA-256")
+        // يطابق تجزئة الطلب النوع النصي المطلوب لبناء طلب التحقق.
+        val requestHash: String = MessageDigest.getInstance("SHA-256")
             .digest(requestPayload.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
         return try {

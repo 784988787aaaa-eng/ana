@@ -1,6 +1,7 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -153,7 +154,7 @@ fun AddCustomerPopup(
                     .imePadding()
                     .padding(2.dp)
             ) {
-                if (showRateSetupOverlay) {
+                Crossfade(targetState = showRateSetupOverlay) { isSetup ->
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false

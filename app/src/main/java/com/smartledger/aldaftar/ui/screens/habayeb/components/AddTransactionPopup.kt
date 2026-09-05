@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -234,7 +235,7 @@ fun AddTransactionPopup(
                     .imePadding()
                     .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                if (showRateSetupOverlay) {
+                Crossfade(targetState = showRateSetupOverlay) { isSetup ->
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false

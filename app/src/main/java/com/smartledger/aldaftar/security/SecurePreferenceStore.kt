@@ -23,8 +23,8 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * مخزن تفضيلات مشفر لا يكتب القيم الحساسة كنص صريح.
- * يستخدم Android Keystore عند نجاحه، وعند تعذره يستخدم PBKDF2-HMAC-SHA256 + AES-GCM
- * مع ملح تثبيت عشوائي محفوظ داخل مساحة التطبيق الخاصة. لا توجد أي عودة إلى SharedPreferences
+ * يستخدم   عند نجاحه، وعند تعذره يستخدم 2--256 + -
+ * مع ملح تثبيت عشوائي محفوظ داخل مساحة التطبيق الخاصة. لا توجد أي عودة إلى 
  * عادية عند فشل التشفير.
  */
 class SecurePreferenceStore(
@@ -73,7 +73,7 @@ class SecurePreferenceStore(
             }
             return (keyStore.getEntry(keystoreAlias, null) as KeyStore.SecretKeyEntry).secretKey
         } catch (_: Throwable) {
-            // لا نعود أبداً إلى SharedPreferences غير مشفرة؛ نستخدم طبقة PBKDF2 المشفرة فقط.
+            // لا نعود أبداً إلى  غير مشفرة؛ نستخدم طبقة 2 المشفرة فقط.
             return fallbackKey()
         }
     }
@@ -218,7 +218,11 @@ class SecurePreferenceStore(
         }
     }
 
-    override val all: Map<String, *> get() = synchronized(lock) { ensureLoaded(); values.toMap() }
+    // تعيد هذه الدالة نسخة مستقلة من جميع القيم وفق واجهة التفضيلات الأصلية.
+    override fun getAll(): MutableMap<String, *> = synchronized(lock) {
+        ensureLoaded()
+        values.toMutableMap()
+    }
     override fun getString(key: String?, defValue: String?): String? = synchronized(lock) { ensureLoaded(); values[key] as? String ?: defValue }
     override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? = synchronized(lock) {
         ensureLoaded(); (values[key] as? Set<*>)?.filterIsInstance<String>()?.toMutableSet() ?: defValues
@@ -278,7 +282,7 @@ class SecurePreferenceStore(
                 return false
             }
 
-            // apply() يجعل القراءة التالية ترى القيمة فوراً، ثم تتم كتابة القرص في خيط مستقل.
+            // () يجعل القراءة التالية ترى القيمة فوراً، ثم تتم كتابة القرص في خيط مستقل.
             val persist = Runnable {
                 try {
                     synchronized(lock) { persistSnapshot(snapshot) }
