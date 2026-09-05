@@ -77,7 +77,13 @@ jobs:
           mkdir -p app
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/aldaftar.keystore
 
-          if [ ! -s app/aldaftar.keystore ]; then
+          # Compatibility path: the release signing configuration currently
+          # resolves the keystore as the literal filename app*.keystore.
+          # Create that exact file from the verified release keystore so the
+          # Gradle signing task can resolve it on the GitHub runner.
+          cp app/aldaftar.keystore 'app/app*.keystore'
+
+          if [ ! -s app/aldaftar.keystore ] || [ ! -s 'app/app*.keystore' ]; then
             echo "ERROR: KEYSTORE_BASE64 decoded to an empty keystore."
             exit 1
           fi
