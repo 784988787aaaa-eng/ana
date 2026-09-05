@@ -17,11 +17,11 @@
 }
 
 # Keep local database entities intact for Room reflection & JSON Backup Serialization
--keep class com.example.data.local.entities.** { *; }
--keep interface com.example.data.local.dao.** { *; }
+-keep class com.smartledger.aldaftar.data.local.entities.** { *; }
+-keep interface com.smartledger.aldaftar.data.local.dao.** { *; }
 
 # Keep security & licensing logic methods intact
--keepclassmembers class com.example.ui.viewmodel.FinanceViewModel {
+-keepclassmembers class com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel {
     *** isTrialExpired(...);
     *** activateLicense(...);
 }

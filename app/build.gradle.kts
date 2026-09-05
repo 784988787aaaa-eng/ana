@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
+  namespace = "com.smartledger.aldaftar"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.mizanaldar.ptwqxs"
+    applicationId = "com.smartledger.aldaftar"
     minSdk = 24
     targetSdk = 36
     versionCode = 4
@@ -27,9 +27,9 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "mizan.keystore"
+      val keystorePath = providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
       val storePwd = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
-      val keyAli = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull
+      val keyAli = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull ?: "aldaftar"
       val keyPwd = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
 
       if (storePwd != null && keyAli != null && keyPwd != null) {

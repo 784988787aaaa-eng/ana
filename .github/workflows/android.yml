@@ -37,22 +37,22 @@ jobs:
           if [ ! -f ~/.android/debug.keystore ]; then
             keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-          # ممنوع منعاً باتاً نسخ debug.keystore إلى mizan.keystore أو تعويض أي release keystore
+          # ممنوع منعاً باتاً نسخ debug.keystore إلى aldaftar.keystore أو تعويض أي release keystore
 
-      # 2. التحقق الصارم المسبق من وجود وسلامة مستودع mizan.keystore الأصلي ومطابقة البصمة
+      # 2. التحقق الصارم المسبق من وجود وسلامة مستودع aldaftar.keystore ومطابقة البصمة
       - name: Verify Release Keystore and Credentials
         env:
-          KEYSTORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'app/mizan.keystore' }}
+          KEYSTORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'app/aldaftar.keystore' }}
           STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'mizan' }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          EXPECTED_SHA1: "AEC20C0F4E48D797C87959764FB6659DC5A5FB20"
+          EXPECTED_SHA1: "4985981003E3502B632056CB931AE3804F6859F8"
         run: |
           echo "===================================================="
           echo "🔍 Pre-Build Verification: Release Keystore Integrity"
           echo "===================================================="
 
-          # التحقق من وجود ملف الـ Keystore الأصلي
+          # التحقق من وجود ملف الـ Keystore
           if [ ! -f "$KEYSTORE_FILE" ]; then
             echo "❌ CRITICAL ERROR: Release Keystore file not found at: $KEYSTORE_FILE"
             echo "🚨 Refusing to build or substitute with any debug/dummy keystore!"
@@ -74,7 +74,7 @@ jobs:
             exit 1
           }
 
-          # استخراج بصمة SHA-1 ومقارنتها بالبصمة المرجعية الأصلية
+          # استخراج بصمة SHA-1 ومقارنتها بالبصمة المرجعية
           EXTRACTED_SHA1=$(echo "$CERT_OUTPUT" | grep -i "SHA1:" | head -n 1 | sed -e 's/.*SHA1:[[:space:]]*//' -e 's/://g' | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')
           
           if [ "$EXTRACTED_SHA1" != "$EXPECTED_SHA1" ]; then
@@ -84,7 +84,7 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Pre-build Keystore verification PASSED. Certificate matches original release signature."
+          echo "✅ Pre-build Keystore verification PASSED. Certificate matches genuine release signature."
 
       # 3. التحقق من سلامة Gradle Wrapper
       - name: Verify Gradle Wrapper
@@ -103,9 +103,9 @@ jobs:
       # 4. بناء نسخة Release مع تمرير بارامترات التوقيع الموثقة
       - name: Build Release APK
         env:
-          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'mizan.keystore' }}
+          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'mizan' }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           echo "🚀 Building Release APK with verified signing configuration..."
@@ -119,9 +119,9 @@ jobs:
       # 5. الفحص الإجباري لشهادة Release APK باستخدام apksigner
       - name: Verify Release APK Signature & Fingerprint
         env:
-          EXPECTED_SHA1_FORMATTED: "AE:C2:0C:0F:4E:48:D7:97:C8:79:59:76:4F:B6:65:9D:C5:A5:FB:20"
-          EXPECTED_SHA1_CLEAN: "AEC20C0F4E48D797C87959764FB6659DC5A5FB20"
-          SIGNING_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'mizan' }}
+          EXPECTED_SHA1_FORMATTED: "49:85:98:10:03:E3:50:2B:63:20:56:CB:93:1A:E3:80:4F:68:59:F8"
+          EXPECTED_SHA1_CLEAN: "4985981003E3502B632056CB931AE3804F6859F8"
+          SIGNING_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
         run: |
           echo "===================================================="
           echo "🔍 Post-Build APK Signature Verification"
@@ -164,7 +164,7 @@ jobs:
           # التقرير الإلزامي لـ Workflow
           echo "----------------------------------------------------"
           echo "Build variant: release"
-          echo "Package: com.aistudio.mizanaldar.ptwqxs"
+          echo "Package: com.smartledger.aldaftar"
           echo "Signing alias: $SIGNING_ALIAS"
           echo "Expected SHA-1: $EXPECTED_SHA1_FORMATTED"
           echo "Actual APK SHA-1: $ACTUAL_SHA1_FORMATTED"
@@ -172,18 +172,18 @@ jobs:
 
           if [ "$ACTUAL_SHA1_CLEAN" != "$EXPECTED_SHA1_CLEAN" ]; then
             echo "Fingerprint verification: FAIL"
-            echo "❌ CRITICAL MISMATCH: Release APK signature does NOT match the required Firebase SHA-1!"
+            echo "❌ CRITICAL MISMATCH: Release APK signature does NOT match the required release SHA-1!"
             echo "Expected: $EXPECTED_SHA1_FORMATTED"
             echo "Actual:   $ACTUAL_SHA1_FORMATTED"
             exit 1
           fi
 
           echo "Fingerprint verification: PASS"
-          echo "✅ Release APK is verified with the genuine original signing key."
+          echo "✅ Release APK is verified with the genuine release signing key."
 
       # 6. رفع حزمة Release APK المؤكدة فقط بعد اجتياز فحص البصمة
       - name: Upload Verified Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mizan-Al-Dar-Release-APK
+          name: Al-Daftar-Release-APK
           path: app/build/outputs/apk/release/*.apk

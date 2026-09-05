@@ -556,6 +556,7 @@
     <string name="report_booklet_generating_title">جاري إعداد السجل التفصيلي الشامل...</string>
     <string name="report_booklet_progress_fmt">تمت معالجة %1$d من %2$d حساب مالي</string>
     <string name="report_booklet_cancel_btn">إلغاء العملية</string>
+    <string name="report_booklet_cancelled_toast">تم إلغاء إعداد السجل التفصيلي</string>
     <string name="report_booklet_error_toast">فشل إنشاء السجل الورقي التوثيقي</string>
 
     <!-- ============================================================================== -->
