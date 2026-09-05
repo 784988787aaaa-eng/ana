@@ -27,7 +27,15 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
+      val configuredKeystorePath =
+        providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
+      // This file is resolved from the app module directory. Accept both
+      // "aldaftar.keystore" and the CI-friendly "app/aldaftar.keystore"
+      // without ever producing the invalid app/app/... path.
+      val keystorePath = configuredKeystorePath
+        .removePrefix("app/")
+        .removePrefix("./")
+        .ifBlank { "aldaftar.keystore" }
       val storePwd = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
       val keyAli = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull ?: "aldaftar"
       val keyPwd = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull

@@ -77,13 +77,7 @@ jobs:
           mkdir -p app
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/aldaftar.keystore
 
-          # Compatibility path: the release signing configuration currently
-          # resolves the keystore as the literal filename app*.keystore.
-          # Create that exact file from the verified release keystore so the
-          # Gradle signing task can resolve it on the GitHub runner.
-          cp app/aldaftar.keystore 'app/app*.keystore'
-
-          if [ ! -s app/aldaftar.keystore ] || [ ! -s 'app/app*.keystore' ]; then
+          if [ ! -s app/aldaftar.keystore ]; then
             echo "ERROR: KEYSTORE_BASE64 decoded to an empty keystore."
             exit 1
           fi
@@ -166,7 +160,7 @@ jobs:
 
       - name: Build signed Al-Daftar release APK
         env:
-          RELEASE_STORE_FILE: "app/aldaftar.keystore"
+          RELEASE_STORE_FILE: "aldaftar.keystore"
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
