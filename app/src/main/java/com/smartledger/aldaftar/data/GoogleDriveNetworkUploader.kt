@@ -30,8 +30,8 @@ class GoogleDriveNetworkUploader(
         private const val PREFS_NAME = "google_drive_uploader_prefs"
         private const val KEY_LAST_UPLOADED_HASH = "last_uploaded_payload_hash"
 
-        private const val DRIVE_FILES_BASE_URL = "https:// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
-        private const val DRIVE_UPLOAD_BASE_URL = "https:// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+        private const val DRIVE_FILES_BASE_URL = "https://www.googleapis.com/drive/v3/files"
+        private const val DRIVE_UPLOAD_BASE_URL = "https://www.googleapis.com/upload/drive/v3/files"
         private const val MIME_TYPE_OCTET_STREAM = "application/octet-stream"
 
         private val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()

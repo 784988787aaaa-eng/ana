@@ -357,7 +357,7 @@ fun MainAppLayout(
                 safRestoreLauncher.launch(arrayOf(FinanceConstants.MIME_TYPE_ALL_APP))
             },
             onDiscoverLegacy = {
-                legacyFolderLauncher.launch(Unit)
+                legacyFolderLauncher.launch(null)
             },
             onDismiss = { showBackupRestoreSheet = false }
         )

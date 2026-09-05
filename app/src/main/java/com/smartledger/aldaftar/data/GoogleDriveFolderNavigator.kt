@@ -20,7 +20,7 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
     companion object {
         private const val TAG = "GoogleDriveFolderNavigator"
 
-        private const val DRIVE_FILES_API_URL = "https:// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+        private const val DRIVE_FILES_API_URL = "https://www.googleapis.com/drive/v3/files"
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
         private const val ENCODING_UTF8 = "UTF-8"

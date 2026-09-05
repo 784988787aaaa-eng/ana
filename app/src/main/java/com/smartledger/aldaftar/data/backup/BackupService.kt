@@ -29,6 +29,7 @@ import com.smartledger.aldaftar.data.serialization.BackupExtraDataProvider
 import com.smartledger.aldaftar.data.serialization.BackupPayloadData
 import com.smartledger.aldaftar.data.serialization.BackupPayloadSerializer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -122,7 +123,7 @@ class BackupService(
         customFileName: String? = null,
         targetDir: File? = null
     ): BackupOperationResult = backupMutex.withLock {
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IO + NonCancellable) {
             try {
                 // المرحلة الأولى: تجهيز البيانات وتحويلها إلى الصيغة المعيارية.
                 val jsonString = generateBackupJson()
@@ -167,6 +168,8 @@ class BackupService(
                         cause = err
                     )
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "استثناء أثناء دورة النسخ الاحتياطي: ${e.javaClass.simpleName}")
                 BackupOperationResult.Failure(

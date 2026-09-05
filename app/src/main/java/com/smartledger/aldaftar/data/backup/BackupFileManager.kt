@@ -63,7 +63,7 @@ class BackupFileManager(private val context: Context) {
     fun getMonthlyBackupDirectory(): File {
         val monthlyName = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US).format(Date())
         val monthlyDir = File(getBaseBackupDirectory(), monthlyName)
-        val ensureResult = BackupPathResolver.ensureDirectory(monthlyDir)
+        val ensureResult = BackupPathResolver.ensureDirectory(monthlyDir, getBaseBackupDirectory())
         return ensureResult.getOrDefault(monthlyDir)
     }
 
@@ -121,8 +121,8 @@ class BackupFileManager(private val context: Context) {
             // التحقق من اسم الملف المستهدف
             BackupPathResolver.validateFileName(targetFileName)
 
-            // ضمان وجود وصلاحية المجلد المستهدف داخل  الخاص بالتطبيق.
-            val dirResult = BackupPathResolver.ensureDirectory(targetDirectory)
+            // ضمان وجود وصلاحية المجلد المستهدف داخل المسار المعتمد.
+            val dirResult = BackupPathResolver.ensureDirectory(targetDirectory, getBaseBackupDirectory())
             if (dirResult.isFailure) {
                 return@withContext Result.failure(
                     dirResult.exceptionOrNull() ?: IOException("فشل تجهيز مجلد النسخ الاحتياطي: ${targetDirectory.path}")

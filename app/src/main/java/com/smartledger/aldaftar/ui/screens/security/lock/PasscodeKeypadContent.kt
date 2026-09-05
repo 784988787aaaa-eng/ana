@@ -63,6 +63,9 @@ fun PasscodeKeypadContent(
     onBiometricClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+    val zeroDigitText = stringResource(id = R.string.calc_default_zero)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -149,8 +152,8 @@ fun PasscodeKeypadContent(
                         Box(modifier = Modifier.size(72.dp))
                     }
 
-                    KeypadButton(text = stringResource(id = R.string.calc_default_zero), isFunctional = false) {
-                        onKeyPress(stringResource(id = R.string.calc_default_zero))
+                    KeypadButton(text = zeroDigitText, isFunctional = false) {
+                        onKeyPress(zeroDigitText)
                     }
 
                     KeypadButton(text = stringResource(id = R.string.lock_delete_btn), isFunctional = true) {
