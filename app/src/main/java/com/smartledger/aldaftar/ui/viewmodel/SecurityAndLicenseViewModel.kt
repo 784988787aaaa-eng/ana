@@ -289,10 +289,9 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     fun verifyCredentials(input: String): Boolean {
         val inputChars = input.trim().toCharArray()
         return try {
-            val hashed = HashUtils.hashString(String(inputChars))
             val settings = settingsState.value
-            (settings.passcodeHash != null && DatabaseSecurityGuard.secureEqual(hashed, settings.passcodeHash)) ||
-                    (settings.recoveryPhraseHash != null && DatabaseSecurityGuard.secureEqual(hashed, settings.recoveryPhraseHash))
+            (settings.passcodeHash != null && HashUtils.verifyPassword(inputChars, settings.passcodeHash)) ||
+                    (settings.recoveryPhraseHash != null && HashUtils.verifyPassword(inputChars, settings.recoveryPhraseHash))
         } catch (t: Throwable) {
             Log.e(TAG, "Error verifying credentials", t)
             false

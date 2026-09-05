@@ -110,7 +110,7 @@ fun ExchangeRateSetupContent(
             focusRequester.requestFocus()
             keyboardController?.show()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("SmartLedger", "Operation failed")
         }
     }
 

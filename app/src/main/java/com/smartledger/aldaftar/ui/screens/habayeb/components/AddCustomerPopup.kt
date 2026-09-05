@@ -1,7 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +37,7 @@ import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import java.util.Calendar
 
 @Composable
+/// تدير هذه الدالة نافذة إنشاء الحساب مع تمرير الحقول وتثبيت اتجاه الواجهة العربية.
 fun AddCustomerPopup(
     viewModel: HabayebFinanceViewModel,
     onDismiss: () -> Unit,
@@ -59,11 +59,12 @@ fun AddCustomerPopup(
     val creditGreen = mizanColors.credit
     val defaultPrimary = MaterialTheme.colorScheme.primary
 
+    // يحدد اللون الدلالي من رموز المظهر المركزية حتى تتوافق الواجهة مع الوضعين الفاتح والداكن.
     val dynamicThemeColor = remember(initialType, debtRed, creditGreen, defaultPrimary) {
         when (initialType) {
-            TransactionType.OWED_BY_THEM.value -> debtRed     // عند اختيار "عليه": يتلون بالأحمر المالي الجذاب
-            TransactionType.OWED_TO_THEM.value -> creditGreen // عند اختيار "له": يتلون بالأخضر المالي الجذاب
-            else -> defaultPrimary // أرجواني افتراضي قبل تحديد النوع
+            TransactionType.OWED_BY_THEM.value -> debtRed     // عند اختيار عليه يتلون باللون الدلالي للدين
+            TransactionType.OWED_TO_THEM.value -> creditGreen // عند اختيار له يتلون باللون الدلالي للرصيد
+            else -> defaultPrimary // لون أساسي قبل تحديد النوع
         }
     }
     val currencySymbol = settings.currencySymbol
@@ -126,7 +127,7 @@ fun AddCustomerPopup(
             focusRequester.requestFocus()
             softwareKeyboardController?.show()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("SmartLedger", "تعذر تجهيز التركيز ولوحة المفاتيح")
         }
     }
 
@@ -152,7 +153,7 @@ fun AddCustomerPopup(
                     .imePadding()
                     .padding(2.dp)
             ) {
-                Crossfade(targetState = showRateSetupOverlay, label = "CustomerFormTransition") { isSetup ->
+                if (showRateSetupOverlay) {
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false
@@ -181,7 +182,8 @@ fun AddCustomerPopup(
                             modifier = Modifier
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                                 .navigationBarsPadding()
-                                .verticalScroll(rememberScrollState()),
+                                .verticalScroll(rememberScrollState())
+                                .imePadding(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {

@@ -18,6 +18,12 @@ android {
     versionCode = 4
     versionName = "1.3"
 
+    // بصمة شهادة الإصدار الإنتاجي تُمرر من إعدادات البناء أو متغيرات البيئة ولا تُخمن داخل الشيفرة.
+    val expectedReleaseCert = providers.gradleProperty("RELEASE_CERT_SHA256").orNull ?: System.getenv("RELEASE_CERT_SHA256") ?: ""
+    buildConfigField("String", "EXPECTED_RELEASE_CERT_SHA256", "\"${expectedReleaseCert}\"")
+    val integrityProject = providers.gradleProperty("PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER").orNull ?: System.getenv("PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER") ?: "0"
+    buildConfigField("long", "PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER", integrityProject)
+
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -29,9 +35,9 @@ android {
     create("release") {
       val configuredKeystorePath =
         providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
-      // This file is resolved from the app module directory. Accept both
-      // "aldaftar.keystore" and the CI-friendly "app/aldaftar.keystore"
-      // without ever producing the invalid app/app/... path.
+      // يُحل مسار ملف التوقيع من مجلد وحدة التطبيق.
+      // يُقبل المسار المحلي المباشر ومسار بيئة التكامل المستمر بعد تنظيف السابقة.
+      // يمنع التنظيف تكوين مسار مكرر قد يؤدي إلى ملف توقيع غير صحيح.
       val keystorePath = configuredKeystorePath
         .removePrefix("app/")
         .removePrefix("./")
@@ -92,8 +98,8 @@ android {
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
-// Configure the Secrets Gradle Plugin to use .env and .env.example files
-// to match the convention used in Web projects.
+// يُضبط مكون الأسرار لاستخدام ملف الإعداد المحلي والملف النموذجي.
+// الغرض هو توحيد مصدر إعدادات الأسرار بين بيئات البناء مع إبقاء القيم خارج الشيفرة المصدرية.
 val envFile = rootProject.file(".env")
 if (!envFile.exists()) {
   val googleClientId = System.getenv("GOOGLE_CLIENT_ID") ?: ""
@@ -108,7 +114,8 @@ if (!envFile.exists()) {
   }
 }
 
-// Sanitize the .env file to ensure no empty keys are present (which would cause compiler errors inBuildConfig.java)
+// تُنقح أسطر ملف الأسرار لمنع القيم الفارغة التي قد تنتج إعدادات بناء غير صالحة.
+// لا تُستخدم هذه المعالجة لإجراء أي حساب مالي أو تشغيل عمل ثقيل على خيط الواجهة.
 if (envFile.exists()) {
   try {
     val lines = envFile.readLines().map { line ->
@@ -127,7 +134,7 @@ if (envFile.exists()) {
     }
     envFile.writeText(lines.joinToString("\n"))
   } catch (e: Exception) {
-    // Fail-safe
+    // تُمنع مشكلة ملف الإعداد من إسقاط عملية البناء بسبب خطأ جانبي في التنقيح.
   }
 }
 
@@ -160,6 +167,7 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.okhttp)
   implementation(libs.play.services.auth)
+  implementation(libs.play.integrity)
   implementation(libs.androidx.security.crypto)
   implementation(libs.androidx.biometric)
   implementation(libs.androidx.work.runtime.ktx)

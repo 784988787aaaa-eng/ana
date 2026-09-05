@@ -269,7 +269,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 repository.removeDeletedItem(item)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
             }
         }
     }
@@ -279,7 +279,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 items.forEach { repository.removeDeletedItem(it) }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
             }
         }
     }
@@ -292,7 +292,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 items.forEach { TrashRestoreHandler.restorePrefsForDeletedItem(context, it) }
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -306,7 +306,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -320,7 +320,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -349,7 +349,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e("SmartLedger", "Operation failed")
                 }
             }
         }
@@ -367,7 +367,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     repository.removeDeletedItem(it)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
             }
         }
     }
@@ -384,7 +384,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     repository.removeDeletedItem(it)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
             }
         }
     }
@@ -395,7 +395,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 repository.softDeleteTransactionToTrash(tx)
                 repository.deleteTransaction(tx)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -410,7 +410,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 }
                 repository.deleteTransactionById(id)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -427,7 +427,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     toDelete.forEach { repository.deleteTransactionById(it.id) }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -438,7 +438,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 repository.saveTransaction(tx)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -451,7 +451,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 val fc = FixedCommitment(name, targetAmount, currentProgress, count)
                 repository.saveCommitment(fc)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_save_failed))
             }
         }
@@ -462,7 +462,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 repository.saveCommitment(commitment)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -488,7 +488,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     repository.updateCommitments(updatedList)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
             }
         }
     }
@@ -502,7 +502,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 }
                 repository.deleteCommitment(name)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -513,7 +513,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 repository.saveCustomCategory(CustomCategory(name = name, tabType = tabType, iconEmoji = emoji))
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_save_failed))
             }
         }
@@ -524,7 +524,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 repository.deleteCustomCategory(customCategory)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -535,7 +535,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 repository.deleteAllData()
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("SmartLedger", "Operation failed")
             }
         }
     }

@@ -268,7 +268,7 @@ class HabayebCategoryManager(
 
             triggerUpdate()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("SmartLedger", "Operation failed")
         }
     }
 
@@ -305,7 +305,7 @@ class HabayebCategoryManager(
             triggerUpdate()
             VibrationHelper.triggerDeleteVibration(application)
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("SmartLedger", "Operation failed")
         }
     }
 

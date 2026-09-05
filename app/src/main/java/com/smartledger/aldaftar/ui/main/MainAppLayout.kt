@@ -168,7 +168,7 @@ fun MainAppLayout(
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e("SmartLedger", "Operation failed")
                 }
             }
         }

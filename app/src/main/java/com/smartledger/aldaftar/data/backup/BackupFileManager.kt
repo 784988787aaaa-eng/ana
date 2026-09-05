@@ -50,8 +50,8 @@ class BackupFileManager(private val context: Context) {
      * Documents/الدفتر الذكي
      */
     fun getBaseBackupDirectory(): File {
-        val rootDir = BackupPathResolver.getPublicBackupRoot()
-        val ensureResult = BackupPathResolver.ensureDirectory(rootDir)
+        val rootDir = BackupPathResolver.getAppBackupRoot(context)
+        val ensureResult = BackupPathResolver.ensureAppDirectory(context, rootDir)
         return ensureResult.getOrDefault(rootDir)
     }
 
@@ -60,8 +60,9 @@ class BackupFileManager(private val context: Context) {
      * تنشئ وترجع مجلداً فرعياً بصيغة (yyyy-MM) في المسار العام المعتمد لتصنيف النسخ حسب شهر الإنشاء.
      */
     fun getMonthlyBackupDirectory(): File {
-        val monthlyDir = BackupPathResolver.getCurrentMonthlyDirectory()
-        val ensureResult = BackupPathResolver.ensureDirectory(monthlyDir)
+        val monthlyName = SimpleDateFormat(BackupConstants.MONTH_DATE_PATTERN, Locale.US).format(Date())
+        val monthlyDir = File(getBaseBackupDirectory(), monthlyName)
+        val ensureResult = BackupPathResolver.ensureAppDirectory(context, monthlyDir)
         return ensureResult.getOrDefault(monthlyDir)
     }
 
@@ -119,8 +120,8 @@ class BackupFileManager(private val context: Context) {
             // التحقق من اسم الملف المستهدف
             BackupPathResolver.validateFileName(targetFileName)
 
-            // ضمان وجود وصلاحية المجلد المستهدف
-            val dirResult = BackupPathResolver.ensureDirectory(targetDirectory)
+            // ضمان وجود وصلاحية المجلد المستهدف داخل sandbox الخاص بالتطبيق.
+            val dirResult = BackupPathResolver.ensureAppDirectory(context, targetDirectory)
             if (dirResult.isFailure) {
                 return@withContext Result.failure(
                     dirResult.exceptionOrNull() ?: IOException("فشل تجهيز مجلد النسخ الاحتياطي: ${targetDirectory.path}")

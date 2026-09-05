@@ -110,58 +110,8 @@ fun QuadBackupCard(
         }
     }
 
-    val checkBackupPermissionsGranted = remember(context) {
-        {
-            val hasWrite = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else true
-            
-            val hasRead = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            
-            val hasNotification = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else true
-            
-            val hasManage = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                android.os.Environment.isExternalStorageManager()
-            } else true
-            
-            hasWrite && hasRead && hasNotification && hasManage
-        }
-    }
-
-    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        val writeGranted = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-            results[android.Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: false
-        } else true
-        
-        val readGranted = results[android.Manifest.permission.READ_EXTERNAL_STORAGE] ?: false
-        
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            if (!android.os.Environment.isExternalStorageManager()) {
-                Toast.makeText(context, context.getString(R.string.settings_toast_permission_manage_files), Toast.LENGTH_LONG).show()
-                try {
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    }
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                    context.startActivity(intent)
-                }
-            } else {
-                onPermissionGrantedCallback?.invoke()
-            }
-        } else {
-            if (writeGranted && readGranted) {
-                onPermissionGrantedCallback?.invoke()
-            } else {
-                Toast.makeText(context, context.getString(R.string.settings_toast_permission_denied_err), Toast.LENGTH_LONG).show()
-            }
-        }
-    }
+    // النسخ التلقائي محصور في sandbox الخاص بالتطبيق؛ لا توجد صلاحيات تخزين مطلوبة.
+    val checkBackupPermissionsGranted = remember { { true } }
 
     // Official Google Sign-In SDK configuration
     val googleSignInClient = remember {
@@ -320,15 +270,8 @@ fun QuadBackupCard(
         BackupPermissionExplanationDialog(
             onDismiss = { showBackupPermissionExplanationDialog = false },
             onGrantPermissions = {
-                val permissions = mutableListOf<String>()
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-                    permissions.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                }
-                permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
-                }
-                multiplePermissionsLauncher.launch(permissions.toTypedArray())
+                // لا نطلب صلاحيات التخزين؛ يمكن للمستخدم اختيار موقع التصدير من SAF عند الحاجة.
+                onPermissionGrantedCallback?.invoke()
             },
             onUseInternalStorage = {
                 onPermissionGrantedCallback?.invoke()

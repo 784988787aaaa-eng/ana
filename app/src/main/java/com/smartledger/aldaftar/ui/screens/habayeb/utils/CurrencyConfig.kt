@@ -4,8 +4,9 @@ import android.content.Context
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.BigDecimalConverter
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.finance.FinancialMath
+import com.smartledger.aldaftar.domain.finance.LegacyExchangeRateBridge
 import java.math.BigDecimal
-import java.math.MathContext
 import java.math.RoundingMode
 import java.util.Collections
 import java.util.LinkedHashMap
@@ -144,11 +145,11 @@ object CurrencyConfig {
     
     // دالة التحويل الآمنة بين العملات بناءً على أسعار الصرف الحالية
     fun convert(amount: BigDecimal, rate: BigDecimal, toWeaker: Boolean): BigDecimal {
-        if (rate <= BigDecimal.ZERO) return amount.setScale(4, RoundingMode.HALF_EVEN)
+        if (rate <= BigDecimal.ZERO) return FinancialMath.money(amount)
         return if (toWeaker) {
-            amount.multiply(rate, MathContext.DECIMAL128).setScale(4, RoundingMode.HALF_EVEN)
+            FinancialMath.multiply(amount, rate)
         } else {
-            amount.divide(rate, 4, RoundingMode.HALF_EVEN)
+            FinancialMath.divide(amount, rate)
         }
     }
 
@@ -173,19 +174,19 @@ object CurrencyConfig {
         val baseNorm = getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
         val foreignNorm = getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
         if (baseNorm == foreignNorm) {
-            return amount.setScale(4, RoundingMode.HALF_EVEN)
+            return FinancialMath.money(amount)
         }
-        val finalRate = if (rate <= BigDecimal.ZERO) BigDecimal.ONE else rate.setScale(4, RoundingMode.HALF_EVEN)
+        val finalRate = if (rate <= BigDecimal.ZERO) BigDecimal.ONE else FinancialMath.rate(rate)
         val baseRank = getCurrencyRank(baseNorm)
         val foreignRank = getCurrencyRank(foreignNorm)
 
         return if (baseRank < foreignRank) {
-            amount.multiply(finalRate, MathContext.DECIMAL128).setScale(4, RoundingMode.HALF_EVEN)
+            FinancialMath.multiply(amount, finalRate)
         } else {
             if (finalRate.compareTo(BigDecimal.ZERO) == 0) {
-                amount.setScale(4, RoundingMode.HALF_EVEN)
+                FinancialMath.money(amount)
             } else {
-                amount.divide(finalRate, 4, RoundingMode.HALF_EVEN)
+                FinancialMath.divide(amount, finalRate)
             }
         }
     }
@@ -197,8 +198,9 @@ object CurrencyConfig {
         rate: Double
     ): Double {
         val amountBD = BigDecimal.valueOf(amount)
-        val rateBD = BigDecimal.valueOf(rate)
-        return convertAmountBigDecimal(amountBD, baseCurrencySymbol, foreignCurrencySymbol, rateBD).toDouble()
+        val rateBD = LegacyExchangeRateBridge.fromLegacyDouble(rate)
+        val converted = convertAmountBigDecimal(amountBD, baseCurrencySymbol, foreignCurrencySymbol, rateBD)
+        return LegacyExchangeRateBridge.toLegacyDouble(converted)
     }
 
     /**
@@ -230,16 +232,16 @@ object CurrencyConfig {
                 defaultCurrencySymbol
             }
             val baseCurrency = getBySymbol(baseCurrencyRaw)?.symbol ?: baseCurrencyRaw
-            return Pair(baseCurrency, tx.equivalentAmount.setScale(4, RoundingMode.HALF_EVEN))
+            return Pair(baseCurrency, FinancialMath.money(tx.equivalentAmount))
         }
 
         val normDefaultSymbol = getBySymbol(defaultCurrencySymbol)?.symbol ?: defaultCurrencySymbol
         val actualAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
 
         return if (txCurrency != normDefaultSymbol) {
-            Pair(txCurrency, actualAmount.setScale(4, RoundingMode.HALF_EVEN))
+            Pair(txCurrency, FinancialMath.money(actualAmount))
         } else {
-            Pair(normDefaultSymbol, tx.amount.setScale(4, RoundingMode.HALF_EVEN))
+            Pair(normDefaultSymbol, FinancialMath.money(actualAmount))
         }
     }
 

@@ -28,6 +28,7 @@ import android.content.Context
 import com.smartledger.aldaftar.domain.AppSecurityManager
 import com.smartledger.aldaftar.domain.GoogleAuthSessionManager
 import com.smartledger.aldaftar.domain.HashUtils
+import com.smartledger.aldaftar.security.SecurityEnvironmentGuard
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -154,8 +155,11 @@ class LicenseAndTrialManager(context: Context) {
      * @return true إذا كان التطبيق مرخصاً ونشطاً.
      */
     fun isAppActivated(): Boolean {
-        val deviceId = getOrGenerateUnifiedDeviceId(appContext)
+        // نقرأ عدة إشارات مستقلة قبل قرار الترخيص لمنع تحويل نقطة تحقق واحدة إلى هدف Hook بسيط.
+        val environment = SecurityEnvironmentGuard.assess(appContext)
+        if (environment.compromised) return false
 
+        val deviceId = getOrGenerateUnifiedDeviceId(appContext)
         val cachedIsActivated = securityManager.isActivatedCached()
         val cachedForDevice = securityManager.getCachedDeviceId()
 
@@ -164,8 +168,11 @@ class LicenseAndTrialManager(context: Context) {
         val isCodeValid = enteredCode.isNotBlank() && verifyActivationCode(deviceId, enteredCode)
 
         val isEmailActivated = activatedEmail.isNotBlank()
+        val deviceBindingValid = cachedForDevice.isBlank() || cachedForDevice == deviceId
+        val credentialValid = isCodeValid || isEmailActivated
+        val cachedActivationValid = cachedIsActivated && deviceBindingValid && credentialValid
 
-        if (cachedIsActivated && (cachedForDevice == deviceId || cachedForDevice.isBlank()) && (isCodeValid || isEmailActivated)) {
+        if (cachedActivationValid) {
             return true
         }
 
@@ -204,6 +211,8 @@ class LicenseAndTrialManager(context: Context) {
      * @return true إذا تم التفعيل بنجاح.
      */
     fun activateLicenseWithCode(code: String): Boolean {
+        // يمنع التفعيل المحلي في بيئة Root/Hooking أو عند توقيع APK غير موثوق.
+        if (SecurityEnvironmentGuard.assess(appContext).compromised) return false
         val cleanCode = code.trim().uppercase()
         val deviceId = getOrGenerateUnifiedDeviceId(appContext)
         val isValid = verifyActivationCode(deviceId, cleanCode)

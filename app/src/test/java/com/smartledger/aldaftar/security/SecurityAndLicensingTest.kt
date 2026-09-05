@@ -102,4 +102,19 @@ class SecurityAndLicensingTest {
         assertTrue(networkOutage is LicenseCheckResult.NetworkOutage)
         assertEquals("No internet connection", networkOutage.message)
     }
+    @Test
+    fun testPbkdf2PasswordHashingAndLegacyCompatibility() {
+        val secret = "1234".toCharArray()
+        val stored = HashUtils.hashPassword(secret)
+        HashUtils.wipeCharArray(secret)
+
+        assertTrue(stored.startsWith("v2$"))
+        assertTrue(HashUtils.verifyPassword("1234".toCharArray(), stored))
+        assertFalse(HashUtils.verifyPassword("9999".toCharArray(), stored))
+
+        val legacy = HashUtils.hashString("1234")
+        assertTrue(HashUtils.verifyPassword("1234".toCharArray(), legacy))
+        assertFalse(HashUtils.verifyPassword("9999".toCharArray(), legacy))
+    }
+
 }

@@ -1,12 +1,12 @@
-# --- Advanced R8 & ProGuard Optimization Flags ---
+# إعدادات التحسين المتقدمة لحماية الشيفرة وتقليل الحجم.
 -optimizationpasses 5
 -allowaccessmodification
 -dontusemixedcaseclassnames
 -verbose
 
-# --- Defensive Engineering Keeps ---
+# قواعد إبقاء دفاعية تمنع إزالة الأنواع اللازمة وقت التشغيل.
 
-# Prevent Room entities, DAOs, and Database classes from being renamed or stripped
+# تمنع إعادة تسمية أو إزالة كيانات قاعدة البيانات وواجهات الوصول وقاعدة البيانات المستخدمة وقت التشغيل.
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
 -keep interface * {
@@ -16,31 +16,22 @@
     @androidx.room.Database *;
 }
 
-# Keep local database entities intact for Room reflection & JSON Backup Serialization
+# تُبقي كيانات التخزين المحلي ثابتة لدعم الانعكاس والتسلسل المستخدم في النسخ الاحتياطية.
 -keep class com.smartledger.aldaftar.data.local.entities.** { *; }
 -keep interface com.smartledger.aldaftar.data.local.dao.** { *; }
 
-# Keep security & licensing logic methods intact
--keepclassmembers class com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel {
-    *** isTrialExpired(...);
-    *** activateLicense(...);
-}
-
-# --- Compose and UI State Optimizations ---
+# قواعد الحفاظ على سمات واجهات العرض وحالاتها أثناء التحسين.
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 -keepclassmembers class * {
     @androidx.compose.runtime.Immutable <fields>;
     @androidx.compose.runtime.Stable <fields>;
 }
 
-# Keep WorkManager and App Startup components from being stripped by R8/Proguard
--keep class androidx.work.** { *; }
--keep class androidx.startup.** { *; }
--keep class * extends androidx.work.ListenableWorker {
-    <init>(***);
-}
+# تُبقي منشئات العمال التي ينشئها مدير المهام بالاعتماد على أسماء الأنواع وقت التشغيل.
+-keep class * extends androidx.work.Worker { <init>(android.content.Context, androidx.work.WorkerParameters); }
+-keep class * extends androidx.work.CoroutineWorker { <init>(android.content.Context, androidx.work.WorkerParameters); }
 
-# OkHttp Platform rules
+# قواعد التحذيرات الخاصة بطبقات الاتصال المستخدمة مع مكتبة الشبكة.
 -dontwarn okhttp3.internal.platform.**
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**

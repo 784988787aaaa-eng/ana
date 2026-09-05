@@ -28,6 +28,7 @@ package com.smartledger.aldaftar.domain
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * [الكائن الأحادي لحارس أمان قاعدة البيانات - DatabaseSecurityGuard]:
@@ -49,14 +50,8 @@ object DatabaseSecurityGuard {
      */
     fun secureEqual(a: String?, b: String?): Boolean {
         if (a == null || b == null) return false
-        if (a.length != b.length) return false
-
-        var result = 0
-        // تنفيذ عملية XOR على جميع المحارف مع تجميع الفروق بـ OR لضمان ثبات زمن التنفيذ
-        for (i in 0 until a.length) {
-            result = result or (a[i].code xor b[i].code)
-        }
-        return result == 0
+        // MessageDigest.isEqual ينفذ مقارنة مقاومة للقنوات الجانبية على التمثيل البايتـي.
+        return MessageDigest.isEqual(a.toByteArray(Charsets.UTF_8), b.toByteArray(Charsets.UTF_8))
     }
 
     /**

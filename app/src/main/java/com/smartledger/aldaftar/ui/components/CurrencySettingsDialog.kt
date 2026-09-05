@@ -54,11 +54,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -72,13 +74,10 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import kotlinx.coroutines.android.awaitFrame
 import java.math.BigDecimal
 
-private const val TAG = "CurrencySettingsDialog"
-
-/**
- * نافذة ضبط وتعديل أسعار صرف العملات والعملة الافتراضية للتطبيق
- * توفر تجربة مدمجة وسلسة لضبط أزواج الصرف وإعادة تقييم العمليات السابقة أو اللاحقة بدقة متناهية.
- */
+// * نافذة ضبط وتعديل أسعار صرف العملات والعملة الافتراضية للتطبيق
+// * توفر تجربة مدمجة وسلسة لضبط أزواج الصرف وإعادة تقييم العمليات السابقة أو اللاحقة بدقة متناهية.
 @Composable
+/// تدير هذه الدالة إعداد العملة وسعر الصرف مع إبقاء التعديل قابلاً للتمرير أمام لوحة المفاتيح.
 fun CurrencySettingsDialog(
     settings: AppSettings,
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
@@ -107,7 +106,7 @@ fun CurrencySettingsDialog(
             rateFocusRequester.requestFocus()
             keyboardController?.show()
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
+            Log.w("SmartLedger", "تعذر تجهيز التركيز ولوحة المفاتيح")
         }
     }
 
@@ -115,7 +114,8 @@ fun CurrencySettingsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        val view = LocalView.current
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            val view = LocalView.current
         DisposableEffect(view) {
             val window = (view.parent as? DialogWindowProvider)?.window
             window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
@@ -141,6 +141,7 @@ fun CurrencySettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
+                    .imePadding()
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -178,6 +179,7 @@ fun CurrencySettingsDialog(
                 )
             }
         }
+        }
     }
 
     val revalueState = state.activeDialogState as? CurrencyDialogState.RevalueConfirm
@@ -213,10 +215,9 @@ fun CurrencySettingsDialog(
     }
 }
 
-/**
- * شريط العنوان وزر الإغلاق المصغر لنافذة إعدادات العملة
- */
+// * شريط العنوان وزر الإغلاق المصغر لنافذة إعدادات العملة
 @Composable
+/// تعرض هذه الدالة عنوان النافذة وزر الإغلاق من رموز الألوان والنصوص المركزية.
 private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
     Box(
         modifier = Modifier.fillMaxWidth(),
@@ -246,10 +247,9 @@ private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
     }
 }
 
-/**
- * أعمدة الاختيار الثنائي بين العملة الافتراضية للتطبيق وأزواج الصرف المستهدفة
- */
+// * أعمدة الاختيار الثنائي بين العملة الافتراضية للتطبيق وأزواج الصرف المستهدفة
 @Composable
+/// تعرض هذه الدالة اختيارات العملة المحلية والعملة المستهدفة وحقل سعر الصرف.
 private fun CurrencySelectorColumns(
     currenciesToDisplay: List<String>,
     localDefaultCurrency: String,
@@ -297,7 +297,7 @@ private fun CurrencySelectorColumns(
                             .fillMaxWidth()
                             .height(22.dp)
                             .clip(RoundedCornerShape(topStart = 6.dp, bottomEnd = 6.dp, topEnd = 2.dp, bottomStart = 2.dp))
-                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface.copy(alpha = 0f))
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onDefaultCurrencyChange(symbol)
@@ -347,7 +347,7 @@ private fun CurrencySelectorColumns(
                             .weight(1f)
                             .height(20.dp)
                             .clip(RoundedCornerShape(topStart = 5.dp, bottomEnd = 5.dp, topEnd = 1.5.dp, bottomStart = 1.5.dp))
-                            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0f))
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onTargetCurrencyChange(symbol)
@@ -435,10 +435,9 @@ private fun CurrencySelectorColumns(
     }
 }
 
-/**
- * أزرار الحفظ والإلغاء لنافذة إعدادات العملة
- */
+// * أزرار الحفظ والإلغاء لنافذة إعدادات العملة
 @Composable
+/// تعرض هذه الدالة أزرار الحفظ والإلغاء مع استجابة لمسية خفيفة.
 private fun CurrencyActionButtons(
     haptic: HapticFeedback,
     onDismiss: () -> Unit,
