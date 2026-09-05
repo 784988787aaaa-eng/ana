@@ -1,23 +1,9 @@
-/**
- * =====================================================================
- * ملف: متصفح ومستكشف مجلدات جوجل درايف (GoogleDriveFolderNavigator.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يختص هذا الملف بالاستعلام والتنقل والبحث داخل مجلد التطبيق المخصص السري
- * في Google Drive (والمعروف برمجياً بـ `appDataFolder`).
- * 
- * [المسؤوليات المعمارية والوظيفية]:
- * 1. البحث عن أحدث نسخة احتياطية مشفرة بصيغة `.mzd` تبدأ بـ `Mzd_`.
- * 2. سرد واستعراض جميع ملفات النسخ الاحتياطي المتوفرة في السحابة مع أحجامها وتواريخ إنشائها.
- * 3. التخزين المؤقت (In-Memory Caching) لمعرف الملف الأخير لمدة دقيقة لتجنب تكرار استهلاك واجهة برمجة التطبيقات (API Quota).
- * 4. التمييز الدقيق بين أخطاء المصادقة (401/403 Auth Errors) وأخطاء الشبكة العامة لتوجيه التطبيق لتجديد الرمز.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 package com.smartledger.aldaftar.data
 
-// ---------------------------------------------------------------------
-// استيراد حزم الاتصال عبر OkHttp ومعالجة بيانات JSON وتشفير روابط URL
-// ---------------------------------------------------------------------
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,20 +13,14 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * [فئة متصفح مجلدات Drive - GoogleDriveFolderNavigator]:
- * تستقبل عميل OkHttpClient وتنفذ طلبات البحث والاستعلام في مسار IO غير المتزامن.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
 
-    /**
-     * [الكائن المرافق - Companion Object]:
-     * يحتوي على روابط REST API لملفات Google Drive ومعايير البحث ومفاتيح JSON.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     companion object {
         private const val TAG = "GoogleDriveFolderNavigator"
 
-        private const val DRIVE_FILES_API_URL = "https://www.googleapis.com/drive/v3/files"
+        private const val DRIVE_FILES_API_URL = "https:// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
         private const val ENCODING_UTF8 = "UTF-8"
@@ -57,34 +37,25 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         private const val JSON_KEY_SIZE = "size"
         private const val JSON_KEY_CREATED_TIME = "createdTime"
 
-        private const val CACHE_EXPIRY_MS = 60_000L // كاش لمدة دقيقة لتفادي استهلاك الحصة اليومية لـ Drive API
+        private const val CACHE_EXPIRY_MS = 60_000L // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
     }
 
-    // كاش مؤقت في الذاكرة يحفظ (وقت الاستعلام، ومعرف أحدث ملف تم العثور عليه)
+    // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
     private var cachedLatestFileId: Pair<Long, String?>? = null
 
-    /**
-     * [نتيجة البحث عن ملف - FileSearchResult]:
-     * فئة تمثل إما النجاح مع معرف الملف (أو null إذا لم توجد نسخ)، أو الفشل مع توضيح إذا كان الخطأ بسبب الصلاحيات.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class FileSearchResult {
         data class Success(val fileId: String?) : FileSearchResult()
         data class Error(val isAuthError: Boolean, val code: Int) : FileSearchResult()
     }
 
-    /**
-     * [نتيجة استعراض قائمة النسخ - ListBackupsResult]:
-     * فئة تمثل إما النجاح مع قائمة ملفات النسخ السحابية، أو الفشل مع كود الاستجابة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class ListBackupsResult {
         data class Success(val backups: List<CloudBackupFile>) : ListBackupsResult()
         data class Error(val isAuthError: Boolean, val code: Int) : ListBackupsResult()
     }
 
-    /**
-     * [دالة بناء طلب مصرح - buildAuthorizedRequest]:
-     * تنشئ كائن Request مع ترويسة التفويض المعتمدة Bearer Access Token.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun buildAuthorizedRequest(url: String, accessToken: String): Request {
         return Request.Builder()
             .url(url)
@@ -93,24 +64,15 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
             .build()
     }
 
-    /**
-     * [دالة فحص أخطاء التفويض]:
-     * تفحص ما إذا كان كود الاستجابة هو 401 (غير مصرح) أو 403 (ممنوع).
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun isAuthError(code: Int): Boolean = code == 401 || code == 403
 
-    /**
-     * [دالة مسح الكاش المؤقت]:
-     * تصفر القيمة المحفوظة في الذاكرة لفرض استعلام شبكي جديد عند الحاجة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     fun clearCache() {
         cachedLatestFileId = null
     }
 
-    /**
-     * [دالة البحث عن أحدث نسخة احتياطية - findLatestBackupFileId]:
-     * تبحث في مساحة appDataFolder في Google Drive عن أحدث ملف .mzd غير محذوف ومرتب تنازلياً حسب وقت الإنشاء.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun findLatestBackupFileId(accessToken: String, forceRefresh: Boolean = false): FileSearchResult = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (!forceRefresh) {
@@ -149,10 +111,7 @@ class GoogleDriveFolderNavigator(private val client: OkHttpClient) {
         }
     }
 
-    /**
-     * [دالة سرد كافة النسخ السحابية - listCloudBackups]:
-     * تستعرض جميع ملفات .mzd المخزنة في مجلد التطبيق السحابي مع تفاصيل الحجم وتاريخ الإنشاء.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun listCloudBackups(accessToken: String): ListBackupsResult = withContext(Dispatchers.IO) {
         try {
             val url = "$DRIVE_FILES_API_URL?spaces=$SPACE_APP_DATA_FOLDER" +

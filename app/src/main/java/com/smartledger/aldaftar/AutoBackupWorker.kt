@@ -1,27 +1,9 @@
 /**
- * =====================================================================
- * ملف: العامل الخلفي للنسخ الاحتياطي التلقائي (AutoBackupWorker.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف عصب منظومة النسخ الاحتياطي الذاتي اليومي في الخلفية. يعتمد على
- * مكتبة Android WorkManager لجدولة وتنفيذ عمليات النسخ الاحتياطي لقاعدة بيانات التطبيق
- * في وقت محدد (نهاية اليوم 11:59 مساءً) دون الحاجة لفتح المستخدم للتطبيق.
- * 
- * [آلية وسير تدفق العمليات (Workflow Flow)]:
- * 1. استيقاظ الـ Worker في الوقت المحدد وفق قيود النظام (مثل توفر شحن كافٍ في البطارية).
- * 2. التحقق من تمكين ميزة النسخ التلقائي في إعدادات التطبيق.
- * 3. إنشاء نسخة احتياطية محلية بصيغة مشفرة وآمنة والتحقق من سلامتها عبر فحص الشيكسم (Checksum).
- * 4. إذا كان المستخدم قد ربط حسابه بـ Google Drive وتوفرت شبكة الإنترنت، يتم رفع النسخة تلقائياً.
- * 5. في حال عدم توفر شبكة، يتم تسجيل طلب مزامنة معلق لتقوم مهمة لاحقة برفعه فور عودة الاتصال.
- * 6. إرسال إشعارات واضحة للمستخدم بحالة النسخ (جاري التنفيذ، نجاح، أو فشل).
+ * عامل الخلفية المسؤول عن إنشاء النسخة الاحتياطية المحلية الدورية والتحقق من سلامتها،
+ * ثم محاولة المزامنة السحابية دون التأثير في عمل المحاسبة المحلية عند غياب الشبكة.
  */
 package com.smartledger.aldaftar
 
-// ---------------------------------------------------------------------
-// استيراد المكتبات وحزم أندرويد الأساسية
-// تشمل: نظام الإشعارات، مكتبة WorkManager للمهام الخلفية، وأدوات الشبكة والتوقيت
-// ---------------------------------------------------------------------
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -59,19 +41,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-/**
- * [فئة العامل الخلفي - AutoBackupWorker]:
- * ترث من `CoroutineWorker` مما يتيح تنفيذ العمليات الطويلة (مثل قراءة قاعدة البيانات،
- * وضغط الملفات، والرفع للإنترنت) بشكل غير متزامن تماماً على مسار خلفي (IO Thread)
- * دون التسبب في أي تجميد لواجهة المستخدم.
- */
 class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
-    /**
-     * [الكائن المرافق - Companion Object]:
-     * يحتوي على الثوابت المشتركة ودوال الجدولة والإلغاء والفحص الاستدراكي للنسخ الفائتة.
-     * يمكن استدعاء هذه الدوال من أي مكان في التطبيق دون الحاجة لإنشاء كائن جديد.
-     */
     companion object {
         private const val TAG = "AutoBackupWorker"
         const val WORK_NAME = "MizanDailyBackup"
@@ -80,16 +51,9 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         private const val NOTIFICATION_PROGRESS_ID = 1001
         private const val NOTIFICATION_RESULT_ID = 1002
 
-        /**
-         * [دالة جدولة النسخ الاحتياطي اليومي]:
-         * تقوم بحساب الوقت المتبقي حتى الساعة 11:59 مساءً من اليوم الحالي (أو اليوم التالي
-         * إذا كان الوقت قد مضى)، ثم تنشئ طلباً دورياً يتكرر كل 24 ساعة عبر WorkManager
-         * مع اشتراط عدم انخفاض مستوى البطارية لضمان استقرار النظام.
-         */
         fun scheduleDailyBackupWorker(context: Context) {
             val workManager = WorkManager.getInstance(context)
 
-            // حساب التوقيت المستهدف: 11:59:00 مساءً
             val currentDate = Calendar.getInstance()
             val dueDate = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, 23)
@@ -97,19 +61,17 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
-            // إذا كان الوقت الحالي بعد 11:59 مساءً، نجدول لليوم التالي
+
             if (dueDate.before(currentDate)) {
                 dueDate.add(Calendar.DAY_OF_YEAR, 1)
             }
             val initialDelay = (dueDate.timeInMillis - currentDate.timeInMillis).coerceAtLeast(0L)
 
-            // ضبط قيود التشغيل: الحفاظ على طاقة الجهاز
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
                 .setRequiresBatteryNotLow(true)
                 .build()
 
-            // بناء طلب العمل الدوري مع استراتيجية التراجع التدريجي عند حدوث خطأ
             val dailyWorkRequest = PeriodicWorkRequestBuilder<AutoBackupWorker>(
                 1, TimeUnit.DAYS
             )
@@ -122,7 +84,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 )
                 .build()
 
-            // تسجيل المهمة في نظام أندرويد مع الحفاظ على أي مهمة قائمة سابقاً
             workManager.enqueueUniquePeriodicWork(
                 WORK_NAME,
                 ExistingPeriodicWorkPolicy.KEEP,
@@ -131,21 +92,12 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
             Log.d(TAG, "تمت جدولة النسخ الاحتياطي اليومي بنجاح بعد ${initialDelay / (1000 * 60)} دقيقة")
         }
 
-        /**
-         * [دالة إلغاء الجدولة اليومية]:
-         * تستخدم عند قيام المستخدم بتعطيل ميزة النسخ الاحتياطي التلقائي من شاشة الإعدادات.
-         */
         fun cancelDailyBackupWorker(context: Context) {
             val workManager = WorkManager.getInstance(context)
             workManager.cancelUniqueWork(WORK_NAME)
             Log.d(TAG, "تم إلغاء مهمة النسخ الاحتياطي اليومي.")
         }
 
-        /**
-         * [دالة التحقق الذاتي واستدراك النسخ الفائتة]:
-         * تُستدعى عند فتح التطبيق. تتحقق مما إذا كان الجهاز مغلقاً وقت الجدولة الليلية السابقة.
-         * إذا وُجد أن موعد النسخ السابق قد فات دون إنشاء نسخة، تقوم فوراً بتشغيل نسخة تعويضية لمرة واحدة.
-         */
         suspend fun checkAndTriggerBackupIfMissed(context: Context) = withContext(Dispatchers.IO) {
             try {
                 val db = AppDatabase.getDatabase(context)
@@ -157,7 +109,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
 
                 val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-                // إذا كان هذا هو التشغيل الأول للتطبيق بعد التثبيت، نهيئ التوقيت لتفادي عمل نسخة فورية غير ضرورية
                 val isFirstLaunch = sharedPrefs.getBoolean("is_first_backup_initialized", true)
                 if (isFirstLaunch) {
                     sharedPrefs.edit()
@@ -169,7 +120,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                     return@withContext
                 }
 
-                // حساب توقيت آخر موعد نسخ مفترض
                 val now = Calendar.getInstance()
                 val lastDueBackup = Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, 23)
@@ -187,7 +137,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 val syncHelper = GoogleDriveSyncHelper(context)
                 val isCloudLinked = !syncHelper.getStoredRefreshToken().isNullOrEmpty()
 
-                // المقارنة: هل آخر نسخة تم إنشاؤها أقدم من آخر موعد استحقاق؟
                 if (lastBackupTimestamp < lastDueBackup.timeInMillis) {
                     Log.d(TAG, "فات موعد النسخ اليومي السابق، جاري تشغيل نسخة تعويضية فورية.")
                     val immediateWorkRequest = OneTimeWorkRequestBuilder<AutoBackupWorker>()
@@ -207,32 +156,24 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                     CloudUploadWorker.enqueueUploadLatest(context)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "خطأ أثناء فحص النسخ الاحتياطي الفائت", e)
+                Log.e(TAG, "تعذر فحص النسخ الاحتياطي الفائت: ${e.javaClass.simpleName}")
             }
         }
     }
 
-    /**
-     * [الدالة التنفيذية المركزية - doWork]:
-     * يتم تشغيل هذه الدالة بواسطة نظام أندرويد في الخلفية.
-     * تقوم بتنفيذ الخطوات المتسلسلة لإنشاء الملف وفحصه وحفظه ومزامنته.
-     */
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val context = applicationContext
         try {
             val db = AppDatabase.getDatabase(context)
             val settings = db.settingsDao().getSettingsDirect() ?: AppSettings()
 
-            // 1. التحقق من تمكين الميزة من قبل المستخدم
             if (!settings.isAutoBackupEnabled) {
                 Log.d(TAG, "ميزة النسخ الاحتياطي التلقائي معطلة في الإعدادات.")
                 return@withContext Result.success()
             }
 
-            // 2. إرسال إشعار قيد التنفيذ لإعلام المستخدم في شريط الإشعارات
             sendBackupInProgressNotification(context)
 
-            // 3. تنسيق إنشاء وحفظ النسخة الاحتياطية محلياً عبر BackupService و BackupFileManager
             val fileManager = BackupFileManager(context)
             val backupService = BackupService(context, db, fileManager)
 
@@ -249,7 +190,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 is BackupOperationResult.Success -> {
                     val activeFile = backupResult.file
 
-                    // 4. التحقق الاستباقي من صحة وسلامة الملف المكتوب واكتمال بنيته
                     val integrity = BackupIntegrityManager.validateBackupFileIntegrity(activeFile)
                     if (integrity !is BackupIntegrityManager.IntegrityCheckResult.Valid) {
                         Log.e(TAG, "فشل فحص سلامة ملف النسخة بعد إنشائه")
@@ -257,14 +197,12 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                         return@withContext Result.retry()
                     }
 
-                    // 5. تحديث التفضيلات بتوقيت آخر نسخة ناجحة
                     val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                     sharedPrefs.edit()
                         .putLong("last_successful_auto_backup_timestamp", backupResult.timestamp)
                         .putLong(BackupConstants.KEY_LAST_SUCCESSFUL_BACKUP, backupResult.timestamp)
                         .apply()
 
-                    // 6. المزامنة السحابية إذا كان الحساب مربوطاً بحساب Google Drive
                     val syncHelper = GoogleDriveSyncHelper(context)
                     val isCloudLinked = !syncHelper.getStoredRefreshToken().isNullOrEmpty()
                     var cloudSynced = false
@@ -275,7 +213,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                             cloudSynced = syncHelper.uploadBackupToDriveWithFilename(fileName, jsonContent)
                         }
 
-                        // إذا تعذر الرفع لعدم توفر شبكة، نجدول مهمة رفع منفصلة لاحقاً
                         if (!cloudSynced) {
                             Log.w(TAG, "تعذر الرفع السحابي الفوري، إدراج CloudUploadWorker في الخلفية.")
                             sharedPrefs.edit().putBoolean(BackupConstants.KEY_PENDING_CLOUD_UPLOAD, true).apply()
@@ -285,13 +222,12 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                         }
                     }
 
-                    // 7. إشعار النجاح والاهتزاز لتأكيد اكتمال العملية للمستخدم
                     com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                     sendBackupSuccessNotification(context, activeFile.name, cloudSynced)
                     Result.success()
                 }
                 is BackupOperationResult.Failure -> {
-                    Log.e(TAG, "فشلت عملية إنشاء النسخة الاحتياطية المحلية: ${backupResult.userMessage}", backupResult.cause)
+                    Log.e(TAG, "فشلت عملية إنشاء النسخة الاحتياطية المحلية: ${backupResult.userMessage}")
                     sendBackupFailureNotification(context, false)
                     if (backupResult.cause is IOException) {
                         Result.retry()
@@ -301,16 +237,12 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "استثناء غير متوقع أثناء دورة النسخ الاحتياطي التلقائي", e)
+            Log.e(TAG, "تعذر إكمال دورة النسخ الاحتياطي التلقائي: ${e.javaClass.simpleName}")
             sendBackupFailureNotification(context, false)
             if (e is IOException) Result.retry() else Result.failure()
         }
     }
 
-    /**
-     * [دالة فحص الاتصال بالإنترنت]:
-     * تتحقق مما إذا كان الجهاز متصلاً حالياً بشبكة إنترنت نشطة وصالحة لنقل البيانات.
-     */
     private fun isNetworkConnected(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -326,14 +258,9 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         }
     }
 
-    /**
-     * [دالة إرسال إشعار بدء العمل]:
-     * تظهر إشعاراً ثابتاً غير قابل للإلغاء يدوياً يفيد بأن النسخ جاري حالياً.
-     */
     private fun sendBackupInProgressNotification(context: Context) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
-        // إنشاء قناة الإشعارات لنظام أندرويد 8.0 فأعلى (Android Oreo+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -359,10 +286,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         notificationManager.notify(NOTIFICATION_PROGRESS_ID, notification)
     }
 
-    /**
-     * [دالة إرسال إشعار النجاح]:
-     * تظهر إشعاراً قابلاً للنقر يفتح التطبيق مباشرة، مع نمط اهتزاز احتفالي بنجاح العملية.
-     */
     private fun sendBackupSuccessNotification(context: Context, fileName: String, cloudSynced: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
@@ -403,15 +326,10 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
             .setAutoCancel(true)
             .build()
 
-        // إلغاء إشعار التقدم الثابت أولاً لضمان عدم بقائه في شريط الإشعارات
         notificationManager.cancel(NOTIFICATION_PROGRESS_ID)
         notificationManager.notify(NOTIFICATION_RESULT_ID, notification)
     }
 
-    /**
-     * [دالة إرسال إشعار الفشل أو التنبيه]:
-     * تنبه المستخدم في حال تعذر إكمال النسخ (بسبب نقص الصلاحيات أو أخطاء التخزين) ليتخذ إجراءً يدوياً.
-     */
     private fun sendBackupFailureNotification(context: Context, isPermissionIssue: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
@@ -453,7 +371,6 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
             .setAutoCancel(true)
             .build()
 
-        // إلغاء إشعار التقدم الثابت لضمان تنظيف شريط الإشعارات
         notificationManager.cancel(NOTIFICATION_PROGRESS_ID)
         notificationManager.notify(NOTIFICATION_RESULT_ID, notification)
     }

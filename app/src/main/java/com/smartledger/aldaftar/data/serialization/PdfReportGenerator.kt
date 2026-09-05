@@ -1,30 +1,11 @@
 /**
- * =====================================================================
- * ملف: محرك ومنسق تقارير PDF المالية (PdfReportGenerator.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المحرك التنفيذي الأساسي لرسم وتوليد مستندات PDF الاحترافية
- * المعتمدة على لوحة رسم أندرويد الأصلية [android.graphics.pdf.PdfDocument].
- * يقوم بحساب المسافات وقياس النصوص العربية وتوزيع السجلات على صفحات متعددة (Pagination)
- * وفق المقاس العالمي A4 (595x842 نقطة)، مع معالجة ذكية للترويسة التجارية وشعار المنشأة
- * وخاتمة الصفحات والتقارير الشاملة لكافة العملاء.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. الجولة التجريبية الاستباقية (Dry Run Pass):
- *    - محاكاة رسم الجداول لحساب العدد الدقيق للصفحات الإجمالية قبل الرسم الفعلي (مثال: صفحة 1 من 3).
- * 2. معالجة النصوص والاتجاه العربي الأصيل (RTL):
- *    - التوافق مع [StaticLayout] لرسم النصوص العربية والوصف المالي دون تقطيع أو تشويه.
- * 3. التدوير الذكي للموارد والتنظيف:
- *    - إدارة وتفريغ صور الشعارات والبيتماب [recycleBitmapsSafely] لمنع تسريب الذاكرة (Memory Leaks).
- * 4. إدارة قنوات التصدير والإرسال:
- *    - دعم المشاركة عبر النظام، الحفظ المباشر بذاكرة الجهاز، والإرسال الفوري عبر تطبيق واتساب.
+ * مولد تقارير المستندات: يبني التقارير في مسارات خلفية ويستخدم موارد التطبيق الحالية للترويسة والمشاركة.
+ * القيم المالية تُعرض كما يحددها ملخص الحساب، ولا تُستحدث تحويلات عائمة داخل هذا الغلاف.
+ * أي فشل داخلي يعالج بصمت ويُعاد إلى واجهة المستخدم عبر المسار الحالي دون تسريب تفاصيل التنفيذ.
  */
 package com.smartledger.aldaftar.data.serialization
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والرسومات والطباعة ووثائق PDF والكيانات وتزامن كوتلن
-// ---------------------------------------------------------------------
+
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -33,7 +14,6 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.text.Layout
-import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.smartledger.aldaftar.R
@@ -61,28 +41,14 @@ typealias PdfAction = PdfAction
 typealias BusinessHeaderData = BusinessHeaderData
 typealias BusinessProfileLoader = BusinessProfileLoader
 
-/**
- * [الكائن الأحادي لمحرك تقارير PDF - PdfReportGenerator]:
- * يوفر واجهات توليد وتصدير كشوف الحسابات الفردية والتقارير الشاملة بصيغة PDF.
- */
-object PdfReportGenerator {
 
-    /** وسم السجلات التشخيصية */
-    private const val TAG = "PdfReportGenerator"
-    /** نوع الوسائط المعياري لمستندات PDF */
+/** يدير توليد تقارير المستندات الفردية والشاملة دون حجب واجهة المستخدم. */
+object PdfReportGenerator {
+    
     private const val MIME_TYPE_PDF = "application/pdf"
 
-    /**
-     * [التوليد الداخلي لكشف حساب العميل الفردي - generatePdfFileInternal]:
-     * يبني مستند PDF متعدد الصفحات يتضمن ترويسة العمل وكشف حركة الحساب والخاتمة.
-     *
-     * @param context سياق التطبيق.
-     * @param customer بيانات العميل المستهدف.
-     * @param transactions قائمة معاملات العميل.
-     * @param currencySymbol رمز العملة الرئيسية.
-     * @param primaryColorHex لون السمة التنسيقي.
-     * @return ملف الـ PDF المؤقت المنشأ، أو null عند الفشل.
-     */
+    
+    /** يبني كشف العميل متعدد الصفحات في مسار خلفي مع إغلاق الموارد في جميع الحالات. */
     private fun generatePdfFileInternal(
         context: Context,
         customer: HabayebCustomer,
@@ -98,7 +64,7 @@ object PdfReportGenerator {
             originalCustomer = customer
         )
 
-        // 1. الجولة التجريبية (Dry Run) لحساب إجمالي عدد الصفحات بدقة متناهية
+        
         var totalPages = 1
         var dryPageCount = 1
         PdfPageRenderer.drawCustomerStatementSheet(
@@ -151,7 +117,7 @@ object PdfReportGenerator {
             }
             PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, 74f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
-            // بدء رسم جدول المعاملات
+            
             PdfPageRenderer.drawCustomerStatementSheet(
                 canvas = canvas,
                 context = context,
@@ -191,7 +157,6 @@ object PdfReportGenerator {
             }
             file
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating customer PDF", e)
             null
         } finally {
             pdfDocument.close()
@@ -199,10 +164,8 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [التوليد الداخلي لتقرير كافة العملاء الشامل - generateAllCustomersPdfFileInternal]:
-     * يبني وثيقة PDF تحوي بطاقة ملخص الأرصدة الكلية وجدول كافة العملاء وأرصدتهم.
-     */
+    
+    /** يبني التقرير الشامل مع حساب الصفحات قبل الرسم الفعلي لتثبيت التخطيط. */
     private fun generateAllCustomersPdfFileInternal(
         context: Context,
         customers: List<CustomerUiState>,
@@ -212,7 +175,7 @@ object PdfReportGenerator {
         val summary = PdfReportCalculator.calculateComprehensiveReport(customers)
         val totalItems = customers.size
 
-        // 1. الجولة التجريبية لحساب إجمالي عدد الصفحات
+        
         var totalPages = 1
         run {
             var dryY = 186f
@@ -328,7 +291,6 @@ object PdfReportGenerator {
 
             file
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating all customers PDF", e)
             null
         } finally {
             pdfDocument.close()
@@ -336,22 +298,20 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [إطلاق نية المشاركة أو العرض - triggerShareOrViewIntent]:
-     * يفوض الإطلاق إلى [PdfIntentLauncher].
-     */
+    
+    /** يمرر الملف إلى مسار المشاركة أو العرض الحالي دون نسخ إضافية غير لازمة. */
     fun triggerShareOrViewIntent(context: Context, file: File?, action: PdfAction) {
         PdfIntentLauncher.triggerShareOrViewIntent(context, file, action)
     }
 
-    /** إطلاق نية المشاركة بنص الإجراء */
+    
+    /** يحول الإجراء النصي إلى قيمة معروفة ثم يستدعي المسار الموحد. */
     fun triggerShareOrViewIntent(context: Context, file: File?, action: String) {
         PdfIntentLauncher.triggerShareOrViewIntent(context, file, PdfAction.from(action))
     }
 
-    /**
-     * [توليد ومعالجة تقرير العميل بنطاق كوروتين ممرر - generateAndHandleCustomerPdfReport]:
-     */
+    
+    /** يبدأ توليد تقرير العميل مع نطاق تشغيل يمرره المستدعي. */
     fun generateAndHandleCustomerPdfReport(
         context: Context,
         scope: CoroutineScope,
@@ -364,9 +324,7 @@ object PdfReportGenerator {
         generateAndHandleCustomerPdfReportAsync(context, scope, customer, transactions, currencySymbol, PdfAction.from(action), primaryColorHex)
     }
 
-    /**
-     * [توليد ومعالجة تقرير العميل بنطاق رئيسي افتراضي - generateAndHandleCustomerPdfReport]:
-     */
+    
     fun generateAndHandleCustomerPdfReport(
         context: Context,
         customer: HabayebCustomer,
@@ -386,10 +344,8 @@ object PdfReportGenerator {
         )
     }
 
-    /**
-     * [توليد ومعالجة تقرير العميل اللاتزامني الأساسي - generateAndHandleCustomerPdfReportAsync]:
-     * يبني ملف الـ PDF ثم يوجهه للمشاركة، أو الحفظ المحلي، أو الإرسال المباشر عبر واتساب.
-     */
+    
+    /** ينفذ توليد تقرير العميل في الخلفية ثم يعيد نتيجة المشاركة إلى الواجهة. */
     fun generateAndHandleCustomerPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -431,7 +387,6 @@ object PdfReportGenerator {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error generating customer PDF async", e)
             } finally {
                 withContext(Dispatchers.Main) {
                     onFinished()
@@ -440,9 +395,7 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [توليد ومعالجة تقرير العميل اللاتزامني بنص الإجراء - generateAndHandleCustomerPdfReportAsync]:
-     */
+    
     fun generateAndHandleCustomerPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -458,10 +411,8 @@ object PdfReportGenerator {
         )
     }
 
-    /**
-     * [توليد ومعالجة تقرير كافة العملاء اللاتزامني - generateAndHandleAllCustomersPdfReportAsync]:
-     * يبني تقرير PDF شامل يضم جميع العملاء وأرصدتهم الإجمالية.
-     */
+    
+    /** ينفذ التقرير الشامل في الخلفية ويحافظ على واجهة المشاركة الحالية. */
     fun generateAndHandleAllCustomersPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
@@ -478,7 +429,6 @@ object PdfReportGenerator {
                     triggerShareOrViewIntent(context, file, action)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error generating all customers PDF async", e)
             } finally {
                 withContext(Dispatchers.Main) {
                     onFinished()
@@ -487,9 +437,7 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [توليد ومعالجة تقرير كافة العملاء بنص الإجراء - generateAndHandleAllCustomersPdfReportAsync]:
-     */
+    
     fun generateAndHandleAllCustomersPdfReportAsync(
         context: Context,
         scope: CoroutineScope,

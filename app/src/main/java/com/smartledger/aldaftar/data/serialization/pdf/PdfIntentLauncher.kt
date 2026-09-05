@@ -1,21 +1,21 @@
 /**
  * =====================================================================
- * ملف: مشغل النوايا وموجه مشاركة وعرض تقارير PDF (PdfIntentLauncher.kt)
+ * ملف: مشغل النوايا وموجه مشاركة وعرض تقارير  (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يوفر هذا الكائن وسيطاً آمناً وموحداً للتعامل مع ملفات تقارير PDF المولدة محلياً،
- * حيث يتولى تحويل مسارات الملفات إلى مسارات محتوى آمنة [Uri] باستخدام [FileProvider]،
- * وتوجيه أوامر المشاركة العامة [ACTION_SEND] أو العرض المباشر [ACTION_VIEW]،
- * بالإضافة إلى وظيفة مساعدة لتحرير وتدوير الصور النقطية [Bitmap] بأمان.
+ * يوفر هذا الكائن وسيطاً آمناً وموحداً للتعامل مع ملفات تقارير  المولدة محلياً،
+ * حيث يتولى تحويل مسارات الملفات إلى مسارات محتوى آمنة [] باستخدام []،
+ * وتوجيه أوامر المشاركة العامة [_] أو العرض المباشر [_]،
+ * بالإضافة إلى وظيفة مساعدة لتحرير وتدوير الصور النقطية [الصورة النقطية] بأمان.
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. حماية وتأمين مشاركة الملفات (FileProvider Security):
+ * 1. حماية وتأمين مشاركة الملفات (أمان مزود الملفات):
  *    - منح أذونات القراءة المؤقتة لتطبيقات الطرف الثالث دون الكشف عن المسارات الحقيقية.
- * 2. توجيه نوايا النظام (Intent Launching):
- *    - إطلاق عارض ملفات PDF مع إضافة علم [FLAG_ACTIVITY_NEW_TASK].
- *    - إطلاق حوار المشاركة الشامل [Intent.createChooser].
- * 3. التحرير الآمن للذاكرة (Safe Memory Recycling):
+ * 2. توجيه نوايا النظام (إطلاق النوايا):
+ *    - إطلاق عارض ملفات  مع إضافة علم [___].
+ *    - إطلاق حوار المشاركة الشامل [.].
+ * 3. التحرير الآمن للذاكرة (تحرير الذاكرة بأمان):
  *    - تفريغ صور الشعار والبيتماب لتجنب تراكمها في الذاكرة.
  */
 package com.smartledger.aldaftar.data.serialization.pdf
@@ -26,32 +26,30 @@ package com.smartledger.aldaftar.data.serialization.pdf
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.smartledger.aldaftar.R
 import java.io.File
 
 /**
- * [الكائن الأحادي لموجه نوايا تقارير PDF - PdfIntentLauncher]:
+ * [الكائن الأحادي لموجه نوايا تقارير  - ]:
  * يدير إرسال النوايا وعرض التقارير وتفريغ كائنات الصور.
  */
 object PdfIntentLauncher {
 
     /** وسم السجلات التشخيصية */
-    private const val TAG = "PdfIntentLauncher"
-    /** نوع محتوى ملفات PDF المعتمد في نظام أندرويد */
+    /** نوع محتوى ملفات  المعتمد في نظام أندرويد */
     private const val MIME_TYPE_PDF = "application/pdf"
     /** اللاحقة المعتمدة لمزود الملفات في البيان */
     private const val FILE_PROVIDER_SUFFIX = ".fileprovider"
 
     /**
-     * [توجيه نية المشاركة أو العرض للتقرير - triggerShareOrViewIntent]:
-     * يولد مسار المحتوى الآمن ويطلق النية المناسبة وفق خيار [PdfAction].
+     * [توجيه نية المشاركة أو العرض للتقرير - ]:
+     * يولد مسار المحتوى الآمن ويطلق النية المناسبة وفق خيار [].
      *
-     * @param context سياق التطبيق لإطلاق الأنشطة وعرض التنبيهات.
-     * @param file كائن الملف المولد في وحدة التخزين المؤقتة أو المحلية.
-     * @param action نوع الإجراء المطلوب (مشاركة أو معاينة).
+     * @  سياق التطبيق لإطلاق الأنشطة وعرض التنبيهات.
+     * @  كائن الملف المولد في وحدة التخزين المؤقتة أو المحلية.
+     * @  نوع الإجراء المطلوب (مشاركة أو معاينة).
      */
     fun triggerShareOrViewIntent(context: Context, file: File?, action: PdfAction) {
         if (file == null) {
@@ -86,17 +84,16 @@ object PdfIntentLauncher {
                 else -> {}
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error sharing or viewing PDF file", e)
             Toast.makeText(context, context.getString(R.string.toast_operation_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
     /**
-     * [تدوير وتحرير صور البيتماب بأمان - recycleBitmapsSafely]:
+     * [تدوير وتحرير صور البيتماب بأمان - الصورة النقطية]:
      * يحرر الذاكرة المستهلكة في صور الشعارات الأصلية والمصغرة دون التسبب في أخطاء.
      *
-     * @param rawBitmap الصورة النقطية الأصلية.
-     * @param scaledLogo الصورة النقطية المصغرة.
+     * @ الصورة النقطية الصورة النقطية الأصلية.
+     * @  الصورة النقطية المصغرة.
      */
     fun recycleBitmapsSafely(rawBitmap: Bitmap?, scaledLogo: Bitmap?) {
         try {
@@ -109,7 +106,6 @@ object PdfIntentLauncher {
                 scaledLogo.recycle()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error recycling bitmaps", e)
         }
     }
 }

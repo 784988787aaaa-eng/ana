@@ -1,26 +1,6 @@
-/**
- * =====================================================================
- * ملف: كائن الوصول لبيانات واستعادة سلة المهملات (TrashDao.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف صمام الأمان واسترجاع البيانات المحذوفة (Recycle Bin & Disaster Recovery).
- * يعتمد على نمط الحذف المرن (Soft Delete via JSON Bundling)، حيث يتم تحويل الكيانات
- * أو مجموعات الحسابات المحذوفة إلى نصوص JSON وحفظها في جدول `deleted_items`.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. التخزين المرن (JSON Serialization): حفظ أي نوع من السجلات المحذوفة (معاملات، عملاء، التزامات، أو حزم كاملة)
- *    في هيكل مرن دون الحاجة لتغيير جداول قاعدة البيانات عند كل تعديل.
- * 2. الاستعادة الذرية الشاملة [@Transaction]: تضمن دالة [restoreDeletedItem] فك تشفير كائن JSON
- *    وإعادة إدراج السجلات في جداولها الأصلية وحذفها من سلة المهملات في معاملة واحدة لا تقبل التجزئة.
- * 3. استعادة حركة مفردة من حزمة عميل [restoreSingleTransactionFromBundle]: تتيح للمستخدم استعادة قيد واحد
- *    من حزمة عميل محذوف مع ضمان وجود العميل في قاعدة البيانات وتحديث ما تبقى من الحزمة داخل السلة.
- */
+
 package com.smartledger.aldaftar.data.local
 
-// ---------------------------------------------------------------------
-// استيراد حزم قاعدة البيانات Room والكيانات ومحلل كائنات JSON والتدفقات
-// ---------------------------------------------------------------------
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -37,120 +17,80 @@ import kotlinx.coroutines.flow.Flow
 import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * [فئة الوصول لبيانات سلة المهملات - TrashDao]:
- * فئة مجردة تجمع بين استعلامات Room المجردة والدوال التنفيذية المعقدة لفك الحزم واستعادتها.
- */
+/** واجهة قاعدة بيانات سلة المهملات ومسار الاستعادة الذرية للبيانات المحذوفة. */
 @Dao
 abstract class TrashDao {
 
-    /**
-     * [ثوابت أسماء الجداول وأنواع الحزم المحذوفة]:
-     * تُستخدم لتمييز نوع الكيان المحفوظ داخل نص JSON في سلة المهملات.
-     */
+    /** ثوابت تعريف الجداول والحزم التي تحدد نوع البيانات المحذوفة ومسار استعادتها. */
     companion object {
-        /** جدول معاملات اليومية العامة */
+        
+        /** اسم جدول قيود اليومية العامة. */
         const val TABLE_TRANSACTIONS = "transactions"
-        /** جدول معاملات ديون الحبايب */
+        
+        /** اسم جدول معاملات ديون الحبايب. */
         const val TABLE_HABAYEB_TRANSACTIONS = "habayeb_transactions"
-        /** جدول الالتزامات والأقساط */
+        
+        /** اسم جدول الالتزامات المالية الثابتة. */
         const val TABLE_FIXED_COMMITMENTS = "fixed_commitments"
-        /** جدول عملاء ديون الحبايب */
+        
+        /** اسم جدول عملاء ديون الحبايب. */
         const val TABLE_HABAYEB_CUSTOMERS = "habayeb_customers"
-        /** حزمة عميل الحبايب مع كافة كشف حسابه */
+        
+        /** نوع حزمة عميل الحبايب مع قيوده التابعة. */
         const val BUNDLE_HABAYEB = "habayeb_bundle"
-        /** حزمة ميزان الدار المجمعة */
+        
+        /** نوع حزمة بيانات دفتر الدار. */
         const val BUNDLE_DAR = "dar_bundle"
     }
 
-    // =================================================================
-    // 1. استعلامات جدول سلة المهملات (Deleted Items Queries)
-    // =================================================================
-
-    /**
-     * [استعلام جلب عناصر السلة كتدفق حي - getAllDeletedItemsFlow]:
-     * يستعلم عن جميع العناصر المحذوفة مرتبة تنازلياً حسب توقيت الحذف [deletedAt].
-     */
-    @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC")
+    /** يعيد عناصر السلة بترتيب حذف ثابت لدعم العرض والاستعادة. */
+    @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC, id ASC")
     abstract fun getAllDeletedItemsFlow(): Flow<List<DeletedItemEntity>>
 
-    /**
-     * [استعلام جلب عناصر السلة كقائمة مباشرة - getAllDeletedItemsDirect]:
-     * دالة معلقة تجلب قائمة بالعناصر المحذوفة لمعالج التنظيف التلقائي القديم.
-     */
-    @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC")
+    /** يجلب عناصر السلة مباشرة لمعالجة التنظيف دون حجب خيط الواجهة. */
+    @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC, id ASC")
     abstract suspend fun getAllDeletedItemsDirect(): List<DeletedItemEntity>
 
-    /**
-     * [استعلام جلب عنصر سلة بالمعرف - getDeletedItemByIdDirect]:
-     * يسترجع كائن العنصر المحذوف من السلة باستخدام معرفه الفريد [id].
-     */
+    /** يسترجع عنصراً محذوفاً بواسطة معرفه للتحقق قبل الاستعادة. */
     @Query("SELECT * FROM deleted_items WHERE id = :id LIMIT 1")
     abstract suspend fun getDeletedItemByIdDirect(id: String): DeletedItemEntity?
 
-    /**
-     * [دالة إدراج عنصر في سلة المهملات - insertDeletedItem]:
-     * تحفظ الكيان المحذوف في جدول السلة مع بياناته بصيغة JSON وتوقيت الحذف.
-     */
+    /** يحفظ بيانات العنصر المحذوف باستراتيجية الاستبدال المتوافقة مع السلوك السابق. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertDeletedItem(item: DeletedItemEntity)
-
-    /**
-     * [دالة حذف عنصر نهائياً من السلة - deleteItem]:
-     * تحذف سجل المهملات بشكل دائم.
-     */
+    /** يحذف العنصر من السلة نهائياً بعد اكتمال الاستعادة أو الحذف المقصود. */
     @Delete
     abstract suspend fun deleteItem(item: DeletedItemEntity)
 
-    /**
-     * [دالة حذف عنصر من السلة بواسطة المعرف - deleteItemById]:
-     * تحذف العنصر المحذوف نهائياً باستخدام معرفه.
-     */
+    /** يحذف عنصراً من السلة بواسطة معرفه الفريد. */
     @Query("DELETE FROM deleted_items WHERE id = :id")
     abstract suspend fun deleteItemById(id: String)
 
-    /**
-     * [دالة تفريغ سلة المهملات بالكامل - clearAllDeletedItems]:
-     * تحذف كافة العناصر المتواجدة في سلة المهملات نهائياً.
-     */
+    /** يفرغ السلة بالكامل عند تنفيذ عملية حذف شاملة مصرح بها. */
     @Query("DELETE FROM deleted_items")
     abstract suspend fun clearAllDeletedItems()
 
-    // =================================================================
-    // 2. دوال إعادة الإدراج للجداول الأصلية (Target Restoration Inserts)
-    // =================================================================
-
-    /** دالة إدراج حركة يومية مستعادة */
+    /** يعيد إدراج قيد يومية مستعاد مع الحفاظ على معرفه وقيمته المالية. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertTransaction(tx: TransactionDb)
 
-    /** دالة إدراج حركة حبايب مستعادة */
+    /** يعيد إدراج معاملة حبايب مستعادة دون تغيير بياناتها المالية. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertHabayebTransaction(tx: HabayebTransaction)
 
-    /** دالة إدراج التزام مالي مستعاد */
+    /** يعيد إدراج التزام مالي مستعاد ضمن المعاملة الذرية. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertFixedCommitment(commitment: FixedCommitment)
 
-    /** دالة إدراج بطاقة عميل مستعادة */
+    /** يعيد إنشاء بطاقة العميل عند الحاجة قبل استعادة معاملاته التابعة. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertHabayebCustomer(customer: HabayebCustomer)
 
-    /** استعلام التحقق من وجود العميل في قاعدة البيانات قبل إعادة ربط معاملاته */
+    /** يتحقق من وجود العميل قبل ربط المعاملات المستعادة به. */
     @Query("SELECT COUNT(*) FROM habayeb_customers WHERE id = :customerId")
     abstract suspend fun checkCustomerExists(customerId: String): Int
 
-    // =================================================================
-    // 3. الدوال التنفيذية للاستعادة الذرية (@Transaction Restoration Logic)
-    // =================================================================
-
-    /**
-     * [استعادة معاملة مفردة من حزمة عميل محذوف - restoreSingleTransactionFromBundle]:
-     * دالة ذرية متقدمة تتيح للمستخدم استعادة قيد مالي محدد من داخل حزمة عميل محذوف:
-     * 1. تتحقق من وجود بطاقة العميل في قاعدة البيانات، وإذا لم تكن موجودة تعيد إنشاءها أولاً.
-     * 2. تستخرج المعاملة المطلوبة وتدرجها في جدول المعاملات.
-     * 3. إذا لم يتبق معاملات أخرى في الحزمة تحذف عنصر السلة كاملاً، وإلا تحدث نص JSON المتبقي.
-     */
+    /** يستعيد معاملة واحدة من حزمة العميل ويحدث الحزمة داخل معاملة ذرية واحدة. */
     @Transaction
     open suspend fun restoreSingleTransactionFromBundle(itemId: String, txId: String) {
         val item = getDeletedItemByIdDirect(itemId) ?: return
@@ -193,11 +133,7 @@ abstract class TrashDao {
         }
     }
 
-    /**
-     * [استعادة عنصر محذوف بالكامل - restoreDeletedItem]:
-     * عملية ذرية [@Transaction] شاملة تحلل نص JSON للعنصر المحذوف وتعيد بناء الكائنات
-     * وإدراجها في جداولها المخصصة حسب نوع الجدول الأصلي [originalTableName]، ثم تمسح عنصر السلة.
-     */
+    /** يستعيد العنصر المحذوف كاملاً ثم يحذفه من السلة بعد نجاح جميع عمليات الإدراج. */
     @Transaction
     open suspend fun restoreDeletedItem(item: DeletedItemEntity) {
         val root = JSONObject(item.jsonData)
@@ -253,5 +189,4 @@ abstract class TrashDao {
         deleteItem(item)
     }
 }
-
 

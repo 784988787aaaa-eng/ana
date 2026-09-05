@@ -117,12 +117,12 @@ class BackupRestoreServiceTest {
         assertTrue(exportedJson.contains("1500.75"))
         assertTrue(exportedJson.contains("99.99"))
 
-        // Execute Master Restore
+        // تنفيذ الاستعادة الشاملة
         val result = restoreService.executeMasterRestore(exportedJson)
         assertNotNull(result)
         assertEquals("$", result.settings.currencySymbol)
 
-        // Verify Database Records
+        // التحقق من سجلات قاعدة البيانات
         val commitments = database.commitmentDao().getAllCommitmentsFlow().first()
         val restoredCommitment = commitments.find { it.name == "Rent" }
         assertNotNull(restoredCommitment)
@@ -139,6 +139,33 @@ class BackupRestoreServiceTest {
         val restoredHTx = database.habayebDao().getTransactionById("htx-1")
         assertNotNull(restoredHTx)
         assertEquals(BigDecimal("250.5000"), restoredHTx?.amount)
+    }
+
+    @Test
+    fun testRestoreRejectsTamperedIntegrityHash() = runBlocking {
+        val payload = BackupPayloadData(
+            settings = AppSettings(id = 1, currencySymbol = "SAR"),
+            commitments = emptyList(),
+            transactions = listOf(
+                TransactionDb(
+                    id = "integrity-tx",
+                    timestamp = 1700000000000L,
+                    type = "EXPENSE",
+                    category = "اختبار",
+                    amount = BigDecimal("10.0000"),
+                    description = "اختبار سلامة"
+                )
+            )
+        )
+        val json = BackupPayloadSerializer.exportBackupToJson(payload)
+        val root = org.json.JSONObject(json)
+        val metadata = root.getJSONObject("metadata")
+        metadata.put("security_hash", "0".repeat(64))
+
+        val result = runCatching { restoreService.executeMasterRestore(root.toString()) }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("INTEGRITY_HASH_MISMATCH") == true)
+        assertEquals(0, database.transactionDao().getTransactionsCountDirect())
     }
 
     @Test
@@ -162,13 +189,13 @@ class BackupRestoreServiceTest {
             settings = AppSettings(id = 1),
             commitments = emptyList(),
             transactions = emptyList(),
-            habayebCustomers = emptyList(), // No customer provided!
+            habayebCustomers = emptyList(), // لا يوجد عميل مرفق في النسخة
             habayebTransactions = listOf(hTxOrphan)
         )
 
         val exportedJson = BackupPayloadSerializer.exportBackupToJson(payload)
 
-        // Execute Master Restore - should create fallback customer automatically to avoid FK violation
+        // تنفيذ الاستعادة الشاملة؛ يجب إنشاء عميل بديل تلقائياً لمنع كسر العلاقة المرجعية
         val result = restoreService.executeMasterRestore(exportedJson)
         assertNotNull(result)
 
@@ -183,7 +210,7 @@ class BackupRestoreServiceTest {
 
     @Test
     fun testBackupServiceAndAtomicFileOperations() = runBlocking {
-        // Prepare data in Database
+        // تجهيز بيانات قاعدة البيانات
         database.settingsDao().insertOrUpdateSettings(AppSettings(id = 1, currencySymbol = "SAR"))
         database.transactionDao().insertTransaction(
             TransactionDb(
@@ -196,7 +223,7 @@ class BackupRestoreServiceTest {
             )
         )
 
-        // Create local backup
+        // إنشاء نسخة احتياطية محلية
         val backupResult = backupRepository.createLocalBackup("Test_Mizan_Backup.mzd")
         assertTrue(backupResult is BackupOperationResult.Success)
 
@@ -204,17 +231,17 @@ class BackupRestoreServiceTest {
         assertTrue(file.exists())
         assertTrue(file.length() > 0)
 
-        // Integrity verification
+        // التحقق من سلامة النسخة
         val integrityResult = BackupIntegrityManager.validateBackupFileIntegrity(file)
         assertTrue(integrityResult is BackupIntegrityManager.IntegrityCheckResult.Valid)
 
-        // Restore from file
+        // الاستعادة من الملف
         val restoreFileResult = backupRepository.restoreFromFile(file)
         assertTrue(restoreFileResult.isSuccess)
         val restoredData = restoreFileResult.getOrThrow()
         assertEquals("SAR", restoredData.settings.currencySymbol)
 
-        // Clean up
+        // تنظيف بيانات الاختبار
         val deleteResult = fileManager.deleteBackupFile(file)
         assertTrue(deleteResult.isSuccess)
     }

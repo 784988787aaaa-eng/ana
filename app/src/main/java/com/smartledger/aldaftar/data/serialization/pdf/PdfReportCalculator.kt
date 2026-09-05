@@ -1,22 +1,22 @@
 /**
  * =====================================================================
- * ملف: محرك الحسابات المالية لتقارير PDF (PdfReportCalculator.kt)
+ * ملف: محرك الحسابات المالية لتقارير  (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن العقل الحسابي المالي لكافة تقارير PDF المطبوعة في التطبيق.
+ * يمثل هذا الكائن العقل الحسابي المالي لكافة تقارير  المطبوعة في التطبيق.
  * يتولى مسؤولية معالجة المعاملات المالية وترتيبها زمنياً، وتصنيف المبالغ وفق
  * العملة الأساسية للتقرير والعملات الأجنبية، وحساب الأرصدة المتراكمة،
- * وإجماليات المديونيات (لنا) والمدفوعات والمستحقات (علينا)، والصافي الكلي بدقة [BigDecimal].
+ * وإجماليات المديونيات (لنا) والمدفوعات والمستحقات (علينا)، والصافي الكلي بدقة [].
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. الحساب الدقيق عالي الحساسية (High-Precision BigDecimal Math):
- *    - حماية العمليات المالية من أخطاء الفاصلة العائمة [Floating Point Errors].
+ * 1. الحساب الدقيق عالي الحساسية (الحساب العشري عالي الدقة):
+ *    - حماية العمليات المالية من أخطاء الفاصلة العائمة [أخطاء الفاصلة العائمة].
  * 2. الترتيب الزمني الصارم للمعاملات:
- *    - الفرز وفق التاريخ والوقت [timestamp] ثم المعرف [id] لضمان اتساق الأرصدة التراكمية.
+ *    - الفرز وفق التاريخ والوقت [] ثم المعرف [] لضمان اتساق الأرصدة التراكمية.
  * 3. الفصل المحاسبي بين العملة الأساسية والعملات الأجنبية:
  *    - التمييز بين المعاملات المحسوبة بسعر الصرف والمعاملات الأجنبية الصرفة.
- * 4. حساب الملخص الشامل لكافة العملاء [calculateComprehensiveReport]:
+ * 4. حساب الملخص الشامل لكافة العملاء []:
  *    - تجميع إجمالي ما لنا على العملاء وما علينا لهم عبر كافة العملات.
  */
 package com.smartledger.aldaftar.data.serialization.pdf
@@ -32,15 +32,15 @@ import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.math.BigDecimal
 
 /**
- * [معاملة مالية معالجة ومجهزة للطباعة - ProcessedTransaction]:
+ * [معاملة مالية معالجة ومجهزة للطباعة - ]:
  * تحتوي على الكيان الأصلي وبيانات العملة والمبالغ المحسوبة.
  *
- * @property tx المعاملة المالية الأصلية.
- * @property resolvedCurrency رمز العملة النهائي.
- * @property resolvedAmount المبلغ النهائي المعتمد للطباعة.
- * @property isTxForeign هل المعاملة بعملة أجنبية أو محولة بسعر صرف.
- * @property baseCurrencyAmount المبلغ بالعملة الأساسية للتقرير (أو صفر إن كانت أجنبية صرفة).
- * @property pureBaseAmount المبلغ الصافي بالعملة الأساسية دون أسعار صرف.
+ * @  المعاملة المالية الأصلية.
+ * @  رمز العملة النهائي.
+ * @  المبلغ النهائي المعتمد للطباعة.
+ * @  هل المعاملة بعملة أجنبية أو محولة بسعر صرف.
+ * @  المبلغ بالعملة الأساسية للتقرير (أو صفر إن كانت أجنبية صرفة).
+ * @  المبلغ الصافي بالعملة الأساسية دون أسعار صرف.
  */
 data class ProcessedTransaction(
     val tx: HabayebTransaction,
@@ -52,17 +52,17 @@ data class ProcessedTransaction(
 )
 
 /**
- * [ملخص كشف حساب عميل واحد لـ PDF - SingleCustomerPdfSummary]:
+ * [ملخص كشف حساب عميل واحد لـ  - ]:
  * يجمع قائمة المعاملات المرتبة وإجماليات المديونيات والمقبوضات وصافي الرصيد.
  *
- * @property sortedProcessedTxs قائمة المعاملات مرتبة زمنياً ومعالجة.
- * @property totalDebts إجمالي المبالغ المدينة (لنا).
- * @property totalPayments إجمالي المقبوضات/المسددات.
- * @property totalDebtsBase إجمالي الديون بالعملة الأساسية الصرفة.
- * @property totalPaymentsBase إجمالي المسددات بالعملة الأساسية الصرفة.
- * @property calculatedNetDebt صافي الرصيد النهائي بالعملة الأساسية.
- * @property uncalculatedForeignSums خريطة أرصدة العملات الأجنبية غير المحولة.
- * @property hasMultipleCurrencies ما إذا كان الحساب يحتوي على أكثر من عملة.
+ * @  قائمة المعاملات مرتبة زمنياً ومعالجة.
+ * @  إجمالي المبالغ المدينة (لنا).
+ * @  إجمالي المقبوضات/المسددات.
+ * @  إجمالي الديون بالعملة الأساسية الصرفة.
+ * @  إجمالي المسددات بالعملة الأساسية الصرفة.
+ * @  صافي الرصيد النهائي بالعملة الأساسية.
+ * @  خريطة أرصدة العملات الأجنبية غير المحولة.
+ * @  ما إذا كان الحساب يحتوي على أكثر من عملة.
  */
 data class SingleCustomerPdfSummary(
     val sortedProcessedTxs: List<ProcessedTransaction>,
@@ -76,13 +76,13 @@ data class SingleCustomerPdfSummary(
 )
 
 /**
- * [ملخص تقرير دفتر الحسابات الشامل لـ PDF - ComprehensivePdfSummary]:
+ * [ملخص تقرير دفتر الحسابات الشامل لـ  - ]:
  * يجمع إجماليات كافة حسابات العملاء على مستوى المنشأة.
  *
- * @property totalOwedByThem إجمالي ما لنا على جميع العملاء (الديون الخارجية).
- * @property totalOwedToThem إجمالي ما علينا لجميع العملاء (الالتزامات).
- * @property netPrimary صافي الرصيد العام بالعملة الأساسية.
- * @property foreignTotalsMap خريطة إجماليات العملات الأجنبية لكافة الحسابات.
+ * @  إجمالي ما لنا على جميع العملاء (الديون الخارجية).
+ * @  إجمالي ما علينا لجميع العملاء (الالتزامات).
+ * @  صافي الرصيد العام بالعملة الأساسية.
+ * @  خريطة إجماليات العملات الأجنبية لكافة الحسابات.
  */
 data class ComprehensivePdfSummary(
     val totalOwedByThem: BigDecimal,
@@ -92,18 +92,18 @@ data class ComprehensivePdfSummary(
 )
 
 /**
- * [الكائن الأحادي لمحرك حسابات تقارير PDF - PdfReportCalculator]:
+ * [الكائن الأحادي لمحرك حسابات تقارير  - ]:
  * يوفر خوارزميات المعالجة المالية والحسابات التراكمية.
  */
 object PdfReportCalculator {
 
     /**
-     * [حساب ومعالجة كشف حساب عميل فردي - calculateSingleCustomerReport]:
+     * [حساب ومعالجة كشف حساب عميل فردي - ]:
      * يرتب المعاملات ويفصل الأرصدة ويحسب إجماليات المديونيات والصافي.
      *
-     * @param transactions قائمة معاملات العميل الخام من قاعدة البيانات.
-     * @param currencySymbol رمز العملة الأساسية المعتمدة للتقرير.
-     * @return كائن [SingleCustomerPdfSummary] متكامل ومجهز للعرض.
+     * @  قائمة معاملات العميل الخام من قاعدة البيانات.
+     * @  رمز العملة الأساسية المعتمدة للتقرير.
+     * @ كائن [] متكامل ومجهز للعرض.
      */
     fun calculateSingleCustomerReport(
         transactions: List<HabayebTransaction>,
@@ -126,7 +126,7 @@ object PdfReportCalculator {
             val (resolvedCurrency, resolvedAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, currencySymbol)
             val affectsReportPrimaryCurrency = (resolvedCurrency == normDefaultSymbol)
 
-            // Strictly assign baseCurrencyAmount only if this transaction targets the report's primary currency!
+            // تخصيص مبلغ العملة الأساسية فقط عندما تستهدف المعاملة العملة الأساسية للتقرير
             val baseCurrencyAmount = if (affectsReportPrimaryCurrency) resolvedAmount else BigDecimal.ZERO
 
             val isTxForeign = (tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && 
@@ -186,11 +186,11 @@ object PdfReportCalculator {
     }
 
     /**
-     * [حساب الملخص المالي الشامل لكافة العملاء - calculateComprehensiveReport]:
+     * [حساب الملخص المالي الشامل لكافة العملاء - ]:
      * يجمع إجماليات المديونيات والالتزامات وصافي الرصيد لكافة الحسابات.
      *
-     * @param customers قائمة حالات واجهة المستخدم لكافة العملاء.
-     * @return كائن [ComprehensivePdfSummary] يحتوي على الإجماليات الموحدة.
+     * @  قائمة حالات واجهة المستخدم لكافة العملاء.
+     * @ كائن [] يحتوي على الإجماليات الموحدة.
      */
     fun calculateComprehensiveReport(
         customers: List<CustomerUiState>

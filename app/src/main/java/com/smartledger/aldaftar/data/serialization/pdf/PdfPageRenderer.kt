@@ -1,21 +1,21 @@
 /**
  * =====================================================================
- * ملف: مكون رسم الصفحات والترويسات والتذييلات في PDF (PdfPageRenderer.kt)
+ * ملف: مكون رسم الصفحات والترويسات والتذييلات في  (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن العمود الفقري لتنسيق صفحات PDF في التطبيق، حيث يحتوي
+ * يمثل هذا الكائن العمود الفقري لتنسيق صفحات  في التطبيق، حيث يحتوي
  * على آليات رسم ترويسة المنشأة الرسمية (مع الشعار ومعلومات الاتصال والتاريخ)،
- * وترويسات الجداول (Table Headers)، وتذييل الصفحات مع أرقام الصفحات (Footers)،
- * وترويسات الصفحات الفرعية المتتابعة، وبناء ورقة كشف حساب العميل الكاملة [drawCustomerStatementSheet].
+ * وترويسات الجداول (ترويسات الجداول)، وتذييل الصفحات مع أرقام الصفحات ()،
+ * وترويسات الصفحات الفرعية المتتابعة، وبناء ورقة كشف حساب العميل الكاملة [].
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. تنسيق التواريخ والأوقات باللغة العربية (Locale-Aware Formatting):
- *    - دوال منسقة متزامنة [formatDayAr], [formatDateEn], [formatTimeAr].
- * 2. الضبط الديناميكي لحجم الخطوط (Adaptive Font Sizing):
+ * 1. تنسيق التواريخ والأوقات باللغة العربية (تنسيق مراعي للغة):
+ *    - دوال منسقة متزامنة [], [], [].
+ * 2. الضبط الديناميكي لحجم الخطوط (التحجيم المتكيف للخط):
  *    - تصغير حجم الخط آلياً عند زيادة طول اسم المنشأة أو شعارها اللفظي لمنع تجاوز الهوامش.
- * 3. إدارة فواصل الصفحات الذكية (Pagination & Page Breaks):
- *    - حساب الارتفاع المستهلك مع تنبيه رد النداء [onPageBreakNeeded] لنقل الرسام للصفحة التالية وإعادة رسم الترويسات.
+ * 3. إدارة فواصل الصفحات الذكية (ترقيم الصفحات وفواصل الصفحات):
+ *    - حساب الارتفاع المستهلك مع تنبيه رد النداء [] لنقل الرسام للصفحة التالية وإعادة رسم الترويسات.
  * 4. تجميع كشوفات الحسابات وتدفق المعاملات والصفوف الختامية:
  *    - دمج شريط تعريف العميل، جدول المعاملات، صف الإجماليات، وشريط الصافي النهائي.
  */
@@ -41,7 +41,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * [وعاء بيانات ترويسة المنشأة في تقارير PDF - PdfBusinessHeaderData]:
+ * [وعاء بيانات ترويسة المنشأة في تقارير  - ]:
  * يجمع البيانات النصية والبصرية وتواريخ التقرير المنسقة.
  */
 data class PdfBusinessHeaderData(
@@ -57,7 +57,7 @@ data class PdfBusinessHeaderData(
 )
 
 /**
- * [الكائن الأحادي لرسم وتخطيط صفحات PDF - PdfPageRenderer]:
+ * [الكائن الأحادي لرسم وتخطيط صفحات  - ]:
  * يقدم وظائف رسم الترويسات وتخطيط الجداول وتذييلات الصفحات.
  */
 object PdfPageRenderer {
@@ -143,7 +143,7 @@ object PdfPageRenderer {
     @Synchronized
     fun formatDayAr(date: Date): String = dayFormatAr.format(date)
 
-    /** تنسيق التاريخ الميلادي بصيغة yyyy/MM/dd */
+    /** تنسيق التاريخ الميلادي بصيغة // */
     @Synchronized
     fun formatDateEn(date: Date): String = dateFormatEn.format(date)
 
@@ -152,7 +152,7 @@ object PdfPageRenderer {
     fun formatTimeAr(date: Date): String = timeFormatAr.format(date)
 
     /**
-     * [رسم ترويسة جدول كشف الحساب - drawTableHeader]:
+     * [رسم ترويسة جدول كشف الحساب - ]:
      * يرسم رؤوس الأعمدة الستة لكشف حساب العميل وفق طبيعة حسابه (لنا أو علينا).
      */
     fun drawTableHeader(canvas: Canvas, y: Float, context: Context, initialType: String = TransactionType.OWED_BY_THEM.value) {
@@ -160,7 +160,7 @@ object PdfPageRenderer {
         canvas.drawLine(25f, y, 570f, y, paintHeaderBorder)
         canvas.drawLine(25f, y + 25f, 570f, y + 25f, paintHeaderBorder)
 
-        // Draw vertical grid lines in table header
+        //       
         canvas.drawLine(545f, y, 545f, y + 25f, paintHeaderBorder)
         canvas.drawLine(455f, y, 455f, y + 25f, paintHeaderBorder)
         canvas.drawLine(260f, y, 260f, y + 25f, paintHeaderBorder)
@@ -180,7 +180,7 @@ object PdfPageRenderer {
     }
 
     /**
-     * [رسم ترويسة مصغرة للصفحات اللاحقة - drawSubsequentPageHeader]:
+     * [رسم ترويسة مصغرة للصفحات اللاحقة - ]:
      * يضع شريطاً رفيعاً باسم العميل في أعلى الصفحات الإضافية من كشف حسابه.
      */
     fun drawSubsequentPageHeader(canvas: Canvas, customerName: String, primaryColorHex: String, context: Context) {
@@ -191,7 +191,7 @@ object PdfPageRenderer {
     }
 
     /**
-     * [رسم تذييل الصفحة - drawFooter]:
+     * [رسم تذييل الصفحة - ]:
      * يضع رقم الصفحة وإجمالي الصفحات مع عبارة التوثيق المعتمد أسفل الصفحة.
      */
     fun drawFooter(canvas: Canvas, pageNum: Int, totalPages: Int, primaryColorHex: String, context: Context) {
@@ -203,7 +203,7 @@ object PdfPageRenderer {
     }
 
     /**
-     * [رسم ترويسة المنشأة الكاملة - drawBusinessHeader]:
+     * [رسم ترويسة المنشأة الكاملة - ]:
      */
     fun drawBusinessHeader(canvas: Canvas, headerData: PdfBusinessHeaderData) {
         drawBusinessHeader(
@@ -221,7 +221,7 @@ object PdfPageRenderer {
     }
 
     /**
-     * [رسم ترويسة المنشأة بالمعاملات المباشرة - drawBusinessHeader]:
+     * [رسم ترويسة المنشأة بالمعاملات المباشرة - ]:
      * يرسم اسم المنشأة والوصف وأرقام الهواتف على اليمين، والشعار بالوسط، والتاريخ والوقت على اليسار.
      */
     fun drawBusinessHeader(
@@ -279,7 +279,7 @@ object PdfPageRenderer {
     }
 
     /**
-     * [رسم ترويسة جدول كشف كافة العملاء - drawAllCustomersTableHeader]:
+     * [رسم ترويسة جدول كشف كافة العملاء - ]:
      */
     fun drawAllCustomersTableHeader(canvas: Canvas, y: Float, context: Context) {
         canvas.drawRect(25f, y, 570f, y + 26f, paintHeaderBg)
@@ -287,7 +287,7 @@ object PdfPageRenderer {
         canvas.drawLine(25f, y, 570f, y, paintHeaderBorder)
         canvas.drawLine(25f, y + 26f, 570f, y + 26f, paintHeaderBorder)
 
-        // Vertical dividers
+        // الفواصل الرأسية
         canvas.drawLine(535f, y, 535f, y + 26f, paintHeaderBorder)
         canvas.drawLine(360f, y, 360f, y + 26f, paintHeaderBorder)
         canvas.drawLine(230f, y, 230f, y + 26f, paintHeaderBorder)
@@ -330,7 +330,7 @@ object PdfPageRenderer {
     ) = PdfRowRenderer.drawComprehensiveSummaryCard(canvas, context, primaryColorHex, summary, totalItems, currencySymbol)
 
     /**
-     * [رسم ورقة كشف حساب العميل التفصيلية - drawCustomerStatementSheet]:
+     * [رسم ورقة كشف حساب العميل التفصيلية - ]:
      * يرسم شريط العميل، جدول المعاملات، الإجماليات، وشريط الصافي، مع تدوير الصفحات تلقائياً عند الامتلاء.
      */
     fun drawCustomerStatementSheet(
@@ -348,7 +348,7 @@ object PdfPageRenderer {
         var workingY = startY
         var currentCanvas = canvas
 
-        // 1. Customer Header Banner (Optional)
+        // 1.    ()
         if (includeCustomerHeaderBanner) {
             if (workingY > 42f) {
                 if (workingY + 100f > 780f) {
@@ -388,13 +388,13 @@ object PdfPageRenderer {
             workingY += 32f
         }
 
-        // 2. Table Header
+        // 2.  
         if (!isDryRun && currentCanvas != null) {
             drawTableHeader(currentCanvas, workingY, context, customer.originalCustomer.initialType)
         }
         workingY += 28f
 
-        // 3. Transaction Rows
+        // 3.  
         val sortedTxs = summary.sortedProcessedTxs
         if (sortedTxs.isEmpty()) {
             if (workingY + 25f > 780f) {
@@ -470,7 +470,7 @@ object PdfPageRenderer {
                 workingY += calculatedHeight
             }
 
-            // 4. Totals & Final Net Banner
+            // 4.  &   
             val extraSummaryHeight = 60f + (if (summary.uncalculatedForeignSums.isNotEmpty()) 24f + summary.uncalculatedForeignSums.size * 20f else 0f)
             if (workingY + extraSummaryHeight > 780f) {
                 currentCanvas = onPageBreakNeeded?.invoke(false) ?: currentCanvas

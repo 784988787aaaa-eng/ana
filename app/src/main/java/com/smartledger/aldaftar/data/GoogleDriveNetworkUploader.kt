@@ -1,25 +1,9 @@
-/**
- * =====================================================================
- * ملف: رافع ومنزل الملفات السحابية عبر الشبكة (GoogleDriveNetworkUploader.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف طبقة النقل الشبكي منخفضة المستوى (Low-level HTTP Network Layer)
- * المسؤولة عن تبادل حزم النسخ الاحتياطي بين التطبيق وخوادم Google Drive REST API.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. رفع النسخ الاحتياطية الجديدة (Create & Upload Media) وتحديث النسخ القائمة (Patch).
- * 2. تنزيل محتوى النسخ المشفرة وفحص سلامة بنيتها التركيبية (JSON Payload Validation).
- * 3. آلية التحقق من عدم التغيير (Zero-Diff Detection) بحساب بصمة SHA-256 للبيانات لمنع استهلاك الباقة بالرفع غير المبرر.
- * 4. إدارة التزامن عبر قفل متبادل (Mutex) لمنع عمليات الرفع المزدوجة المتزامنة.
- * 5. استخدام محرك إعادة المحاولة [CloudNetworkEngine] للتعامل المرن مع انقطاعات الشبكة المؤقتة.
- * 6. حظر تام لتسجيل أي بيانات اعتماد أو نصوص حساسة في السجلات لضمان أمان المستخدم.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 package com.smartledger.aldaftar.data
 
-// ---------------------------------------------------------------------
-// استيراد حزم الاتصال عبر OkHttp وكوروتين التزامن وتنسيقات الوسائط
-// ---------------------------------------------------------------------
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
@@ -35,25 +19,19 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 
-/**
- * [فئة رافع بيانات Google Drive - GoogleDriveNetworkUploader]:
- * تنفذ عمليات HTTP (POST, PATCH, GET, DELETE) على ملفات النسخ السحابية.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 class GoogleDriveNetworkUploader(
     private val context: Context
 ) {
-    /**
-     * [الكائن المرافق - Companion Object]:
-     * يحتوي على ثوابت روابط الرفع وبيانات الوسائط ومفاتيح التفضيلات لبصمة النسخة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     companion object {
         private const val TAG = "GoogleDriveNetworkUploader"
 
         private const val PREFS_NAME = "google_drive_uploader_prefs"
         private const val KEY_LAST_UPLOADED_HASH = "last_uploaded_payload_hash"
 
-        private const val DRIVE_FILES_BASE_URL = "https://www.googleapis.com/drive/v3/files"
-        private const val DRIVE_UPLOAD_BASE_URL = "https://www.googleapis.com/upload/drive/v3/files"
+        private const val DRIVE_FILES_BASE_URL = "https:// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+        private const val DRIVE_UPLOAD_BASE_URL = "https:// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
         private const val MIME_TYPE_OCTET_STREAM = "application/octet-stream"
 
         private val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
@@ -69,14 +47,7 @@ class GoogleDriveNetworkUploader(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    /**
-     * [نموذج نتائج الرفع الموحد - UploadResult]:
-     * يمثل الحالات المختلفة لعملية الرفع:
-     * - Success: نجاح الرفع والتأكيد السحابي.
-     * - SkippedUnchanged: تخطي الرفع لأن البيانات متطابقة تماماً مع السحابة (Zero-Diff).
-     * - AuthError: خطأ تفويض يتطلب تجديد رمز الوصول (401/403).
-     * - Failure: فشل العملية مع توضيح إمكانية إعادة المحاولة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class UploadResult {
         object Success : UploadResult()
         object SkippedUnchanged : UploadResult()
@@ -84,15 +55,7 @@ class GoogleDriveNetworkUploader(
         data class Failure(val message: String, val isRetryable: Boolean) : UploadResult()
     }
 
-    /**
-     * [نموذج نتائج التنزيل الموحد - DownloadResult]:
-     * يمثل حالات استرجاع النسخة من السحابة:
-     * - Success: نجاح التنزيل وصحة بنية البيانات.
-     * - FileNotFound: الملف المطلوب غير موجود في السحابة.
-     * - InvalidPayload: الملف منزل ولكنه تالف أو لا يطابق هيكل النسخ المتوقع.
-     * - AuthError: خطأ صلاحيات.
-     * - Failure: خطأ شبكي أو استثناء غير متوقع.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     sealed class DownloadResult {
         data class Success(val content: String) : DownloadResult()
         object FileNotFound : DownloadResult()
@@ -101,10 +64,7 @@ class GoogleDriveNetworkUploader(
         data class Failure(val message: String, val isRetryable: Boolean) : DownloadResult()
     }
 
-    /**
-     * [دوال إدارة البصمة الرقمية للنسخة - Payload Hash]:
-     * تخزن وتسترجع كود SHA-256 للمحتوى لتفادي تكرار رفع نفس البيانات دون أي تغيير.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     fun getStoredPayloadHash(): String? = uploaderPrefs.getString(KEY_LAST_UPLOADED_HASH, null)
 
     fun saveLastUploadedPayloadHash(hash: String) {
@@ -112,10 +72,7 @@ class GoogleDriveNetworkUploader(
         Log.d(TAG, "تم حفظ بصمة النسخة الاحتياطية المرفوعة بنجاح.")
     }
 
-    /**
-     * [دالة فحص تطابق المحتوى]:
-     * تقارن بصمة البيانات الحالية مع البصمة المسجلة لآخر رفع ناجح.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     fun isPayloadIdentical(jsonContent: String): Boolean {
         val currentHash = BackupPayloadSerializer.calculateSha256Hash(jsonContent)
         val storedHash = getStoredPayloadHash()
@@ -126,10 +83,7 @@ class GoogleDriveNetworkUploader(
         return match
     }
 
-    /**
-     * [دالة إنشاء ورفع ملف جديد - createAndUploadNewFile]:
-     * تنشئ البيانات الوصفية للملف (Metadata) في مجلد appDataFolder ثم ترفع المحتوى الفعلي (Media).
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun createAndUploadNewFile(
         filename: String,
         backupJsonContent: String,
@@ -200,10 +154,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
-    /**
-     * [دالة تحديث محتوى ملف موجود - updateExistingFile]:
-     * تستبدل محتوى ملف موجود بالفعل في Google Drive دون الحاجة لتغيير معرف الملف.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun updateExistingFile(
         fileId: String,
         newFileName: String,
@@ -226,7 +177,7 @@ class GoogleDriveNetworkUploader(
 
                 client.newCall(updateRequest).execute().use { updateResponse ->
                     if (updateResponse.isSuccessful) {
-                        // تحديث اسم الملف إذا لزم الأمر
+                        // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
                         val metaUrl = "$DRIVE_FILES_BASE_URL/$fileId"
                         val metaJson = JSONObject().apply { put("name", newFileName) }
                         val metaBody = metaJson.toString().toRequestBody(MEDIA_TYPE_JSON)
@@ -237,7 +188,7 @@ class GoogleDriveNetworkUploader(
                             .patch(metaBody)
                             .build()
 
-                        client.newCall(metaRequest).execute().use { /* ignore meta update response */ }
+                        client.newCall(metaRequest).execute().use { /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */ }
 
                         val currentHash = BackupPayloadSerializer.calculateSha256Hash(backupJsonContent)
                         saveLastUploadedPayloadHash(currentHash)
@@ -260,10 +211,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
-    /**
-     * [دالة الرفع الآمن المنسق - uploadBackupSafe]:
-     * تنفذ تدقيق عدم التغيير وتستخدم قفل Mutex لمنع أي رفع متزامن مزدوج.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun uploadBackupSafe(
         filename: String,
         backupJsonContent: String,
@@ -285,10 +233,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
-    /**
-     * [دالة تنزيل الملف بالمعرف - downloadFileById]:
-     * تجلب المحتوى الخام لملف محدد من Google Drive وتتأكد من صحة هيكل JSON للنسخة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun downloadFileById(
         fileId: String,
         accessToken: String
@@ -336,10 +281,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
-    /**
-     * [دالة حذف ملف من السحابة - deleteFileById]:
-     * ترسل طلب DELETE إلى Google Drive لإزالة ملف محدد من مساحة appDataFolder.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun deleteFileById(
         fileId: String,
         accessToken: String
@@ -363,10 +305,7 @@ class GoogleDriveNetworkUploader(
         }
     }
 
-    /**
-     * [دالة التحقق من صحة بنية JSON للنسخة - isValidBackupJson]:
-     * تفحص احتواء الـ JSON على الجداول والكيانات المالية الأساسية لتطبيق الميزان.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun isValidBackupJson(content: String): Boolean {
         if (content.isBlank()) return false
         return try {

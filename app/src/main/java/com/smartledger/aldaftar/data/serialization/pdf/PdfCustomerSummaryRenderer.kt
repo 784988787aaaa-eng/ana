@@ -1,21 +1,21 @@
 /**
  * =====================================================================
- * ملف: مكون رسم ملخصات العملاء في تقارير PDF (PdfCustomerSummaryRenderer.kt)
+ * ملف: مكون رسم ملخصات العملاء في تقارير  (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
  * يتولى هذا الكائن مسؤولية حساب مقاسات ورسم صفوف كشف أرصدة العملاء
- * (Customer Balances Directory)، وفهرس كتيب الحسابات (Booklet Index)،
- * وبطاقة الملخص الإجمالي الشامل للحسابات والعملات الأجنبية في مستندات PDF.
+ * (دليل أرصدة العملاء)، وفهرس كتيب الحسابات (فهرس الكتيب)،
+ * وبطاقة الملخص الإجمالي الشامل للحسابات والعملات الأجنبية في مستندات .
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. الحساب الديناميكي لارتفاع الصفوف (Dynamic Row Height Calculation):
+ * 1. الحساب الديناميكي لارتفاع الصفوف (حساب ارتفاع الصف ديناميكياً):
  *    - قياس أطوال نصوص أسماء العملاء وأرقام هواتفهم وقوائم العملات الأجنبية لمنع تداخل النصوص.
- * 2. رسم خلايا الجداول والفواصل بدقة (Table Layout & Divider Drawing):
+ * 2. رسم خلايا الجداول والفواصل بدقة (تخطيط الجدول ورسم الفواصل):
  *    - محاذاة الأعمدة (رقم متسلسل، الاسم ورقم الهاتف، الرصيد الأساسي، العملات الأجنبية، والحالة المحاسبية).
  * 3. تمييز حالات الأرصدة بالألوان والدلالات المحاسبية:
  *    - تطبيق ألوان متباينة للأرصدة المدينة والدائنة والمتزنة.
- * 4. رسم بطاقة الملخص الشامل (Comprehensive Summary Card):
+ * 4. رسم بطاقة الملخص الشامل (بطاقة الملخص الشامل):
  *    - عرض إجمالي ما لنا وما علينا، وصافي الحسابات الإجمالي، وملخص العملات الأجنبية غير الصفرية.
  */
 package com.smartledger.aldaftar.data.serialization.pdf
@@ -36,8 +36,8 @@ import com.smartledger.aldaftar.ui.state.CustomerUiState
 import java.math.BigDecimal
 
 /**
- * [الكائن الأحادي لرسم ملخصات العملاء - PdfCustomerSummaryRenderer]:
- * يقدم وظائف قياس ورسم صفوف الدليل وبطاقات التجميع في تقارير PDF.
+ * [الكائن الأحادي لرسم ملخصات العملاء - ]:
+ * يقدم وظائف قياس ورسم صفوف الدليل وبطاقات التجميع في تقارير .
  */
 object PdfCustomerSummaryRenderer {
 
@@ -54,14 +54,14 @@ object PdfCustomerSummaryRenderer {
     }
 
     /**
-     * [حساب ارتفاع صف ملخص العميل - calculateCustomerSummaryRowHeight]:
+     * [حساب ارتفاع صف ملخص العميل - ]:
      * يقيس المساحة الرأسية المطلوبة للاسم والهاتف والعملات الأجنبية.
      *
-     * @param context سياق التطبيق.
-     * @param c كائن حالة واجهة العميل.
-     * @param nameWidth العرض المتاح لعمود الاسم.
-     * @param foreignWidth العرض المتاح لعمود العملات الأجنبية.
-     * @return الارتفاع المناسب للصف بالنقاط.
+     * @  سياق التطبيق.
+     * @  كائن حالة واجهة العميل.
+     * @  العرض المتاح لعمود الاسم.
+     * @  العرض المتاح لعمود العملات الأجنبية.
+     * @ الارتفاع المناسب للصف بالنقاط.
      */
     fun calculateCustomerSummaryRowHeight(
         context: Context,
@@ -85,7 +85,7 @@ object PdfCustomerSummaryRenderer {
     }
 
     /**
-     * [رسم صف ملخص العميل في دليل الحسابات - drawCustomerSummaryRow]:
+     * [رسم صف ملخص العميل في دليل الحسابات - ]:
      * يرسم الخلايا الخمس للعميل مع الفواصل وخلفية العملات الأجنبية إن وجدت.
      */
     fun drawCustomerSummaryRow(
@@ -104,7 +104,7 @@ object PdfCustomerSummaryRenderer {
 
         canvas.drawLine(25f, currentY + rowHeight, 570f, currentY + rowHeight, PdfPaints.paintRowDivider)
 
-        // Vertical dividers
+        // الفواصل الرأسية
         canvas.drawLine(535f, currentY, 535f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(360f, currentY, 360f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(230f, currentY, 230f, currentY + rowHeight, PdfPaints.paintRowDivider)
@@ -112,10 +112,10 @@ object PdfCustomerSummaryRenderer {
 
         val textYOffset = (rowHeight - 12f) / 2f
 
-        // Col 1: Index
+        // العمود الأول: الرقم
         drawArabicText(canvas, (index + 1).toString(), 535f, currentY + textYOffset, 35, PdfPaints.paintCellNormal, Layout.Alignment.ALIGN_CENTER)
 
-        // Col 2: Name & Phone with Dynamic Layout
+        // العمود الثاني: الاسم والهاتف بتخطيط متكيف
         val nameLayout = PdfDrawingUtils.createStaticLayout(c.name, PdfPaints.paintCellBold, 170, Layout.Alignment.ALIGN_NORMAL)
         val nameTotalH = nameLayout.height + if (c.phone.isNotBlank()) 14f else 0f
         val nameYOffset = ((rowHeight - nameTotalH) / 2f).coerceAtLeast(3f)
@@ -125,7 +125,7 @@ object PdfCustomerSummaryRenderer {
             drawArabicText(canvas, c.phone, 365f, currentY + nameYOffset + nameLayout.height + 1f, 170, PdfPaints.paintMutedText, Layout.Alignment.ALIGN_NORMAL)
         }
 
-        // Col 3: Primary Balance
+        // العمود الثالث: الرصيد الأساسي
         val totalBd = c.defaultCurrencyTotal
         val isPositive = totalBd.compareTo(BigDecimal.ZERO) > 0
         val isNegative = totalBd.compareTo(BigDecimal.ZERO) < 0
@@ -133,7 +133,7 @@ object PdfCustomerSummaryRenderer {
         val balancePaint = if (isPositive) PdfPaints.paintOwedText else if (isNegative) PdfPaints.paintPaymentText else PdfPaints.paintCellNormal
         drawArabicText(canvas, formattedPrimary, 230f, currentY + textYOffset, 130, balancePaint, Layout.Alignment.ALIGN_CENTER)
 
-        // Col 4: Foreign Currencies with Dynamic Layout
+        // العمود الرابع: العملات الأجنبية بتخطيط متكيف
         val foreignList = c.foreignDebts.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
         val foreignStr = if (foreignList.isEmpty()) {
             "-"
@@ -148,7 +148,7 @@ object PdfCustomerSummaryRenderer {
         val foreignYOffset = ((rowHeight - foreignLayout.height) / 2f).coerceAtLeast(3f)
         PdfDrawingUtils.drawStaticLayout(canvas, foreignLayout, 105f, currentY + foreignYOffset)
 
-        // Col 5: Status
+        // العمود الخامس: الحالة
         val statusStr = if (isPositive) {
             context.getString(R.string.pdf_status_owed_word)
         } else if (isNegative) {
@@ -161,8 +161,8 @@ object PdfCustomerSummaryRenderer {
     }
 
     /**
-     * [رسم ترويسة جدول فهرس الكتيب - drawBookletIndexHeader]:
-     * يرسم شريط العناوين الداكن مع أسماء الأعمدة في مستند PDF.
+     * [رسم ترويسة جدول فهرس الكتيب - ]:
+     * يرسم شريط العناوين الداكن مع أسماء الأعمدة في مستند .
      */
     fun drawBookletIndexHeader(canvas: Canvas, y: Float, context: Context) {
         val paintHeaderBg = Paint().apply {
@@ -178,7 +178,7 @@ object PdfCustomerSummaryRenderer {
         canvas.drawLine(25f, y, 570f, y, paintHeaderBorder)
         canvas.drawLine(25f, y + 24f, 570f, y + 24f, paintHeaderBorder)
 
-        // Vertical dividers
+        // الفواصل الرأسية
         canvas.drawLine(535f, y, 535f, y + 24f, paintHeaderBorder)
         canvas.drawLine(305f, y, 305f, y + 24f, paintHeaderBorder)
         canvas.drawLine(205f, y, 205f, y + 24f, paintHeaderBorder)
@@ -198,7 +198,7 @@ object PdfCustomerSummaryRenderer {
     }
 
     /**
-     * [حساب ارتفاع صف فهرس الكتيب - calculateBookletIndexRowHeight]:
+     * [حساب ارتفاع صف فهرس الكتيب - ]:
      * يقيس ارتفاع صف العميل في فهرس الكتيب.
      */
     fun calculateBookletIndexRowHeight(customer: CustomerUiState, availableWidth: Int = 225): Float {
@@ -207,7 +207,7 @@ object PdfCustomerSummaryRenderer {
     }
 
     /**
-     * [رسم صف فهرس الكتيب - drawBookletIndexRow]:
+     * [رسم صف فهرس الكتيب - ]:
      * يرسم بيانات العميل في فهرس الكتيب مع حالته ورصيده النهائي.
      */
     fun drawBookletIndexRow(
@@ -221,7 +221,7 @@ object PdfCustomerSummaryRenderer {
     ) {
         canvas.drawLine(25f, currentY + rowHeight, 570f, currentY + rowHeight, PdfPaints.paintRowDivider)
 
-        // Vertical dividers
+        // الفواصل الرأسية
         canvas.drawLine(535f, currentY, 535f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(305f, currentY, 305f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(205f, currentY, 205f, currentY + rowHeight, PdfPaints.paintRowDivider)
@@ -229,22 +229,22 @@ object PdfCustomerSummaryRenderer {
 
         val textYOffset = (rowHeight - 12f) / 2f
 
-        // Column: No (م)
+        // العمود: الرقم (م)
         drawArabicText(canvas, (index + 1).toString(), 535f, currentY + textYOffset, 35, PdfPaints.paintCellNormal, Layout.Alignment.ALIGN_CENTER)
 
-        // Column: Name with Dynamic Layout
+        // العمود: الاسم بتخطيط متكيف
         val nameLayout = PdfDrawingUtils.createStaticLayout(customer.name, PdfPaints.paintCellBold, 225, Layout.Alignment.ALIGN_NORMAL)
         val nameYOffset = ((rowHeight - nameLayout.height) / 2f).coerceAtLeast(2f)
         PdfDrawingUtils.drawStaticLayout(canvas, nameLayout, 310f, currentY + nameYOffset)
 
-        // Column: Phone
+        // العمود: الهاتف
         drawArabicText(canvas, customer.phone.ifEmpty { "-" }, 205f, currentY + textYOffset, 100, PdfPaints.paintCellNormal, Layout.Alignment.ALIGN_NORMAL)
 
-        // Column: Final Balance
+        // العمود: الرصيد النهائي
         val balText = "${HabayebMathHelper.formatSmart(customer.defaultCurrencyTotal.abs())} $currencySymbol"
         drawArabicText(canvas, balText, 105f, currentY + textYOffset, 100, PdfPaints.paintCellBold, Layout.Alignment.ALIGN_CENTER)
 
-        // Column: Status
+        // العمود: الحالة
         val statusStr = when {
             customer.defaultCurrencyTotal > BigDecimal.ZERO -> context.getString(R.string.pdf_status_for_us)
             customer.defaultCurrencyTotal < BigDecimal.ZERO -> context.getString(R.string.pdf_status_on_us)
@@ -265,7 +265,7 @@ object PdfCustomerSummaryRenderer {
     }
 
     /**
-     * [رسم بطاقة الملخص الإجمالي الشامل - drawComprehensiveSummaryCard]:
+     * [رسم بطاقة الملخص الإجمالي الشامل - ]:
      * يرسم بطاقة مستديرة الحواف تعرض الأرصدة المجمعة والعملات الأجنبية.
      */
     fun drawComprehensiveSummaryCard(

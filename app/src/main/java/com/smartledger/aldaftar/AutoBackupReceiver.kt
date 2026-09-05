@@ -1,20 +1,36 @@
 /**
- * =====================================================================
- * ملف التوثيق والتعريف: مستلم النسخ الاحتياطي التلقائي (AutoBackupReceiver.kt)
- * =====================================================================
- * 
- * [الغرض العام من الملف]:
- * يمثل هذا الملف تعريفاً لحزمة التطبيق في هذا المسار. تم الإبقاء عليه نظيفاً
- * وبسيطاً ليحل محل أي إصدارات قديمة غير مستخدمة من مستقبل البث (BroadcastReceiver)
- * القديم، حيث تم نقل مهام الجدولة والنسخ الاحتياطي المتقدمة إلى بنية WorkManager
- * الحديثة مثل (AutoBackupWorker.kt).
- * 
- * [السياق المعماري والعلاقة مع النظام]:
- * - يرتبط هذا الملف بحزمة التطبيق الرئيسية `com.smartledger.aldaftar`.
- * - المهام الفعلية للنسخ الاحتياطي الدوري والذاتي أصبحت تدار بواسطة كلاسات مخصصة
- *   مثل `AutoBackupWorker` و `BackupSyncViewModel`.
+ * مستقبل نظامي يعيد جدولة مهام النسخ الاحتياطي بعد إقلاع الجهاز أو تغير وقت النظام.
+ * لا يقرأ بيانات مالية ولا ينفذ النسخ داخل خيط الواجهة.
  */
 package com.smartledger.aldaftar
 
-// هذا الملف مخصص كحاجز نظيف لضمان عدم تعارض مستقبل البث القديم مع البنية المعمارية الحديثة
-// تم استبدال آليات البث التقليدية بجدولة WorkManager الأكثر كفاءة وأماناً لنظام أندرويد.
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+
+/**
+ * يعيد تسجيل مهام النسخ الدورية بعد الأحداث النظامية التي قد تؤثر في مواعيد الجدولة.
+ */
+class AutoBackupReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val action = intent.action ?: return
+        if (action != Intent.ACTION_BOOT_COMPLETED &&
+            action != Intent.ACTION_TIME_CHANGED &&
+            action != Intent.ACTION_TIMEZONE_CHANGED
+        ) {
+            return
+        }
+
+        val safeContext = context.applicationContext
+        AutoBackupWorker.scheduleDailyBackupWorker(safeContext)
+        BackupReminderWorker.scheduleReminder(safeContext)
+
+        val preferences = safeContext.getSharedPreferences(
+            AutoBackupWorker.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        if (preferences.getBoolean(com.smartledger.aldaftar.data.backup.BackupConstants.KEY_PENDING_CLOUD_UPLOAD, false)) {
+            CloudUploadWorker.enqueueUploadLatest(safeContext)
+        }
+    }
+}

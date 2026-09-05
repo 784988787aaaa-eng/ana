@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -74,7 +73,7 @@ fun SecurityActivePanel(
             val deactivateContent = mizanColors.debt
             val deactivateBorder = mizanColors.debtBorder
 
-            // Shield Icon
+            //  
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -161,7 +160,7 @@ fun SecurityActivePanel(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
 
-            // CHANGE PIN BUTTON
+            //   
             OutlinedButton(
                 onClick = { pendingAction = SecurityActiveAction.CHANGE_PIN },
                 shape = RoundedCornerShape(12.dp),
@@ -187,7 +186,7 @@ fun SecurityActivePanel(
                 }
             }
 
-            // DEACTIVATE SECURITY BUTTON
+            //   
             OutlinedButton(
                 onClick = { pendingAction = SecurityActiveAction.DEACTIVATE },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = deactivateContent),
@@ -217,7 +216,7 @@ fun SecurityActivePanel(
         }
     }
 
-    // Modal verification dialog requiring Old PIN or Recovery Phrase
+    //         
     val activePendingAction = pendingAction
     if (activePendingAction != null) {
         VerifyOldPinDialog(
@@ -285,7 +284,7 @@ fun VerifyOldPinDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", modifier = Modifier.size(18.dp))
+                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(id = R.string.calc_close_desc), modifier = Modifier.size(18.dp))
                     }
                     Text(
                         text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(id = R.string.sec_verify_change_pin) else stringResource(id = R.string.sec_verify_disable_lock),

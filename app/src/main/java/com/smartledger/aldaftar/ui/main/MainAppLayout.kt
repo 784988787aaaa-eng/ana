@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
+import com.smartledger.aldaftar.data.backup.LegacyBackupCandidate
+import com.smartledger.aldaftar.ui.screens.settings.components.LegacyBackupCandidatesDialog
 import com.smartledger.aldaftar.ui.components.*
 import com.smartledger.aldaftar.ui.navigation.Screen
 import com.smartledger.aldaftar.ui.screens.ledger.components.DeviceActivationDialog
@@ -149,26 +151,44 @@ fun MainAppLayout(
         }
     }
 
+    var legacyBackupCandidates by remember { mutableStateOf<List<LegacyBackupCandidate>>(emptyList()) }
+    var showLegacyBackupCandidates by remember { mutableStateOf(false) }
+
+    val legacyFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { treeUri ->
+        if (treeUri != null) {
+            scope.launch(Dispatchers.IO) {
+                val candidates = com.smartledger.aldaftar.data.backup.LegacyBackupDiscovery.discover(
+                    context.contentResolver,
+                    treeUri
+                )
+                withContext(Dispatchers.Main) {
+                    legacyBackupCandidates = candidates
+                    showLegacyBackupCandidates = candidates.isNotEmpty()
+                    if (candidates.isEmpty()) {
+                        Toast.makeText(context, context.getString(R.string.backup_legacy_candidates_empty), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
     val safRestoreLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            scope.launch {
-                try {
-                    val jsonText = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: ""
-                    }
-                    if (jsonText.isNotBlank()) {
-                        backupSyncViewModel.executeMasterRestore(jsonText, context) { success, _ ->
-                            if (success) {
-                                Toast.makeText(context, context.getString(R.string.toast_restore_success), Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
-                            }
+            backupSyncViewModel.readLocalBackupFromUri(context, uri) { jsonText ->
+                if (jsonText.isNullOrBlank()) {
+                    Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
+                } else {
+                    backupSyncViewModel.executeMasterRestore(jsonText, context) { success, _ ->
+                        if (success) {
+                            Toast.makeText(context, context.getString(R.string.toast_restore_success), Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
                         }
                     }
-                } catch (e: Exception) {
-                    android.util.Log.e("SmartLedger", "Operation failed")
                 }
             }
         }
@@ -336,7 +356,33 @@ fun MainAppLayout(
             onImportMzd = {
                 safRestoreLauncher.launch(arrayOf(FinanceConstants.MIME_TYPE_ALL_APP))
             },
+            onDiscoverLegacy = {
+                legacyFolderLauncher.launch(Unit)
+            },
             onDismiss = { showBackupRestoreSheet = false }
+        )
+    }
+
+    if (showLegacyBackupCandidates) {
+        LegacyBackupCandidatesDialog(
+            candidates = legacyBackupCandidates,
+            onSelect = { candidate ->
+                showLegacyBackupCandidates = false
+                backupSyncViewModel.readLocalBackupFromUri(context, candidate.uri) { jsonText ->
+                    if (jsonText.isNullOrBlank()) {
+                        Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
+                    } else {
+                        backupSyncViewModel.executeMasterRestore(jsonText, context) { success, _ ->
+                            if (success) {
+                                Toast.makeText(context, context.getString(R.string.toast_restore_success), Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+            },
+            onDismiss = { showLegacyBackupCandidates = false }
         )
     }
 

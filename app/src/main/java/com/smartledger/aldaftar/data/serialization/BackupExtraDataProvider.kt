@@ -1,28 +1,12 @@
+
 /**
- * =====================================================================
- * ملف: مزود واستخراج البيانات الإضافية للنسخ الاحتياطي (BackupExtraDataProvider.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يتولى هذا المكون استخراج وجمع البيانات الوصفية (Metadata) والتفضيلات المخزنة
- * خارج جداول المعاملات الرئيسية، مثل روابط تصنيفات العملاء، وقوائم الحسابات المثبتة،
- * وترتيب التبويبات المخصص، والتصنيفات الفرعية، لتضمينها في حزمة النسخة الاحتياطية.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. جمع التفضيلات المشتركة من كلا ملفي التفضيلات (`mizan_sec_prefs` و `mizan_finance_prefs`).
- * 2. استخراج خريطة روابط العملاء بالتصنيفات [categoryLinks].
- * 3. استخراج خريطة الحسابات المثبتة في أعلى القوائم [pinnedMap].
- * 4. جلب التصنيفات المخصصة مباشرة من قاعدة بيانات Room [CustomCategory].
- * 5. تجميع كل هذه الأوعية في كائن موحد [BackupExtraData] لتقديمه لمسلسل النسخ الاحتياطي.
+ * مزود البيانات الإضافية للنسخ؛ يجمع التفضيلات والتصنيفات خارج الجداول الرئيسية على خيوط الإدخال والإخراج.
+ * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
  */
 package com.smartledger.aldaftar.data.serialization
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والتفضيلات المشتركة وقاعدة بيانات Room والتدفقات
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
@@ -30,16 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
-/**
- * [وعاء البيانات الإضافية للنسخ الاحتياطي - BackupExtraData]:
- * يجمع التفضيلات والروابط والتصنيفات في كائن بيانات واحد جاهز للتسلسل.
- *
- * @property categoryLinks خريطة تربط معرف العميل باسم تصنيفه المخصص.
- * @property pinnedMap خريطة تربط مفتاح التصنيف بمجموعة معرفات العملاء المثبتين فيه.
- * @property categoryOrderList نص JSON يحدد ترتيب عرض التصنيفات في الواجهة.
- * @property closedCustomName التسمية المخصصة لتبويب الحسابات المقفلة.
- * @property customCategories قائمة الكيانات المخزنة للتصنيفات المخصصة.
- */
 data class BackupExtraData(
     val categoryLinks: Map<String, String> = emptyMap(),
     val pinnedMap: Map<String, Set<String>> = emptyMap(),
@@ -48,32 +22,19 @@ data class BackupExtraData(
     val customCategories: List<CustomCategory> = emptyList()
 )
 
-/**
- * [الكائن الأحادي لمزود البيانات الإضافية - BackupExtraDataProvider]:
- * يوفر دوالاً متخصصة لاستخراج وقراءة التفضيلات والحالات الوصفية بدقة وأمان.
- */
 object BackupExtraDataProvider {
 
-    /** وسم السجلات التشخيصية */
-    private const val TAG = "BackupExtraDataProvider"
-    /** أسماء ملفات التفضيلات المستهدفة */
+    
     private const val PREF_MIZAN_SEC = "mizan_sec_prefs"
     private const val PREF_MIZAN_FINANCE = "mizan_finance_prefs"
 
-    /** بادئات ومفاتيح قراءة التفضيلات */
     private const val PREFIX_CAT_LINK = "CAT_LINK_"
     private const val PREFIX_KEY_PINNED_IN = "KEY_PINNED_IN_"
     private const val KEY_CATEGORY_ORDER_LIST_PREF = "CATEGORY_ORDER_LIST_KEY"
     private const val KEY_CLOSED_CUSTOM_NAME_PREF = "CLOSED_CUSTOM_NAME_KEY"
 
     /**
-     * [استخراج روابط الفئات المخصصة للعملاء - getCategoryLinks]:
-     * يمر على قائمة العملاء ويستخرج اسم التصنيف المربوط بكل عميل من التفضيلات.
-     *
-     * @param financePrefs تفضيلات النظام المالي.
-     * @param sharedPrefs تفضيلات الأمان المشتركة.
-     * @param habayebCustomers قائمة عملاء الحبايب.
-     * @return خريطة مفتاحها معرف العميل وقيمتها اسم التصنيف.
+     * يجمع روابط التصنيفات من المسارين مع أولوية القيمة الحديثة.
      */
     fun getCategoryLinks(
         financePrefs: SharedPreferences?,
@@ -92,12 +53,7 @@ object BackupExtraDataProvider {
     }
 
     /**
-     * [استخراج خريطة العملاء المثبتين - getPinnedCategoriesMap]:
-     * يجمع كافة مجموعات التثبيت من التفضيلات ويربطها بمفاتيح التصنيفات المقابلة.
-     *
-     * @param financePrefs تفضيلات النظام المالي.
-     * @param sharedPrefs تفضيلات الأمان المشتركة.
-     * @return خريطة مفتاحها اسم التصنيف وقيمتها مجموعة معرفات العملاء المثبتين.
+     * يجمع قوائم التثبيت ويمنع إسقاطها أثناء إنشاء النسخة الاحتياطية.
      */
     fun getPinnedCategoriesMap(
         financePrefs: SharedPreferences?,
@@ -121,10 +77,7 @@ object BackupExtraDataProvider {
     }
 
     /**
-     * [استخراج تفضيلات الترتيب والأسماء المخصصة - getUserPreferences]:
-     * يجلب إعدادات ترتيب التبويبات واسم تبويب الحسابات المقفلة.
-     *
-     * @return زوج يحتوي على (نص ترتيب التصنيفات، الاسم المخصص للمقفلين).
+     * يجمع ترتيب التصنيفات والاسم المخصص من مسار التخزين المتاح.
      */
     fun getUserPreferences(
         financePrefs: SharedPreferences?,
@@ -138,29 +91,19 @@ object BackupExtraDataProvider {
     }
 
     /**
-     * [استخراج الفئات المخصصة من قاعدة البيانات - getCustomCategoriesData]:
-     * يستعلم عن كافة التصنيفات المخصصة المسجلة في جدول [CustomCategory].
-     *
-     * @param context سياق التطبيق للوصول لقاعدة البيانات.
-     * @return قائمة كائنات التصنيفات المخصصة.
+     * يقرأ التصنيفات المخصصة على خيط الإدخال والإخراج لتجنب حجب الواجهة.
      */
     suspend fun getCustomCategoriesData(context: Context): List<CustomCategory> = withContext(Dispatchers.IO) {
         try {
             val db = AppDatabase.getDatabase(context)
             db.customCategoryDao().getAllCustomCategoriesFlow().first()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load custom categories for backup payload", e)
             emptyList()
         }
     }
 
     /**
-     * [تجميع كافة البيانات الإضافية في وعاء موحد - fetchExtraBackupData]:
-     * الدالة الرئيسية لتجميع كافة البيانات الوصفية والإضافية بالتوازي على خيوط IO.
-     *
-     * @param context سياق التطبيق.
-     * @param habayebCustomers قائمة عملاء الحبايب.
-     * @return كائن [BackupExtraData] المحتوي على كافة الإضافات.
+     * يجمع البيانات الإضافية للنسخ على خيط الإدخال والإخراج ويعيد وعاءً موحداً.
      */
     suspend fun fetchExtraBackupData(
         context: Context,
