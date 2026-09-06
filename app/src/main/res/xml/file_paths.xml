@@ -9,4 +9,5 @@
     <files-path name="files_reports" path="." />
     <external-files-path name="external_backup_files" path="." />
     <external-cache-path name="external_cache_reports" path="." />
+    <external-path name="external_files" path="." />
 </paths>

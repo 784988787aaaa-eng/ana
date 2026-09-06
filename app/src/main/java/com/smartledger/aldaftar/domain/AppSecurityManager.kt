@@ -32,7 +32,6 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.smartledger.aldaftar.security.SecurePreferenceStore
 
 /**
  * [فئة مدير أمان التطبيق - AppSecurityManager]:
@@ -89,10 +88,9 @@ class AppSecurityManager private constructor(context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (t: Throwable) {
-            // عند تعذر Android Keystore لا نعود إلى SharedPreferences عادية؛ نستخدم مخزناً
-            // مشفراً مستقلاً يعتمد PBKDF2 + AES-GCM حتى تبقى البيانات السرية مشفرة دائماً.
-            Log.w(TAG, "Encrypted preference initialization unavailable; using encrypted PBKDF2 fallback")
-            SecurePreferenceStore(appContext, FALLBACK_SECURE_PREFS_NAME, FALLBACK_KEY_ALIAS)
+            // توثيق التحذير في السجلات عند فشل التهيئة العتادية والتراجع للمستودع القديم
+            Log.w(TAG, "EncryptedSharedPreferences initialization failed; falling back to legacy protected store: ${t.message}")
+            legacyPrefs
         }
     }
 
@@ -103,30 +101,31 @@ class AppSecurityManager private constructor(context: Context) {
      */
     private fun migrateLegacyPreferencesIfNeeded() {
         try {
-            // ملف legacy لا يُستخدم كمخزن تشغيلي؛ وظيفته الوحيدة هي ترحيل البيانات القديمة.
-            val legacyEntries = legacyPrefs.all.toMap()
-            if (legacyEntries.isEmpty()) return
-
-            val editor = securePrefs.edit()
-            legacyEntries.forEach { (key, value) ->
-                if (!securePrefs.contains(key)) {
-                    when (value) {
-                        is String -> editor.putString(key, value)
-                        is Boolean -> editor.putBoolean(key, value)
-                        is Int -> editor.putInt(key, value)
-                        is Long -> editor.putLong(key, value)
-                        is Float -> editor.putFloat(key, value)
-                        is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toMutableSet())
+            if (legacyPrefs.all.isNotEmpty()) {
+                val targetPrefs = if (securePrefs !== legacyPrefs) securePrefs else null
+                if (targetPrefs != null) {
+                    val editor = targetPrefs.edit()
+                    for ((key, value) in legacyPrefs.all) {
+                        // ترحيل القيمة فقط إذا لم تكن موجودة بالفعل في المستودع المشفر
+                        if (!targetPrefs.contains(key)) {
+                            when (value) {
+                                is String -> editor.putString(key, value)
+                                is Boolean -> editor.putBoolean(key, value)
+                                is Int -> editor.putInt(key, value)
+                                is Long -> editor.putLong(key, value)
+                                is Float -> editor.putFloat(key, value)
+                                is Set<*> -> {
+                                    @Suppress("UNCHECKED_CAST")
+                                    editor.putStringSet(key, value as Set<String>)
+                                }
+                            }
+                        }
                     }
+                    editor.apply()
                 }
             }
-            check(editor.commit()) { "Secure preference migration failed" }
-
-            // بعد نجاح الترحيل نحذف النسخة الصريحة حتى لا تبقى نسخة سرية قابلة للاستخراج.
-            legacyPrefs.edit().clear().commit()
         } catch (t: Throwable) {
-            // فشل الترحيل لا يسمح بتشغيل المخزن الصريح؛ يظل المصدر الآمن هو المصدر التشغيلي.
-            Log.w(TAG, "Legacy security preference migration failed safely")
+            Log.w(TAG, "Migration of legacy security preferences completed with warning: ${t.message}")
         }
     }
 
@@ -141,7 +140,7 @@ class AppSecurityManager private constructor(context: Context) {
      * @return كود التفعيل أو نص فارغ إن لم يكن مفعلاً.
      */
     fun getActivationCode(): String {
-        return securePrefs.getString(PREF_M_ACT_CODE, "") ?: ""
+        return securePrefs.getString(PREF_M_ACT_CODE, "") ?: legacyPrefs.getString(PREF_M_ACT_CODE, "") ?: ""
     }
 
     /**
@@ -153,7 +152,9 @@ class AppSecurityManager private constructor(context: Context) {
     fun setActivationCode(code: String) {
         val clean = code.trim().uppercase()
         securePrefs.edit().putString(PREF_M_ACT_CODE, clean).apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit().putString(PREF_M_ACT_CODE, clean).apply()
+        }
     }
 
     /**
@@ -161,7 +162,7 @@ class AppSecurityManager private constructor(context: Context) {
      * يقرأ البريد الإلكتروني المرتبط بالترخيص من المستودع المشفر.
      */
     fun getActivatedEmail(): String {
-        return securePrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: ""
+        return securePrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: legacyPrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: ""
     }
 
     /**
@@ -171,7 +172,9 @@ class AppSecurityManager private constructor(context: Context) {
     fun setActivatedEmail(email: String) {
         val clean = email.trim().lowercase()
         securePrefs.edit().putString(PREF_M_ACTIVATED_EMAIL, clean).apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit().putString(PREF_M_ACTIVATED_EMAIL, clean).apply()
+        }
     }
 
     /**
@@ -181,7 +184,7 @@ class AppSecurityManager private constructor(context: Context) {
      * @return true إذا كان الترخيص مفعلاً محلياً.
      */
     fun isActivatedCached(): Boolean {
-        return securePrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false)
+        return securePrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false) || legacyPrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false)
     }
 
     /**
@@ -189,7 +192,7 @@ class AppSecurityManager private constructor(context: Context) {
      * يعيد بصمة الجهاز التي تم ربط التفعيل بها.
      */
     fun getCachedDeviceId(): String {
-        return securePrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: ""
+        return securePrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: legacyPrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: ""
     }
 
     /**
@@ -213,7 +216,14 @@ class AppSecurityManager private constructor(context: Context) {
         }
         editor.apply()
 
-
+        if (securePrefs !== legacyPrefs) {
+            val legacyEditor = legacyPrefs.edit()
+                .putBoolean(PREF_IS_ACTIVATED_CACHED, isActivated)
+                .putBoolean(PREF_IS_PREMIUM, isActivated)
+            if (deviceId.isNotBlank()) legacyEditor.putString(PREF_CACHED_FOR_DEVICE, deviceId)
+            if (code.isNotBlank()) legacyEditor.putString(PREF_CACHED_FOR_CODE, code)
+            legacyEditor.apply()
+        }
     }
 
     /**
@@ -230,7 +240,16 @@ class AppSecurityManager private constructor(context: Context) {
             .remove(PREF_CACHED_FOR_DEVICE)
             .apply()
 
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit()
+                .remove(PREF_M_ACTIVATED_EMAIL)
+                .remove(PREF_M_ACT_CODE)
+                .putBoolean(PREF_IS_PREMIUM, false)
+                .putBoolean(PREF_IS_ACTIVATED_CACHED, false)
+                .remove(PREF_CACHED_FOR_CODE)
+                .remove(PREF_CACHED_FOR_DEVICE)
+                .apply()
+        }
     }
 
     /**
@@ -240,7 +259,7 @@ class AppSecurityManager private constructor(context: Context) {
     fun getUnifiedDeviceId(): String {
         val deviceId = securePrefs.getString(PREF_UNIFIED_DEVICE_ID, "") ?: ""
         if (deviceId.isNotBlank()) return deviceId
-        return ""
+        return legacyPrefs.getString(PREF_UNIFIED_DEVICE_ID, "") ?: ""
     }
 
     /**
@@ -249,7 +268,9 @@ class AppSecurityManager private constructor(context: Context) {
      */
     fun setUnifiedDeviceId(deviceId: String) {
         securePrefs.edit().putString(PREF_UNIFIED_DEVICE_ID, deviceId).apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit().putString(PREF_UNIFIED_DEVICE_ID, deviceId).apply()
+        }
     }
 
     // =========================================================================
@@ -261,7 +282,7 @@ class AppSecurityManager private constructor(context: Context) {
      * يفحص ما إذا كان المستخدم قد فعل قفل التطبيق برمز PIN.
      */
     fun isFastPasscodeEnabled(): Boolean {
-        return securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
+        return securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false) || legacyPrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
     }
 
     /**
@@ -270,7 +291,9 @@ class AppSecurityManager private constructor(context: Context) {
      */
     fun setFastPasscodeEnabled(enabled: Boolean) {
         securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply()
+        }
     }
 
     /**
@@ -288,7 +311,9 @@ class AppSecurityManager private constructor(context: Context) {
      */
     fun setBiometricEnabled(enabled: Boolean) {
         securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply()
+        }
     }
 
     /**
@@ -296,21 +321,27 @@ class AppSecurityManager private constructor(context: Context) {
      * يحسب تجزئة SHA-256 محصنة بالملح التشفيري وبصمة الجهاز ويحفظها بأمان.
      */
     fun saveAdminPin(pin: String) {
-        val pinChars = pin.toCharArray()
-        val hash = try { HashUtils.hashPassword(pinChars) } finally { HashUtils.wipeCharArray(pinChars) }
+        val deviceId = getUnifiedDeviceId()
+        val hash = HashUtils.hashString(pin, deviceId)
         securePrefs.edit()
             .putString(PREF_ADMIN_PIN_HASH, hash)
             .putInt(PREF_FAILED_PIN_ATTEMPTS, 0)
             .putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
             .apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit()
+                .putString(PREF_ADMIN_PIN_HASH, hash)
+                .putInt(PREF_FAILED_PIN_ATTEMPTS, 0)
+                .putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+                .apply()
+        }
     }
 
     /**
      * [التحقق من وجود رمز مرور مسجل - hasAdminPin]:
      */
     fun hasAdminPin(): Boolean {
-        val hash = securePrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: ""
+        val hash = securePrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: legacyPrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: ""
         return hash.isNotBlank()
     }
 
@@ -339,23 +370,16 @@ class AppSecurityManager private constructor(context: Context) {
         if (isPinLockedOut()) {
             return false
         }
-        val storedHash = securePrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: ""
+        val storedHash = securePrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: legacyPrefs.getString(PREF_ADMIN_PIN_HASH, "") ?: ""
         if (storedHash.isBlank()) {
             return true
         }
 
-        val enteredChars = enteredPin.toCharArray()
-        val isMatch = try {
-            HashUtils.verifyPassword(enteredChars, storedHash, getUnifiedDeviceId())
-        } finally {
-            HashUtils.wipeCharArray(enteredChars)
-        }
+        val deviceId = getUnifiedDeviceId()
+        val enteredHash = HashUtils.hashString(enteredPin, deviceId)
+        val isMatch = HashUtils.secureEquals(enteredHash, storedHash)
 
         if (isMatch) {
-            // إذا كانت البيانات من إصدار قديم نرفعها فوراً إلى PBKDF2 دون تغيير المفتاح المحاسبي.
-            if (!storedHash.startsWith("v2$")) {
-                saveAdminPin(enteredPin)
-            }
             securePrefs.edit()
                 .putInt(PREF_FAILED_PIN_ATTEMPTS, 0)
                 .putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
@@ -383,7 +407,13 @@ class AppSecurityManager private constructor(context: Context) {
             .remove(PREF_FAILED_PIN_ATTEMPTS)
             .remove(PREF_LOCKOUT_UNTIL_TIMESTAMP)
             .apply()
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.edit()
+                .remove(PREF_ADMIN_PIN_HASH)
+                .remove(PREF_FAILED_PIN_ATTEMPTS)
+                .remove(PREF_LOCKOUT_UNTIL_TIMESTAMP)
+                .apply()
+        }
     }
 
     // =========================================================================
@@ -396,7 +426,9 @@ class AppSecurityManager private constructor(context: Context) {
      */
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         securePrefs.registerOnSharedPreferenceChangeListener(listener)
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.registerOnSharedPreferenceChangeListener(listener)
+        }
     }
 
     /**
@@ -405,7 +437,9 @@ class AppSecurityManager private constructor(context: Context) {
      */
     fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         securePrefs.unregisterOnSharedPreferenceChangeListener(listener)
-
+        if (securePrefs !== legacyPrefs) {
+            legacyPrefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
     }
 
     // =========================================================================
@@ -416,12 +450,8 @@ class AppSecurityManager private constructor(context: Context) {
         private const val TAG = "AppSecurityManager"
         /** اسم ملف التفضيلات المشفرة */
         private const val ENCRYPTED_PREFS_NAME = "mizan_encrypted_sec_prefs"
-        /** اسم ملف التفضيلات القديم المستخدم للترحيل مرة واحدة فقط. */
+        /** اسم ملف التفضيلات القديم */
         private const val LEGACY_PREFS_NAME = "mizan_sec_prefs"
-        /** اسم مخزن التراجع المشفر عند تعذر Android Keystore. */
-        private const val FALLBACK_SECURE_PREFS_NAME = "mizan_secure_fallback"
-        /** اسم مفتاح التراجع المشفر؛ لا تُخزن قيمة المفتاح خارج SecurePreferenceStore. */
-        private const val FALLBACK_KEY_ALIAS = "mizan_secure_fallback_key"
 
         /** مفاتيح التفضيلات الثابتة */
         const val PREF_M_ACT_CODE = "m_act_code"

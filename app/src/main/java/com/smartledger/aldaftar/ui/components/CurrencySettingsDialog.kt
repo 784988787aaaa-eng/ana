@@ -37,7 +37,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,18 +48,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -74,17 +72,19 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import kotlinx.coroutines.android.awaitFrame
 import java.math.BigDecimal
 
-// * نافذة ضبط وتعديل أسعار صرف العملات والعملة الافتراضية للتطبيق
-// * توفر تجربة مدمجة وسلسة لضبط أزواج الصرف وإعادة تقييم العمليات السابقة أو اللاحقة بدقة متناهية.
+private const val TAG = "CurrencySettingsDialog"
+
+/**
+ * نافذة ضبط وتعديل أسعار صرف العملات والعملة الافتراضية للتطبيق
+ * توفر تجربة مدمجة وسلسة لضبط أزواج الصرف وإعادة تقييم العمليات السابقة أو اللاحقة بدقة متناهية.
+ */
 @Composable
-/// تدير هذه الدالة إعداد العملة وسعر الصرف مع إبقاء التعديل قابلاً للتمرير أمام لوحة المفاتيح.
 fun CurrencySettingsDialog(
     settings: AppSettings,
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-    val colorScheme = MaterialTheme.colorScheme
 
     val currencyYer = stringResource(id = R.string.currency_yer)
     val currencySar = stringResource(id = R.string.currency_sar)
@@ -107,7 +107,7 @@ fun CurrencySettingsDialog(
             rateFocusRequester.requestFocus()
             keyboardController?.show()
         } catch (e: Exception) {
-            Log.w("SmartLedger", "تعذر تجهيز التركيز ولوحة المفاتيح")
+            Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
         }
     }
 
@@ -115,8 +115,7 @@ fun CurrencySettingsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            val view = LocalView.current
+        val view = LocalView.current
         DisposableEffect(view) {
             val window = (view.parent as? DialogWindowProvider)?.window
             window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
@@ -134,22 +133,21 @@ fun CurrencySettingsDialog(
                 topEnd = 6.dp,
                 bottomStart = 6.dp
             ),
-            border = BorderStroke(1.2.dp, colorScheme.outlineVariant),
-            colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
+            border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .imePadding()
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CurrencyDialogHeader(onDismiss = onDismiss)
 
-                HorizontalDivider(color = colorScheme.outlineVariant, thickness = 1.dp)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 
                 CurrencySelectorColumns(
                     currenciesToDisplay = state.currenciesToDisplay,
@@ -179,7 +177,6 @@ fun CurrencySettingsDialog(
                     }
                 )
             }
-        }
         }
     }
 
@@ -216,11 +213,11 @@ fun CurrencySettingsDialog(
     }
 }
 
-// * شريط العنوان وزر الإغلاق المصغر لنافذة إعدادات العملة
+/**
+ * شريط العنوان وزر الإغلاق المصغر لنافذة إعدادات العملة
+ */
 @Composable
-/// تعرض هذه الدالة عنوان النافذة وزر الإغلاق من رموز الألوان والنصوص المركزية.
 private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
-    val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
@@ -229,7 +226,7 @@ private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
             text = stringResource(R.string.currency_settings_dialog_title),
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
         
@@ -242,16 +239,17 @@ private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = stringResource(R.string.currency_settings_dialog_close),
-                tint = colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(12.dp)
             )
         }
     }
 }
 
-// * أعمدة الاختيار الثنائي بين العملة الافتراضية للتطبيق وأزواج الصرف المستهدفة
+/**
+ * أعمدة الاختيار الثنائي بين العملة الافتراضية للتطبيق وأزواج الصرف المستهدفة
+ */
 @Composable
-/// تعرض هذه الدالة اختيارات العملة المحلية والعملة المستهدفة وحقل سعر الصرف.
 private fun CurrencySelectorColumns(
     currenciesToDisplay: List<String>,
     localDefaultCurrency: String,
@@ -265,7 +263,6 @@ private fun CurrencySelectorColumns(
     onTargetCurrencyChange: (String) -> Unit,
     onRateInputChange: (String) -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -280,7 +277,7 @@ private fun CurrencySelectorColumns(
                 text = stringResource(R.string.currency_settings_dialog_default),
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
@@ -288,8 +285,8 @@ private fun CurrencySelectorColumns(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(colorScheme.surfaceVariant)
-                    .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                     .padding(2.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
@@ -300,7 +297,7 @@ private fun CurrencySelectorColumns(
                             .fillMaxWidth()
                             .height(22.dp)
                             .clip(RoundedCornerShape(topStart = 6.dp, bottomEnd = 6.dp, topEnd = 2.dp, bottomStart = 2.dp))
-                            .background(if (isSelected) colorScheme.primary.copy(alpha = 0.12f) else colorScheme.surface.copy(alpha = 0f))
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onDefaultCurrencyChange(symbol)
@@ -311,7 +308,7 @@ private fun CurrencySelectorColumns(
                             text = symbol,
                             fontSize = 9.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) colorScheme.primary else colorScheme.onSurfaceVariant
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -328,7 +325,7 @@ private fun CurrencySelectorColumns(
                 text = stringResource(R.string.currency_settings_dialog_target),
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
@@ -339,7 +336,7 @@ private fun CurrencySelectorColumns(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(6.dp))
-                    .background(colorScheme.outlineVariant)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
                     .padding(1.5.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
@@ -350,7 +347,7 @@ private fun CurrencySelectorColumns(
                             .weight(1f)
                             .height(20.dp)
                             .clip(RoundedCornerShape(topStart = 5.dp, bottomEnd = 5.dp, topEnd = 1.5.dp, bottomStart = 1.5.dp))
-                            .background(if (isSelected) colorScheme.primary else colorScheme.surface.copy(alpha = 0f))
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onTargetCurrencyChange(symbol)
@@ -361,7 +358,7 @@ private fun CurrencySelectorColumns(
                             text = symbol,
                             fontSize = 8.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) colorScheme.onPrimary else colorScheme.onSurfaceVariant
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -375,8 +372,8 @@ private fun CurrencySelectorColumns(
                     .fillMaxWidth()
                     .height(24.dp)
                     .clip(RoundedCornerShape(topStart = 6.dp, bottomEnd = 6.dp, topEnd = 2.dp, bottomStart = 2.dp))
-                    .background(colorScheme.surface)
-                    .border(0.8.dp, colorScheme.outlineVariant, RoundedCornerShape(topStart = 6.dp, bottomEnd = 6.dp, topEnd = 2.dp, bottomStart = 2.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(0.8.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(topStart = 6.dp, bottomEnd = 6.dp, topEnd = 2.dp, bottomStart = 2.dp))
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -385,7 +382,7 @@ private fun CurrencySelectorColumns(
                     text = stringResource(id = R.string.currency_settings_dialog_unit_rate_prefix, selectedTargetCurrency),
                     fontSize = 7.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Box(
@@ -403,7 +400,7 @@ private fun CurrencySelectorColumns(
                             textAlign = TextAlign.Center,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -417,7 +414,7 @@ private fun CurrencySelectorColumns(
                                     Text(
                                         text = stringResource(R.string.currency_settings_dialog_price),
                                         fontSize = 8.sp,
-                                        color = colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         textAlign = TextAlign.Center
                                     )
                                 }
@@ -431,22 +428,22 @@ private fun CurrencySelectorColumns(
                     text = localDefaultCurrency,
                     fontSize = 7.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
 }
 
-// * أزرار الحفظ والإلغاء لنافذة إعدادات العملة
+/**
+ * أزرار الحفظ والإلغاء لنافذة إعدادات العملة
+ */
 @Composable
-/// تعرض هذه الدالة أزرار الحفظ والإلغاء مع استجابة لمسية خفيفة.
 private fun CurrencyActionButtons(
     haptic: HapticFeedback,
     onDismiss: () -> Unit,
     onSave: () -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -456,7 +453,7 @@ private fun CurrencyActionButtons(
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onSave()
             },
-            colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp, topEnd = 2.dp, bottomStart = 2.dp),
             modifier = Modifier
                 .weight(1.3f)
@@ -467,15 +464,15 @@ private fun CurrencyActionButtons(
                 text = stringResource(R.string.currency_settings_dialog_save),
                 fontSize = 8.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorScheme.onPrimary
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
 
         Button(
             onClick = onDismiss,
             colors = ButtonDefaults.buttonColors(
-                containerColor = colorScheme.outlineVariant,
-                contentColor = colorScheme.onSurfaceVariant
+                containerColor = MaterialTheme.colorScheme.outlineVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
             shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp, topEnd = 2.dp, bottomStart = 2.dp),
             modifier = Modifier

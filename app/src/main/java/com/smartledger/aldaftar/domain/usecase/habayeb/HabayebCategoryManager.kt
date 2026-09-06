@@ -1,22 +1,22 @@
 /**
  * =====================================================================
- * ملف: مدير تصنيفات وتثبيتات عملاء الحبايب (.)
+ * ملف: مدير تصنيفات وتثبيتات عملاء الحبايب (HabayebCategoryManager.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن حالة الاستخدام (  /  ) المركزية المسؤولة عن
+ * يمثل هذا الكائن حالة الاستخدام (Use Case / Domain Manager) المركزية المسؤولة عن
  * تنظيم وتبويب عملاء قسم "الحبايب"، وتعيين وتثبيت الحسابات المميزة في أعلى كل تصنيف،
- * وإدارة الترتيب الأفقي للأقسام بمراعاة اتجاه واجهات المستخدم العربية ().
+ * وإدارة الترتيب الأفقي للأقسام بمراعاة اتجاه واجهات المستخدم العربية (RTL).
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. التخزين المؤقت عالي السرعة (- - ):
- *    - استخدام [] لتخزين روابط العملاء بالتصنيفات والتثبيتات محلياً في الذاكرة
- *      لتجنب القراءة المستمرة والبطيئة من [] أثناء التمرير في القوائم.
- * 2. التحكم في تثبيت الحسابات (  & ):
+ * 1. التخزين المؤقت عالي السرعة (High-Performance In-Memory Caching):
+ *    - استخدام [ConcurrentHashMap] لتخزين روابط العملاء بالتصنيفات والتثبيتات محلياً في الذاكرة
+ *      لتجنب القراءة المستمرة والبطيئة من [SharedPreferences] أثناء التمرير في القوائم.
+ * 2. التحكم في تثبيت الحسابات (Pinning Management & Limits):
  *    - تثبيت حتى 3 عملاء كحد أقصى لكل تصنيف، مع إشعار المستخدم عبر التوست والاهتزاز اللمسي.
- * 3. العمليات الشاملة للتصنيفات (  &  ):
+ * 3. العمليات الشاملة للتصنيفات (Category Lifecycle & Cascade Operations):
  *    - إنشاء، وإعادة تسمية، وحذف التصنيفات إما بنقل حساباتها أو بنقلها مع المعاملات لسلة المحذوفات.
- * 4. إدارة الترتيب الأفقي للواجهة العربية (  ):
+ * 4. إدارة الترتيب الأفقي للواجهة العربية (RTL Layout Reordering):
  *    - عكس اتجاهات التحريك (اليمين واليسار) لتتوافق طبيعياً مع اللغة العربية.
  */
 package com.smartledger.aldaftar.domain.usecase.habayeb
@@ -26,6 +26,7 @@ package com.smartledger.aldaftar.domain.usecase.habayeb
 // ---------------------------------------------------------------------
 import android.app.Application
 import android.content.SharedPreferences
+import android.util.Log
 import android.widget.Toast
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
@@ -40,10 +41,10 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * [فئة مدير تصنيفات وتثبيتات الحبايب - ]:
- * @  سياق التطبيق العام لجلب الموارد النصية وإظهار الرسائل.
- * @  مستودع البيانات المالية لتنفيذ عمليات قاعدة البيانات.
- * @  تفضيلات التطبيق لتخزين الروابط السريعة والتثبيتات.
+ * [فئة مدير تصنيفات وتثبيتات الحبايب - HabayebCategoryManager]:
+ * @property application سياق التطبيق العام لجلب الموارد النصية وإظهار الرسائل.
+ * @property repository مستودع البيانات المالية لتنفيذ عمليات قاعدة البيانات.
+ * @property sharedPrefs تفضيلات التطبيق لتخزين الروابط السريعة والتثبيتات.
  */
 class HabayebCategoryManager(
     private val application: Application,
@@ -70,6 +71,7 @@ class HabayebCategoryManager(
                 }
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error initializing category and pinned cache from SharedPreferences", e)
         }
     }
 
@@ -82,7 +84,7 @@ class HabayebCategoryManager(
     val categoryUpdateTrigger = _categoryUpdateTrigger.asStateFlow()
 
     /**
-     * [إطلاق إشعار التحديث - ]:
+     * [إطلاق إشعار التحديث - triggerUpdate]:
      * يزيد قيمة العداد لإعلام الشاشات بضرورة إعادة رسم وتحديث البيانات.
      */
     fun triggerUpdate() {
@@ -90,13 +92,13 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [استرجاع خارطة التصنيفات الكاملة - ]:
+     * [استرجاع خارطة التصنيفات الكاملة - getCategoryMap]:
      * تعيد الخارطة المباشرة لروابط كافة العملاء بالتصنيفات.
      */
     fun getCategoryMap(): Map<String, String> = categoryMapCache
 
     /**
-     * [جلب معرفات العملاء المثبتين في تصنيف معين - ]:
+     * [جلب معرفات العملاء المثبتين في تصنيف معين - getPinnedForCategory]:
      * يقرأ من الذاكرة المؤقتة أو من الإعدادات عند عدم التوفر.
      */
     fun getPinnedForCategory(category: String?): Set<String> {
@@ -109,7 +111,7 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [التأكد من وجود التصنيف الافتراضي للحسابات المقفلة - ]:
+     * [التأكد من وجود التصنيف الافتراضي للحسابات المقفلة - ensureClosedCategoryExists]:
      * يفحص وجود تصنيف الحسابات المسددة/المقفلة وينشئه تلقائياً إذا لم يكن موجوداً.
      */
     suspend fun ensureClosedCategoryExists() = withContext(Dispatchers.IO) {
@@ -131,7 +133,7 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [تحميل المثبتين لتصنيف معين في تدفق الحالة - ]:
+     * [تحميل المثبتين لتصنيف معين في تدفق الحالة - loadPinnedForCategory]:
      */
     fun loadPinnedForCategory(category: String?) {
         val pinnedSet = getPinnedForCategory(category)
@@ -139,12 +141,12 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [تبديل حالة تثبيت العميل - ]:
+     * [تبديل حالة تثبيت العميل - togglePinCustomer]:
      * يضيف العميل إلى قائمة المثبتين أو يزيله منها مع فحص الحد الأقصى (3 عملاء).
      *
-     * @  معرف العميل.
-     * @  التصنيف النشط حالياً.
-     * @  إذا تمت العملية بنجاح،  إذا تجاوز الحد الأقصى.
+     * @param customerId معرف العميل.
+     * @param selectedCategory التصنيف النشط حالياً.
+     * @return true إذا تمت العملية بنجاح، false إذا تجاوز الحد الأقصى.
      */
     suspend fun togglePinCustomer(customerId: String, selectedCategory: String?): Boolean = withContext(Dispatchers.IO) {
         val catKey = selectedCategory ?: KEY_GLOBAL_ALL
@@ -173,8 +175,8 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [تعيين أو إلغاء تصنيف لمجموعة عملاء - ]:
-     * يربط قائمة من معرفات العملاء بتصنيف محدد، أو يزيل التصنيف إذا كان .
+     * [تعيين أو إلغاء تصنيف لمجموعة عملاء - assignCategoryToCustomers]:
+     * يربط قائمة من معرفات العملاء بتصنيف محدد، أو يزيل التصنيف إذا كان null.
      */
     suspend fun assignCategoryToCustomers(customerIds: List<String>, category: String?) = withContext(Dispatchers.IO) {
         val editor = sharedPrefs.edit()
@@ -192,12 +194,12 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [جلب تصنيف عميل معين - ]:
+     * [جلب تصنيف عميل معين - getCustomerCategory]:
      */
     fun getCustomerCategory(customerId: String): String? = categoryMapCache[customerId]
 
     /**
-     * [تعديل اسم تصنيف الحسابات المقفلة - ]:
+     * [تعديل اسم تصنيف الحسابات المقفلة - renameClosedCategory]:
      * يحدث اسم تصنيف النظام للحسابات المغلقة في قاعدة البيانات والإعدادات.
      */
     suspend fun renameClosedCategory(newName: String) = withContext(Dispatchers.IO) {
@@ -220,7 +222,7 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [حفظ تصنيف مخصص جديد - ]:
+     * [حفظ تصنيف مخصص جديد - saveCustomCategory]:
      * ينشئ تصنيفاً جديداً برتبة عرض تالية لأعلى رتبة متوفرة.
      */
     suspend fun saveCustomCategory(name: String) = withContext(Dispatchers.IO) {
@@ -237,7 +239,7 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [إعادة تسمية تصنيف مخصص - ]:
+     * [إعادة تسمية تصنيف مخصص - renameCustomCategory]:
      * يحدث اسم التصنيف ويرحل كافة روابط العملاء والتثبيتات المرتبطة به تلقائياً.
      */
     suspend fun renameCustomCategory(category: CustomCategory, newName: String) = withContext(Dispatchers.IO) {
@@ -266,11 +268,12 @@ class HabayebCategoryManager(
 
             triggerUpdate()
         } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     /**
-     * [حذف تصنيف مخصص مع خيار معالجة الحسابات التابعة - ]:
+     * [حذف تصنيف مخصص مع خيار معالجة الحسابات التابعة - deleteCustomCategoryWithChoice]:
      * يحذف التصنيف ويفك ارتباط حساباته، أو ينقلها بكافة معاملاتها لسلة المحذوفات.
      */
     suspend fun deleteCustomCategoryWithChoice(category: CustomCategory, deleteLinkedAccounts: Boolean) = withContext(Dispatchers.IO) {
@@ -302,16 +305,17 @@ class HabayebCategoryManager(
             triggerUpdate()
             VibrationHelper.triggerDeleteVibration(application)
         } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     /**
-     * [تحريك التصنيف لليسار في الواجهة العربية  - ]:
-     * في الواجهات العربية يعني التحريك لليسار الانتقال للموقع ذي الفهرس الأعلى ( + 1).
+     * [تحريك التصنيف لليسار في الواجهة العربية RTL - moveCategoryLeft]:
+     * في الواجهات العربية يعني التحريك لليسار الانتقال للموقع ذي الفهرس الأعلى (index + 1).
      */
     suspend fun moveCategoryLeft(currentOrder: List<String>, categoryName: String) = withContext(Dispatchers.IO) {
         val index = currentOrder.indexOf(categoryName)
-        //    ,           ( + 1)
+        // In RTL Arabic layout, moving visually to the LEFT means moving towards higher index (index + 1)
         if (index >= 0 && index < currentOrder.size - 1) {
             val newList = currentOrder.toMutableList()
             val temp = newList[index]
@@ -323,12 +327,12 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [تحريك التصنيف لليمين في الواجهة العربية  - ]:
-     * في الواجهات العربية يعني التحريك لليمين الانتقال للموقع ذي الفهرس الأقل ( - 1).
+     * [تحريك التصنيف لليمين في الواجهة العربية RTL - moveCategoryRight]:
+     * في الواجهات العربية يعني التحريك لليمين الانتقال للموقع ذي الفهرس الأقل (index - 1).
      */
     suspend fun moveCategoryRight(currentOrder: List<String>, categoryName: String) = withContext(Dispatchers.IO) {
         val index = currentOrder.indexOf(categoryName)
-        //    ,           ( - 1)
+        // In RTL Arabic layout, moving visually to the RIGHT means moving towards lower index (index - 1)
         if (index > 0) {
             val newList = currentOrder.toMutableList()
             val temp = newList[index]
@@ -340,7 +344,7 @@ class HabayebCategoryManager(
     }
 
     /**
-     * [إعادة ترتيب كامل التصنيفات - ]:
+     * [إعادة ترتيب كامل التصنيفات - reorderCategories]:
      * يحدث ترتيب عرض التصنيفات في قاعدة البيانات ويطلق إشعار التحديث.
      */
     suspend fun reorderCategories(newList: List<String>) = withContext(Dispatchers.IO) {
@@ -352,6 +356,7 @@ class HabayebCategoryManager(
      * الثوابت والمفاتيح المعمارية لمدير التصنيفات.
      */
     companion object {
+        private const val TAG = "HabayebCategoryManager"
         const val PREFIX_CAT_LINK = "CAT_LINK_"
         private const val KEY_GLOBAL_ALL = "GLOBAL_ALL"
         private const val KEY_CLOSED_CUSTOM_NAME = "CLOSED_CUSTOM_NAME_KEY"

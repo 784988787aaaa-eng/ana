@@ -1,21 +1,21 @@
 /**
  * =====================================================================
- * ملف: مدير جلسة مصادقة حساب جوجل الموحد (.)
+ * ملف: مدير جلسة مصادقة حساب جوجل الموحد (GoogleAuthSessionManager.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المصدر المركزي الوحيد للحقيقة (   ) لحالة
- * جلسة حساب  للمستخدم في جميع أنحاء التطبيق.
+ * يمثل هذا الكائن المصدر المركزي الوحيد للحقيقة (Single Source of Truth) لحالة
+ * جلسة حساب Google للمستخدم في جميع أنحاء التطبيق.
  * يضمن مزامنة لحظية وفورية لحالة تسجيل الدخول أو الخروج بين مختلف الشاشات
  * (شاشة التفعيل والترخيص، شاشة إعدادات النسخ الاحتياطي السحابي، وشاشة إدارة الحساب)
- * عبر تدفقات الحالة التفاعلية [].
+ * عبر تدفقات الحالة التفاعلية [StateFlow].
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. إدارة تدفق حالة البريد الإلكتروني المتفاعل (  ):
+ * 1. إدارة تدفق حالة البريد الإلكتروني المتفاعل (Reactive Session StateFlow):
  *    - بث البريد الإلكتروني المسجل لحظياً لكافة واجهات المستخدم ومراقبي الحالة.
- * 2. التهيئة التلقائية من مستودع المصادقة (  ):
- *    - استرجاع البريد الإلكتروني المحفوظ مسبقاً من [] عند إقلاع التطبيق.
- * 3. التحديث الموحد للجلسة (  ):
+ * 2. التهيئة التلقائية من مستودع المصادقة (Auth Persistence Sync):
+ *    - استرجاع البريد الإلكتروني المحفوظ مسبقاً من [GoogleDriveAuthManager] عند إقلاع التطبيق.
+ * 3. التحديث الموحد للجلسة (Unified Session Mutation):
  *    - تنظيف وتوحيد البريد عند تسجيل الدخول، ومسح الجلسة فوراً عند تسجيل الخروج.
  */
 package com.smartledger.aldaftar.domain
@@ -23,6 +23,7 @@ package com.smartledger.aldaftar.domain
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.GoogleDriveAuthManager
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
@@ -35,7 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * [حالات جلسة مصادقة حساب  الموحدة - ]
+ * [حالات جلسة مصادقة حساب Google الموحدة - GoogleAuthState]
  */
 sealed class GoogleAuthState {
     object SignedOut : GoogleAuthState()
@@ -45,7 +46,7 @@ sealed class GoogleAuthState {
 }
 
 /**
- * [نتيجة معالجة تسجيل الدخول الموحدة - ]
+ * [نتيجة معالجة تسجيل الدخول الموحدة - GoogleSignInOutcome]
  */
 sealed class GoogleSignInOutcome {
     data class Success(
@@ -63,12 +64,13 @@ sealed class GoogleSignInOutcome {
 }
 
 /**
- * [الكائن الأحادي لمدير جلسة حساب جوجل - ]:
- * يوفر مصدر حقيقة مركزي وموحد لحالة المصادقة بحساب  عبر كامل التطبيق.
+ * [الكائن الأحادي لمدير جلسة حساب جوجل - GoogleAuthSessionManager]:
+ * يوفر مصدر حقيقة مركزي وموحد لحالة المصادقة بحساب Google عبر كامل التطبيق.
  */
 object GoogleAuthSessionManager {
 
     /** وسم السجلات التشخيصية لجلسة المصادقة */
+    private const val TAG = "GoogleAuthSession"
 
     private val _sessionState = MutableStateFlow<GoogleAuthState>(GoogleAuthState.SignedOut)
     val sessionState: StateFlow<GoogleAuthState> = _sessionState.asStateFlow()
@@ -77,16 +79,16 @@ object GoogleAuthSessionManager {
     private val _currentEmail = MutableStateFlow<String?>(null)
 
     /**
-     * تدفق الحالة العام المتاح للقراءة فقط (- ):
-     * تراقبه واجهات   لإعادة رسم المكونات فور تغير حساب المستخدم.
+     * تدفق الحالة العام المتاح للقراءة فقط (Read-Only StateFlow):
+     * تراقبه واجهات Jetpack Compose لإعادة رسم المكونات فور تغير حساب المستخدم.
      */
     val currentEmail: StateFlow<String?> = _currentEmail.asStateFlow()
 
     /**
-     * [تهيئة جلسة المصادقة عند بدء التطبيق - ]:
+     * [تهيئة جلسة المصادقة عند بدء التطبيق - initialize]:
      * يسترجع البريد المحفوظ في تفضيلات أمان جوجل درايف ويحدث الحالة الموحدة.
      *
-     * @  سياق التطبيق للوصول للتخزين المحلي.
+     * @param context سياق التطبيق للوصول للتخزين المحلي.
      */
     fun initialize(context: Context) {
         try {
@@ -100,25 +102,25 @@ object GoogleAuthSessionManager {
                 _currentEmail.value = null
                 _sessionState.value = GoogleAuthState.SignedOut
             }
-
+            Log.d(TAG, "Initialized unified Google Auth Session with email: ${_currentEmail.value != null}")
         } catch (t: Throwable) {
-
+            Log.e(TAG, "Error initializing GoogleAuthSessionManager", t)
         }
     }
 
     /**
-     * [تعيين حالة بدء تسجيل الدخول - ]
+     * [تعيين حالة بدء تسجيل الدخول - setSigningIn]
      */
     fun setSigningIn() {
         _sessionState.value = GoogleAuthState.SigningIn
-
+        Log.d(TAG, "Google auth session state: SigningIn")
     }
 
     /**
-     * [تحديث البريد الإلكتروني للجلسة - ]:
+     * [تحديث البريد الإلكتروني للجلسة - updateEmail]:
      * يقوم بتنظيف وتوحيد حالة الأحرف للبريد وتحديث التدفق التفاعلي.
      *
-     * @  البريد الإلكتروني الجديد لحساب  أو .
+     * @param email البريد الإلكتروني الجديد لحساب Google أو null.
      */
     fun updateEmail(email: String?) {
         val cleanEmail = email?.trim()?.lowercase()
@@ -129,41 +131,41 @@ object GoogleAuthSessionManager {
             _currentEmail.value = null
             _sessionState.value = GoogleAuthState.SignedOut
         }
-
+        Log.d(TAG, "Unified Google Auth Session email updated: ${_currentEmail.value != null}")
     }
 
     /**
-     * [تعيين حالة فشل المصادقة - ]
+     * [تعيين حالة فشل المصادقة - setAuthFailed]
      */
     fun setAuthFailed(message: String, statusCode: Int? = null) {
         _sessionState.value = GoogleAuthState.AuthFailed(message, statusCode)
-
+        Log.w(TAG, "Google auth session failed: statusCode=$statusCode, message=$message")
     }
 
     /**
-     * [مسح جلسة المصادقة بالكامل - ]:
-     * يعيد البريد الإلكتروني إلى  عند تسجيل الخروج لإشعار كافة شاشات التطبيق فوراً.
+     * [مسح جلسة المصادقة بالكامل - clearSession]:
+     * يعيد البريد الإلكتروني إلى null عند تسجيل الخروج لإشعار كافة شاشات التطبيق فوراً.
      */
     fun clearSession() {
         _currentEmail.value = null
         _sessionState.value = GoogleAuthState.SignedOut
-
+        Log.d(TAG, "Unified Google Auth Session cleared.")
     }
 
     /**
-     * [التحقق من صحة الجلسة الحالية - ]
+     * [التحقق من صحة الجلسة الحالية - isSessionValid]
      */
     fun isSessionValid(): Boolean {
         return !_currentEmail.value.isNullOrBlank() && _sessionState.value is GoogleAuthState.Authenticated
     }
 
     /**
-     * [المعالج المركزي لنتيجة تسجيل الدخول - ]:
-     *  موحد يعالج نتيجة  لـ  -:
-     * 1. استخراج  بأمان وتدقيق وجود الحساب والبريد ورمز التفويض.
+     * [المعالج المركزي لنتيجة تسجيل الدخول - handleSignInActivityResult]:
+     * Facade موحد يعالج نتيجة ActivityResult لـ Google Sign-In:
+     * 1. استخراج GoogleSignInAccount بأمان وتدقيق وجود الحساب والبريد ورمز التفويض.
      * 2. تشخيص آمن يمنع تسريب أي رموز حساسة أو توكنات.
      * 3. التمييز الدقيق بين الإلغاء الفعلي وأخطاء التهيئة والشبكة.
-     * 4. تمرير  إلى المسار المركزي لتبادل التوكنات لـ   عند توفره.
+     * 4. تمرير authCode إلى المسار المركزي لتبادل التوكنات لـ Google Drive عند توفره.
      * 5. تحديث الجلسة الموحدة لإشعار كافة واجهات التطبيق في آن واحد.
      */
     fun handleSignInActivityResult(
@@ -173,6 +175,7 @@ object GoogleAuthSessionManager {
         backupSyncViewModel: BackupSyncViewModel?,
         onOutcome: (GoogleSignInOutcome) -> Unit
     ) {
+        Log.d(TAG, "handleSignInActivityResult: resultCode=$resultCode, hasIntentData=${data != null}")
 
         if (resultCode == Activity.RESULT_OK && data != null) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
@@ -181,13 +184,19 @@ object GoogleAuthSessionManager {
                 val email = account?.email?.trim()?.lowercase() ?: ""
                 val authCode = account?.serverAuthCode
 
+                // تسجيل تشخيصي آمن دون طباعة أي توكن أو كود
+                Log.i(
+                    TAG,
+                    "GoogleSignIn resultCode=RESULT_OK, account=${account != null}, email=${email.isNotEmpty()}, serverAuthCode=${!authCode.isNullOrEmpty()}"
+                )
+
                 if (email.isNotEmpty()) {
                     updateEmail(email)
                 }
 
                 if (!authCode.isNullOrEmpty() && backupSyncViewModel != null) {
                     backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { driveSuccess ->
-
+                        Log.i(TAG, "Google OAuth server code exchange result: driveSuccess=$driveSuccess")
                         onOutcome(
                             GoogleSignInOutcome.Success(
                                 email = email,
@@ -198,7 +207,7 @@ object GoogleAuthSessionManager {
                     }
                 } else if (email.isNotEmpty()) {
                     backupSyncViewModel?.googleDriveSyncHelper?.storeEmail(email)
-
+                    Log.w(TAG, "GoogleSignIn account obtained, but serverAuthCode is null")
                     onOutcome(
                         GoogleSignInOutcome.Success(
                             email = email,
@@ -239,7 +248,7 @@ object GoogleAuthSessionManager {
                     processSignInException(e, resultCode, data, context, onOutcome)
                 }
             } else {
-
+                Log.i(TAG, "GoogleSignIn cancelled: resultCode=$resultCode, data=null")
                 restoreSessionOrSignedOut()
                 onOutcome(GoogleSignInOutcome.Cancelled)
             }
@@ -264,11 +273,12 @@ object GoogleAuthSessionManager {
     ) {
         if (e is ApiException) {
             val sc = e.statusCode
+            Log.w(TAG, "GoogleSignIn failed: statusCode=$sc, resultCode=$resultCode")
 
             val isExplicitCancel = (sc == GoogleSignInStatusCodes.SIGN_IN_CANCELLED || sc == 16) && resultCode == Activity.RESULT_CANCELED
 
             if (isExplicitCancel) {
-
+                Log.i(TAG, "GoogleSignIn confirmed explicit cancellation by user (statusCode=$sc)")
                 restoreSessionOrSignedOut()
                 onOutcome(GoogleSignInOutcome.Cancelled)
             } else {
@@ -281,8 +291,8 @@ object GoogleAuthSessionManager {
                 onOutcome(GoogleSignInOutcome.Failed(userErrorMessage, sc))
             }
         } else {
-
-            val msg = context.getString(R.string.backup_toast_connect_failed)
+            Log.e(TAG, "GoogleSignIn unexpected error: ${e.javaClass.simpleName}")
+            val msg = e.localizedMessage ?: "Google Sign-In error"
             setAuthFailed(msg)
             onOutcome(GoogleSignInOutcome.Failed(msg))
         }

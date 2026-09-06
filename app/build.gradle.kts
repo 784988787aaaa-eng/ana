@@ -29,9 +29,9 @@ android {
     create("release") {
       val configuredKeystorePath =
         providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
-      // يُحل مسار ملف التوقيع من مجلد وحدة التطبيق.
-      // يُقبل المسار المحلي المباشر ومسار بيئة التكامل المستمر بعد تنظيف السابقة.
-      // يمنع التنظيف تكوين مسار مكرر قد يؤدي إلى ملف توقيع غير صحيح.
+      // This file is resolved from the app module directory. Accept both
+      // "aldaftar.keystore" and the CI-friendly "app/aldaftar.keystore"
+      // without ever producing the invalid app/app/... path.
       val keystorePath = configuredKeystorePath
         .removePrefix("app/")
         .removePrefix("./")
@@ -92,8 +92,8 @@ android {
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
-// يُضبط مكون الأسرار لاستخدام ملف الإعداد المحلي والملف النموذجي.
-// الغرض هو توحيد مصدر إعدادات الأسرار بين بيئات البناء مع إبقاء القيم خارج الشيفرة المصدرية.
+// Configure the Secrets Gradle Plugin to use .env and .env.example files
+// to match the convention used in Web projects.
 val envFile = rootProject.file(".env")
 if (!envFile.exists()) {
   val googleClientId = System.getenv("GOOGLE_CLIENT_ID") ?: ""
@@ -108,8 +108,7 @@ if (!envFile.exists()) {
   }
 }
 
-// تُنقح أسطر ملف الأسرار لمنع القيم الفارغة التي قد تنتج إعدادات بناء غير صالحة.
-// لا تُستخدم هذه المعالجة لإجراء أي حساب مالي أو تشغيل عمل ثقيل على خيط الواجهة.
+// Sanitize the .env file to ensure no empty keys are present (which would cause compiler errors inBuildConfig.java)
 if (envFile.exists()) {
   try {
     val lines = envFile.readLines().map { line ->
@@ -128,7 +127,7 @@ if (envFile.exists()) {
     }
     envFile.writeText(lines.joinToString("\n"))
   } catch (e: Exception) {
-    // تُمنع مشكلة ملف الإعداد من إسقاط عملية البناء بسبب خطأ جانبي في التنقيح.
+    // Fail-safe
   }
 }
 
@@ -161,7 +160,6 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.okhttp)
   implementation(libs.play.services.auth)
-  implementation(libs.play.integrity)
   implementation(libs.androidx.security.crypto)
   implementation(libs.androidx.biometric)
   implementation(libs.androidx.work.runtime.ktx)

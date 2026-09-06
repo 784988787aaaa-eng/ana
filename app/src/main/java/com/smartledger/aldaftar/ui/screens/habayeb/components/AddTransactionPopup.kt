@@ -45,11 +45,12 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import java.math.BigDecimal
 
-// * قيمة افتراضية فارغة مخصصة لحالات حقول الإدخال والوصف ومعدلات التحويل داخل هذا المكون فقط.
+/**
+ * قيمة افتراضية فارغة مخصصة لحالات حقول الإدخال والوصف ومعدلات التحويل داخل هذا المكون فقط.
+ */
 private const val INITIAL_EMPTY_TEXT = ""
 
 @Composable
-/// تدير هذه الدالة نافذة إنشاء وتعديل المعاملة وتضمن بقاء الإدخال قابلاً للتمرير عند ظهور لوحة المفاتيح.
 fun AddTransactionPopup(
     customer: HabayebCustomer,
     viewModel: HabayebFinanceViewModel,
@@ -136,7 +137,7 @@ fun AddTransactionPopup(
             amountFocusRequester.requestFocus()
             softwareKeyboardController?.show()
         } catch (e: Exception) {
-            android.util.Log.e("SmartLedger", "تعذر تجهيز التركيز ولوحة المفاتيح")
+            e.printStackTrace()
         }
     }
 
@@ -162,7 +163,7 @@ fun AddTransactionPopup(
     val debtRedColor = mizanColors.debt
     val creditGreenColor = mizanColors.credit
 
-    // ينفذ الحفظ بعد التحقق من المبلغ وسعر الصرف مع إبقاء الحسابات المالية خارج أنواع الفاصلة العائمة.
+    val scope = rememberCoroutineScope()
     val executeSave = { finalActionType: String ->
         softwareKeyboardController?.hide()
         if (!isSaving) {
@@ -195,10 +196,12 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
+                // Instant UI Dismissal & Instant Toast Feedback
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
                 onTransactionSaved()
                 onDismiss()
 
+                // Execute save and licensing check asynchronously in the background
                 viewModel.addHabayebTransaction(
                     customerId = customer.id,
                     type = finalActionType,
@@ -235,7 +238,7 @@ fun AddTransactionPopup(
                     .imePadding()
                     .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                Crossfade(targetState = showRateSetupOverlay) { isSetup ->
+                Crossfade(targetState = showRateSetupOverlay, label = "FormTransition") { isSetup ->
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false
@@ -263,9 +266,7 @@ fun AddTransactionPopup(
                         Column(
                             modifier = Modifier
                                 .padding(8.dp)
-                                .verticalScroll(rememberScrollState())
-                                .imePadding()
-                                .navigationBarsPadding(),
+                                .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(

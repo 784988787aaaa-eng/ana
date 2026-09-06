@@ -27,7 +27,6 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.smartledger.aldaftar.security.SecurePreferenceStore
 import com.smartledger.aldaftar.BuildConfig
 import com.smartledger.aldaftar.data.cloud.CloudNetworkEngine
 import com.smartledger.aldaftar.data.local.AppDatabase
@@ -77,8 +76,6 @@ class GoogleDriveAuthManager(
         // مفاتيح التخزين الثابتة الإلزامية لحماية جلسات المستخدمين القائمة
         private const val PREFS_NAME = "secure_google_drive_sync_prefs"
         private const val FALLBACK_PREFS_NAME = "google_drive_sync_prefs"
-        private const val ENCRYPTED_FALLBACK_PREFS_NAME = "google_drive_secure_fallback"
-        private const val ENCRYPTED_FALLBACK_KEY_ALIAS = "google_drive_secure_fallback_key"
 
         const val KEY_ACCESS_TOKEN = "access_token"
         const val KEY_REFRESH_TOKEN = "refresh_token"
@@ -129,44 +126,13 @@ class GoogleDriveAuthManager(
             EncryptedSharedPreferences.create(
                 PREFS_NAME,
                 masterKeyAlias,
-                context.applicationContext,
+                context,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
-        } catch (_: Throwable) {
-            // فشل Android Keystore لا يسمح بتخزين Token في SharedPreferences عادية؛
-            // طبقة SecurePreferenceStore تستخدم AES-GCM وPBKDF2 كبديل مشفر فقط.
-            Log.w(TAG, "Keystore unavailable; using encrypted fallback store")
-            SecurePreferenceStore(context, ENCRYPTED_FALLBACK_PREFS_NAME, ENCRYPTED_FALLBACK_KEY_ALIAS)
-        }.also { secureStore ->
-            // نقل أي Token قديم من المسار غير المشفر مرة واحدة ثم محوه فور نجاح النقل.
-            migrateLegacyPlaintextPreferences(secureStore)
-        }
-    }
-
-    private fun migrateLegacyPlaintextPreferences(target: SharedPreferences) {
-        try {
-            val legacy = context.getSharedPreferences(FALLBACK_PREFS_NAME, Context.MODE_PRIVATE)
-            val entries = legacy.all.toMap()
-            if (entries.isEmpty()) return
-            val editor = target.edit()
-            entries.forEach { (key, value) ->
-                if (!target.contains(key)) {
-                    when (value) {
-                        is String -> editor.putString(key, value)
-                        is Boolean -> editor.putBoolean(key, value)
-                        is Int -> editor.putInt(key, value)
-                        is Long -> editor.putLong(key, value)
-                        is Float -> editor.putFloat(key, value)
-                        is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toMutableSet())
-                    }
-                }
-            }
-            check(editor.commit()) { "Legacy Google auth migration failed" }
-            legacy.edit().clear().commit()
-        } catch (_: Throwable) {
-            // إذا فشل النقل لا نستخدم المستودع القديم كمصدر تشغيلي ولا نعيد الرموز منه.
-            Log.w(TAG, "Legacy Google auth migration failed safely")
+        } catch (e: Exception) {
+            Log.w(TAG, "تعذر استخدام التشفير للتفضيلات، جاري الرجوع للملف الاحتياطي: ${e.javaClass.simpleName}")
+            context.getSharedPreferences(FALLBACK_PREFS_NAME, Context.MODE_PRIVATE)
         }
     }
 

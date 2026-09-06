@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens.settings.components
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,8 +54,7 @@ private const val TAG = "QuadBackupCard"
 fun QuadBackupCard(
     backupSyncViewModel: BackupSyncViewModel,
     settings: AppSettings,
-    onRestoreSuccess: (AppSettings) -> Unit,
-    onDiscoverLegacy: () -> Unit = {}
+    onRestoreSuccess: (AppSettings) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -68,7 +68,7 @@ fun QuadBackupCard(
     var showRestoreWarningDialog by remember { mutableStateOf(false) }
     var pendingRestoreJson by remember { mutableStateOf<String?>(null) }
 
-    // منتقي إنشاء ملف النسخة عبر نظام اختيار المستندات
+    // Backup SAF Create Document launcher
     val safExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
@@ -92,26 +92,78 @@ fun QuadBackupCard(
         }
     }
 
-    // منتقي ملف الاستعادة يمنح التطبيق معرّف المحتوى فقط؛ القراءة والتحقق يتمان خارج الواجهة.
+    // Backup SAF Open Document launcher
     val safRestoreLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            backupSyncViewModel.readLocalBackupFromUri(context, uri) { jsonText ->
-                if (jsonText.isNullOrBlank()) {
-                    Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
-                } else {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val jsonText = inputStream?.bufferedReader()?.use { it.readText() } ?: ""
+                if (jsonText.isNotBlank()) {
                     pendingRestoreJson = jsonText
                     showRestoreWarningDialog = true
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to restore backup from SAF OpenDocument: ${e.message}")
             }
         }
     }
 
-    // النسخ التلقائي محصور في المساحة الخاصة بالتطبيق؛ لا توجد صلاحيات تخزين مطلوبة.
-    val checkBackupPermissionsGranted = remember { { true } }
+    val checkBackupPermissionsGranted = remember(context) {
+        {
+            val hasWrite = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
+                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            } else true
+            
+            val hasRead = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            
+            val hasNotification = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            } else true
+            
+            val hasManage = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.os.Environment.isExternalStorageManager()
+            } else true
+            
+            hasWrite && hasRead && hasNotification && hasManage
+        }
+    }
 
-    // تهيئة حزمة تسجيل الدخول الرسمية من جوجل
+    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val writeGranted = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
+            results[android.Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: false
+        } else true
+        
+        val readGranted = results[android.Manifest.permission.READ_EXTERNAL_STORAGE] ?: false
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            if (!android.os.Environment.isExternalStorageManager()) {
+                Toast.makeText(context, context.getString(R.string.settings_toast_permission_manage_files), Toast.LENGTH_LONG).show()
+                try {
+                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    context.startActivity(intent)
+                }
+            } else {
+                onPermissionGrantedCallback?.invoke()
+            }
+        } else {
+            if (writeGranted && readGranted) {
+                onPermissionGrantedCallback?.invoke()
+            } else {
+                Toast.makeText(context, context.getString(R.string.settings_toast_permission_denied_err), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // Official Google Sign-In SDK configuration
     val googleSignInClient = remember {
         backupSyncViewModel.googleDriveSyncHelper.getGoogleSignInClient()
     }
@@ -174,7 +226,7 @@ fun QuadBackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // ١. المزامنة السحابية في أعلى القسم
+                // 1. المزامنة السحابية في أعلى الجميع (Cloud Sync & Backup Section)
                 CloudBackupSection(
                     backupSyncViewModel = backupSyncViewModel,
                     isDark = isDark,
@@ -190,7 +242,6 @@ fun QuadBackupCard(
                     backupSyncViewModel = backupSyncViewModel,
                     context = context,
                     safRestoreLauncher = safRestoreLauncher,
-                    onDiscoverLegacy = onDiscoverLegacy,
                     checkBackupPermissionsGranted = checkBackupPermissionsGranted,
                     onShowPermissionExplanation = { callback ->
                         onPermissionGrantedCallback = callback
@@ -198,7 +249,7 @@ fun QuadBackupCard(
                     }
                 )
 
-                // ٣. زر مسح كافة البيانات وإعادة الضبط
+                // 3. زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
                 Button(
                     onClick = { showResetConfirmationFlow = true },
                     colors = ButtonDefaults.buttonColors(
@@ -269,8 +320,15 @@ fun QuadBackupCard(
         BackupPermissionExplanationDialog(
             onDismiss = { showBackupPermissionExplanationDialog = false },
             onGrantPermissions = {
-                // لا نطلب صلاحيات التخزين؛ يختار المستخدم موقع التصدير من منتقي المستندات عند الحاجة.
-                onPermissionGrantedCallback?.invoke()
+                val permissions = mutableListOf<String>()
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
+                    permissions.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
+                permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+                multiplePermissionsLauncher.launch(permissions.toTypedArray())
             },
             onUseInternalStorage = {
                 onPermissionGrantedCallback?.invoke()

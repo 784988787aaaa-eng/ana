@@ -1,19 +1,19 @@
 /**
  * =====================================================================
- * ملف: الواجهة الموحدة لرسم صفوف وبطاقات  (.)
+ * ملف: الواجهة الموحدة لرسم صفوف وبطاقات PDF (PdfRowRenderer.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن نمط الواجهة الموحدة (نمط الواجهة الموحدة) الذي يجمع ويوجه كافة
+ * يمثل هذا الكائن نمط الواجهة الموحدة (Facade Pattern) الذي يجمع ويوجه كافة
  * عمليات رسم الصفوف، والبطاقات التلخيصية، وشريط الصافي النهائي، وفهرس دفاتر الحسابات.
  * يعمل كوسيط ينوب عن المستدعي ويوجه المهام إلى الرسامين المتخصصين:
- * - []: لصفوف المعاملات الفردية.
- * - []: لصفوف الإجماليات وملخص العملات الأجنبية.
- * - []: لصفوف فهرس العملاء والبطاقة التلخيصية الكبرى.
+ * - [PdfTransactionRowRenderer]: لصفوف المعاملات الفردية.
+ * - [PdfStatementTotalsRenderer]: لصفوف الإجماليات وملخص العملات الأجنبية.
+ * - [PdfCustomerSummaryRenderer]: لصفوف فهرس العملاء والبطاقة التلخيصية الكبرى.
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. تطبيق نمط الواجهة الموحدة (النمط البنيوي للواجهة الموحدة):
- *    - عزل تفاصيل التنفيذ الداخلي وتوفير نقطة دخول برمجية نظيفة لمحركات .
+ * 1. تطبيق نمط الواجهة الموحدة (Facade Structural Pattern):
+ *    - عزل تفاصيل التنفيذ الداخلي وتوفير نقطة دخول برمجية نظيفة لمحركات PDF.
  * 2. التوجيه الدقيق للمهام الرسومية المتخصصة:
  *    - تفويض حساب الارتفاعات ورسم الخلايا بدقة نقطية.
  * 3. المحافظة على معايير الأداء وتوحيد توقيعات الدوال.
@@ -30,18 +30,18 @@ import com.smartledger.aldaftar.ui.state.CustomerUiState
 import java.math.BigDecimal
 
 /**
- * [الكائن الأحادي للواجهة الموحدة لرسم الصفوف - ]:
+ * [الكائن الأحادي للواجهة الموحدة لرسم الصفوف - PdfRowRenderer]:
  * يفوض عمليات الرسم للرسامين المتخصصين وفق سياق البيانات.
  */
 object PdfRowRenderer {
 
     // -------------------------------------------------------------------------
-    // 1.     & 
+    // 1. Single Customer Transaction Rows & Details
     // -------------------------------------------------------------------------
 
     /**
-     * [بناء النص التوضيحي للمعاملة - ]:
-     * يفوض التوليد لـ [].
+     * [بناء النص التوضيحي للمعاملة - buildTransactionDescriptionText]:
+     * يفوض التوليد لـ [PdfTransactionRowRenderer].
      */
     fun buildTransactionDescriptionText(
         context: Context,
@@ -50,8 +50,8 @@ object PdfRowRenderer {
     ): String = PdfTransactionRowRenderer.buildTransactionDescriptionText(context, pt, initialType)
 
     /**
-     * [حساب الارتفاع الرأسي لصف المعاملة - ]:
-     * يفوض الحساب لـ [].
+     * [حساب الارتفاع الرأسي لصف المعاملة - calculateTransactionRowHeight]:
+     * يفوض الحساب لـ [PdfTransactionRowRenderer].
      */
     fun calculateTransactionRowHeight(
         context: Context,
@@ -61,8 +61,8 @@ object PdfRowRenderer {
     ): Float = PdfTransactionRowRenderer.calculateTransactionRowHeight(context, pt, initialType, availableWidth)
 
     /**
-     * [رسم صف معاملة فردية - ]:
-     * يفوض الرسم المباشر لـ [].
+     * [رسم صف معاملة فردية - drawSingleTransactionRow]:
+     * يفوض الرسم المباشر لـ [PdfTransactionRowRenderer].
      */
     fun drawSingleTransactionRow(
         canvas: Canvas,
@@ -78,12 +78,12 @@ object PdfRowRenderer {
     )
 
     // -------------------------------------------------------------------------
-    // 2.  ,   &  
+    // 2. Statement Totals, Net Banner & Foreign Currencies
     // -------------------------------------------------------------------------
 
     /**
-     * [رسم صف إجماليات كشف الحساب - ]:
-     * يفوض الرسم لـ [].
+     * [رسم صف إجماليات كشف الحساب - drawTotalsRow]:
+     * يفوض الرسم لـ [PdfStatementTotalsRenderer].
      */
     fun drawTotalsRow(
         canvas: Canvas,
@@ -98,8 +98,8 @@ object PdfRowRenderer {
     )
 
     /**
-     * [رسم شريط الصافي النهائي لكشف الحساب - ]:
-     * يفوض الرسم لـ [].
+     * [رسم شريط الصافي النهائي لكشف الحساب - drawFinalNetBanner]:
+     * يفوض الرسم لـ [PdfStatementTotalsRenderer].
      */
     fun drawFinalNetBanner(
         canvas: Canvas,
@@ -113,8 +113,8 @@ object PdfRowRenderer {
     )
 
     /**
-     * [رسم ملخص مديونيات العملات الأجنبية - ]:
-     * يفوض الرسم لـ [].
+     * [رسم ملخص مديونيات العملات الأجنبية - drawForeignCurrenciesSummary]:
+     * يفوض الرسم لـ [PdfStatementTotalsRenderer].
      */
     fun drawForeignCurrenciesSummary(
         canvas: Canvas,
@@ -127,12 +127,12 @@ object PdfRowRenderer {
     )
 
     // -------------------------------------------------------------------------
-    // 3.    ( & - )
+    // 3. Customer Summary Rows (Comprehensive & All-Customers Report)
     // -------------------------------------------------------------------------
 
     /**
-     * [حساب ارتفاع صف ملخص العميل - ]:
-     * يفوض الحساب لـ [].
+     * [حساب ارتفاع صف ملخص العميل - calculateCustomerSummaryRowHeight]:
+     * يفوض الحساب لـ [PdfCustomerSummaryRenderer].
      */
     fun calculateCustomerSummaryRowHeight(
         context: Context,
@@ -142,8 +142,8 @@ object PdfRowRenderer {
     ): Float = PdfCustomerSummaryRenderer.calculateCustomerSummaryRowHeight(context, c, nameWidth, foreignWidth)
 
     /**
-     * [رسم صف ملخص العميل في التقرير الشامل - ]:
-     * يفوض الرسم لـ [].
+     * [رسم صف ملخص العميل في التقرير الشامل - drawCustomerSummaryRow]:
+     * يفوض الرسم لـ [PdfCustomerSummaryRenderer].
      */
     fun drawCustomerSummaryRow(
         canvas: Canvas,
@@ -158,26 +158,26 @@ object PdfRowRenderer {
     )
 
     // -------------------------------------------------------------------------
-    // 4.     & 
+    // 4. Booklet Index Table Header & Rows
     // -------------------------------------------------------------------------
 
     /**
-     * [رسم ترويسة جدول فهرس الدفتر - ]:
-     * يفوض الرسم لـ [].
+     * [رسم ترويسة جدول فهرس الدفتر - drawBookletIndexHeader]:
+     * يفوض الرسم لـ [PdfCustomerSummaryRenderer].
      */
     fun drawBookletIndexHeader(canvas: Canvas, y: Float, context: Context) =
         PdfCustomerSummaryRenderer.drawBookletIndexHeader(canvas, y, context)
 
     /**
-     * [حساب ارتفاع صف فهرس الدفتر - ]:
-     * يفوض الحساب لـ [].
+     * [حساب ارتفاع صف فهرس الدفتر - calculateBookletIndexRowHeight]:
+     * يفوض الحساب لـ [PdfCustomerSummaryRenderer].
      */
     fun calculateBookletIndexRowHeight(customer: CustomerUiState, availableWidth: Int = 225): Float =
         PdfCustomerSummaryRenderer.calculateBookletIndexRowHeight(customer, availableWidth)
 
     /**
-     * [رسم صف فهرس الدفتر - ]:
-     * يفوض الرسم لـ [].
+     * [رسم صف فهرس الدفتر - drawBookletIndexRow]:
+     * يفوض الرسم لـ [PdfCustomerSummaryRenderer].
      */
     fun drawBookletIndexRow(
         canvas: Canvas,
@@ -192,12 +192,12 @@ object PdfRowRenderer {
     )
 
     // -------------------------------------------------------------------------
-    // 5.   
+    // 5. Comprehensive Summary Card
     // -------------------------------------------------------------------------
 
     /**
-     * [رسم البطاقة التلخيصية الشاملة - ]:
-     * يفوض الرسم لـ [].
+     * [رسم البطاقة التلخيصية الشاملة - drawComprehensiveSummaryCard]:
+     * يفوض الرسم لـ [PdfCustomerSummaryRenderer].
      */
     fun drawComprehensiveSummaryCard(
         canvas: Canvas,

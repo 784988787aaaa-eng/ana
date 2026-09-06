@@ -60,10 +60,8 @@ private suspend fun saveSecurityPasscode(
     viewModel: SecurityAndLicenseViewModel,
     onSuccess: () -> Unit
 ) {
-    val passChars = passcode.toCharArray()
-    val recoveryChars = recoveryPhrase.trim().toCharArray()
-    val pHash = try { HashUtils.hashPassword(passChars) } finally { HashUtils.wipeCharArray(passChars) }
-    val rHash = try { HashUtils.hashPassword(recoveryChars) } finally { HashUtils.wipeCharArray(recoveryChars) }
+    val pHash = HashUtils.hashString(passcode)
+    val rHash = HashUtils.hashString(recoveryPhrase.trim())
     val updated = currentSettings.copy(
         isPasscodeEnabled = true,
         passcodeHash = pHash,

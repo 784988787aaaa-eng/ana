@@ -1,15 +1,15 @@
 /**
  * =====================================================================
- * ملف: مدير مجلدات ومسارات النسخ الاحتياطي (مدير مجلدات النسخ.المكوّن)
+ * ملف: مدير مجلدات ومسارات النسخ الاحتياطي (BackupDirectoryManager.kt)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
  * يتولى هذا الملف إدارة مسارات التخزين والتقسيم الشهري التلقائي لملفات
  * النسخ الاحتياطي في المسار العام المعتمد:
- * /المكوّن/المكوّن/0/المستندات/الدفتر الذكي/[نمط السنة والشهر]/
+ * /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
  * 
  * [المسؤوليات المعمارية]:
- * 1. تفويض كامل إلى [مدير الملفات] و [محدد المسارات].
+ * 1. تفويض كامل إلى [BackupFileManager] و [BackupPathResolver].
  * 2. الحفاظ على التوافقية العكسية مع المستودع المالي المركزي.
  */
 package com.smartledger.aldaftar.data.repository
@@ -23,9 +23,9 @@ import com.smartledger.aldaftar.data.backup.BackupFileManager
 import java.io.File
 
 /**
- * [فئة مدير مجلدات النسخ الاحتياطي - مدير مجلدات النسخ]:
+ * [فئة مدير مجلدات النسخ الاحتياطي - BackupDirectoryManager]:
  * واجهة تفويض وتوافقية تفوض عمليات إدارة المسارات
- * والمجلدات الشهرية والبحث الشجري إلى [مدير الملفات] الموحد.
+ * والمجلدات الشهرية والبحث الشجري إلى [BackupFileManager] الموحد.
  */
 class BackupDirectoryManager(private val context: Context) {
 
@@ -38,24 +38,24 @@ class BackupDirectoryManager(private val context: Context) {
     }
 
     /**
-     * [دالة جلب المجلد الرئيسي للنسخ الاحتياطي - جلب المجلد الأساسي]:
-     * تفوض جلب المجلد الأساسي إلى [مدير الملفات].
+     * [دالة جلب المجلد الرئيسي للنسخ الاحتياطي - getBaseBackupDirectory]:
+     * تفوض جلب المجلد الأساسي إلى [BackupFileManager].
      */
     fun getBaseBackupDirectory(): File {
         return fileManager.getBaseBackupDirectory()
     }
 
     /**
-     * [دالة جلب المجلد الشهري للنسخ الحالي - جلب مجلد النسخ]:
-     * تفوض جلب المجلد الشهري إلى [مدير الملفات].
+     * [دالة جلب المجلد الشهري للنسخ الحالي - getBackupDirectory]:
+     * تفوض جلب المجلد الشهري إلى [BackupFileManager].
      */
     fun getBackupDirectory(): File {
         return fileManager.getMonthlyBackupDirectory()
     }
 
     /**
-     * [دالة البحث الشجري العودي عن ملفات النسخ - جلب ملفات النسخ تكرارياً]:
-     * تفحص كافة المجلدات الفرعية داخل [المجلد الجذري] وتعيد قائمة بجميع ملفات النسخ المنتهية بـ .
+     * [دالة البحث الشجري العودي عن ملفات النسخ - getAllMzdFilesRecursively]:
+     * تفحص كافة المجلدات الفرعية داخل [rootDir] وتعيد قائمة بجميع ملفات النسخ المنتهية بـ `.mzd`.
      */
     fun getAllMzdFilesRecursively(rootDir: File): List<File> {
         return fileManager.getAllBackupFiles()

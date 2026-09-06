@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.security.components
 
+import android.util.Log
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.foundation.background
@@ -31,10 +32,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.mizanColors
+import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
 
 import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
 
+private const val TAG = "SecuritySetupForm"
+private const val CD_TOGGLE_VISIBILITY = "Toggle Visibility"
 private const val TEST_TAG_PIN_CODE_INPUT = "pin_code_input"
 private const val TEST_TAG_PIN_CODE_CONFIRM_INPUT = "pin_code_confirm_input"
 private const val TEST_TAG_RECOVERY_PHRASE_INPUT = "recovery_phrase_input"
@@ -58,7 +61,6 @@ fun SecuritySetupForm(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
-    val mizanColors = MaterialTheme.mizanColors
 
     var passcodeVisible by remember { mutableStateOf(false) }
     var confirmPasscodeVisible by remember { mutableStateOf(false) }
@@ -76,8 +78,8 @@ fun SecuritySetupForm(
             kotlinx.coroutines.android.awaitFrame()
             passcodeFocus.requestFocus()
             keyboardController?.show()
-        } catch (_: Exception) {
-            // تعذر التركيز التلقائي لا يمنع الإدخال اليدوي ولا يؤثر في حفظ إعدادات الأمان
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
         }
     }
 
@@ -107,7 +109,7 @@ fun SecuritySetupForm(
                     .padding(bottom = 4.dp)
             )
 
-            // حقل رمز الدخول
+            // PASSCODE INPUT
             OutlinedTextField(
                 value = passcode,
                 onValueChange = { input ->
@@ -126,7 +128,7 @@ fun SecuritySetupForm(
                     IconButton(onClick = { passcodeVisible = !passcodeVisible }) {
                         Icon(
                             imageVector = if (passcodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = stringResource(id = if (passcodeVisible) R.string.sec_visibility_hide_code else R.string.sec_visibility_show_code),
+                            contentDescription = CD_TOGGLE_VISIBILITY,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -153,7 +155,7 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_PIN_CODE_INPUT)
             )
 
-            // حقل تأكيد رمز الدخول
+            // CONFIRM PASSCODE INPUT
             OutlinedTextField(
                 value = confirmPasscode,
                 onValueChange = { input ->
@@ -172,7 +174,7 @@ fun SecuritySetupForm(
                     IconButton(onClick = { confirmPasscodeVisible = !confirmPasscodeVisible }) {
                         Icon(
                             imageVector = if (confirmPasscodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = stringResource(id = if (confirmPasscodeVisible) R.string.sec_visibility_hide_code else R.string.sec_visibility_show_code),
+                            contentDescription = CD_TOGGLE_VISIBILITY,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -213,7 +215,7 @@ fun SecuritySetupForm(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            // حقل عبارة الاسترداد
+            // RECOVERY PHRASE
             OutlinedTextField(
                 value = recoveryPhrase,
                 onValueChange = onRecoveryPhraseChange,
@@ -247,7 +249,7 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_RECOVERY_PHRASE_INPUT)
             )
 
-            // حقل تلميح الاسترداد
+            // RECOVERY HINT
             OutlinedTextField(
                 value = recoveryHint,
                 onValueChange = onRecoveryHintChange,
@@ -281,7 +283,7 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_RECOVERY_HINT_INPUT)
             )
 
-            // مربع الإقرار الأمني
+            // ACK CHECKBOX
             val ackBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
             val ackText = MaterialTheme.colorScheme.onSurface
             val checkboxBorderColor = MaterialTheme.colorScheme.outline
@@ -310,7 +312,7 @@ fun SecuritySetupForm(
                     checked = checkAcknowledged,
                     onCheckedChange = onCheckAcknowledgedChange,
                     colors = CheckboxDefaults.colors(
-                        checkedColor = mizanColors.securityIndicatorFilled,
+                        checkedColor = EmeraldPrimary,
                         uncheckedColor = checkboxBorderColor
                     ),
                     modifier = Modifier.size(24.dp)
@@ -323,11 +325,11 @@ fun SecuritySetupForm(
                     checkAcknowledged &&
                     !isSaving
 
-            // زر الحفظ والتفعيل
+            // SAVE & ACTIVATE BUTTON
             Button(
                 onClick = onSave,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = mizanColors.securityIndicatorFilled,
+                    containerColor = EmeraldPrimary,
                     disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 ),
                 enabled = isValid,
