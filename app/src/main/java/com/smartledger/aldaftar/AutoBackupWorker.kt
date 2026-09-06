@@ -236,6 +236,8 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
                     }
                 }
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "تعذر إكمال دورة النسخ الاحتياطي التلقائي: ${e.javaClass.simpleName}")
             sendBackupFailureNotification(context, false)

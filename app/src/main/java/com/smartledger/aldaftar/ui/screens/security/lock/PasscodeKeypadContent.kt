@@ -64,7 +64,8 @@ fun PasscodeKeypadContent(
     modifier: Modifier = Modifier
 ) {
     val mizanColors = MaterialTheme.mizanColors
-    val defaultZeroText = stringResource(id = R.string.calc_default_zero)
+    val zeroDigitText = stringResource(id = R.string.calc_default_zero)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -151,8 +152,8 @@ fun PasscodeKeypadContent(
                         Box(modifier = Modifier.size(72.dp))
                     }
 
-                    KeypadButton(text = defaultZeroText, isFunctional = false) {
-                        onKeyPress(defaultZeroText)
+                    KeypadButton(text = zeroDigitText, isFunctional = false) {
+                        onKeyPress(zeroDigitText)
                     }
 
                     KeypadButton(text = stringResource(id = R.string.lock_delete_btn), isFunctional = true) {

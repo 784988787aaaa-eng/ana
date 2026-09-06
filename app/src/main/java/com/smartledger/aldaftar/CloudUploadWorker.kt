@@ -152,6 +152,8 @@ class CloudUploadWorker(context: Context, params: WorkerParameters) : CoroutineW
                 Log.w(TAG, "تعذر إتمام الرفع السحابي، ستتم إعادة المحاولة تلقائياً.")
                 Result.retry()
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "تعذر إكمال الرفع السحابي: ${e.javaClass.simpleName}")
             Result.retry()
