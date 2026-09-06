@@ -1,25 +1,25 @@
 /**
  * =====================================================================
- * ملف: مساعد المصادقة الحيوية وبصمة الإصبع والوجه (BiometricAuthHelper.kt)
+ * ملف: مساعد المصادقة الحيوية وبصمة الإصبع والوجه (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
  * يوفر هذا الكائن وسيطاً آمناً ومباشراً للتعامل مع واجهة المصادقة الحيوية
- * المدمجة في نظام أندرويد [AndroidX BiometricPrompt API].
+ * المدمجة في نظام أندرويد [  ].
  * يتيح للتطبيق قفل وفتح الشاشات والعمليات الحساسة باستخدام بصمة الإصبع أو
  * التعرف على الوجه المعتمدة على عتاد الجهاز، مع ضمان استجابة واجهة المستخدم
  * والتأكد المسبق من توفر مستشعرات البصمة وتسجيل أصابع المستخدم قبل إطلاق نافذة التحقق.
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. التحقق الاستباقي من توفر العتاد الحيوي (Hardware & Enrollment Check):
- *    - فحص وجود قارئ البصمة/الوجه وتسجيل بيانات حيوية صالحة عبر [BiometricManager].
- * 2. إطلاق نافذة المصادقة النظامية الآمنة (Secure Biometric Prompt Dialog):
+ * 1. التحقق الاستباقي من توفر العتاد الحيوي ( &  ):
+ *    - فحص وجود قارئ البصمة/الوجه وتسجيل بيانات حيوية صالحة عبر [].
+ * 2. إطلاق نافذة المصادقة النظامية الآمنة (   ):
  *    - بناء وتخصيص نافذة التحقق القياسية التابعة للنظام دون إمكانية اعتراضها أو تزويرها.
- * 3. معالجة أحداث الاستجابة الحيوية (Authentication Callbacks):
- *    - التعامل السلس مع حالات: النجاح [onSuccess]، والخطأ الحرج أو الإلغاء [onError]،
- *      وفشل مطابقة البصمة مع المحاولة مجدداً [onFailed].
- * 4. التنفيذ الآمن على مسار الواجهة الرئيسي (Main Thread Execution):
- *    - ضمان عودة النتائج مباشرة على المسار الرئيسي لتحديث واجهات Compose فوراً.
+ * 3. معالجة أحداث الاستجابة الحيوية ( ):
+ *    - التعامل السلس مع حالات: النجاح []، والخطأ الحرج أو الإلغاء []،
+ *      وفشل مطابقة البصمة مع المحاولة مجدداً [].
+ * 4. التنفيذ الآمن على مسار الواجهة الرئيسي (  ):
+ *    - ضمان عودة النتائج مباشرة على المسار الرئيسي لتحديث واجهات  فوراً.
  */
 package com.smartledger.aldaftar.domain
 
@@ -33,23 +33,23 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
 /**
- * [الكائن الأحادي لمساعد المصادقة الحيوية - BiometricAuthHelper]:
+ * [الكائن الأحادي لمساعد المصادقة الحيوية - ]:
  * يجمع دوال التحقق من توفر البصمة وإطلاق نافذة المصادقة.
  */
 object BiometricAuthHelper {
 
     /**
      * تحديد مستويات المصادقة الحيوية المقبولة:
-     * يشمل البصمات القوية عتادياً [BIOMETRIC_STRONG] والبصمات الموثوقة القياسية [BIOMETRIC_WEAK].
+     * يشمل البصمات القوية عتادياً [_] والبصمات الموثوقة القياسية [_].
      */
     private const val AUTHENTICATORS = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
 
     /**
-     * [التحقق من جاهزية وتوفر المصادقة الحيوية - isBiometricAvailable]:
+     * [التحقق من جاهزية وتوفر المصادقة الحيوية - ]:
      * يفحص ما إذا كان الجهاز يحتوي على مستشعر حيوي نشط، وأن المستخدم قام بتسجيل بصمته بالفعل.
      *
-     * @param context سياق التطبيق للوصول إلى مدير القياسات الحيوية.
-     * @return true إذا كانت البصمة جاهزة للاستخدام الفوري، وإلا false.
+     * @  سياق التطبيق للوصول إلى مدير القياسات الحيوية.
+     * @  إذا كانت البصمة جاهزة للاستخدام الفوري، وإلا .
      */
     fun isBiometricAvailable(context: Context): Boolean {
         return try {
@@ -61,16 +61,16 @@ object BiometricAuthHelper {
     }
 
     /**
-     * [إطلاق نافذة المصادقة الحيوية - authenticate]:
+     * [إطلاق نافذة المصادقة الحيوية - ]:
      * يفتح حوار المصادقة الرسمي التابع لنظام أندرويد مع ربط المستمعين للنتائج.
      *
-     * @param activity النشاط الحاضن [FragmentActivity] المطلوب لربط حوار BiometricPrompt.
-     * @param title عنوان نافذة التحقق (مثال: "تأكيد الهوية").
-     * @param subtitle العنوان الفرعي التوضيحي (مثال: "المس مستشعر البصمة للمتابعة").
-     * @param negativeButtonText نص زر الإلغاء أو استخدام رمز المرور.
-     * @param onSuccess الدالة التي يتم استدعاؤها عند نجاح مطابقة البصمة.
-     * @param onError الدالة التي تستقبل رمز الخطأ ورسالته عند الإلغاء أو استنفاد المحاولات.
-     * @param onFailed الدالة التي تستدعى عند عدم تطابق البصمة مع إتاحة المحاولة مجدداً.
+     * @  النشاط الحاضن [] المطلوب لربط حوار .
+     * @  عنوان نافذة التحقق (مثال: "تأكيد الهوية").
+     * @  العنوان الفرعي التوضيحي (مثال: "المس مستشعر البصمة للمتابعة").
+     * @  نص زر الإلغاء أو استخدام رمز المرور.
+     * @  الدالة التي يتم استدعاؤها عند نجاح مطابقة البصمة.
+     * @  الدالة التي تستقبل رمز الخطأ ورسالته عند الإلغاء أو استنفاد المحاولات.
+     * @  الدالة التي تستدعى عند عدم تطابق البصمة مع إتاحة المحاولة مجدداً.
      */
     fun authenticate(
         activity: FragmentActivity,
@@ -81,17 +81,17 @@ object BiometricAuthHelper {
         onError: (errorCode: Int, errString: String) -> Unit = { _, _ -> },
         onFailed: () -> Unit = {}
     ) {
-        // التحقق الاستباقي: إذا كان العتاد غير متوفر أو معطل نبلغ بالخطأ فوراً دون إظهار نافذة فارغة
+        // التحقق الاستباقي من جاهزية المصادقة قبل إنشاء النافذة لتجنب مسار واجهة غير صالح.
         if (!isBiometricAvailable(activity)) {
-            onError(BiometricPrompt.ERROR_HW_UNAVAILABLE, "Biometrics unavailable")
+            onError(BiometricPrompt.ERROR_HW_UNAVAILABLE, "المصادقة الحيوية غير متاحة")
             return
         }
 
         try {
-            // جلب منفذ المسار الرئيسي لضمان تشغيل ردود النداء على خيط الواجهة
+            // الحصول على منفذ المسار الرئيسي لضمان تحديث الواجهة من ردود النداء في الخيط الصحيح.
             val executor = ContextCompat.getMainExecutor(activity)
 
-            // بناء كائن ردود النداء لمعالجة نتائج المصادقة
+            // بناء كائن ردود النداء لمعالجة النجاح والخطأ والفشل دون الاحتفاظ ببيانات حساسة.
             val callback = object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
@@ -109,7 +109,7 @@ object BiometricAuthHelper {
                 }
             }
 
-            // إعداد معلومات النافذة ونصوصها ومستويات التشفير المسموحة
+            // إعداد النافذة الرسمية بالنصوص المعروضة ومستويات المصادقة المسموحة.
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
                 .setTitle(title)
                 .setSubtitle(subtitle)
@@ -117,11 +117,11 @@ object BiometricAuthHelper {
                 .setAllowedAuthenticators(AUTHENTICATORS)
                 .build()
 
-            // إنشاء موجه المصادقة وإطلاقه للمستخدم
+            // إنشاء موجه المصادقة الرسمي وإطلاقه من النشاط الحاضن.
             val biometricPrompt = BiometricPrompt(activity, executor, callback)
             biometricPrompt.authenticate(promptInfo)
         } catch (t: Throwable) {
-            onError(BiometricPrompt.ERROR_UNABLE_TO_PROCESS, t.message ?: "Authentication error")
+            onError(BiometricPrompt.ERROR_UNABLE_TO_PROCESS, "تعذر معالجة المصادقة الحيوية")
         }
     }
 }

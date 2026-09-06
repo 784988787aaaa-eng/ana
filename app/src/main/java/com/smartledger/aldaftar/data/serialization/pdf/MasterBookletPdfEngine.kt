@@ -1,28 +1,29 @@
 /**
  * =====================================================================
- * ملف: محرك دفاتر وكشوفات الأستاذ العامة المجمعة (MasterBookletPdfEngine.kt)
+ * ملف: محرك دفاتر وكشوفات الأستاذ العامة المجمعة (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
  * يمثل هذا الكائن المحرك المتقدم المسؤول عن تجميع وتوليد كتيب الحسابات الماستر
- * (Comprehensive Master Ledger Booklet) بصيغة PDF لعدة عملاء أو لجميع الحسابات
+ * (   ) بصيغة  لعدة عملاء أو لجميع الحسابات
  * دفعة واحدة، مع تدفق سلس ومستمر للصفحات، وإدارة ذكية للذاكرة، وحساب دقيق لإجمالي
  * الصفحات عبر جولتين: تجريبية لحساب المقاسات وفعلية للرسم.
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. المعالجة المجمعة المتدفقة (Chunked Processing & Streaming):
- *    - تقسيم معالجة العملاء إلى دفعات (Chunks of 50) مع إمكانية إلغاء الكوروتين [ensureActive].
- * 2. التخزين المؤقت المحلي للعمليات (Local In-Memory Caching):
- *    - استخدام [txCacheMap] لتفادي الاستعلام المتكرر من قاعدة البيانات بين الجولة التجريبية والفعلية.
- * 3. إدارة لوحات الرسم والصفحات وسياق الدفتر [BookletDrawingContext]:
- *    - إنشاء صفحات مقاس A4 ورسم الترويسة والفاصل السفلي لكل صفحة تلقائياً.
- * 4. إدارة الموارد وتدوير البيتماب (Bitmap Lifecycle Management):
- *    - ضمان تدوير وتحرير صور الشعارات النقطية لمنع نفاد الذاكرة (OOM) في التقارير الضخمة.
+ * 1. المعالجة المجمعة المتدفقة (  & ):
+ *    - تقسيم معالجة العملاء إلى دفعات (  50) مع إمكانية إلغاء الكوروتين [].
+ * 2. التخزين المؤقت المحلي للعمليات ( - ):
+ *    - استخدام [] لتفادي الاستعلام المتكرر من قاعدة البيانات بين الجولة التجريبية والفعلية.
+ * 3. إدارة لوحات الرسم والصفحات وسياق الدفتر []:
+ *    - إنشاء صفحات مقاس 4 ورسم الترويسة والفاصل السفلي لكل صفحة تلقائياً.
+ * 4. إدارة الموارد وتدوير البيتماب (  ):
+ *    - ضمان تدوير وتحرير صور الشعارات النقطية لمنع نفاد الذاكرة () في التقارير الضخمة.
  */
 package com.smartledger.aldaftar.data.serialization.pdf
 
+import android.os.Build
 // ---------------------------------------------------------------------
-// استيراد حزم أندرويد والرسومات وتوليد PDF وقواعد البيانات والكوروتين
+// استيراد حزم أندرويد والرسومات وتوليد  وقواعد البيانات والكوروتين
 // ---------------------------------------------------------------------
 import android.app.Application
 import android.content.Context
@@ -33,7 +34,6 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.text.Layout
-import android.util.Log
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.repository.FinanceRepository
@@ -49,7 +49,7 @@ import java.util.Date
 import kotlin.coroutines.coroutineContext
 
 /**
- * [وعاء بيانات هوية المنشأة للكتيب - BusinessProfileData]:
+ * [وعاء بيانات هوية المنشأة للكتيب - ]:
  * يضم معلومات المنشأة وشعارها وأبعادها.
  */
 data class BusinessProfileData(
@@ -63,7 +63,7 @@ data class BusinessProfileData(
 )
 
 /**
- * [البيانات الوصفية للتقرير المالي - PdfReportMetaData]:
+ * [البيانات الوصفية للتقرير المالي - ]:
  * يجمع التواريخ المنسقة والعملة ولون السمة الأساسي.
  */
 data class PdfReportMetaData(
@@ -73,10 +73,8 @@ data class PdfReportMetaData(
     val primaryColorHex: String
 )
 
-private const val TAG = "MasterBookletPdfEngine"
-
 /**
- * [الكائن الأحادي لمحرك دفتر الحسابات الماستر - MasterBookletPdfEngine]:
+ * [الكائن الأحادي لمحرك دفتر الحسابات الماستر - ]:
  * يبني كتيبات وكشوفات الحسابات المجمعة لكافة العملاء أو المحدد منهم.
  */
 object MasterBookletPdfEngine {
@@ -90,17 +88,9 @@ object MasterBookletPdfEngine {
     private const val PHONE_DELIMITER = " - "
 
     /**
-     * [توليد كتيب الحسابات الماستر بصيغة PDF لاتزامياً - generateBookletPdfAsync]:
+     * [توليد كتيب الحسابات الماستر بصيغة  لاتزامياً - ]:
      * ينفذ الجولة التجريبية ثم الجولة الحقيقية لرسم كشوفات الحسابات المتتابعة وتحديث شريط التقدم.
      *
-     * @param context سياق التطبيق.
-     * @param allCustomers قائمة كافة العملاء المسجلين.
-     * @param selectedIds المعرفات المختارة للطباعة إن وجدت.
-     * @param onlySelected ما إذا كان المطلوب طباعة المحدد فقط.
-     * @param currencySymbol رمز العملة الرئيسية.
-     * @param primaryColorHex كود لون السمة الرئيسي.
-     * @param onProgress دالة رد نداء لتحديث مؤشر التقدم (تمت معالجة X من إجمالي Y).
-     * @param onFinished دالة رد نداء عند اكتمال التوليد مع ملف الـ PDF الناتج.
      */
     suspend fun generateBookletPdfAsync(
         context: Context,
@@ -131,7 +121,7 @@ object MasterBookletPdfEngine {
                 return@withContext
             }
 
-            // Load business profile from shared BusinessProfileLoader
+            //      
             val header = BusinessProfileLoader.load(context)
             scaledLogoToRecycle = header.scaledLogo
             rawBitmapToRecycle = header.rawBitmap
@@ -157,17 +147,17 @@ object MasterBookletPdfEngine {
                 primaryColorHex = primaryColorHex
             )
 
-            // Initialize DB & Repository inside for streaming
+            //   &    
             val database = AppDatabase.getDatabase(context)
             val repository = FinanceRepository(database, context.applicationContext as Application)
 
-            // Memory Cache Map to avoid querying database twice during dry run and real pass
+            //              
             val txCacheMap = mutableMapOf<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>()
 
-            // Let's compute Overall System Balances
+            // '    
             val summary = PdfReportCalculator.calculateComprehensiveReport(targetCustomers)
 
-            // First Pass: DRY RUN to compute total pages accurately
+            //  :       
             var totalPagesInDryRun = 1
             run {
                 val dryDoc = PdfDocument()
@@ -182,10 +172,10 @@ object MasterBookletPdfEngine {
                         reportMetaData = reportMetaData
                     )
 
-                    // Start detailed ledger sheets directly below the business header on Page 1
+                    //            1
                     dryCtx.currentY = 78f
 
-                    // Render detail sections for each customer in chunks
+                    //        
                     val customerChunks = targetCustomers.chunked(50)
                     var processedCount = 0
                     for (chunk in customerChunks) {
@@ -211,7 +201,7 @@ object MasterBookletPdfEngine {
 
             coroutineContext.ensureActive()
 
-            // Second Pass: REAL PASS
+            //  :  
             val pdfDocument = PdfDocument()
             var realCtx: BookletDrawingContext? = null
             val outputFile = try {
@@ -224,7 +214,7 @@ object MasterBookletPdfEngine {
                     reportMetaData = reportMetaData
                 )
 
-                // Draw Business Header on Page 1
+                //      1
                 val canvas = realCtx.currentPageCanvas
                 if (canvas != null) {
                     PdfPageRenderer.drawBusinessHeader(
@@ -234,7 +224,7 @@ object MasterBookletPdfEngine {
                 }
                 realCtx.currentY = 78f
 
-                // 2. Customers detailed ledger sheets in chunks
+                // 2.      
                 val customerChunks = targetCustomers.chunked(50)
                 var processedCount = 0
                 for (chunk in customerChunks) {
@@ -254,15 +244,31 @@ object MasterBookletPdfEngine {
 
                 realCtx.finishLastPage()
 
-                // Save PDF to cache file
+                //     
                 val outputDir = File(context.cacheDir, "pdf_reports")
                 if (!outputDir.exists()) outputDir.mkdirs()
                 val file = File(outputDir, "MasterBookletReport_${System.currentTimeMillis()}.pdf")
-                FileOutputStream(file).use { outputStream ->
-                    pdfDocument.writeTo(outputStream)
-                    outputStream.flush()
+                val tempFile = File.createTempFile(file.nameWithoutExtension, ".tmp", outputDir)
+                try {
+                    FileOutputStream(tempFile).use { outputStream ->
+                        pdfDocument.writeTo(outputStream)
+                        outputStream.flush()
+                        outputStream.fd.sync()
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        try {
+                            java.nio.file.Files.move(tempFile.toPath(), file.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                        } catch (_: Exception) {
+                            java.nio.file.Files.move(tempFile.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                        }
+                    } else {
+                        if (file.exists() && !file.delete()) throw IllegalStateException("تعذر استبدال ملف التقرير")
+                        if (!tempFile.renameTo(file)) throw IllegalStateException("تعذر تثبيت ملف التقرير")
+                    }
+                    file
+                } finally {
+                    if (tempFile.exists()) tempFile.delete()
                 }
-                file
             } finally {
                 realCtx?.closeSafely() ?: run {
                     try { pdfDocument.close() } catch (t: Throwable) {}
@@ -274,12 +280,12 @@ object MasterBookletPdfEngine {
             }
 
         } catch (e: CancellationException) {
-            Log.i(TAG, "Master booklet PDF generation cancelled by user")
+            // معالجة الفشل داخلياً دون تسجيل تفاصيل التنفيذ أو الاستثناءات الحساسة.
             withContext(Dispatchers.Main) {
                 onCancelled()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating booklet PDF", e)
+            // معالجة الفشل داخلياً دون تسجيل تفاصيل التنفيذ أو الاستثناءات الحساسة.
             withContext(Dispatchers.Main) {
                 onFinished(null)
             }
@@ -294,30 +300,30 @@ object MasterBookletPdfEngine {
                     scaledLogoToRecycle.recycle()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error recycling bitmaps", e)
+            // معالجة الفشل داخلياً دون تسجيل تفاصيل التنفيذ أو الاستثناءات الحساسة.
             }
         }
     }
 
     private fun drawCoverAndIndexDryRun(ctx: BookletDrawingContext, customers: List<CustomerUiState>) {
-        // Business header space
+        //   
         ctx.currentY = 78f
-        // Title space
+        //  
         ctx.currentY += 22f
-        // Subtitle space
+        //  
         ctx.currentY += 18f
 
-        // Index Title
+        //  
         ctx.currentY += 18f
-        // Index Header
+        //  
         ctx.currentY += 24f
 
-        // Index Rows
+        //  
         customers.forEachIndexed { _, customer ->
             val rowHeight = PdfRowRenderer.calculateBookletIndexRowHeight(customer)
             if (ctx.currentY + rowHeight > 780f) {
                 ctx.startNewPage()
-                // Subsequent page header + index header space on new page
+                //    +      
                 ctx.currentY = 69f
             }
             ctx.currentY += rowHeight
@@ -332,14 +338,14 @@ object MasterBookletPdfEngine {
         val context = ctx.context
         val canvas = ctx.currentPageCanvas ?: return
 
-        // 1. Draw Business Header
+        // 1.   
         PdfPageRenderer.drawBusinessHeader(
             canvas, ctx.displayedName, ctx.displayedDesc, ctx.phonesStr,
             ctx.hasLogo, ctx.scaledLogo, ctx.logoW, ctx.logoH, ctx.docDateText, ctx.docTimeText
         )
         ctx.currentY = 78f
 
-        // 2. Draw Title
+        // 2.  
         val paintTitle = Paint().apply {
             color = Color.parseColor(ctx.primaryColorHex)
             textSize = 14f
@@ -352,7 +358,7 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 22f
 
-        // 3. Draw Subtitle
+        // 3.  
         val paintSub = Paint().apply {
             color = Color.parseColor(PdfColors.TEXT_MEDIUM)
             textSize = 9.5f
@@ -365,7 +371,7 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 18f
 
-        // 4. Draw Index Title
+        // 4.   
         val paintIndexTitle = Paint().apply {
             color = Color.parseColor(ctx.primaryColorHex)
             textSize = 10.5f
@@ -378,17 +384,17 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 18f
 
-        // 5. Draw Index Table Header
+        // 5.    
         PdfRowRenderer.drawBookletIndexHeader(canvas, ctx.currentY, context)
         ctx.currentY += 24f
 
-        // 6. Draw Index Rows
+        // 6.   
         customers.forEachIndexed { index, customer ->
             val rowHeight = PdfRowRenderer.calculateBookletIndexRowHeight(customer)
             if (ctx.currentY + rowHeight > 780f) {
                 ctx.startNewPage()
                 val nextCanvas = ctx.currentPageCanvas ?: return@forEachIndexed
-                // Redraw table header on next page
+                //      
                 PdfRowRenderer.drawBookletIndexHeader(nextCanvas, 45f, context)
                 ctx.currentY = 69f
             }
@@ -438,15 +444,9 @@ object MasterBookletPdfEngine {
 }
 
 /**
- * [سياق وحالة رسم كتيب الحسابات - BookletDrawingContext]:
- * يدير حالة الصفحات الحالية ومؤشر الإحداثي الرأسي Y، وأرقام الصفحات، ورسم التذييلات تلقائياً.
+ * [سياق وحالة رسم كتيب الحسابات - ]:
+ * يدير حالة الصفحات الحالية ومؤشر الإحداثي الرأسي ، وأرقام الصفحات، ورسم التذييلات تلقائياً.
  *
- * @property context سياق التطبيق.
- * @property pdfDocument كائن مستند الـ PDF قيد البناء.
- * @property isDryRun هل الجولة الحالية جولة تجريبية افتراضية لحساب عدد الصفحات فقط.
- * @property totalPagesInDryRun إجمالي الصفحات المحسوبة من الجولة السابقة.
- * @property businessProfile بيانات ومعلومات وهوية المنشأة.
- * @property reportMetaData البيانات الوصفية للتقرير.
  */
 class BookletDrawingContext(
     val context: Context,
@@ -520,7 +520,7 @@ class BookletDrawingContext(
                     pdfDocument.finishPage(it)
                 }
             } catch (t: Throwable) {
-                Log.w(TAG, "Safe close page finish warning: ${t.message}")
+            // معالجة الفشل داخلياً دون تسجيل تفاصيل التنفيذ أو الاستثناءات الحساسة.
             }
             currentPageObject = null
             currentPageCanvas = null
@@ -528,7 +528,7 @@ class BookletDrawingContext(
         try {
             pdfDocument.close()
         } catch (t: Throwable) {
-            Log.w(TAG, "Safe close pdf document warning: ${t.message}")
+            // معالجة الفشل داخلياً دون تسجيل تفاصيل التنفيذ أو الاستثناءات الحساسة.
         }
     }
 }

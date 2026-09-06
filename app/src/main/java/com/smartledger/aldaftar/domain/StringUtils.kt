@@ -1,24 +1,24 @@
 /**
  * =====================================================================
- * ملف: أدوات معالجة النصوص وتنسيق العملات (StringUtils.kt)
+ * ملف: أدوات معالجة النصوص وتنسيق العملات (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
  * يحتوي هذا الملف على وحدتين رئيسيتين:
- * 1. [StringUtils]: لمعالجة النصوص وتطبيع الحروف العربية (إزالة التشكيل، وتوحيد الهمزات والياءات)،
+ * 1. []: لمعالجة النصوص وتطبيع الحروف العربية (إزالة التشكيل، وتوحيد الهمزات والياءات)،
  *    وتحويل الأرقام المشرقية إلى أرقام غربية، واستخراج بيانات جهات الاتصال من دفتر الهاتف.
- * 2. [FormatUtils]: لتنسيق وعرض المبالغ النقدية والأرقام المالية بدقة متناهية مع إضافة رموز
- *    العملات المحلية (مثل: ر.ي، $، إلخ) وبطريقة آمنة لتعدد الخيوط (Thread-Safe).
+ * 2. []: لتنسيق وعرض المبالغ النقدية والأرقام المالية بدقة متناهية مع إضافة رموز
+ *    العملات المحلية (مثل: ر.ي، $، إلخ) وبطريقة آمنة لتعدد الخيوط (-).
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. تطبيع النصوص للبحث الذكي (Arabic Text Normalization):
+ * 1. تطبيع النصوص للبحث الذكي (  ):
  *    - إزالة التشكيل وتوحيد أشكال الألف (أ، إ، آ، ٱ -> ا) والتاء المربوطة والياء لتسهيل البحث.
- * 2. توحيد الأرقام والمعاملات (Digits Normalization):
+ * 2. توحيد الأرقام والمعاملات ( ):
  *    - تحويل الأرقام العربية (٠-٩) والفارسية (۰-۹) والفواصل إلى الصيغة القياسية للحسابات البرمجية.
- * 3. قراءة جهات الاتصال (Contacts Contract Resolution):
- *    - الاستعلام الآمن عن أسماء وأرقام الهواتف عبر موفر محتوى النظام [ContactsContract].
- * 4. التنسيق المالي الآمن للخيوط (Thread-Safe Currency Formatting):
- *    - استخدام [ThreadLocal] لعزل كائنات [DecimalFormat] ومنع تضارب التنسيق المتزامن.
+ * 3. قراءة جهات الاتصال (  ):
+ *    - الاستعلام الآمن عن أسماء وأرقام الهواتف عبر موفر محتوى النظام [].
+ * 4. التنسيق المالي الآمن للخيوط (-  ):
+ *    - استخدام [] لعزل كائنات [] ومنع تضارب التنسيق المتزامن.
  */
 package com.smartledger.aldaftar.domain
 
@@ -28,7 +28,6 @@ package com.smartledger.aldaftar.domain
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
-import android.util.Log
 import com.smartledger.aldaftar.data.local.entities.DatabaseDefaults
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -37,11 +36,11 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 // =========================================================================
-// قسم: أدوات معالجة وتطبيع النصوص العربية (STRING & ARABIC UTILITIES)
+// قسم: أدوات معالجة وتطبيع النصوص العربية ( &  )
 // =========================================================================
 
 /**
- * [الكائن الأحادي لأدوات معالجة النصوص - StringUtils]:
+ * [الكائن الأحادي لأدوات معالجة النصوص - ]:
  * يوفر دوال تطبيع الحروف العربية وتحويل الأرقام والتعامل مع جهات الاتصال.
  */
 object StringUtils {
@@ -50,11 +49,11 @@ object StringUtils {
     private val PHONE_CLEANUP_REGEX = Regex("[^0-9+]")
 
     /**
-     * [تطبيع النصوص العربية للبحث والمطابقة - normalizeArabic]:
+     * [تطبيع النصوص العربية للبحث والمطابقة - ]:
      * يزيل التشكيل ويوحد رسم الهمزات والتاء المربوطة لتسهيل الفلترة والبحث الذكي.
      *
-     * @param text النص العربي الأصلي.
-     * @return النص المطبع والموحد.
+     * @  النص العربي الأصلي.
+     * @ النص المطبع والموحد.
      */
     @JvmStatic
     fun normalizeArabic(text: String): String {
@@ -79,18 +78,18 @@ object StringUtils {
     }
 
     /**
-     * واجهة مطابقة لـ [normalizeArabic] مع إمكانية تمرير السياق للتوافق البرمجي.
+     * واجهة مطابقة لـ [] مع إمكانية تمرير السياق للتوافق البرمجي.
      */
     @JvmStatic
     fun normalizeArabic(text: String, context: Context?): String = normalizeArabic(text)
 
     /**
-     * [استخراج اسم ورقم جهة الاتصال من دفتر الهاتف - getContactDetails]:
-     * يستعلم عن سجل جهة الاتصال عبر الـ ContentResolver ويستخرج الاسم والرقم النظيف.
+     * [استخراج اسم ورقم جهة الاتصال من دفتر الهاتف - ]:
+     * يستعلم عن سجل جهة الاتصال عبر الـ  ويستخرج الاسم والرقم النظيف.
      *
-     * @param context سياق التطبيق للوصول لمزود المحتوى.
-     * @param contactUri المعرف الموحد لجهة الاتصال (Uri).
-     * @return زوج يحتوي على (الاسم، رقم الهاتف) أو null عند التعذر.
+     * @  سياق التطبيق للوصول لمزود المحتوى.
+     * @  المعرف الموحد لجهة الاتصال ().
+     * @ زوج يحتوي على (الاسم، رقم الهاتف) أو  عند التعذر.
      */
     @JvmStatic
     fun getContactDetails(context: Context, contactUri: Uri): Pair<String, String>? {
@@ -98,7 +97,13 @@ object StringUtils {
         var phone = ""
         try {
             val cr = context.contentResolver
-            cr.query(contactUri, null, null, null, null)?.use { cursor ->
+            cr.query(
+                contactUri,
+                arrayOf(ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.Contacts._ID, ContactsContract.Contacts.HAS_PHONE_NUMBER),
+                null,
+                null,
+                null
+            )?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val nameIndex = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
                     if (nameIndex >= 0) {
@@ -115,7 +120,7 @@ object StringUtils {
                         if (hasPhone == "1") {
                             cr.query(
                                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                                null,
+                                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
                                 ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
                                 arrayOf(contactId),
                                 null
@@ -132,7 +137,7 @@ object StringUtils {
                 }
             }
         } catch (e: Exception) {
-            Log.e("StringUtils", "Error fetching contact: ${e.message}")
+            return null
         }
 
         val cleanedPhone = runCatching { phone.replace(PHONE_CLEANUP_REGEX, "") }.getOrDefault("")
@@ -149,7 +154,7 @@ object StringUtils {
     fun String.toEnglishDigits(): String = toWesternDigits()
 
     /**
-     * [تحويل الأرقام المشرقية والفارسية إلى أرقام لاتينية - toWesternDigits]:
+     * [تحويل الأرقام المشرقية والفارسية إلى أرقام لاتينية - ]:
      * دالة امتدادية تفحص النص وتستبدل أي رقم عربي/فارسي بمقابله اللاتيني المعياري.
      */
     @JvmStatic
@@ -178,11 +183,11 @@ object StringUtils {
     }
 
     /**
-     * [توحيد الأرقام والفواصل العشرية - normalizeDigits]:
+     * [توحيد الأرقام والفواصل العشرية - ]:
      * يحول الأرقام المشرقية إلى لاتينية ويستبدل الفواصل العشرية بنقاط.
      *
-     * @param input النص الرقمي المدخل.
-     * @return النص المحول إلى أرقام قياسية ونقاط عشرية.
+     * @  النص الرقمي المدخل.
+     * @ النص المحول إلى أرقام قياسية ونقاط عشرية.
      */
     @JvmStatic
     fun normalizeDigits(input: String): String {
@@ -204,11 +209,11 @@ object StringUtils {
 }
 
 // =========================================================================
-// قسم: أدوات تنسيق العملات والأرقام المالية (CURRENCY FORMATTERS)
+// قسم: أدوات تنسيق العملات والأرقام المالية ( )
 // =========================================================================
 
 /**
- * [الكائن الأحادي لتنسيق القيم المالية - FormatUtils]:
+ * [الكائن الأحادي لتنسيق القيم المالية - ]:
  * يوفر منسقات أرقام معزولة لكل خيط لعرض العملات والمبالغ المالية بدقة وجمالية.
  */
 object FormatUtils {
@@ -221,7 +226,7 @@ object FormatUtils {
     private val formatterDecimal = ThreadLocal.withInitial { DecimalFormat("#,##0.##", DECIMAL_SYMBOLS) }
 
     /**
-     * [التنسيق الداخلي للقيم المالية - formatNumberInternal]:
+     * [التنسيق الداخلي للقيم المالية - ]:
      * يحدد ما إذا كان الرقم يحتوي على كسور عشرية لاختيار المنسق المناسب.
      */
     private fun formatNumberInternal(value: BigDecimal): String {
@@ -234,13 +239,13 @@ object FormatUtils {
     }
 
     /**
-     * [تنسيق المبلغ النقدي مع الرمز - formatCurrency]:
-     * ينسق المبلغ كـ [BigDecimal] مع إضافة رمز العملة (أو العملة الافتراضية).
+     * [تنسيق المبلغ النقدي مع الرمز - ]:
+     * ينسق المبلغ كـ [] مع إضافة رمز العملة (أو العملة الافتراضية).
      *
-     * @param amount القيمة المالية.
-     * @param symbol رمز العملة المخصص (اختياري).
-     * @param context سياق التطبيق لجلب العملة الافتراضية من الموارد.
-     * @return نص المبلغ المنسق مع العملة.
+     * @  القيمة المالية.
+     * @  رمز العملة المخصص (اختياري).
+     * @  سياق التطبيق لجلب العملة الافتراضية من الموارد.
+     * @ نص المبلغ المنسق مع العملة.
      */
     @JvmStatic
     fun formatCurrency(amount: BigDecimal, symbol: String = "", context: Context? = null): String {
@@ -249,13 +254,13 @@ object FormatUtils {
     }
 
     /**
-     * [تنسيق المبلغ النقدي من نوع Double - formatDoubleCurrency]:
+     * [تنسيق المبلغ النقدي من نوع  - ]:
      * ينسق المبلغ العشري المزدوج مع إضافة رمز العملة المناسب.
      *
-     * @param amount القيمة المالية من نوع Double.
-     * @param symbol رمز العملة (اختياري).
-     * @param context سياق التطبيق للوصول للموارد.
-     * @return نص المبلغ المنسق مع العملة.
+     * @  القيمة المالية من نوع .
+     * @  رمز العملة (اختياري).
+     * @  سياق التطبيق للوصول للموارد.
+     * @ نص المبلغ المنسق مع العملة.
      */
     @JvmStatic
     fun formatDoubleCurrency(amount: Double, symbol: String = "", context: Context? = null): String {
@@ -264,8 +269,8 @@ object FormatUtils {
     }
 
     /**
-     * [تنسيق رقم Double مع الرمز - formatDouble]:
-     * يحول الرقم إلى BigDecimal وينسقه مع الرمز بدقة وأمان.
+     * [تنسيق رقم  مع الرمز - ]:
+     * يحول الرقم إلى  وينسقه مع الرمز بدقة وأمان.
      */
     @JvmStatic
     fun formatDouble(value: Double, symbol: String = ""): String {
@@ -278,8 +283,8 @@ object FormatUtils {
     }
 
     /**
-     * [تنسيق BigDecimal مع الرمز - formatBigDecimal]:
-     * ينسق قيمة [BigDecimal] مع إلحاق رمز العملة في النهاية.
+     * [تنسيق  مع الرمز - ]:
+     * ينسق قيمة [] مع إلحاق رمز العملة في النهاية.
      */
     @JvmStatic
     fun formatBigDecimal(value: BigDecimal, symbol: String = ""): String {

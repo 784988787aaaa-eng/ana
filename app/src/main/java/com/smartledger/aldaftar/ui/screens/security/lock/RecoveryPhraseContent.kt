@@ -47,7 +47,8 @@ import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 /**
- * Visual content for the Recovery Phrase screen when the user forgets the PIN.
+ * يبني محتوى استرداد القفل عند نسيان رمز الدخول.
+ * يعرض التلميح اختيارياً ولا يكشف عبارة الاسترداد إلا داخل حالة العرض المطلوبة.
  */
 @Composable
 fun RecoveryPhraseContent(

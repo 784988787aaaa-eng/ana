@@ -22,7 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 /**
- * Animated Dot Indicators showing filled PIN progress with bouncy scaling and error shake offset.
+ * يرسم مؤشرات طول رمز الدخول بحركة خفيفة عند الامتلاء وإزاحة عند الخطأ.
+ * لا يعرض الرمز نفسه، بل يكتفي بعدد النقاط لحماية السر من العرض المباشر.
  */
 @Composable
 fun PasscodeDotIndicators(
@@ -46,7 +47,7 @@ fun PasscodeDotIndicators(
                     stiffness = Spring.StiffnessHigh,
                     dampingRatio = Spring.DampingRatioMediumBouncy
                 ),
-                label = "dotScale_$i"
+                label = "حركة النقطة_$i"
             )
             Box(
                 modifier = Modifier

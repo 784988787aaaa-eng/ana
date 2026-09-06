@@ -36,6 +36,7 @@ fun BackupRestoreBottomSheet(
     backupSyncViewModel: BackupSyncViewModel,
     onExportMzd: () -> Unit = {},
     onImportMzd: () -> Unit = {},
+    onDiscoverLegacy: () -> Unit = {},
     onDismiss: () -> Unit,
     onOpenCloudBackupsList: () -> Unit = {},
     onRestoreSuccess: (AppSettings) -> Unit = {}
@@ -68,19 +69,20 @@ fun BackupRestoreBottomSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. Header with Title & Status Badge
+                // العنوان وحالة الاتصال
                 BackupSheetHeader(
                     isConnected = isConnected
                 )
 
-                // 2. Comprehensive Backup Card
+                // بطاقة النسخ والاستعادة الشاملة
                 QuadBackupCard(
                     backupSyncViewModel = backupSyncViewModel,
                     settings = settings,
                     onRestoreSuccess = { restoredSettings ->
                         onRestoreSuccess(restoredSettings)
                         onDismiss()
-                    }
+                    },
+                    onDiscoverLegacy = onDiscoverLegacy
                 )
             }
         }

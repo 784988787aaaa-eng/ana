@@ -1,14 +1,13 @@
 /**
  * =====================================================================
- * ملف: إدارة نقل وتصدير ملفات النسخ المحلي (FileTransferManager.kt)
+ * ملف: إدارة نقل وتصدير ملفات النسخ المحلي
  * =====================================================================
  * 
  * [الغرض من الملف]:
  * توفير واجهة مستخدم مبسطة ومباشرة لعمليات تصدير واستيراد النسخ الاحتياطية
- * المحلية بصيغة (.mzd) دون عرض قوائم شجرية مزدحمة.
+ * المحلية بصيغة النسخ المعتمدة دون عرض قوائم شجرية مزدحمة.
  * 
- * [المسار المعتمد]:
- * الحفظ المركزي المباشر في: /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
+ * المسار التشغيلي محفوظ داخل مساحة التطبيق، بينما الاكتشاف القديم يتم عبر منتقي المستندات.
  */
 package com.smartledger.aldaftar.ui.screens.settings.components
 
@@ -44,6 +43,7 @@ fun FileTransferManager(
     backupSyncViewModel: BackupSyncViewModel,
     context: Context,
     safRestoreLauncher: ActivityResultLauncher<Array<String>>,
+    onDiscoverLegacy: () -> Unit,
     checkBackupPermissionsGranted: () -> Boolean,
     onShowPermissionExplanation: (() -> Unit) -> Unit,
     modifier: Modifier = Modifier
@@ -52,7 +52,7 @@ fun FileTransferManager(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // تصدير واستيراد ملفات (.mzd)
+        // تصدير واستيراد ملفات النسخ المحلية
         QuadBackupItem(
             title = stringResource(R.string.settings_backup_portable_title),
             description = stringResource(R.string.settings_backup_portable_desc),
@@ -101,7 +101,7 @@ fun FileTransferManager(
                     )
                 }
 
-                // زر استيراد النسخة الاحتياطية عبر SAF
+                // زر استيراد النسخة الاحتياطية عبر منتقي المستندات
                 Button(
                     onClick = {
                         safRestoreLauncher.launch(arrayOf("application/*", "*/*"))
@@ -116,6 +116,23 @@ fun FileTransferManager(
                         text = stringResource(R.string.settings_import_mzd),
                         fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // فتح مجلد المستندات العام القديم لاكتشاف النسخ المتوافقة دون صلاحيات واسعة
+                Button(
+                    onClick = { onDiscoverLegacy() },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(36.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_discover_legacy_backups),
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         fontWeight = FontWeight.Bold
                     )
                 }

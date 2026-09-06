@@ -1,30 +1,12 @@
 /**
- * =====================================================================
- * ملف: محول النسخ الاحتياطية ودعم التوافق التاريخي (MzdBackupSerializer.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يوفر هذا الكائن جسراً معمارياً متقدماً لدعم التوافق العكسي مع كافة إصدارات
- * حزم النسخ الاحتياطي MZD والإصدارات القديمة (Legacy Backups v1/v2).
- * يتولى القراءة الذكية للكيانات، والحفاظ على قدسية اختيارات المستخدم المحفوظة،
- * والكتابة الذرية الآمنة للملفات على القرص لتجنب تلف البيانات عند انقطاع الطاقة.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. الحفظ الذري الآمن (Atomic File Writing):
- *    - الكتابة في ملف مؤقت (`tmp_mzd_...`) ثم إعادة التسمية والاستبدال الذري لمنع الملفات الناقصة.
- * 2. قدسية خيارات المستخدم الصريحة (Explicit User Intent):
- *    - الالتزام التام بالقيمة الصريحة لحقل `initial_type` ومنع إعادة اشتقاقه إلا عند غيابه التام في النسخ العتيقة.
- * 3. التسامح مع تنوع المخططات والمفاتيح القديمة:
- *    - قراءة مفاتيح `habayeb_debts` أو `habayeb_debts_db`، وحقول `customer_id` أو `customerId`.
- * 4. استخراج دقيق للفئات المخصصة والمحذوفات والديون والعملات الأجنبية.
+ * محول النسخ الاحتياطية: يحافظ على صيغ النسخ التاريخية ويقرأ القيم المالية كقيم عشرية دقيقة.
+ * الكتابة إلى القرص ذرية، والاستيراد متسامح مع أسماء الحقول القديمة دون تغيير مخطط قاعدة البيانات.
+ * لا تُسجل بيانات النسخ أو الاستثناءات الداخلية، وتبقى حدود العمل متوافقة مع مسارات الاستعادة القائمة.
  */
 package com.smartledger.aldaftar.data.serialization
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والسجلات والكيانات والنماذج ومعالجة JSON والملفات
-// ---------------------------------------------------------------------
+
 import android.content.Context
-import android.util.Log
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
@@ -37,21 +19,17 @@ import com.smartledger.aldaftar.ui.navigation.Screen
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
 import java.math.BigDecimal
 
-/**
- * [الكائن الأحادي لمحول وتوافق نسخ MZD - MzdBackupSerializer]:
- * يدير تصدير واستيراد وتحليل ملفات وحزم النسخ الاحتياطي عبر مخططات الإصدارات المختلفة.
- */
+
+/** يدير التصدير والاستيراد والتحليل مع الحفاظ على توافق النسخ التاريخية. */
 object MzdBackupSerializer {
 
-    /** وسم السجلات التشخيصية */
-    private const val TAG = "MzdBackupSerializer"
-
-    /**
-     * [تصدير النسخة كنص JSON - exportBackupToJson]:
-     * يفوض التحويل إلى [BackupPayloadSerializer].
-     */
+    
+    /** يبني تمثيل النسخة النصي عبر المحول المركزي دون تغيير مخطط البيانات. */
     suspend fun exportBackupToJson(
         settings: AppSettings,
         commitments: List<FixedCommitment>,
@@ -64,19 +42,8 @@ object MzdBackupSerializer {
         settings, commitments, transactions, habayebCustomers, habayebTransactions, deletedItems, context
     )
 
-    /**
-     * [تصدير النسخة الاحتياطية ذرياً إلى ملف محلي - exportBackupToFile]:
-     * يكتب المحتوى إلى ملف مؤقت أولاً ثم يستبدل الملف الهدف ذرياً لضمان عدم التلف.
-     *
-     * @param settings إعدادات التطبيق.
-     * @param commitments قائمة الالتزامات.
-     * @param transactions قيود اليومية.
-     * @param habayebCustomers عملاء الحبايب.
-     * @param habayebTransactions معاملات الحبايب.
-     * @param deletedItems المحذوفات.
-     * @param context سياق التطبيق.
-     * @param targetFile الملف المستهدف على القرص.
-     */
+    
+    /** يكتب النسخة إلى ملف مؤقت ثم يستبدل الهدف بعد اكتمال الكتابة. */
     suspend fun exportBackupToFile(
         settings: AppSettings,
         commitments: List<FixedCommitment>,
@@ -101,15 +68,21 @@ object MzdBackupSerializer {
                 writer.write(jsonStr)
                 writer.flush()
             }
-            if (targetFile.exists()) {
-                targetFile.delete()
-            }
-            if (!tempFile.renameTo(targetFile)) {
-                tempFile.copyTo(targetFile, overwrite = true)
-                tempFile.delete()
+            try {
+                Files.move(
+                    tempFile.toPath(),
+                    targetFile.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (_: Exception) {
+                Files.move(
+                    tempFile.toPath(),
+                    targetFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "فشل تصدير ملف النسخة الاحتياطية MZD بشكل ذري", e)
             if (tempFile.exists()) {
                 tempFile.delete()
             }
@@ -117,30 +90,21 @@ object MzdBackupSerializer {
         }
     }
 
-    /**
-     * [استخراج رقم BigDecimal بأمان ودقة - getBigDecimal]:
-     * يفوض الاستخراج المالي إلى [BackupPayloadSerializer].
-     */
+    
+    /** يقرأ القيمة المالية كنص عشري دقيق مع قيمة بديلة عند الغياب أو التلف. */
     fun getBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal =
         BackupPayloadSerializer.getBigDecimal(obj, key, fallback)
 
-    /**
-     * [استيراد النسخة من نص JSON - importBackupFromJson]:
-     * يفوض التفكيك إلى [BackupPayloadSerializer].
-     */
+    
+    /** يستورد النسخة عبر مسار التحقق المركزي مع إبقاء الصيغ القديمة قابلة للقراءة. */
     suspend fun importBackupFromJson(
         jsonString: String,
         context: Context? = null
     ): Triple<AppSettings, List<FixedCommitment>, List<TransactionDb>> =
         BackupPayloadSerializer.importBackupFromJson(jsonString, context)
 
-    /**
-     * [تحليل واستخراج الفئات المخصصة - parseCustomCategories]:
-     * يستخرج قائمة [CustomCategory] من كائن الـ JSON الجذري.
-     *
-     * @param root كائن الـ JSON الجذري للنسخة الاحتياطية.
-     * @return قائمة الفئات المخصصة المستعادة.
-     */
+    
+    /** يحلل الفئات المخصصة مع الحفاظ على أسماء الحقول التاريخية. */
     fun parseCustomCategories(root: JSONObject): List<CustomCategory> {
         val list = mutableListOf<CustomCategory>()
         if (root.has("custom_categories") && !root.isNull("custom_categories")) {
@@ -163,13 +127,8 @@ object MzdBackupSerializer {
         return list
     }
 
-    /**
-     * [تحليل واستخراج عناصر سلة المهملات - parseDeletedItems]:
-     * يستخرج قائمة [DeletedItemEntity] من حزمة النسخ الاحتياطي.
-     *
-     * @param root كائن الـ JSON الجذري.
-     * @return قائمة العناصر المحذوفة المستعادة.
-     */
+    
+    /** يحلل العناصر المحذوفة مع إبقاء الحقول القديمة قابلة للاستعادة. */
     fun parseDeletedItems(root: JSONObject): List<DeletedItemEntity> {
         val list = mutableListOf<DeletedItemEntity>()
         if (root.has("deleted_items") && !root.isNull("deleted_items")) {
@@ -192,25 +151,14 @@ object MzdBackupSerializer {
         return list
     }
 
-    /**
-     * [وعاء بيانات عميل الحبايب المستعاد مع رابط الفئة - RestoredHabayebCustomerData]:
-     * يجمع كيان العميل مع التصنيف المربوط به إن وجد.
-     *
-     * @property customer بطاقة العميل المستعادة.
-     * @property categoryLink الفئة المربوط بها العميل.
-     */
+    
     data class RestoredHabayebCustomerData(
         val customer: HabayebCustomer,
         val categoryLink: String?
     )
 
-    /**
-     * [تحليل واستعادة عملاء الحبايب والديون - parseHabayebCustomers]:
-     * يحلل مصفوفات العملاء ويدعم استعادة `initial_type` الصريح أو اشتقاقه للنسخ التاريخية القديمة.
-     *
-     * @param root كائن JSON الجذري.
-     * @return قائمة العملاء مع روابط فئاتهم.
-     */
+    
+    /** يحلل عملاء الديون ويثبت النوع الصريح عند وجوده في النسخة. */
     fun parseHabayebCustomers(root: JSONObject): List<RestoredHabayebCustomerData> {
         val jsonHabayebObj = root.optJSONObject("habayeb_debts")
             ?: root.optJSONObject("habayeb_debts_db")
@@ -239,7 +187,7 @@ object MzdBackupSerializer {
                 val obj = custArr.getJSONObject(i)
                 val cId = obj.optString("id", obj.optString("customer_id", "")).trim()
 
-                // التحقق من وجود قيمة صريحة لـ initial_type في ملف النسخ الاحتياطي
+                
                 val explicitInitialType = when {
                     obj.has("initial_type") && !obj.isNull("initial_type") -> obj.optString("initial_type").trim()
                     obj.has("initialType") && !obj.isNull("initialType") -> obj.optString("initialType").trim()
@@ -247,10 +195,10 @@ object MzdBackupSerializer {
                 }
 
                 val determinedInitialType = if (explicitInitialType.isNotBlank()) {
-                    // الالتزام التام بالقيمة الصريحة المحفوظة من المستخدم وعدم إعادة اشتقاقها
+                    
                     explicitInitialType
                 } else {
-                    // التراجع للاشتقاق فقط للنسخ القديمة التي لا تحتوي على الحقل
+                    
                     val txTypesForCust = customerIdToTxTypes[cId]
                     if (txTypesForCust != null && txTypesForCust.isNotEmpty()) {
                         if (txTypesForCust.contains(TransactionType.OWED_TO_THEM.value) || txTypesForCust.contains(TransactionType.PAYMENT_TO_THEM.value)) {
@@ -278,14 +226,8 @@ object MzdBackupSerializer {
         return result
     }
 
-    /**
-     * [تحليل واستعادة معاملات الحبايب والعملات الأجنبية - parseHabayebTransactions]:
-     * يستخرج قيود ديون الحبايب بدقة ويضبط أسعار الصرف والمكافئات المالية بدقة [BigDecimal].
-     *
-     * @param root كائن الـ JSON الجذري.
-     * @param defaultCurrency رمز العملة الافتراضية.
-     * @return قائمة المعاملات المستعادة.
-     */
+    
+    /** يحلل المعاملات ويثبت المبالغ وأسعار الصرف كقيم عشرية دقيقة. */
     fun parseHabayebTransactions(root: JSONObject, defaultCurrency: String): List<HabayebTransaction> {
         val list = mutableListOf<HabayebTransaction>()
         val jsonHabayebObj = root.optJSONObject("habayeb_debts")
@@ -297,8 +239,10 @@ object MzdBackupSerializer {
         if (txArr != null) {
             for (i in 0 until txArr.length()) {
                 val obj = txArr.getJSONObject(i)
+                // تثبيت المبلغ كنص عشري يمنع أي فقد دقة ناتج عن تمثيل الفاصلة العائمة.
                 val amount = getBigDecimal(obj, "amount")
                 val foreignAmount = getBigDecimal(obj, "foreign_amount", getBigDecimal(obj, "foreignAmount", "0").toPlainString())
+                // تثبيت سعر الصرف بالطريقة العشرية نفسها لضمان اتساق التحويل المحاسبي.
                 val exchangeRate = getBigDecimal(obj, "exchange_rate", getBigDecimal(obj, "exchangeRate", "1").toPlainString())
                 val equivalentAmount = getBigDecimal(obj, "equivalent_amount", getBigDecimal(obj, "equivalentAmount", amount.toPlainString()).toPlainString())
                 val isForeign = obj.optBoolean("is_foreign", obj.optBoolean("isForeign", false))

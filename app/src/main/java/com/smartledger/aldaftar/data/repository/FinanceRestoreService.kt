@@ -1,31 +1,30 @@
 /**
  * =====================================================================
- * ملف: خدمة استعادة البيانات المالية الشاملة (FinanceRestoreService.kt)
+ * ملف: خدمة استعادة البيانات المالية الشاملة (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
  * تمثل هذه الخدمة المحرك المسؤول عن استعادة قاعدة البيانات المالية وإعادة بنائها
- * من النسخ الاحتياطية المشفرة أو ملفات الـ JSON، مع تطبيق أعلى معايير الأمان والتكامل المرجعي.
+ * من النسخ الاحتياطية المشفرة أو ملفات الـ ، مع تطبيق أعلى معايير الأمان والتكامل المرجعي.
  * 
- * [المسؤوليات المعمارية ونمط الاستعادة على مرحلتين (Two-Phase Restoration)]:
- * 1. مرحلة الفحص والتحقق في الذاكرة (In-Memory Validation Phase):
+ * [المسؤوليات المعمارية ونمط الاستعادة على مرحلتين (- )]:
+ * 1. مرحلة الفحص والتحقق في الذاكرة (-  ):
  *    - قراءة ملف النسخة الاحتياطية وتحليله وتدقيق سلامة جميع الكيانات والمصفوفات قبل لمس قاعدة البيانات.
- *    - الحفاظ الصارم على أمان الجهاز المحلي (عدم استبدال الـ Passcode أو البصمة أو معرف الجهاز الفريد ببيانات النسخة المستعادة).
- *    - تطبيق الدقة المصرفية [BigDecimal] وتوحيد مقياس التقريب (Scale = 4, HALF_EVEN) لجميع المبالغ وأسعار الصرف.
+ *    - الحفاظ الصارم على أمان الجهاز المحلي (عدم استبدال الـ  أو البصمة أو معرف الجهاز الفريد ببيانات النسخة المستعادة).
+ *    - تطبيق الدقة المصرفية [] وتوحيد مقياس التقريب ( = 4, _) لجميع المبالغ وأسعار الصرف.
  *    - التحقق من سلامة المفاتيح الأجنبية: اكتشاف المعاملات المعلقة التي لا ينتمي لها عميل وإنشاء بطاقة عميل بديلة تلقائياً لمنع انهيار التكامل المرجعي.
- * 2. مرحلة المعاملة الذرية الشاملة (Atomic Master Transaction Phase):
- *    - تنفيذ عمليتي المسح الشامل وإعادة الإدراج داخل كتلة ذرية واحدة [database.withTransaction].
- *    - التراجع التلقائي الكامل (Rollback) في حال حدوث أي استثناء أثناء الكتابة، مما يمنع تلف البيانات أو ترك قاعدة البيانات في حالة غير متناسقة.
+ * 2. مرحلة المعاملة الذرية الشاملة (   ):
+ *    - تنفيذ عمليتي المسح الشامل وإعادة الإدراج داخل كتلة ذرية واحدة [.].
+ *    - التراجع التلقائي الكامل () في حال حدوث أي استثناء أثناء الكتابة، مما يمنع تلف البيانات أو ترك قاعدة البيانات في حالة غير متناسقة.
  * 3. حماية الخصوصية:
- *    - حظر تام لطباعة أي مبالغ أو محتوى مالي في سجلات التشخيص (Logs).
+ *    - حظر تام لطباعة أي مبالغ أو محتوى مالي في سجلات التشخيص ().
  */
 package com.smartledger.aldaftar.data.repository
 
 // ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والسجلات ومعاملات Room والكيانات والعمليات الحسابية
+// استيراد حزم سياق أندرويد والسجلات ومعاملات قاعدة البيانات والكيانات والعمليات الحسابية
 // ---------------------------------------------------------------------
 import android.content.Context
-import android.util.Log
 import androidx.room.withTransaction
 import com.smartledger.aldaftar.data.backup.BackupConstants
 import com.smartledger.aldaftar.data.local.AppDatabase
@@ -48,26 +47,26 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /**
- * [فئة نتيجة الاستعادة - FinanceRestoreResult]:
- * تغلف إعدادات التطبيق المستعادة ومؤشر ما إذا كانت النسخة الاحتياطية من الإصدارات القديمة (Legacy).
+ * [فئة نتيجة الاستعادة - ]:
+ * تغلف إعدادات التطبيق المستعادة ومؤشر ما إذا كانت النسخة الاحتياطية من الإصدارات القديمة ().
  *
- * @property settings إعدادات التطبيق المحدثة بعد دمج التفضيلات الأمنية المحلية.
- * @property isLegacy مؤشر ما إذا كانت النسخة تتبع هيكل البيانات القديم.
+ * @  إعدادات التطبيق المحدثة بعد دمج التفضيلات الأمنية المحلية.
+ * @  مؤشر ما إذا كانت النسخة تتبع هيكل البيانات القديم.
  */
 data class FinanceRestoreResult(val settings: AppSettings, val isLegacy: Boolean)
 
 /**
- * [وعاء البيانات المحققة للاستعادة - ValidatedRestoreData]:
+ * [وعاء البيانات المحققة للاستعادة - ]:
  * يحتوي على كافة الكائنات المفحوصة والمطابقة في الذاكرة قبل بدء معاملة الكتابة في قاعدة البيانات.
  *
- * @property restoredSettings إعدادات التطبيق بعد الفحص والدمج.
- * @property restoredCommitments قائمة الالتزامات المالية الثابتة بعد ضبط الدقة الحسابية.
- * @property restoredTransactions قائمة قيود دفتر اليومية العام بعد تطبيع الأرقام.
- * @property customCategories قائمة التصنيفات المخصصة المستعادة.
- * @property deletedItems قائمة عناصر سلة المهملات المستعادة.
- * @property customerData قائمة بطاقات عملاء الحبايب والروابط المرجعية.
- * @property habayebTransactions قائمة معاملات ديون الحبايب المحققة والمربوطة بالعملاء.
- * @property isLegacy هل النسخة من البنية القديمة.
+ * @  إعدادات التطبيق بعد الفحص والدمج.
+ * @  قائمة الالتزامات المالية الثابتة بعد ضبط الدقة الحسابية.
+ * @  قائمة قيود دفتر اليومية العام بعد تطبيع الأرقام.
+ * @  قائمة التصنيفات المخصصة المستعادة.
+ * @  قائمة عناصر سلة المهملات المستعادة.
+ * @  قائمة بطاقات عملاء الحبايب والروابط المرجعية.
+ * @  قائمة معاملات ديون الحبايب المحققة والمربوطة بالعملاء.
+ * @  هل النسخة من البنية القديمة.
  */
 data class ValidatedRestoreData(
     val restoredSettings: AppSettings,
@@ -81,12 +80,12 @@ data class ValidatedRestoreData(
 )
 
 /**
- * [خدمة استعادة البيانات المالية - FinanceRestoreService]:
+ * [خدمة استعادة البيانات المالية - ]:
  * مسؤولة عن تفكيك وتحليل ملفات النسخ وإعادة بناء قاعدة البيانات بالكامل بصورة ذرية وآمنة.
  *
- * @param database كائن قاعدة بيانات التطبيق [AppDatabase].
- * @param context سياق التطبيق للوصول لمترجمات السلاسل النصية والموارد.
- * @param preferenceManager مدير التفضيلات المشفرة لاستعادة حالات التثبيت والترتيب.
+ * @  كائن قاعدة بيانات التطبيق [].
+ * @  سياق التطبيق للوصول لمترجمات السلاسل النصية والموارد.
+ * @  مدير التفضيلات المشفرة لاستعادة حالات التثبيت والترتيب.
  */
 class FinanceRestoreService(
     private val database: AppDatabase,
@@ -98,10 +97,10 @@ class FinanceRestoreService(
      * [الكائن المرافق للثوابت والمقاييس المصرفية]:
      */
     companion object {
-        /** وسم السجلات التشخيصية */
-        private const val TAG = "FinanceRestoreService"
         /** المقياس العشري المعياري للعمليات المحاسبية */
         private const val FINANCIAL_SCALE = BackupConstants.FINANCIAL_SCALE
+        /** الحد الأعلى لحجم نص النسخة قبل تحليله في الذاكرة */
+        private const val MAX_RESTORE_BYTES = 64L * 1024L * 1024L
         /** نمط التقريب المصرفي المعتمد */
         private val FINANCIAL_ROUNDING = RoundingMode.HALF_EVEN
 
@@ -113,7 +112,7 @@ class FinanceRestoreService(
     }
 
     // -----------------------------------------------------------------
-    // مراجع كائنات الوصول للبيانات (DAOs) المستخدمة في الاستعادة
+    // مراجع كائنات الوصول للبيانات المستخدمة في الاستعادة
     // -----------------------------------------------------------------
     private val settingsDao = database.settingsDao()
     private val commitmentDao = database.commitmentDao()
@@ -123,7 +122,7 @@ class FinanceRestoreService(
     private val habayebDao = database.habayebDao()
 
     /**
-     * [تصفية وحذف كافة البيانات المحاسبية - deleteAllData]:
+     * [تصفية وحذف كافة البيانات المحاسبية - ]:
      * تنفذ إفراغاً كاملاً وشاملاً لجميع جداول قاعدة البيانات داخل معاملة ذرية مع إعادة ضبط الإعدادات.
      */
     suspend fun deleteAllData(): Unit = withContext(Dispatchers.IO) {
@@ -137,21 +136,19 @@ class FinanceRestoreService(
                 habayebDao.clearAllTransactions()
                 settingsDao.insertOrUpdateSettings(AppSettings(isFirstLaunch = false))
             }
-            Log.d(TAG, "تم تفريغ كافة الجداول المحاسبية بنجاح داخل معاملة ذرية.")
         } catch (e: Exception) {
-            Log.e(TAG, "خطأ أثناء تصفية البيانات: ${e.javaClass.simpleName}", e)
             throw e
         }
     }
 
     /**
-     * [التحليل والتحقق من صحة البيانات في الذاكرة - validateAndParseRestoreData]:
-     * تفحص بنية الـ JSON وتدمج الإعدادات وتضبط المقاييس المحاسبية وتتحقق من سلامة التكامل المرجعي.
+     * [التحليل والتحقق من صحة البيانات في الذاكرة - ]:
+     * تفحص بنية الـ  وتدمج الإعدادات وتضبط المقاييس المحاسبية وتتحقق من سلامة التكامل المرجعي.
      *
-     * @param root كائن JSON الرئيسي للنسخة الاحتياطية.
-     * @param rawJsonString النص الكامل للنسخة الاحتياطية.
-     * @param currentLocalSettings الإعدادات المحلية الحالية للحفاظ على تفضيلات الأمان للجهاز.
-     * @return كائن [ValidatedRestoreData] الجاهز للإدراج في قاعدة البيانات.
+     * @  كائن  الرئيسي للنسخة الاحتياطية.
+     * @  النص الكامل للنسخة الاحتياطية.
+     * @  الإعدادات المحلية الحالية للحفاظ على تفضيلات الأمان للجهاز.
+     * @ كائن [] الجاهز للإدراج في قاعدة البيانات.
      */
     suspend fun validateAndParseRestoreData(
         root: JSONObject,
@@ -250,15 +247,24 @@ class FinanceRestoreService(
     }
 
     /**
-     * [تنفيذ الاستعادة الشاملة للنسخة الاحتياطية - executeMasterRestore]:
+     * [تنفيذ الاستعادة الشاملة للنسخة الاحتياطية - ]:
      * تنفذ التحليل المسبق ثم تطبق عملية الاستبدال وإعادة البناء الذرية الشاملة داخل قاعدة البيانات.
      *
-     * @param rawJsonString النص الكامل لبيانات النسخة الاحتياطية بتنسيق JSON.
-     * @return [FinanceRestoreResult] يحتوي على نتيجة وإعدادات الاستعادة.
+     * @  النص الكامل لبيانات النسخة الاحتياطية بتنسيق .
+     * @ [] يحتوي على نتيجة وإعدادات الاستعادة.
      */
     suspend fun executeMasterRestore(rawJsonString: String): FinanceRestoreResult = withContext(Dispatchers.IO) {
+        val rawBytes = rawJsonString.toByteArray(Charsets.UTF_8)
+        try {
+            if (rawBytes.size > MAX_RESTORE_BYTES) {
+                throw IOException("تجاوزت النسخة الاحتياطية الحد الحجمي المسموح")
+            }
+        } finally {
+            rawBytes.fill(0)
+        }
+
         // 0. التدقيق الاستباقي الصارم للبنية وسلامة التشفير قبل لمس قاعدة البيانات
-        val preValidation = BackupPayloadValidator.validateBackupPayload(rawJsonString, verifyHashStrictly = false)
+        val preValidation = BackupPayloadValidator.validateBackupPayload(rawJsonString, verifyHashStrictly = true)
         if (preValidation is BackupValidationResult.Invalid) {
             throw IOException("فشل تدقيق سلامة النسخة الاحتياطية (${preValidation.errorCode}): ${preValidation.reason}", preValidation.cause)
         }
@@ -269,7 +275,7 @@ class FinanceRestoreService(
         // 1. مرحلة التحليل والتحقق في الذاكرة
         val validatedData = validateAndParseRestoreData(root, rawJsonString, currentLocalSettings)
 
-        // 2. المعاملة الذرية الشاملة لقاعدة البيانات (Atomic Master Transaction)
+        // ٢. المعاملة الذرية الشاملة لقاعدة البيانات
         database.withTransaction {
             // أ. التصفية المتزامنة لكافة الجداول داخل المعاملة
             transactionDao.clearAllTransactions()
@@ -347,7 +353,6 @@ class FinanceRestoreService(
             }
         }
 
-        Log.d(TAG, "اكتملت الاستعادة الشاملة للبيانات بنجاح. (Legacy: ${validatedData.isLegacy})")
         FinanceRestoreResult(validatedData.restoredSettings, validatedData.isLegacy)
     }
 }

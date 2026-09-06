@@ -16,3 +16,12 @@
 local.properties
 .env
 debug.keystore
+
+# يمنع تسريب ملفات التوقيع والشهادات السرية من المستودع.
+*.jks
+*.p12
+*.pem
+*.p8
+*.keystore
+app/release/
+

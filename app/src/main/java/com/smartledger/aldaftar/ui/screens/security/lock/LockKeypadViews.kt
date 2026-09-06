@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 /**
- * Standard PIN Keypad Digit / Action Button with custom styling and haptics support.
+ * يرسم زر رقم أو إجراء في لوحة القفل بمساحة لمس ثابتة ومظهر موحد.
+ * تعتمد ألوانه على رموز الثيم المركزية حتى يبقى المظهر متسقاً في جميع أوضاع العرض.
  */
 @Composable
 fun KeypadButton(
@@ -70,7 +71,8 @@ fun KeypadButton(
 }
 
 /**
- * Biometric / Action Icon Button on Keypad.
+ * يرسم زر المصادقة الحيوية أو الإجراء الأمني المصاحب للوحة الأرقام.
+ * يحافظ على مساحة لمس ثابتة ويستخدم رموز الأمان المركزية.
  */
 @Composable
 fun KeypadIconButton(
@@ -109,7 +111,7 @@ fun KeypadIconButton(
 }
 
 /**
- * Single Row of 3 Keypad Digit Buttons.
+ * يرسم صفاً ثابتاً من أزرار لوحة الأرقام ويمرر الرقم دون تعديل إلى طبقة القفل.
  */
 @Composable
 fun KeypadRow(

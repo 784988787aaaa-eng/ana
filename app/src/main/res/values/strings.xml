@@ -122,6 +122,8 @@
     <string name="sec_btn_activate">تفعيل القفل وحفظ الإعدادات</string>
     <string name="sec_card_desc_warning">يتم تشفير بياناتك محلياً بأمان. عبارة الأمان هي وسيلتك المعتمدة لاستعادة الوصول عند نسيان رمز المرور.</string>
     <string name="sec_toast_copied">تم نسخ عبارة الأمان إلى الحافظة 📋</string>
+    <string name="sec_visibility_show_code">إظهار رمز الدخول</string>
+    <string name="sec_visibility_hide_code">إخفاء رمز الدخول</string>
     <string name="sec_status_active">الحماية نشطة</string>
     <string name="sec_status_inactive">حماية الدفتر غير مفعلة</string>
     <string name="sec_desc_active">الدفتر مؤمّن برمز مرور وتشفير محلي</string>
@@ -582,6 +584,13 @@
     <string name="settings_backup_portable_desc">تصدير أو استيراد ملف النسخة الاحتياطية</string>
     <string name="settings_export_mzd">تصدير نسخة احتياطية</string>
     <string name="settings_import_mzd">استيراد نسخة احتياطية</string>
+    <string name="settings_discover_legacy_backups">اكتشاف النسخ القديمة</string>
+    <string name="backup_legacy_candidates_title">النسخ المحلية المكتشفة</string>
+    <string name="backup_legacy_candidates_desc">اختر نسخة من المجلد الذي حددته. سيتم فحص سلامتها قبل الاستعادة ولن تتغير البيانات الحالية قبل تأكيد الاستبدال.</string>
+    <string name="backup_legacy_candidates_empty">لم يتم العثور على نسخة محلية مدعومة في المجلد المحدد.</string>
+    <string name="backup_select_file">اختيار</string>
+    <string name="backup_file_size_bytes">الحجم: %1$d بايت</string>
+    <string name="backup_file_size_unknown">الحجم غير معروف</string>
     <string name="settings_backup_base64_title">الرمز المشفر</string>
     <string name="settings_backup_base64_desc">رمز نصي مشفر يحتوي على كافة السجلات</string>
     <string name="settings_copy_encrypted">نسخ الرمز المشفر</string>

@@ -1,18 +1,18 @@
 /**
  * =====================================================================
- * ملف: محرك جداول إكسل لكشف حساب العميل الفردي (SingleCustomerExcelEngine.kt)
+ * ملف: محرك جداول إكسل لكشف حساب العميل الفردي (.)
  * =====================================================================
  * 
  * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المحرك المسؤول عن إنشاء كشف حساب مالي تفصيلي بصيغة OpenXML (.xlsx)
- * لعميل أو مورد محدد، مع دعم كامل للرصيد التراكمي المستمر (Running Balance)،
+ * يمثل هذا الكائن المحرك المسؤول عن إنشاء كشف حساب مالي تفصيلي بصيغة  (.)
+ * لعميل أو مورد محدد، مع دعم كامل للرصيد التراكمي المستمر ( )،
  * وعزل العملات الأجنبية غير المحولة، وتطبيق القواعد المحاسبية لجهة الحساب (لنا/له).
  * 
  * [المسؤوليات المعمارية والتقنية]:
- * 1. التكيف المحاسبي مع طبيعة الحساب (Account Nature Adaptation):
+ * 1. التكيف المحاسبي مع طبيعة الحساب (  ):
  *    - إذا كان الحساب "له" (مورد): يعكس مسميات الأعمدة (مدين/دائن) لتناسب التزامات المنشأة.
- * 2. الحساب التراكمي الآني للأرصدة (Running Balance Calculation):
- *    - تحديث الرصيد سطراً بسطر بدقة [BigDecimal] لمنع تراكم أخطاء الفاصلة العائمة.
+ * 2. الحساب التراكمي الآني للأرصدة (  ):
+ *    - تحديث الرصيد سطراً بسطر بدقة [] لمنع تراكم أخطاء الفاصلة العائمة.
  * 3. توضيح أسعار الصرف والمعاملات الأجنبية:
  *    - إضافة نصوص وصفية دقيقة للعملة الأصلية وسعر التحويل إن وجد.
  * 4. توليد خلايا وجداول وبطاقات إجمالية منسقة بالكامل:
@@ -24,7 +24,6 @@ package com.smartledger.aldaftar.data.serialization.excel
 // استيراد حزم سياق أندرويد والسجلات والكيانات والنماذج والحسابات والمساعدات
 // ---------------------------------------------------------------------
 import android.content.Context
-import android.util.Log
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
@@ -40,13 +39,12 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * [الكائن الأحادي لمحرك إكسل كشف الحساب الفردي - SingleCustomerExcelEngine]:
- * يولد ملف .xlsx مصمم هندسياً لعرض حركة ورصيد حساب شخص أو جهة واحدة.
+ * [الكائن الأحادي لمحرك إكسل كشف الحساب الفردي - ]:
+ * يولد ملف . مصمم هندسياً لعرض حركة ورصيد حساب شخص أو جهة واحدة.
  */
 object SingleCustomerExcelEngine {
 
     /** وسم السجلات التشخيصية */
-    private const val TAG = "SingleCustomerExcel"
     /** رمز اللغة العربية */
     private const val LOCALE_AR = "ar"
     /** رمز اللغة الإنجليزية */
@@ -62,15 +60,9 @@ object SingleCustomerExcelEngine {
     private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", Locale(LOCALE_AR)) }
 
     /**
-     * [توليد كشف حساب إكسل للعميل - generate]:
+     * [توليد كشف حساب إكسل للعميل - ]:
      * يبني مصنف عمل إكسل كامل يضم بيانات المنشأة، بطاقة العميل، جدول الحركات، والرصيد النهائي.
      *
-     * @param context سياق التطبيق لجلب النصوص والموارد.
-     * @param customer بيانات بطاقة العميل المستهدف.
-     * @param transactions قائمة معاملات العميل.
-     * @param currencySymbol رمز العملة الأساسية للتطبيق.
-     * @param exchangeRatesJson مصفوفة أسعار الصرف المخزنة (احتياطياً).
-     * @return ملف הـ XLSX المتولد في التخزين المؤقت، أو null عند الفشل.
      */
     fun generate(
         context: Context,
@@ -99,24 +91,24 @@ object SingleCustomerExcelEngine {
             val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol)
 
             val columns = listOf(
-                XlsxOpenXmlBuilder.SheetColumn(1, 1, 6.0),   // م (Sequence)
-                XlsxOpenXmlBuilder.SheetColumn(2, 2, 16.0),  // التاريخ (Date)
-                XlsxOpenXmlBuilder.SheetColumn(3, 3, 44.0),  // البيان والتفاصيل (Desc)
-                XlsxOpenXmlBuilder.SheetColumn(4, 4, 16.0),  // مدين (Debit)
-                XlsxOpenXmlBuilder.SheetColumn(5, 5, 16.0),  // دائن (Credit)
-                XlsxOpenXmlBuilder.SheetColumn(6, 6, 18.0)   // الرصيد (Running balance)
+                XlsxOpenXmlBuilder.SheetColumn(1, 1, 6.0),   // م ()
+                XlsxOpenXmlBuilder.SheetColumn(2, 2, 16.0),  // التاريخ ()
+                XlsxOpenXmlBuilder.SheetColumn(3, 3, 44.0),  // البيان والتفاصيل ()
+                XlsxOpenXmlBuilder.SheetColumn(4, 4, 16.0),  // مدين ()
+                XlsxOpenXmlBuilder.SheetColumn(5, 5, 16.0),  // دائن ()
+                XlsxOpenXmlBuilder.SheetColumn(6, 6, 18.0)   // الرصيد ( )
             )
 
             val rowsList = mutableListOf<XlsxOpenXmlBuilder.Row>()
             val mergesList = mutableListOf<XlsxOpenXmlBuilder.MergeRange>()
 
-            // 1. Header Row
+            // 1.  
             val rTitle = XlsxOpenXmlBuilder.Row(1, ht = 32)
             rTitle.cell(0, context.getString(R.string.excel_single_title), 15)
             rowsList.add(rTitle)
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A1:F1"))
 
-            // 2. Biz Profile
+            // 2.  
             val rBiz = XlsxOpenXmlBuilder.Row(2, ht = 22)
             rBiz.cell(0, bizHeader.displayedName + " - " + bizHeader.displayedDesc, 16)
             rBiz.cell(3, context.getString(R.string.excel_date_format, docDateText), 17)
@@ -124,7 +116,7 @@ object SingleCustomerExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A2:C2"))
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("D2:F2"))
 
-            // 3. Sub Biz / Meta
+            // 3.   / 
             val rBizSub = XlsxOpenXmlBuilder.Row(3, ht = 22)
             rBizSub.cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16)
             rBizSub.cell(3, "", 17)
@@ -132,10 +124,10 @@ object SingleCustomerExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A3:C3"))
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("D3:F3"))
 
-            // Spacer
+            // 
             rowsList.add(XlsxOpenXmlBuilder.Row(4, ht = 12))
 
-            // 4. Customer Card Row
+            // 4.   
             val rCard = XlsxOpenXmlBuilder.Row(5, ht = 28)
             val phoneText = customer.phone.ifEmpty { context.getString(R.string.csv_not_registered) }
             val cardText = context.getString(R.string.excel_account_card_format, customer.name, phoneText, accountTypeDesc)
@@ -143,10 +135,10 @@ object SingleCustomerExcelEngine {
             rowsList.add(rCard)
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A5:F5"))
 
-            // Spacer
+            // 
             rowsList.add(XlsxOpenXmlBuilder.Row(6, ht = 12))
 
-            // 5. Table Headers Row
+            // 5.   
             val rTableHeader = XlsxOpenXmlBuilder.Row(7, ht = 28)
             rTableHeader.cell(0, context.getString(R.string.excel_col_seq), 1)
             rTableHeader.cell(1, context.getString(R.string.pdf_col_date), 1)
@@ -156,7 +148,7 @@ object SingleCustomerExcelEngine {
             rTableHeader.cell(5, context.getString(R.string.pdf_col_remaining) + " ($currencySymbol)", 1)
             rowsList.add(rTableHeader)
 
-            // 6. Transactions loop
+            // 6.  
             var rIdx = 8
             val sortedTxs = summary.sortedProcessedTxs
             if (sortedTxs.isEmpty()) {
@@ -249,7 +241,7 @@ object SingleCustomerExcelEngine {
                     rIdx++
                 }
 
-                // Independent Totals
+                //  
                 val rTotals = XlsxOpenXmlBuilder.Row(rIdx, ht = 28)
                 rTotals.cell(0, context.getString(R.string.excel_totals_icon, context.getString(R.string.pdf_summary_independent_totals)), 11)
                 rTotals.cell(3, summary.totalDebts, 12)
@@ -260,11 +252,11 @@ object SingleCustomerExcelEngine {
                 rIdx++
             }
 
-            // Spacer
+            // 
             rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 12))
             rIdx++
 
-            // Net balance Banner
+            //   
             val rawPositive = summary.calculatedNetDebt.compareTo(BigDecimal.ZERO) > 0
             val rawNegative = summary.calculatedNetDebt.compareTo(BigDecimal.ZERO) < 0
             val isOwedToThemStatus = if (isOwedToThemAccount) rawPositive else rawNegative
@@ -284,7 +276,7 @@ object SingleCustomerExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:F$rIdx"))
             rIdx++
 
-            // Unconverted Foreign summary
+            //   
             if (summary.uncalculatedForeignSums.isNotEmpty()) {
                 rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 12))
                 rIdx++
@@ -310,7 +302,7 @@ object SingleCustomerExcelEngine {
                 }
             }
 
-            // Certified Signature
+            //  
             rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 16))
             rIdx++
 
@@ -330,7 +322,7 @@ object SingleCustomerExcelEngine {
             )
             return file
         } catch (e: Exception) {
-            Log.e(TAG, "Error writing XLSX statement file", e)
+            // معالجة الفشل داخلياً دون تسجيل تفاصيل التنفيذ أو الاستثناءات الحساسة.
             return null
         }
     }

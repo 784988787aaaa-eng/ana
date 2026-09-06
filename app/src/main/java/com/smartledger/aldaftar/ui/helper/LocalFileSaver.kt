@@ -11,26 +11,22 @@ import com.smartledger.aldaftar.R
 import java.io.File
 
 /**
- * مساعد حفظ الملفات المصدرة في مجلد التنزيلات العام (Local File Saver to Public Downloads)
- *
- * المسؤوليات والمعايير الأمنية:
- * 1. التوافق التام مع التخزين المحدود (Scoped Storage): استخدام واجهة MediaStore على Android 10+ (API 29+) مع إدارة علم IS_PENDING لمنع قراءة الملفات غير المكتملة.
- * 2. العزل الآمن: نسخ الملفات المؤقتة من cacheDir إلى مجلد التنزيلات العام بطريقة حتمية وإغلاق مسارات التدفق بأمان (use blocks).
- * 3. عدم تسريب مسارات النظام الداخلية للمستخدمين أو التطبيقات الأخرى.
+ * مساعد حفظ الملفات المصدرة في مساحة التنزيل العامة أو مساحة التطبيق الآمنة.
+ * يستخدم التخزين المحدود ومسار النظام المخصص للملفات دون طلب صلاحيات تخزين عامة.
  */
 object LocalFileSaver {
     private const val TAG = "LocalFileSaver"
 
     /**
-     * Saves a cached file to the device's public Downloads directory.
-     * Uses MediaStore API on Android 10+ (API 29+) to avoid requiring runtime storage permissions.
-     * Uses standard file copy on Android 9 and below.
+     * يحفظ الملف المؤقت في مجلد المستندات العام عبر واجهة النظام الحديثة،
+     * أو في مساحة التطبيق الآمنة على الإصدارات الأقدم.
+     * يمنع التنفيذ طلب صلاحيات التخزين العامة ويغلق جميع تيارات القراءة والكتابة.
      *
-     * @param context Android context
-     * @param cachedFile The temporary file in cacheDir
-     * @param mimeType MIME type of the file (e.g. "application/pdf", "text/csv")
-     * @param displayName Desired file name (e.g. "statement_John_123.pdf")
-     * @return Boolean indicating success
+     * @معامل السياق سياق التطبيق المستخدم للوصول إلى واجهة التخزين.
+     * @معامل الملف المؤقت الملف المؤقت المراد تصديره.
+     * @معامل نوع الملف نوع الملف المستخدم عند إنشاء السجل في مساحة التخزين.
+     * @معامل الاسم الظاهر اسم الملف الظاهر للمستخدم.
+     * @القيمة المعادة صحيح عند اكتمال الحفظ بنجاح، وخاطئ عند الفشل.
      */
     fun saveFileToPublicDownloads(
         context: Context,
@@ -51,7 +47,7 @@ object LocalFileSaver {
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
-                // Query existing file with the same name to overwrite or resolve uniqueness
+                // ينشئ النظام سجلاً جديداً للاسم المطلوب داخل مساحة المستندات.
                 val collectionUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
                 val uri = resolver.insert(collectionUri, contentValues)
 
@@ -71,8 +67,8 @@ object LocalFileSaver {
                     false
                 }
             } else {
-                // قبل Android 10 لا توجد MediaStore RELATIVE_PATH؛ نحفظ في مساحة التطبيق المعزولة
-                // دون طلب صلاحيات تخزين عامة، ثم يمكن للمستخدم مشاركة الملف عبر FileProvider أو SAF.
+                // قبل أندرويد 10 لا توجد واجهة التخزين النظامية المسار النسبي؛ نحفظ في مساحة التطبيق المعزولة
+                // دون طلب صلاحيات تخزين عامة، ثم يمكن للمستخدم مشاركة الملف عبر مزود الملفات أو واجهة اختيار الملفات.
                 val targetDir = File(
                     context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir,
                     "الدفتر الذكي"
@@ -85,13 +81,13 @@ object LocalFileSaver {
                 true
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to save file to public downloads", e)
+            Log.e(TAG, "فشل حفظ الملف في مساحة التنزيل العامة", e)
             false
         }
     }
 
     /**
-     * Helper to show toast messages upon saving.
+     * يعرض رسالة مختصرة للمستخدم بعد نجاح الحفظ أو فشله.
      */
     fun saveAndShowToast(
         context: Context,

@@ -21,6 +21,17 @@
         android:forceDarkAllowed="false"
         tools:targetApi="q"
         android:theme="@style/Theme.MyApplication">
+        <receiver
+            android:name=".AutoBackupReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

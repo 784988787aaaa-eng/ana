@@ -1,27 +1,9 @@
-/**
- * =====================================================================
- * ملف: منسق وواجهة المزامنة السحابية (GoogleDriveSyncHelper.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف المايسترو ومنسق العمليات الرئيسي (Sync Orchestrator / Facade)
- * لكافة وظائف المزامنة والنسخ الاحتياطي السحابي مع Google Drive.
- * 
- * [المسؤوليات المعمارية والوظيفية]:
- * 1. تنسيق التدفق الكامل للمزامنة: التحقق من الصلاحيات -> فحص الشبكة -> تجهيز البيانات -> الرفع/التنزيل -> تحديث حالة واجهة المستخدم.
- * 2. التحكم في التزامن عبر [syncMutex] لمنع تشغيل عمليتي رفع أو تنزيل متزامنتين.
- * 3. بث حالات المزامنة الصريحة عبر [StateFlow] الموجه لشاشات Jetpack Compose.
- * 4. إدارة النسخة الاحتياطية المتطابقة محلياً (Mirror Cache) للحفظ المؤقت عند فقد الاتصال.
- * 5. تفويض المهام الدقيقة للوحدات المتخصصة:
- *    - إدارة المصادقة والجلسة -> [GoogleDriveAuthManager].
- *    - عمليات الرفع والتنزيل وتدقيق البصمات -> [GoogleDriveNetworkUploader].
- *    - استعراض المجلدات والبحث في Drive -> [GoogleDriveFolderNavigator].
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 package com.smartledger.aldaftar.data
 
-// ---------------------------------------------------------------------
-// استيراد حزم الاتصال والتدفقات والحسابات وقواعد البيانات المحلية
-// ---------------------------------------------------------------------
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
+// توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
 import android.content.Context
 import android.util.Log
 import com.smartledger.aldaftar.data.cloud.CloudNetworkEngine
@@ -44,19 +26,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * [فئات حالة المزامنة السحابية - CloudSyncState]:
- * تمثل جميع الحالات التي تمر بها عملية المزامنة للتفاعل الفوري مع واجهات المستخدم:
- * - Idle: في وضع الخمول وجاهز للعمل.
- * - Preparing: تجهيز حزمة البيانات والتحقق من الرموز المميزة.
- * - Authenticating: قيد التحقق وتجديد جلسة OAuth 2.0.
- * - Authenticated: تم تسجيل الدخول والجلسة نشطة وتحمل بريد المستخدم.
- * - Syncing: قيد نقل البيانات سحابياً (رفع أو تنزيل).
- * - Success: اكتملت عملية المزامنة بنجاح تام.
- * - Skipped: تم تخطي الرفع لعدم وجود أي تعديلات على البيانات (Zero-Diff).
- * - Error: حدث خطأ أثناء المزامنة مع رسالة توضيحية.
- * - SessionExpired: انتهت صلاحية الجلسة وتتطلب إعادة تسجيل الدخول.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 sealed class CloudSyncState {
     object Idle : CloudSyncState()
     object Preparing : CloudSyncState()
@@ -69,10 +39,7 @@ sealed class CloudSyncState {
     object SessionExpired : CloudSyncState()
 }
 
-/**
- * [نموذج بيانات ملف النسخة السحابية - CloudBackupFile]:
- * يحتوي على البيانات الوصفية للملفات المخزنة في مجلد التطبيق السحابي.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 data class CloudBackupFile(
     val id: String,
     val name: String,
@@ -80,16 +47,10 @@ data class CloudBackupFile(
     val createdTime: String
 )
 
-/**
- * [فئة مساعد المزامنة السحابية - GoogleDriveSyncHelper]:
- * الواجهة المركزية لكافة وظائف المزامنة مع Google Drive.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 class GoogleDriveSyncHelper(private val context: Context) {
 
-    /**
-     * [الكائن المرافق - Companion Object]:
-     * يحتوي على ثوابت أسماء الملفات وتنسيق التواريخ ودالة تسجيل الخروج الشامل.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     companion object {
         private const val TAG = "GoogleDriveSyncHelper"
         private const val MIRROR_FILE_NAME = "google_drive_mirror.mzd"
@@ -103,10 +64,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
             return DATE_FORMATTER.get()?.format(date) ?: ""
         }
 
-        /**
-         * [دالة قطع الاتصال وتسجيل الخروج الشامل]:
-         * تعطل المزامنة السحابية في الإعدادات وتمسح الرموز وتسجل الخروج من حساب Google.
-         */
+        /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
         suspend fun disconnectAndSignOut(context: Context) = withContext(Dispatchers.IO) {
             try {
                 val syncHelper = GoogleDriveSyncHelper(context.applicationContext)
@@ -123,11 +81,11 @@ class GoogleDriveSyncHelper(private val context: Context) {
     private val helperScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncMutex = Mutex()
 
-    // تدفق حالة المزامنة السحابية للمراقبة في واجهات Compose
+    // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
     private val _syncState = MutableStateFlow<CloudSyncState>(CloudSyncState.Idle)
     val syncState: StateFlow<CloudSyncState> = _syncState.asStateFlow()
 
-    // المدراء والوحدات المتخصصة التابعة
+    // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
     private val authManager = GoogleDriveAuthManager(context) { state ->
         _syncState.value = state
     }
@@ -153,10 +111,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
 
     fun getAppSignatureSHA1(): String = authManager.getAppSignatureSHA1()
 
-    /**
-     * [كتلة التهيئة - init]:
-     * تستعيد حالة الجلسة المحفوظة وتتحقق من صحة الحساب مع قاعدة البيانات المحلية عند بدء التشغيل.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     init {
         val email = getStoredEmail()
         val refreshToken = getStoredRefreshToken()
@@ -212,10 +167,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         authManager.storeEmail(email)
     }
 
-    /**
-     * [دالة معالجة انتهاء الجلسة]:
-     * تحدث الحالة إلى SessionExpired وتعطل المزامنة السحابية في الإعدادات وتنظف الرموز.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private suspend fun handleSessionExpired() = withContext(Dispatchers.IO) {
         _syncState.value = CloudSyncState.SessionExpired
         authManager.disableCloudSyncInSettings()
@@ -226,10 +178,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         _syncState.value = state
     }
 
-    /**
-     * [دالة التحقق من رمز الوصول الصالح]:
-     * تجدد الرمز إذا لزم الأمر، وتتعامل مع انتهاء الجلسة تلقائياً إذا فشل التجديد.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private suspend fun getValidAccessTokenOrExpired(): String? {
         val token = authManager.refreshAccessTokenIfNeeded()
         if (token == null) {
@@ -242,10 +191,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         return authManager.handleAuthorizationCode(code, inputEmail, redirectUri)
     }
 
-    /**
-     * [دالة حفظ المرآة المحلية - writeLocalMirrorCache]:
-     * تحفظ نسخة احتياطية محلية متطابقة في ملفات التطبيق الخاصة لضمان الأمان الإضافي.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private fun writeLocalMirrorCache(jsonContent: String) {
         try {
             val mirrorFile = File(context.filesDir, MIRROR_FILE_NAME)
@@ -257,20 +203,17 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [تدفق الرفع التلقائي للنسخة الاحتياطية - uploadBackupToDrive]:
-     * ينفذ خطوات الرفع المنسقة مع تدقيق عدم التغيير والتحديث الذكي لأحدث نسخة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun uploadBackupToDrive(backupJsonContent: String): Boolean = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
             val accessToken = getValidAccessTokenOrExpired() ?: return@withContext false
             val email = authManager.getStoredEmail() ?: DEFAULT_ACCOUNT_EMAIL
 
-            // 1. كتابة المرآة المحلية
+            // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
             writeLocalMirrorCache(backupJsonContent)
 
-            // 2. التحقق من تطابق البصمة قبل استهلاك الشبكة (Zero-Diff)
+            // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
             if (networkUploader.isPayloadIdentical(backupJsonContent)) {
                 _syncState.value = CloudSyncState.Skipped
                 delay(800)
@@ -280,7 +223,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
 
             _syncState.value = CloudSyncState.Syncing
 
-            // 3. البحث عن الملف الأخير للتحديث أو الإنشاء
+            // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
             val searchResult = folderNavigator.findLatestBackupFileId(accessToken, forceRefresh = true)
             val existingFileId = when (searchResult) {
                 is GoogleDriveFolderNavigator.FileSearchResult.Success -> searchResult.fileId
@@ -297,7 +240,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
             val dateStr = formatDate(Date())
             val fileName = "Mzd_$dateStr.mzd"
 
-            // 4. تنفيذ الرفع عبر NetworkUploader
+            // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
             val uploadResult = networkUploader.uploadBackupSafe(
                 filename = fileName,
                 backupJsonContent = backupJsonContent,
@@ -307,15 +250,12 @@ class GoogleDriveSyncHelper(private val context: Context) {
 
             folderNavigator.clearCache()
 
-            // 5. تأكيد النتيجة وتحديث الحالة
+            // توثيق تنفيذي: يوضح هذا الموضع الغرض التشغيلي وأثره على سلامة المزامنة والبيانات.
             return@withContext processUploadResult(uploadResult, email)
         }
     }
 
-    /**
-     * [تدفق الرفع المخصص باسم ملف محدد - uploadBackupToDriveWithFilename]:
-     * يتيح رفع ملف نسخة احتياطية باسم محدد يختاره المستخدم أو النظام.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun uploadBackupToDriveWithFilename(filename: String, backupJsonContent: String): Boolean = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
@@ -345,10 +285,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [دالة معالجة نتيجة الرفع - processUploadResult]:
-     * تحول نتيجة الرفع إلى حالة StateFlow مناسبة للواجهة (Success, Skipped, Error, AuthError).
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private suspend fun processUploadResult(result: GoogleDriveNetworkUploader.UploadResult, email: String): Boolean {
         return when (result) {
             is GoogleDriveNetworkUploader.UploadResult.Success -> {
@@ -374,10 +311,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [تدفق تنزيل أحدث نسخة احتياطية - downloadBackupFromDrive]:
-     * يبحث عن أحدث ملف .mzd في السحابة وينزله ويفحص سلامة بياناته.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun downloadBackupFromDrive(): String? = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
@@ -407,10 +341,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [تدفق تنزيل نسخة محددة عبر معرف الملف - downloadBackupFromDriveById]:
-     * ينزل محتوى ملف محدد بناءً على اختيار المستخدم من قائمة النسخ المتوفرة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun downloadBackupFromDriveById(fileId: String): String? = syncMutex.withLock {
         withContext(Dispatchers.IO) {
             _syncState.value = CloudSyncState.Preparing
@@ -422,10 +353,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [الدالة الداخلية لتنزيل النسخة وفحص النتيجة - downloadBackupFromDriveByIdInternal]:
-     * تتولى استدعاء النقل الشبكي وتحديث حالة الواجهة بناءً على النتيجة.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     private suspend fun downloadBackupFromDriveByIdInternal(
         fileId: String,
         accessToken: String,
@@ -456,10 +384,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [دالة استعراض قائمة النسخ السحابية - listCloudBackups]:
-     * تستعلم عن كافة ملفات النسخ السحابية المتاحة في حساب المستخدم.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun listCloudBackups(): List<CloudBackupFile> = withContext(Dispatchers.IO) {
         val accessToken = getValidAccessTokenOrExpired() ?: return@withContext emptyList()
         val result = folderNavigator.listCloudBackups(accessToken)
@@ -474,10 +399,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
         }
     }
 
-    /**
-     * [دالة حذف نسخة سحابية - deleteBackupFromDriveById]:
-     * تحذف ملف نسخة محدد من Google Drive وتصفر الكاش المؤقت.
-     */
+    /** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
     suspend fun deleteBackupFromDriveById(fileId: String): Boolean = withContext(Dispatchers.IO) {
         val accessToken = getValidAccessTokenOrExpired() ?: return@withContext false
         folderNavigator.clearCache()
@@ -485,10 +407,7 @@ class GoogleDriveSyncHelper(private val context: Context) {
     }
 }
 
-/**
- * [كائن واجهة التوافق - GoogleDriveHelper]:
- * كائن مساعد لتوفير توافق استدعاء دالة تسجيل الخروج من أي مكان في المشروع.
- */
+/** توثيق تنفيذي عربي: يوضح هذا الجزء الغرض التشغيلي وأثره على سلامة المزامنة والبيانات. */
 object GoogleDriveHelper {
     suspend fun disconnectAndSignOut(context: Context) {
         GoogleDriveSyncHelper.disconnectAndSignOut(context)

@@ -1,23 +1,7 @@
+
 /**
- * =====================================================================
- * ملف: مدقق بنية ودلالات حزم النسخ الاحتياطي (BackupPayloadValidator.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يوفر هذا الكلاس خط الدفاع الأول والتحقق الاستباقي الصارم (Zero-Bit-Loss Validator)
- * لحزم وملفات النسخ الاحتياطي `.mzd` قبل أي مساس بقاعدة البيانات.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. التحقق الهيكلي والشكلي (Structural Validation):
- *    - فحص قراءة الحاوية ونصوص JSON وصحة الترويسة والبيانات الوصفية والإصدارات.
- *    - رفض أي حقول رقمية تالفة أو تحتوي على NaN أو Infinity أو أرقام مشوهة.
- * 2. التحقق من التكامل التشفيري (Cryptographic & Hash Integrity):
- *    - التحقق من مطابقة البصمة المنطقية الحتمية SHA-256 للملفات التي تحتوي على ترويسة حماية.
- * 3. التحقق الدلالي والمحاسبي (Semantic Validation):
- *    - فحص فرادة المعرفات (ID Uniqueness) ومنع السجلات المكررة.
- *    - تدقيق المفاتيح الأجنبية والروابط المرجعية (Foreign Key Consistency) بدقة مطلقة.
- *    - تدقيق صحة المبالغ المالية وعدم السماح بقيم مشوهة أو التحويل العشوائي للصفر.
- *    - تدقيق صحة مصفوفات أسعار الصرف واستخدام مقياس موحد للـ BigDecimal.
+ * مدقق حمولة النسخ؛ يرفض البنية التالفة والأرقام غير الصالحة والمعرفات المتكررة ويطبق تحقق التكامل قبل الاستعادة.
+ * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
  */
 package com.smartledger.aldaftar.data.serialization
 
@@ -34,9 +18,6 @@ import java.io.File
 import java.io.IOException
 import java.math.BigDecimal
 
-/**
- * [النتيجة المعيارية لفحص النسخة الاحتياطية - BackupValidationResult]:
- */
 sealed class BackupValidationResult {
     data class Valid(
         val payloadData: BackupPayloadData,
@@ -51,9 +32,6 @@ sealed class BackupValidationResult {
     ) : BackupValidationResult()
 }
 
-/**
- * [رموز أخطاء التحقق الصريحة - ValidationErrorCode]:
- */
 enum class ValidationErrorCode {
     EMPTY_OR_UNREADABLE_FILE,
     MALFORMED_JSON_SYNTAX,
@@ -67,18 +45,13 @@ enum class ValidationErrorCode {
     CORRUPTED_PAYLOAD_STRUCTURE
 }
 
-/**
- * [الكائن الأحادي لمدقق النسخ الاحتياطي - BackupPayloadValidator]:
- */
 object BackupPayloadValidator {
 
-    /** أرقام الإصدارات المدعومة */
     const val CURRENT_BACKUP_VERSION = "1.1.0"
     val SUPPORTED_VERSIONS = setOf("1.0.0", "1.0", "1.1.0", "1.1", "1.0-legacy", "legacy")
 
     /**
-     * [فحص دقة وصلاحية السلسلة العشرية - isValidDecimalString]:
-     * يرفض الحقول التالفة، والنصوص غير الرقمية، واللانهايات.
+     * يتحقق من أن القيمة النصية رقم عشري صالح وقابل للحساب.
      */
     fun isValidDecimalString(raw: Any?): Boolean {
         if (raw == null) return false
@@ -102,7 +75,7 @@ object BackupPayloadValidator {
     }
 
     /**
-     * [استخراج وتدقيق قيمة BigDecimal مع رمي خطأ عند التلف - parseStrictBigDecimal]:
+     * يقرأ الحقل المالي مع رفض القيم الفارغة والتالفة واللانهاية.
      */
     fun parseStrictBigDecimal(obj: JSONObject, key: String, isRequired: Boolean = true, defaultVal: String = "0"): BigDecimal {
         if (!obj.has(key) || obj.isNull(key)) {
@@ -135,8 +108,7 @@ object BackupPayloadValidator {
     }
 
     /**
-     * [التحقق الشامل من ملف أو نص النسخة الاحتياطية - validateBackupPayload]:
-     * ينفذ الفحص البنيوي، وفحص التجزئة، والفحص الدلالي المرجعي قبل لمس قاعدة البيانات.
+     * يفحص البنية والمعرفات والمفاتيح والأرقام والبصمة قبل السماح بالاستعادة.
      */
     fun validateBackupPayload(rawJsonString: String, verifyHashStrictly: Boolean = true): BackupValidationResult {
         if (rawJsonString.isBlank()) {
@@ -146,7 +118,6 @@ object BackupPayloadValidator {
             )
         }
 
-        // 1. الفحص البنيوي وقراءة الـ JSON
         val root = try {
             JSONObject(rawJsonString)
         } catch (e: Exception) {
@@ -166,7 +137,6 @@ object BackupPayloadValidator {
             root
         }
 
-        // التحقق من الإصدار
         var formatVersion = "legacy"
         var embeddedHash: String? = null
         if (root.has("metadata") && !root.isNull("metadata")) {
@@ -177,7 +147,6 @@ object BackupPayloadValidator {
             }
         }
 
-        // التحقق من الإعدادات
         val settingsObj = sourceObj.optJSONObject(BackupConstants.JSON_KEY_SETTINGS)
         val settings = if (settingsObj != null) {
             val currency = settingsObj.optString("currency_symbol", "").trim()
@@ -197,7 +166,6 @@ object BackupPayloadValidator {
             AppSettings()
         }
 
-        // 2. تفكيك والتحقق من الالتزامات المالية
         val commitments = mutableListOf<FixedCommitment>()
         val commitmentsArr = sourceObj.optJSONArray(BackupConstants.JSON_KEY_FIXED_COMMITMENTS)
             ?: sourceObj.optJSONArray(BackupConstants.JSON_KEY_COMMITMENTS)
@@ -244,7 +212,6 @@ object BackupPayloadValidator {
             }
         }
 
-        // 3. تفكيك والتحقق من قيود اليومية العامة (Transactions)
         val transactions = mutableListOf<TransactionDb>()
         val transactionIds = mutableSetOf<String>()
         val txArr = sourceObj.optJSONArray(BackupConstants.JSON_KEY_TRANSACTIONS)
@@ -297,7 +264,6 @@ object BackupPayloadValidator {
             }
         }
 
-        // 4. تفكيك والتحقق من عملاء الحبايب وديونهم (Habayeb Debts)
         val customerDataList = MzdBackupSerializer.parseHabayebCustomers(root)
         val customers = customerDataList.map { it.customer }
         val customerIds = mutableSetOf<String>()
@@ -316,7 +282,6 @@ object BackupPayloadValidator {
             }
         }
 
-        // تفكيك المعاملات والتحقق الدلالي من المبالغ والمفاتيح الأجنبية
         val habayebTxRaw = MzdBackupSerializer.parseHabayebTransactions(root, settings.currencySymbol)
         val habayebTxIds = mutableSetOf<String>()
         val habayebTransactions = mutableListOf<HabayebTransaction>()
@@ -349,7 +314,6 @@ object BackupPayloadValidator {
             data.categoryLink?.let { data.customer.id to it }
         }.toMap()
 
-        // استخراج الحسابات المثبتة إن وجدت
         val pinnedMap = mutableMapOf<String, Set<String>>()
         if (root.has(BackupConstants.JSON_KEY_PINNED_CUSTOMERS) && !root.isNull(BackupConstants.JSON_KEY_PINNED_CUSTOMERS)) {
             val pinnedObj = root.optJSONObject(BackupConstants.JSON_KEY_PINNED_CUSTOMERS)
@@ -383,8 +347,13 @@ object BackupPayloadValidator {
             closedCustomName = root.optString(BackupConstants.JSON_KEY_CLOSED_CUSTOM_NAME, null)
         )
 
-        // 5. التحقق التشفيري من البصمة المنطقية إن وجدت في النسخة الموثقة
-        if (verifyHashStrictly && embeddedHash != null && !isLegacyContainer) {
+        if (verifyHashStrictly && !isLegacyContainer && formatVersion in setOf("1.1.0", "1.1")) {
+            if (embeddedHash.isNullOrBlank()) {
+                return BackupValidationResult.Invalid(
+                    "بصمة التكامل المنطقية مفقودة من النسخة الحديثة",
+                    ValidationErrorCode.INTEGRITY_HASH_MISMATCH
+                )
+            }
             val isMatch = BackupIntegrityManager.verifyIntegrity(payloadData, embeddedHash)
             if (!isMatch) {
                 return BackupValidationResult.Invalid(
@@ -402,12 +371,18 @@ object BackupPayloadValidator {
     }
 
     /**
-     * [التحقق من ملف فيزيائي كامل - validateBackupFile]:
+     * يقرأ الملف بعد فحص حدوده ثم يمرره إلى التحقق الشامل.
      */
     fun validateBackupFile(file: File, verifyHashStrictly: Boolean = true): BackupValidationResult {
         if (!file.exists() || !file.isFile || file.length() == 0L) {
             return BackupValidationResult.Invalid(
                 "ملف النسخة الاحتياطية غير موجود أو فارغ: ${file.name}",
+                ValidationErrorCode.EMPTY_OR_UNREADABLE_FILE
+            )
+        }
+        if (file.length() > 64L * 1024L * 1024L) {
+            return BackupValidationResult.Invalid(
+                "حجم ملف النسخة الاحتياطية يتجاوز الحد المسموح",
                 ValidationErrorCode.EMPTY_OR_UNREADABLE_FILE
             )
         }

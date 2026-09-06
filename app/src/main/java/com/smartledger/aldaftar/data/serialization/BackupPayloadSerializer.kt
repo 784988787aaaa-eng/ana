@@ -1,29 +1,10 @@
+
 /**
- * =====================================================================
- * ملف: محرك تسلسل وتصدير حمولة النسخ الاحتياطي (BackupPayloadSerializer.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا المكون العصب المركزي لعمليات تحويل البيانات المالية وقواعد بيانات التطبيق
- * الثنائية إلى صيغة نصية مهيكلة ومعيارية JSON، والعكس. يعتمد على تقنية التدفق المتسلسل
- * المباشر (Streaming Serialization) عبر [android.util.JsonWriter] لضمان استهلاك ذاكرة ثابت
- * ومنع أخطاء نفاد الذاكرة (OutOfMemoryError) أثناء تصدير مئات الآلاف من السجلات.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. الحفاظ الصارم على الدقة المالية لـ [BigDecimal]:
- *    - تحويل الأرقام حصرياً عبر `toPlainString()` دون أي تحويل وسيط إلى أرقام عشرية عائمة (Float/Double).
- * 2. التوافق التاريخي العكسي (Backward Compatibility):
- *    - تثبيت مفاتيح بنية الـ JSON التاريخية لضمان استيراد النسخ القديمة دون أدنى تعارض.
- * 3. المعالجة الآمنة للتدفقات (Stream-Based I/O):
- *    - إتاحة التصدير المباشر إلى ملفات [File]، ومسارات خروج [OutputStream]، ومحررات نصوص [Writer].
- * 4. التدقيق الاستباقي للبنية والتحقق التشفيري:
- *    - فحص سلامة الحقول الإلزامية ورمز العملة وحساب التجزئة التشفيرية SHA-256 للبيانات.
+ * مسلسل حمولة النسخ؛ يصدّر ويستورد البيانات مع تمثيل عشري نصي يحافظ على القيمة المحاسبية دون تحويل عائم.
+ * التوثيق هنا يوضح أثر الدوال على الأمان والتوافق والدقة المالية دون تغيير واجهات الاستدعاء.
  */
 package com.smartledger.aldaftar.data.serialization
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والكيانات ومحولات الأرقام ومعالجة JSON والتزامن
-// ---------------------------------------------------------------------
 import android.content.Context
 import com.smartledger.aldaftar.data.local.BigDecimalConverter
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -40,22 +21,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.math.BigDecimal
 
-/**
- * [وعاء بيانات النسخ الاحتياطي الكامل - BackupPayloadData]:
- * يجمع كافة كيانات وتفضيلات وروابط النظام المالي في كائن موحد قبل التصدير.
- *
- * @property settings إعدادات التطبيق والعملة وأسعار الصرف.
- * @property commitments قائمة الالتزامات المالية الثابتة.
- * @property transactions قائمة قيود اليومية العامة.
- * @property habayebCustomers قائمة بطاقات عملاء الحبايب.
- * @property habayebTransactions قائمة معاملات ديون الحبايب والعملات الأجنبية.
- * @property deletedItems عناصر سلة المهملات.
- * @property customCategories التصنيفات المخصصة.
- * @property categoryLinks خريطة ربط العملاء بالتصنيفات.
- * @property pinnedCustomerIdsByCategory خريطة العملاء المثبتين حسب التصنيف.
- * @property categoryOrderList ترتيب التبويبات المخصص.
- * @property closedCustomName التسمية المخصصة للحسابات المقفلة.
- */
 data class BackupPayloadData(
     val settings: AppSettings,
     val commitments: List<FixedCommitment>,
@@ -70,15 +35,10 @@ data class BackupPayloadData(
     val closedCustomName: String? = null
 )
 
-/**
- * [الكائن الأحادي لمحرك تسلسل النسخ الاحتياطي - BackupPayloadSerializer]:
- * يدير عمليات التحويل الثنائي وكتابة واستيراد حزم النسخ الاحتياطي.
- */
 object BackupPayloadSerializer {
 
-    // =================================================================
-    // مفاتيح بنية الـ JSON المعيارية (ثابتة لحماية التوافق التاريخي)
-    // =================================================================
+    
+    
     private const val KEY_MIZAN_AL_DAR_DB = "mizan_al_dar_db"
     private const val KEY_HABAYEB_DEBTS_DB = "habayeb_debts_db"
     private const val KEY_METADATA = "metadata"
@@ -141,19 +101,20 @@ object BackupPayloadSerializer {
     private const val KEY_DISPLAY_ORDER = "display_order"
     private const val KEY_IS_SYSTEM_CLOSED = "is_system_closed"
 
-    /** حساب بصمة التجزئة SHA-256 للنصوص */
+    /**
+     * يحسب بصمة تجزئة تشفيرية ويحوّلها إلى تمثيل سداسي ثابت.
+     */
     fun calculateSha256Hash(input: String): String =
         BackupIntegrityManager.calculateSha256Hash(input)
 
-    /** حساب البصمة المنطقية الحتمية للحمولة */
+    /**
+     * يبني تمثيلاً حتمياً للحمولة ثم يحسب بصمتها دون تغيير القيم المالية.
+     */
     fun calculateIntegrityHash(data: BackupPayloadData): String =
         BackupIntegrityManager.calculateIntegrityHash(data)
 
     /**
-     * [التحقق من سلامة البيانات قبل التصدير - validatePayloadBeforeExport]:
-     * يفحص صحة الحقول الأساسية كرمز العملة قبل الشروع في التصدير.
-     *
-     * @param data بيانات حمولة النسخة الاحتياطية.
+     * يتحقق من الحد الأدنى لصحة الحمولة قبل التصدير.
      */
     fun validatePayloadBeforeExport(data: BackupPayloadData) {
         if (data.settings.currencySymbol.isBlank()) {
@@ -162,11 +123,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [التحقق من صحة بنية JSON الأساسية - validateJsonStructure]:
-     * يتأكد من سلامة نص الـ JSON ووجود الأقسام والجداول الرئيسية قبل المعالجة.
-     *
-     * @param rawJson النص الخام لملف النسخة.
-     * @return كائن [JSONObject] الجذري.
+     * يتحقق من أن النص يمثل جيسون وبنية نسخة معروفة قبل التحليل.
      */
     fun validateJsonStructure(rawJson: String): JSONObject {
         if (rawJson.isBlank()) {
@@ -192,11 +149,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [التصدير المتدفق المباشر إلى كاتب - exportBackupToWriter]:
-     * يكتب عناصر الحمولة تباعاً عبر [android.util.JsonWriter] دون تجميعها كنص ضخم في الذاكرة.
-     *
-     * @param data بيانات الحمولة الشاملة.
-     * @param writer كاتب الإدخال/الإخراج المستهدف.
+     * يكتب الحمولة تدريجياً إلى الكاتب مع تمثيل المبالغ كنصوص عشرية كاملة.
      */
     fun exportBackupToWriter(data: BackupPayloadData, writer: java.io.Writer) {
         validatePayloadBeforeExport(data)
@@ -204,7 +157,6 @@ object BackupPayloadSerializer {
         val jsonWriter = android.util.JsonWriter(writer)
         jsonWriter.beginObject()
 
-        // البيانات الوصفية (Metadata)
         jsonWriter.name(KEY_METADATA)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_APP_NAME).value("Mizan Al-Dar")
@@ -213,7 +165,6 @@ object BackupPayloadSerializer {
         jsonWriter.name(KEY_SECURITY_HASH).value(calculateIntegrityHash(data))
         jsonWriter.endObject()
 
-        // الإعدادات العامة (Settings)
         jsonWriter.name(KEY_SETTINGS)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_CURRENCY_SYMBOL).value(data.settings.currencySymbol)
@@ -221,7 +172,6 @@ object BackupPayloadSerializer {
         jsonWriter.name(KEY_EXCHANGE_RATES_JSON).value(data.settings.exchangeRatesJson)
         jsonWriter.endObject()
 
-        // الالتزامات المالية الثابتة (Fixed Commitments)
         jsonWriter.name(KEY_FIXED_COMMITMENTS)
         jsonWriter.beginArray()
         for (fc in data.commitments) {
@@ -234,7 +184,6 @@ object BackupPayloadSerializer {
         }
         jsonWriter.endArray()
 
-        // قيود اليومية العامة (Transactions)
         jsonWriter.name(KEY_TRANSACTIONS)
         jsonWriter.beginArray()
         for (tx in data.transactions) {
@@ -249,7 +198,6 @@ object BackupPayloadSerializer {
         }
         jsonWriter.endArray()
 
-        // ديون الحبايب والعملاء والعملات الأجنبية (Habayeb Debts)
         jsonWriter.name(KEY_HABAYEB_DEBTS)
         jsonWriter.beginObject()
         jsonWriter.name(KEY_CUSTOMERS)
@@ -300,7 +248,6 @@ object BackupPayloadSerializer {
         jsonWriter.endArray()
         jsonWriter.endObject()
 
-        // سلة المهملات والمحذوفات (Deleted Items)
         jsonWriter.name(KEY_DELETED_ITEMS)
         jsonWriter.beginArray()
         for (di in data.deletedItems) {
@@ -314,7 +261,6 @@ object BackupPayloadSerializer {
         }
         jsonWriter.endArray()
 
-        // الحسابات المثبتة وترتيب التصنيفات (Pinned Customers & Order)
         if (data.pinnedCustomerIdsByCategory.isNotEmpty()) {
             jsonWriter.name(KEY_PINNED_CUSTOMER_IDS_BY_CATEGORY)
             jsonWriter.beginObject()
@@ -334,7 +280,6 @@ object BackupPayloadSerializer {
             jsonWriter.name(KEY_CLOSED_CUSTOM_NAME).value(data.closedCustomName)
         }
 
-        // التصنيفات المخصصة (Custom Categories)
         if (data.customCategories.isNotEmpty()) {
             jsonWriter.name(KEY_CUSTOM_CATEGORIES)
             jsonWriter.beginArray()
@@ -355,11 +300,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [التصدير المتدفق المباشر إلى تيار مخرجات - exportBackupToStream]:
-     * يتدفق البيانات مباشرة عبر OutputStream على خيوط Dispatchers.IO.
-     *
-     * @param data بيانات الحمولة.
-     * @param outputStream تيار المخرجات المستهدف.
+     * ينفذ التصدير إلى تيار على خيط الإدخال والإخراج دون حجب الواجهة.
      */
     suspend fun exportBackupToStream(
         data: BackupPayloadData,
@@ -371,11 +312,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [التصدير المباشر إلى ملف محلي - exportBackupToFile]:
-     * ينشئ ملف النسخة ويكتب البيانات فيه بشكل متدفق وسريع.
-     *
-     * @param data بيانات الحمولة.
-     * @param targetFile الملف المستهدف على القرص.
+     * ينشئ النسخة في ملف الوجهة عبر المسار التشغيلي المخصص للنسخ.
      */
     suspend fun exportBackupToFile(
         data: BackupPayloadData,
@@ -387,11 +324,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [تصدير الحمولة كنص JSON موحد - exportBackupToJson]:
-     * يحول كائن [BackupPayloadData] إلى سلسلة نصية كاملة بصيغة JSON.
-     *
-     * @param data كائن الحمولة.
-     * @return نص الـ JSON الناتج.
+     * ينشئ تمثيل جيسون كاملاً عند الحاجة مع الحفاظ على الدقة العشرية.
      */
     suspend fun exportBackupToJson(
         data: BackupPayloadData
@@ -403,10 +336,6 @@ object BackupPayloadSerializer {
         stringWriter.toString()
     }
 
-    /**
-     * [دالة التصدير المتوافقة مع الإصدارات السابقة - exportBackupToJson]:
-     * تجمع المعاملات والكيانات والتفضيلات وتصدر نص الـ JSON الشامل.
-     */
     suspend fun exportBackupToJson(
         settings: AppSettings,
         commitments: List<FixedCommitment>,
@@ -435,13 +364,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [استخراج قيمة BigDecimal بأمان ودقة - getBigDecimal]:
-     * يستخرج القيمة الرقمية بدقة متناهية دون تحويل وسيط إلى أرقام عشرية عائمة لمنع فقدان الهللات.
-     *
-     * @param obj كائن JSON الحاوي للحقل.
-     * @param key اسم الحقل الرقمي.
-     * @param fallback القيمة الاحتياطية عند الغياب.
-     * @return كائن [BigDecimal] المطابق.
+     * يقرأ المبلغ من جيسون ويحوّله إلى القيمة العشرية دون المرور برقم عائم.
      */
     fun getBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal {
         if (!obj.has(key)) return BigDecimal(fallback)
@@ -461,12 +384,7 @@ object BackupPayloadSerializer {
     }
 
     /**
-     * [استيراد وتفكيك حمولة النسخة من JSON - importBackupFromJson]:
-     * يفكك نص الـ JSON إلى نماذج الكيانات الأساسية (الإعدادات، الالتزامات، واليومية).
-     *
-     * @param jsonString نص النسخة الاحتياطية.
-     * @param context سياق التطبيق لجلب العملة الافتراضية.
-     * @return ثلاثية تحتوي على (الإعدادات، قائمة الالتزامات، قائمة قيود اليومية).
+     * يحلل النسخة ويعيد بناء الكيانات المالية مع الحفاظ على التوافق والدقة.
      */
     suspend fun importBackupFromJson(
         jsonString: String,

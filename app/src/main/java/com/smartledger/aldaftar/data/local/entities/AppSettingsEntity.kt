@@ -1,94 +1,70 @@
-/**
- * =====================================================================
- * ملف: كيان إعدادات وتكوينات التطبيق (AppSettingsEntity.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكيان نموذج جدول `app_settings` في قاعدة بيانات Room، وهو المسؤول عن
- * حفظ كافة التفضيلات العامة، الإعدادات الأمنية، التكوينات المالية، وحالات المزامنة.
- * 
- * [الأنماط المعمارية والتوافقية]:
- * 1. نمط السجل الفردي (Singleton Row Pattern): يحتوي الجدول على صف واحد فقط ذي المعرف الثابت (`id = 1`).
- * 2. التوافق العكسي لقواعد البيانات (Schema Backward Compatibility):
- *    - تم الحفاظ على أعمدة أسعار الصرف التاريخية (`exchangeRateSar` و `exchangeRateUsd` و `exchangeRateYer`)
- *      لضمان عدم انهيار ترقية قواعد البيانات للمستخدمين القدامى.
- *    - يعتمد النظام الحديث على حقل `exchangeRatesJson` لإتاحة مصفوفة ديناميكية غير محدودة من العملات وأسعار التحويل.
- * 3. الأمان والتشفير (Security & Licensing Subsystem):
- *    - يحتوي على بصمات التجزئة المشفرة للرمز السري وعبارة الاسترداد.
- *    - يحتوي على أجزاء مفتاح الترخيص وبصمة الجهاز الموحدة لمنع التلاعب.
- */
 package com.smartledger.aldaftar.data.local.entities
 
-// ---------------------------------------------------------------------
-// استيراد حزم قاعدة البيانات Room ودقة الحسابات العشرية BigDecimal
-// ---------------------------------------------------------------------
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.math.BigDecimal
 
 /**
- * [كائن الثوابت الافتراضية لقاعدة البيانات - DatabaseDefaults]:
- * يحدد القيم الأولية للنظام عند التشغيل لأول مرة.
+ * كيان الإعدادات العامة للتطبيق.
+ * يحافظ على بنية جدول الإعدادات الحالية لضمان التوافق مع قواعد البيانات السابقة.
+ * لا يغير هذا الملف أي عمود تاريخي أو نوع مخزن، لأن تغيير المخطط قد يمنع ترقية بيانات المستخدم.
  */
 object DatabaseDefaults {
-    /** رمز العملة الافتراضي (الريال اليمني) */
+    /** يحدد رمز العملة الافتراضي عند إنشاء إعدادات التطبيق لأول مرة. */
     const val DEFAULT_CURRENCY_SYMBOL = "ر.ي"
 }
 
 /**
- * [فئة بيانات إعدادات التطبيق - AppSettings]:
- * تمثل بنية الجدول الشامل لتفضيلات المستخدم والنظام.
- *
- * @property id المعرف الأساسي الثابت، قيمته دائماً 1 لضمان وجود صف واحد فقط.
- * @property currencySymbol رمز العملة الرئيسية المعروضة في الشاشات والتقارير.
- * @property schoolExpensesEnabled مفتاح تفعيل/تعطيل تبويب ومصاريف المدارس والتعليم.
- * @property themeMode وضع المظهر: 0 = تلقائي (النظام)، 1 = فاتح، 2 = داكن.
- * @property doubleCheckExit طلب تأكيد الخروج عند الضغط على زر الرجوع لتفادي الإغلاق العرضي.
- * @property isPasscodeEnabled حالة تفعيل القفل برمز الحماية والتطبيق.
- * @property passcodeHash التجزئة المشفرة (SHA-256) للرمز السري.
- * @property recoveryPhraseHash التجزئة المشفرة لعبارة استرداد الحساب.
- * @property recoveryHint تلميح تذكيري لكلمة المرور لمساعدة المستخدم عند نسيانها.
- * @property tempPart الجزء المؤقت المشفر من مفتاح التفعيل/الترخيص.
- * @property permPart الجزء الدائم المشفر من مفتاح التفعيل/الترخيص.
- * @property unifiedDeviceId المعرف الرقمي الموحد للبصمة الفريدة للجهاز.
- * @property isFirstLaunch مؤشر التشغيل لأول مرة لعرض شاشات التهيئة والترحيب.
- * @property isAutoBackupEnabled مفتاح تفعيل النسخ الاحتياطي التلقائي اليومي.
- * @property isCloudSyncEnabled مفتاح تفعيل المزامنة التلقائية مع Google Drive.
- * @property exchangeRateSar سعر صرف الريال السعودي (عمود تاريخي للتوافقية).
- * @property exchangeRateUsd سعر صرف الدولار الأمريكي (عمود تاريخي للتوافقية).
- * @property exchangeRateYer سعر صرف الريال اليمني (عمود تاريخي للتوافقية).
- * @property exchangeRatesJson قاموس أسعار الصرف المتعددة الحديث بصيغة نص JSON ديناميكي.
+ * يمثل الصف الوحيد لإعدادات التطبيق.
+ * القيم المالية القديمة محفوظة كما هي، بينما تُستخدم القيم العشرية المساعدة للقراءة الدقيقة.
+ * الحقول الحساسة لا تُفسر هنا ولا تُفكك، بل تُمرر إلى طبقات الحماية المخصصة لها.
  */
 @Entity(tableName = "app_settings")
 data class AppSettings(
+    /** المعرف الثابت للصف الوحيد في جدول الإعدادات. */
     @PrimaryKey @ColumnInfo(name = "id") val id: Int = 1,
+    /** رمز العملة الأساسية المستخدمة في العرض والحسابات المرتبطة بالإعدادات. */
     @ColumnInfo(name = "currencySymbol") val currencySymbol: String = DatabaseDefaults.DEFAULT_CURRENCY_SYMBOL,
+    /** يحدد إتاحة وحدة مصروفات المدارس والتعليم. */
     @ColumnInfo(name = "schoolExpensesEnabled") val schoolExpensesEnabled: Boolean = true,
-    @ColumnInfo(name = "themeMode") val themeMode: Int = 0, // 0 = Auto, 1 = Light, 2 = Dark
+    /** يحدد وضع المظهر: تلقائي أو فاتح أو داكن وفق القيم المعتمدة في التطبيق. */
+    @ColumnInfo(name = "themeMode") val themeMode: Int = 0,
+    /** يحدد طلب تأكيد الخروج لمنع الإغلاق العرضي. */
     @ColumnInfo(name = "doubleCheckExit") val doubleCheckExit: Boolean = true,
+    /** يحدد تفعيل قفل التطبيق برمز الحماية. */
     @ColumnInfo(name = "isPasscodeEnabled") val isPasscodeEnabled: Boolean = false,
+    /** تجزئة رمز الحماية المخزنة وفق آلية الحماية المخصصة للتطبيق. */
     @ColumnInfo(name = "passcodeHash") val passcodeHash: String? = null,
+    /** تجزئة عبارة الاسترداد المستخدمة للتحقق من الاسترداد. */
     @ColumnInfo(name = "recoveryPhraseHash") val recoveryPhraseHash: String? = null,
+    /** تلميح استرداد اختياري لا يمثل السر نفسه. */
     @ColumnInfo(name = "recoveryHint") val recoveryHint: String? = null,
+    /** الجزء المؤقت من حالة الترخيص المحفوظة بالتوافق مع النظام القائم. */
     @ColumnInfo(name = "tempPart") val tempPart: String = "",
+    /** الجزء الدائم من حالة الترخيص المحفوظة بالتوافق مع النظام القائم. */
     @ColumnInfo(name = "permPart") val permPart: String = "",
+    /** المعرف الموحد المرتبط ببصمة الجهاز ضمن منظومة الترخيص. */
     @ColumnInfo(name = "unifiedDeviceId") val unifiedDeviceId: String = "",
+    /** يحدد ما إذا كان التطبيق في حالة التشغيل الأول. */
     @ColumnInfo(name = "isFirstLaunch") val isFirstLaunch: Boolean = true,
+    /** يحدد تفعيل النسخ الاحتياطي التلقائي. */
     @ColumnInfo(name = "isAutoBackupEnabled") val isAutoBackupEnabled: Boolean = true,
+    /** يحدد تفعيل المزامنة السحابية التلقائية. */
     @ColumnInfo(name = "isCloudSyncEnabled") val isCloudSyncEnabled: Boolean = false,
+    /** سعر الصرف التاريخي الأول المحفوظ كما هو لضمان توافق الإصدارات السابقة. */
     @ColumnInfo(name = "exchangeRateSar") val exchangeRateSar: Double = 1.0,
+    /** سعر الصرف التاريخي الثاني المحفوظ كما هو لضمان توافق الإصدارات السابقة. */
     @ColumnInfo(name = "exchangeRateUsd") val exchangeRateUsd: Double = 1.0,
+    /** سعر الصرف التاريخي الثالث المحفوظ كما هو لضمان توافق الإصدارات السابقة. */
     @ColumnInfo(name = "exchangeRateYer") val exchangeRateYer: Double = 1.0,
+    /** تمثيل أسعار الصرف الحديثة النصية دون فرض تغيير على الأعمدة التاريخية. */
     @ColumnInfo(name = "exchangeRatesJson") val exchangeRatesJson: String = "{}"
 ) {
-    /** خاصية مساعدة لإرجاع سعر صرف الريال السعودي بدقة BigDecimal */
+    /** يحول سعر الصرف التاريخي إلى قيمة عشرية دون استخدام تحويل نصي تقريبي. */
     val exchangeRateSarBigDecimal: BigDecimal get() = BigDecimal.valueOf(exchangeRateSar)
-
-    /** خاصية مساعدة لإرجاع سعر صرف الدولار بدقة BigDecimal */
+    /** يحول سعر الصرف التاريخي إلى قيمة عشرية دون استخدام تحويل نصي تقريبي. */
     val exchangeRateUsdBigDecimal: BigDecimal get() = BigDecimal.valueOf(exchangeRateUsd)
-
-    /** خاصية مساعدة لإرجاع سعر صرف الريال اليمني بدقة BigDecimal */
+    /** يحول سعر الصرف التاريخي إلى قيمة عشرية دون استخدام تحويل نصي تقريبي. */
     val exchangeRateYerBigDecimal: BigDecimal get() = BigDecimal.valueOf(exchangeRateYer)
 }
-

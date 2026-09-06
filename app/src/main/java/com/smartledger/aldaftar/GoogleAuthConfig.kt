@@ -1,65 +1,42 @@
 /**
- * =====================================================================
- * ملف: إعدادات مصادقة جوجل (GoogleAuthConfig.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن الأحادي (Singleton Object) مرجع التكوين المركزي لخدمات المصادقة
- * وتسجيل الدخول بحسابات Google وخدمات السحابة (Google Drive API).
- * 
- * [أهميته في حل مشكلات الاعتماد (OAuth Resolution)]:
- * - يستخرج معرف العميل الموحد (Web Client ID) من `BuildConfig`.
- * - يوفر دالة تحقق صارمة لصيغة المعرف لتفادي الأخطاء الشائعة (مثل الخطأ 10 Developer Error).
- * - يوفر أداة برمجية لفحص واستخراج بصمة التوقيع الرقمية للشهادة (SHA-1 Fingerprint)
- *   واسم الحزمة (Package Name) ديناميكياً من نظام أندرويد لتسهيل التحقق والتكامل مع Google Cloud Console.
+ * ملف مركزي لإعدادات مصادقة خدمات جوجل والتحقق من معرف العميل.
+ * يقرأ المعرف من إعدادات البناء ولا يخزن أي سر حساس داخل المصدر.
  */
 package com.smartledger.aldaftar
 
-// ---------------------------------------------------------------------
-// استيراد حزم إدارة الحزم والتوقيعات الرقمية واستخراج بصمات SHA-1
-// ---------------------------------------------------------------------
 import android.util.Log
 
 /**
- * [كائن إعدادات المصادقة - GoogleAuthConfig]:
- * كائن عام يتيح الوصول السريع لبيانات الاعتماد وأدوات فحص توقيع التطبيق.
+ * كائن مركزي يتيح قراءة إعدادات المصادقة والتحقق من صيغة معرف العميل.
  */
 object GoogleAuthConfig {
     private const val TAG = "GoogleAuthConfig"
 
-    // -----------------------------------------------------------------
-    // قراءة معرف العميل المعتمد (Web Client ID) من متغيرات البناء BuildConfig
-    // -----------------------------------------------------------------
-    val WEB_CLIENT_ID = BuildConfig.GOOGLE_CLIENT_ID
+    /** معرف العميل العام المستخدم لبدء جلسة مصادقة خدمات جوجل. */
+    val WEB_CLIENT_ID: String = BuildConfig.GOOGLE_CLIENT_ID.trim()
 
     /**
-     * [دالة التحقق من صحة معرف العميل - validateClientId]:
-     * تفحص نص المعرف للتأكد من أنه ليس فارغاً وينتهي بالامتداد القياسي (.apps.googleusercontent.com)
-     * ويحتوي على أرقام تعريفية صالحة قبل بدء عملية تسجيل الدخول.
+     * يتحقق من أن المعرف موجود ويطابق البنية المتوقعة دون تسجيل قيمته.
      */
     fun validateClientId(): Boolean {
-        if (WEB_CLIENT_ID.isEmpty()) {
-            Log.e(TAG, "❌ [GOOGLE_AUTH_ERROR] WEB_CLIENT_ID is EMPTY! Please insert your Web Client ID in GoogleAuthConfig.kt")
+        if (WEB_CLIENT_ID.isBlank()) {
+            Log.e(TAG, "معرف عميل جوجل غير مضبوط في إعدادات البناء")
             return false
         }
-        
-        val trimmed = WEB_CLIENT_ID.trim()
+
         val suffix = ".apps.googleusercontent.com"
-        
-        if (!trimmed.endsWith(suffix)) {
-            Log.e(TAG, "Google Web Client ID format is invalid")
+        if (!WEB_CLIENT_ID.endsWith(suffix)) {
+            Log.e(TAG, "صيغة معرف عميل جوجل غير صالحة")
             return false
         }
-        
-        val prefix = trimmed.substring(0, trimmed.length - suffix.length)
-        if (prefix.isEmpty() || !prefix.any { it.isDigit() }) {
-            Log.e(TAG, "Google Web Client ID prefix is invalid")
+
+        val prefix = WEB_CLIENT_ID.removeSuffix(suffix)
+        if (prefix.isBlank() || prefix.any { !it.isDigit() }) {
+            Log.e(TAG, "مقدمة معرف عميل جوجل غير صالحة")
             return false
         }
-        
-        Log.d(TAG, "Google Web Client ID is configured")
+
+        Log.d(TAG, "تم التحقق من إعداد معرف عميل جوجل")
         return true
     }
-
-
 }

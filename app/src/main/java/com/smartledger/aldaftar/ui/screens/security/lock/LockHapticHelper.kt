@@ -7,14 +7,16 @@ import android.os.Vibrator
 import android.os.VibratorManager
 
 /**
- * Haptic feedback types for application lock interactions.
+ * يحدد أنواع التنبيه اللمسي المستخدمة في أحداث شاشة القفل.
+ * الفصل بين الأنواع يجعل الإحساس اللمسي متسقاً مع نتيجة العملية الأمنية.
  */
 enum class LockHapticType {
     KEYPRESS, SUCCESS, ERROR
 }
 
 /**
- * Utility helper providing tactile and haptic vibration feedback for lock screen interactions.
+ * يوفر اهتزازاً لمسياً قصيراً لعمليات شاشة القفل مع توافق إصدارات النظام المختلفة.
+ * عند غياب العتاد أو تعذر الخدمة تستمر وظيفة القفل دون الاعتماد على الاهتزاز.
  */
 object LockHapticHelper {
 
@@ -64,7 +66,7 @@ object LockHapticHelper {
                 }
             }
         } catch (_: Exception) {
-            // Fallback safely if device lacks vibration hardware permission
+            // عند تعذر خدمة الاهتزاز أو غياب العتاد يستمر القفل دون أثر على الوظيفة الأمنية
         }
     }
 }

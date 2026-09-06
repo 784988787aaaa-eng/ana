@@ -3,7 +3,6 @@ package com.smartledger.aldaftar.ui.screens.settings.components
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -54,7 +53,8 @@ private const val TAG = "QuadBackupCard"
 fun QuadBackupCard(
     backupSyncViewModel: BackupSyncViewModel,
     settings: AppSettings,
-    onRestoreSuccess: (AppSettings) -> Unit
+    onRestoreSuccess: (AppSettings) -> Unit,
+    onDiscoverLegacy: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -68,7 +68,7 @@ fun QuadBackupCard(
     var showRestoreWarningDialog by remember { mutableStateOf(false) }
     var pendingRestoreJson by remember { mutableStateOf<String?>(null) }
 
-    // Backup SAF Create Document launcher
+    // منتقي إنشاء ملف النسخة عبر نظام اختيار المستندات
     val safExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
@@ -92,28 +92,26 @@ fun QuadBackupCard(
         }
     }
 
-    // Backup SAF Open Document launcher
+    // منتقي ملف الاستعادة يمنح التطبيق معرّف المحتوى فقط؛ القراءة والتحقق يتمان خارج الواجهة.
     val safRestoreLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val jsonText = inputStream?.bufferedReader()?.use { it.readText() } ?: ""
-                if (jsonText.isNotBlank()) {
+            backupSyncViewModel.readLocalBackupFromUri(context, uri) { jsonText ->
+                if (jsonText.isNullOrBlank()) {
+                    Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
+                } else {
                     pendingRestoreJson = jsonText
                     showRestoreWarningDialog = true
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to restore backup from SAF OpenDocument: ${e.message}")
             }
         }
     }
 
-    // النسخ التلقائي محصور في sandbox الخاص بالتطبيق؛ لا توجد صلاحيات تخزين مطلوبة.
+    // النسخ التلقائي محصور في المساحة الخاصة بالتطبيق؛ لا توجد صلاحيات تخزين مطلوبة.
     val checkBackupPermissionsGranted = remember { { true } }
 
-    // Official Google Sign-In SDK configuration
+    // تهيئة حزمة تسجيل الدخول الرسمية من جوجل
     val googleSignInClient = remember {
         backupSyncViewModel.googleDriveSyncHelper.getGoogleSignInClient()
     }
@@ -176,7 +174,7 @@ fun QuadBackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. المزامنة السحابية في أعلى الجميع (Cloud Sync & Backup Section)
+                // ١. المزامنة السحابية في أعلى القسم
                 CloudBackupSection(
                     backupSyncViewModel = backupSyncViewModel,
                     isDark = isDark,
@@ -192,6 +190,7 @@ fun QuadBackupCard(
                     backupSyncViewModel = backupSyncViewModel,
                     context = context,
                     safRestoreLauncher = safRestoreLauncher,
+                    onDiscoverLegacy = onDiscoverLegacy,
                     checkBackupPermissionsGranted = checkBackupPermissionsGranted,
                     onShowPermissionExplanation = { callback ->
                         onPermissionGrantedCallback = callback
@@ -199,7 +198,7 @@ fun QuadBackupCard(
                     }
                 )
 
-                // 3. زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
+                // ٣. زر مسح كافة البيانات وإعادة الضبط
                 Button(
                     onClick = { showResetConfirmationFlow = true },
                     colors = ButtonDefaults.buttonColors(
@@ -270,7 +269,7 @@ fun QuadBackupCard(
         BackupPermissionExplanationDialog(
             onDismiss = { showBackupPermissionExplanationDialog = false },
             onGrantPermissions = {
-                // لا نطلب صلاحيات التخزين؛ يمكن للمستخدم اختيار موقع التصدير من SAF عند الحاجة.
+                // لا نطلب صلاحيات التخزين؛ يختار المستخدم موقع التصدير من منتقي المستندات عند الحاجة.
                 onPermissionGrantedCallback?.invoke()
             },
             onUseInternalStorage = {
