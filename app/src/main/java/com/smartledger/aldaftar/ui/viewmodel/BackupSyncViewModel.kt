@@ -17,7 +17,6 @@ import com.smartledger.aldaftar.ui.viewmodel.backup.BackupPayloadBuilder
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupSearchMatcher
 import com.smartledger.aldaftar.ui.viewmodel.backup.OAuthCodeParser
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -401,8 +400,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                             }
                         }
                     }
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    // Ignore normal coroutine cancellation
                 } catch (e: Exception) {
                     Log.e(TAG, "استثناء في exportLocalBackup", e)
                     launch(Dispatchers.Main) {
@@ -426,7 +423,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         if (currentTime - lastSilentBackupTime < 600000) {
             return
         }
-        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+        viewModelScope.launch(Dispatchers.IO) {
             if (!backupRestoreMutex.tryLock()) {
                 return@launch
             }
@@ -436,8 +433,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     lastSilentBackupTime = currentTime
                     refreshLocalBackups()
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                // Ignore normal cancellation
             } catch (e: Exception) {
                 Log.e(TAG, "استثناء في triggerSilentLocalBackup", e)
             } finally {
