@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "smartledger-aldaftar",
-    "storage_bucket": "smartledger-aldaftar.appspot.com"
+    "project_number": "512516697236",
+    "project_id": "al-daftar-android",
+    "storage_bucket": "al-daftar-android.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890abcdef",
+        "mobilesdk_app_id": "1:512516697236:android:2516cb9d724a44710c9881",
         "android_client_info": {
           "package_name": "com.smartledger.aldaftar"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyFakeKeyForBuildInitialization"
+          "current_key": "AIzaSyCJF2dNfr0f9cWE_A0-e7kDmsIG15eb9Vk"
         }
       ],
       "services": {
