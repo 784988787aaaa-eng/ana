@@ -49,7 +49,7 @@ fun ActivationHeaderSection(
     }
     val titleText = when {
         isActivated -> stringResource(R.string.licensing_fluent_title_active)
-        isAutoTriggered -> stringResource(R.string.licensing_fluent_title_trial)
+        isAutoTriggered -> stringResource(R.string.licensing_trial_exhausted_title)
         else -> stringResource(R.string.licensing_fluent_title_activate)
     }
 

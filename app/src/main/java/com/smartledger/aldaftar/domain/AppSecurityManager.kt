@@ -103,9 +103,23 @@ class AppSecurityManager private constructor(context: Context) {
         try {
             if (legacyPrefs.all.isNotEmpty()) {
                 val targetPrefs = if (securePrefs !== legacyPrefs) securePrefs else null
+                val legacyActivationKeys = setOf(
+                    "is_activated_cached",
+                    "is_premium",
+                    "m_act_code",
+                    "cached_for_code",
+                    "cached_for_device",
+                    "is_permanent"
+                )
+                // Scrub legacy unverified activation keys from legacy preferences
+                legacyPrefs.edit().apply {
+                    legacyActivationKeys.forEach { remove(it) }
+                }.apply()
+
                 if (targetPrefs != null) {
                     val editor = targetPrefs.edit()
                     for ((key, value) in legacyPrefs.all) {
+                        if (key in legacyActivationKeys) continue
                         // ترحيل القيمة فقط إذا لم تكن موجودة بالفعل في المستودع المشفر
                         if (!targetPrefs.contains(key)) {
                             when (value) {
@@ -130,39 +144,15 @@ class AppSecurityManager private constructor(context: Context) {
     }
 
     // =========================================================================
-    // قسم: إدارة التراخيص والتفعيل (LICENSE & ACTIVATION MANAGEMENT)
+    // قسم: إدارة التراخيص والتفعيل السحابي (CLOUD LICENSE LEASE MANAGEMENT)
     // =========================================================================
-
-    /**
-     * [جلب كود التفعيل المخزن - getActivationCode]:
-     * يقرأ كود التفعيل من المستودع المشفر مع التراجع للاحتياطي.
-     *
-     * @return كود التفعيل أو نص فارغ إن لم يكن مفعلاً.
-     */
-    fun getActivationCode(): String {
-        return securePrefs.getString(PREF_M_ACT_CODE, "") ?: legacyPrefs.getString(PREF_M_ACT_CODE, "") ?: ""
-    }
-
-    /**
-     * [حفظ كود التفعيل - setActivationCode]:
-     * يقوم بتنظيف وتوحيد حالة الأحرف لكود التفعيل وتخزينه في المستودعات بأمان.
-     *
-     * @param code كود التفعيل المدخل.
-     */
-    fun setActivationCode(code: String) {
-        val clean = code.trim().uppercase()
-        securePrefs.edit().putString(PREF_M_ACT_CODE, clean).apply()
-        if (securePrefs !== legacyPrefs) {
-            legacyPrefs.edit().putString(PREF_M_ACT_CODE, clean).apply()
-        }
-    }
 
     /**
      * [جلب البريد الإلكتروني المفعل - getActivatedEmail]:
      * يقرأ البريد الإلكتروني المرتبط بالترخيص من المستودع المشفر.
      */
     fun getActivatedEmail(): String {
-        return securePrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: legacyPrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: ""
+        return securePrefs.getString(PREF_M_ACTIVATED_EMAIL, "") ?: ""
     }
 
     /**
@@ -172,16 +162,11 @@ class AppSecurityManager private constructor(context: Context) {
     fun setActivatedEmail(email: String) {
         val clean = email.trim().lowercase()
         securePrefs.edit().putString(PREF_M_ACTIVATED_EMAIL, clean).apply()
-        if (securePrefs !== legacyPrefs) {
-            legacyPrefs.edit().putString(PREF_M_ACTIVATED_EMAIL, clean).apply()
-        }
     }
 
     /**
-     * [فحص حالة التفعيل المخبأة محلياً - isActivatedCached]:
-     * يتحقق مما إذا كانت النسخة مفعلة مسبقاً ومسجلة في التفضيلات المحلية.
-     *
-     * @return true إذا كان الترخيص مفعلاً محلياً.
+     * [حفظ تصريح الترخيص السحابي الموقّع - saveLicenseLease]:
+     * يحفظ الـLease الموقّع المشفر والمستلم حصراً من خادم التراخيص.
      */
     fun saveLicenseLease(
         email: String,
@@ -197,8 +182,6 @@ class AppSecurityManager private constructor(context: Context) {
             .putString(PREF_LICENSE_SESSION_ID, sessionId)
             .putString(PREF_LICENSE_LEASE_JSON, leaseJson)
             .putString(PREF_LICENSE_SIGNATURE, signature)
-            .putBoolean(PREF_IS_ACTIVATED_CACHED, true)
-            .putBoolean(PREF_IS_PREMIUM, true)
             .apply()
     }
 
@@ -214,77 +197,72 @@ class AppSecurityManager private constructor(context: Context) {
         securePrefs.getString(PREF_LICENSE_SIGNATURE, "") ?: ""
     } else ""
 
-    fun isActivatedCached(): Boolean {
-        return securePrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false) || legacyPrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false)
-    }
-
-    /**
-     * [جلب معرف الجهاز المخبأ للترخيص - getCachedDeviceId]:
-     * يعيد بصمة الجهاز التي تم ربط التفعيل بها.
-     */
     fun getCachedDeviceId(): String {
-        return securePrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: legacyPrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: ""
+        return securePrefs.getString(PREF_CACHED_FOR_DEVICE, "") ?: ""
+    }
+
+    // =========================================================================
+    // قسم: هوية الدعم الفني (CUSTOMER SUPPORT IDENTITY)
+    // =========================================================================
+
+    /**
+     * [جلب معرّف الدعم - getSupportId]:
+     * يقرأ معرّف الدعم الفني من المستودع المشفر (معرّف خدمة عملاء غير مشتق من البريد أو UID).
+     */
+    fun getSupportId(): String {
+        return securePrefs.getString(PREF_SUPPORT_ID, "") ?: ""
     }
 
     /**
-     * [حفظ بيانات التفعيل المؤقتة - setCachedActivation]:
-     * يخزن حالة التفعيل والنسخة المميزة وبصمة الجهاز والكود لتمكين التحقق السريع دون اتصال.
-     *
-     * @param isActivated حالة التفعيل (مفعل أم لا).
-     * @param deviceId بصمة الجهاز الحالية.
-     * @param code كود التفعيل المعتمد.
+     * [حفظ معرّف الدعم - saveSupportId]:
+     * يحفظ معرّف الدعم الفني المعتمد من الخادم في المستودع المشفر.
      */
-    fun setCachedActivation(isActivated: Boolean, deviceId: String = "", code: String = "") {
-        val editor = securePrefs.edit()
-            .putBoolean(PREF_IS_ACTIVATED_CACHED, isActivated)
-            .putBoolean(PREF_IS_PREMIUM, isActivated)
+    fun saveSupportId(supportId: String) {
+        check(securePrefs !== legacyPrefs) { "Encrypted storage is required for Support ID" }
+        securePrefs.edit().putString(PREF_SUPPORT_ID, supportId.trim()).apply()
+    }
 
-        if (deviceId.isNotBlank()) {
-            editor.putString(PREF_CACHED_FOR_DEVICE, deviceId)
-        }
-        if (code.isNotBlank()) {
-            editor.putString(PREF_CACHED_FOR_CODE, code)
-        }
-        editor.apply()
-
-        if (securePrefs !== legacyPrefs) {
-            val legacyEditor = legacyPrefs.edit()
-                .putBoolean(PREF_IS_ACTIVATED_CACHED, isActivated)
-                .putBoolean(PREF_IS_PREMIUM, isActivated)
-            if (deviceId.isNotBlank()) legacyEditor.putString(PREF_CACHED_FOR_DEVICE, deviceId)
-            if (code.isNotBlank()) legacyEditor.putString(PREF_CACHED_FOR_CODE, code)
-            legacyEditor.apply()
-        }
+    /**
+     * [مسح معرّف الدعم - clearSupportId]:
+     * يمسح معرّف الدعم الفني عند تسجيل الخروج أو تبديل الحساب.
+     */
+    fun clearSupportId() {
+        securePrefs.edit().remove(PREF_SUPPORT_ID).apply()
     }
 
     /**
      * [مسح بيانات التفعيل والترخيص - clearActivationData]:
-     * يقوم بإلغاء التفعيل وحذف كافة المفاتيح والبريد وحالة النسخة المميزة بالكامل.
+     * يقوم بإلغاء التفعيل وحذف كافة المفاتيح وتصاريح الـLease بالكامل.
      */
     fun clearActivationData() {
         securePrefs.edit()
             .remove(PREF_M_ACTIVATED_EMAIL)
-            .remove(PREF_M_ACT_CODE)
-            .putBoolean(PREF_IS_PREMIUM, false)
-            .putBoolean(PREF_IS_ACTIVATED_CACHED, false)
-            .remove(PREF_CACHED_FOR_CODE)
             .remove(PREF_CACHED_FOR_DEVICE)
             .remove(PREF_LICENSE_SESSION_ID)
             .remove(PREF_LICENSE_LEASE_JSON)
             .remove(PREF_LICENSE_SIGNATURE)
+            .remove(PREF_SUPPORT_ID)
+            // إزالة أي مفاتيح تراخيص قديمة متبقية
+            .remove("is_activated_cached")
+            .remove("is_premium")
+            .remove("m_act_code")
+            .remove("cached_for_code")
+            .remove("is_permanent")
             .apply()
 
         if (securePrefs !== legacyPrefs) {
             legacyPrefs.edit()
                 .remove(PREF_M_ACTIVATED_EMAIL)
-                .remove(PREF_M_ACT_CODE)
-                .putBoolean(PREF_IS_PREMIUM, false)
-                .putBoolean(PREF_IS_ACTIVATED_CACHED, false)
-                .remove(PREF_CACHED_FOR_CODE)
                 .remove(PREF_CACHED_FOR_DEVICE)
                 .remove(PREF_LICENSE_SESSION_ID)
                 .remove(PREF_LICENSE_LEASE_JSON)
                 .remove(PREF_LICENSE_SIGNATURE)
+                .remove(PREF_SUPPORT_ID)
+                .remove("is_activated_cached")
+                .remove("is_premium")
+                .remove("m_act_code")
+                .remove("cached_for_code")
+                .remove("is_permanent")
                 .apply()
         }
     }
@@ -491,17 +469,13 @@ class AppSecurityManager private constructor(context: Context) {
         private const val LEGACY_PREFS_NAME = "mizan_sec_prefs"
 
         /** مفاتيح التفضيلات الثابتة */
-        const val PREF_M_ACT_CODE = "m_act_code"
         const val PREF_M_ACTIVATED_EMAIL = "m_activated_email"
-        const val PREF_IS_ACTIVATED_CACHED = "is_activated_cached"
         const val PREF_CACHED_FOR_DEVICE = "cached_for_device"
-        const val PREF_CACHED_FOR_CODE = "cached_for_code"
-        const val PREF_IS_PREMIUM = "is_premium"
-        const val PREF_IS_PERMANENT = "is_permanent"
         const val PREF_UNIFIED_DEVICE_ID = "unified_device_id"
         const val PREF_LICENSE_SESSION_ID = "license_session_id"
         const val PREF_LICENSE_LEASE_JSON = "license_lease_json"
         const val PREF_LICENSE_SIGNATURE = "license_lease_signature"
+        const val PREF_SUPPORT_ID = "support_identity_id"
         const val PREF_FAST_PASSCODE_ENABLED = "fast_passcode_enabled"
         const val PREF_BIOMETRIC_ENABLED = "biometric_enabled"
         const val PREF_ADMIN_PIN_HASH = "admin_pin_hash"

@@ -15,7 +15,7 @@ object LicenseLeaseVerifier {
 
     // This PEM is the public half of the RSA-3072 license signing key used by the Worker.
     // Never put the private key in the Android project.
-    private const val SERVER_PUBLIC_KEY_PEM = """
+    private val SERVER_PUBLIC_KEY_PEM = """
 -----BEGIN PUBLIC KEY-----
 MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA6zJNL0G3eWhuo3eqnUsZ
 zbuvIJKWZ8P5z42KlIbjMoGPxBBvDEvF822Vgv6cGgT9LBmovTNxqKlcoPOnjGtB

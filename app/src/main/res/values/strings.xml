@@ -67,9 +67,11 @@
     <string name="licensing_fluent_title_active">حالة التنشيط: مفعّل</string>
     <string name="licensing_fluent_subtitle_active">الترخيص نشط ✨</string>
     <string name="licensing_fluent_title_activate">ترخيص وتنشيط التطبيق</string>
-    <string name="licensing_fluent_title_trial">تنبيه: استنفاد الفترة التجريبية</string>
-    <string name="licensing_fluent_desc_active">تم التحقق من الترخيص بنجاح. ترخيصك دائم ومرتبط بحساب Google، مع تحقق سحابي وتجديد تلقائي لمدة تصل إلى 30 يوماً عند انقطاع الإنترنت.</string>
-    <string name="licensing_fluent_desc_trial">لقد وصلت إلى الحد الأقصى للنسخة المجانية. سجّل الدخول بحساب Google المرخص لمتابعة الاستخدام.</string>
+    <string name="licensing_fluent_title_trial">انتهت المعاملات المجانية المتاحة</string>
+    <string name="licensing_fluent_desc_active">تم التحقق من الترخيص بنجاح. ترخيص حسابك مرتبط بحساب Google، ويُجدَّد تصريح الجهاز الموقّع تلقائياً لمدة تصل إلى 30 يوماً عند انقطاع الإنترنت.</string>
+    <string name="licensing_fluent_desc_trial">للاستمرار، يرجى التواصل مع المطور وذكر معرّف الدعم الخاص بك.</string>
+    <string name="licensing_trial_exhausted_title">انتهت المعاملات المجانية المتاحة</string>
+    <string name="licensing_trial_exhausted_desc">للاستمرار، يرجى التواصل مع المطور وذكر معرّف الدعم الخاص بك.</string>
     <string name="licensing_fluent_desc_default">سجّل الدخول بحساب Google المرخص لتفعيل الترخيص السحابي على هذا الهاتف.</string>
     <string name="licensing_fluent_cloud_synced_badge">رخصة معتمدة ✨</string>
     <string name="licensing_fluent_cloud_backup_only">نسخ احتياطي سحابي فقط</string>
@@ -77,6 +79,14 @@
     <string name="licensing_fluent_btn_signout">تسجيل الخروج</string>
     <string name="licensing_fluent_copy_device_id">نسخ المعرّف</string>
     <string name="licensing_fluent_copied_toast">تم نسخ معرّف الجهاز إلى الحافظة بنجاح 📋</string>
+    <string name="licensing_support_id_label">معرّف الدعم</string>
+    <string name="licensing_support_id_pending">قيد التجهيز من الخادم</string>
+    <string name="licensing_support_id_loading">جاري جلب معرّف الدعم...</string>
+    <string name="licensing_copy_support_id">نسخ معرّف الدعم</string>
+    <string name="licensing_support_id_copied_toast">تم نسخ معرّف الدعم إلى الحافظة بنجاح 📋</string>
+    <string name="licensing_support_id_pending_toast">معرّف الدعم قيد التجهيز من الخادم حالياً</string>
+    <string name="licensing_google_account_connected">حساب Google متصل</string>
+    <string name="licensing_google_account_linked">حساب Google معتمد</string>
     <string name="licensing_fluent_btn_activate_now">تنشيط الترخيص الآن</string>
     <string name="licensing_fluent_btn_close">إغلاق النافذة</string>
     <string name="licensing_fluent_license_status_label">حالة الترخيص</string>
@@ -144,7 +154,9 @@
     <string name="drawer_activate_pro">تفعيل النسخة الكاملة Pro 👑</string>
     <string name="drawer_activate_pro_success">النسخة الكاملة Pro مفعّلة ✨</string>
     <string name="licensing_btn_whatsapp_request">طلب الترخيص عبر واتساب 💬</string>
-    <string name="licensing_whatsapp_email_request_template">أود طلب وتفعيل ترخيص النسخة الكاملة.\n\n📧 بريدي الالكتروني: %1$s\n📱 معرّف الجهاز: %2$s</string>
+    <string name="licensing_whatsapp_support_request_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n🎫 معرّف الدعم: %1$s</string>
+    <string name="licensing_whatsapp_support_request_pending_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.</string>
+    <string name="licensing_whatsapp_email_request_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n🎫 معرّف الدعم: %1$s</string>
 
     <!-- ============================================================================== -->
     <!-- 03. قسم الحبايب والديون (Habayeb Module, Customers, Debts & Transactions)         -->

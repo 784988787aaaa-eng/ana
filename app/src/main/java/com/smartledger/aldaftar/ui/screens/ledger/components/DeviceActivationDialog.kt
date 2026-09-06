@@ -45,9 +45,14 @@ fun DeviceActivationDialog(
     val isActivated by viewModel.isActivatedState.collectAsStateWithLifecycle()
     val activatedEmail by viewModel.activatedEmailState.collectAsStateWithLifecycle()
     val isLicenseLoading by viewModel.isLicenseLoading.collectAsStateWithLifecycle()
+    val supportState by viewModel.supportIdentityState.collectAsStateWithLifecycle()
     val storedEmail by com.smartledger.aldaftar.domain.GoogleAuthSessionManager.currentEmail.collectAsStateWithLifecycle()
 
     var actionFeedbackMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSupportIdentity()
+    }
 
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -192,15 +197,20 @@ fun DeviceActivationDialog(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Device ID Bar
-                    ActivationDeviceIdBar(
-                        deviceId = deviceId,
+                    // Support ID Card
+                    ActivationSupportIdCard(
+                        supportState = supportState,
                         onCopyClick = {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("DeviceID", deviceId)
-                            clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, context.getString(R.string.licensing_fluent_copied_toast), Toast.LENGTH_SHORT).show()
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            val supportId = (supportState as? com.smartledger.aldaftar.domain.SupportIdentityState.Available)?.supportId
+                            if (!supportId.isNullOrBlank()) {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("SupportID", supportId)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, context.getString(R.string.licensing_support_id_copied_toast), Toast.LENGTH_SHORT).show()
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            } else {
+                                Toast.makeText(context, context.getString(R.string.licensing_support_id_pending_toast), Toast.LENGTH_SHORT).show()
+                            }
                         }
                     )
 
@@ -208,8 +218,12 @@ fun DeviceActivationDialog(
                     ActivationFeedbackBanner(
                         actionFeedbackMessage = actionFeedbackMessage,
                         onWhatsAppRequestClick = {
-                            val googleEmailStr = storedEmail ?: context.getString(R.string.licensing_fluent_unregistered_email)
-                            val msg = context.getString(R.string.licensing_whatsapp_email_request_template, googleEmailStr, deviceId)
+                            val supportId = (supportState as? com.smartledger.aldaftar.domain.SupportIdentityState.Available)?.supportId
+                            val msg = if (!supportId.isNullOrBlank()) {
+                                context.getString(R.string.licensing_whatsapp_support_request_template, supportId)
+                            } else {
+                                context.getString(R.string.licensing_whatsapp_support_request_pending_template)
+                            }
                             openWhatsAppSupportDirect(context, msg)
                         }
                     )
@@ -219,8 +233,12 @@ fun DeviceActivationDialog(
                     // Bottom Actions
                     ActivationActionsFooter(
                         onWhatsAppClick = {
-                            val googleEmailStr = storedEmail ?: context.getString(R.string.licensing_fluent_unregistered_email)
-                            val msg = context.getString(R.string.licensing_whatsapp_email_request_template, googleEmailStr, deviceId)
+                            val supportId = (supportState as? com.smartledger.aldaftar.domain.SupportIdentityState.Available)?.supportId
+                            val msg = if (!supportId.isNullOrBlank()) {
+                                context.getString(R.string.licensing_whatsapp_support_request_template, supportId)
+                            } else {
+                                context.getString(R.string.licensing_whatsapp_support_request_pending_template)
+                            }
                             openWhatsAppSupportDirect(context, msg)
                         },
                         onDismiss = onDismiss

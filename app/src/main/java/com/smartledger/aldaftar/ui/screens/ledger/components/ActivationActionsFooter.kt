@@ -77,7 +77,7 @@ fun ActivationGoogleTabContent(
                         Spacer(modifier = Modifier.width(6.dp))
                         Column {
                             Text(
-                                text = storedEmail,
+                                text = stringResource(R.string.licensing_google_account_connected),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -140,6 +140,121 @@ fun ActivationGoogleTabContent(
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivationSupportIdCard(
+    supportState: com.smartledger.aldaftar.domain.SupportIdentityState,
+    onCopyClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.ConfirmationNumber,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.licensing_support_id_label),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                when (supportState) {
+                    is com.smartledger.aldaftar.domain.SupportIdentityState.Available -> {
+                        FilledTonalButton(
+                            onClick = onCopyClick,
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier
+                                .height(28.dp)
+                                .testTag("copy_support_id_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.licensing_copy_support_id),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    is com.smartledger.aldaftar.domain.SupportIdentityState.Loading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 1.5.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    else -> Unit
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                when (supportState) {
+                    is com.smartledger.aldaftar.domain.SupportIdentityState.Available -> {
+                        Text(
+                            text = supportState.supportId,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.testTag("support_id_text")
+                        )
+                    }
+                    is com.smartledger.aldaftar.domain.SupportIdentityState.Loading -> {
+                        Text(
+                            text = stringResource(R.string.licensing_support_id_loading),
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = stringResource(R.string.licensing_support_id_pending),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

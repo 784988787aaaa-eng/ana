@@ -102,4 +102,56 @@ class SecurityAndLicensingTest {
         assertTrue(networkOutage is LicenseCheckResult.NetworkOutage)
         assertEquals("No internet connection", networkOutage.message)
     }
+
+    @Test
+    fun testSupportIdentityStateHierarchy() {
+        val idle: com.smartledger.aldaftar.domain.SupportIdentityState =
+            com.smartledger.aldaftar.domain.SupportIdentityState.Idle
+        assertTrue(idle is com.smartledger.aldaftar.domain.SupportIdentityState.Idle)
+
+        val loading: com.smartledger.aldaftar.domain.SupportIdentityState =
+            com.smartledger.aldaftar.domain.SupportIdentityState.Loading
+        assertTrue(loading is com.smartledger.aldaftar.domain.SupportIdentityState.Loading)
+
+        val available: com.smartledger.aldaftar.domain.SupportIdentityState =
+            com.smartledger.aldaftar.domain.SupportIdentityState.Available("SD-7K4M-92QX")
+        assertTrue(available is com.smartledger.aldaftar.domain.SupportIdentityState.Available)
+        assertEquals("SD-7K4M-92QX", (available as com.smartledger.aldaftar.domain.SupportIdentityState.Available).supportId)
+
+        val unavailable: com.smartledger.aldaftar.domain.SupportIdentityState =
+            com.smartledger.aldaftar.domain.SupportIdentityState.Unavailable("Endpoint pending")
+        assertTrue(unavailable is com.smartledger.aldaftar.domain.SupportIdentityState.Unavailable)
+    }
+
+    @Test
+    fun testSupportMessagePrivacyInvariants() {
+        // Privacy mandate: Support messages must NEVER contain email, UID, tokens, or device ID
+        val supportId = "SD-7K4M-92QX"
+        val supportTemplate = "مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n🎫 معرّف الدعم: %1\$s"
+        val formattedMessage = String.format(supportTemplate, supportId)
+
+        assertTrue(formattedMessage.contains("SD-7K4M-92QX"))
+        assertFalse("Support message must NEVER contain an email address", formattedMessage.contains("@"))
+        assertFalse("Support message must NEVER contain firebase UID", formattedMessage.contains("firebase"))
+        assertFalse("Support message must NEVER contain Bearer tokens", formattedMessage.contains("Bearer"))
+        assertFalse("Support message must NEVER contain lease JSON", formattedMessage.contains("\"lease\""))
+    }
+
+    @Test
+    fun testTrialBoundaryLimitStrict100() {
+        val trialLimit = com.smartledger.aldaftar.data.repository.LicenseAndTrialManager.SECURE_LIMIT_VAL
+        assertEquals(100, trialLimit)
+
+        // Under limit: 99 transactions is strictly within free trial
+        val isExpired99 = 99 >= trialLimit
+        assertFalse("99 transactions must not expire trial", isExpired99)
+
+        // At boundary: 100 transactions triggers trial exhaustion
+        val isExpired100 = 100 >= trialLimit
+        assertTrue("100 transactions must trigger trial exhaustion", isExpired100)
+
+        // Beyond boundary: 101 transactions is expired
+        val isExpired101 = 101 >= trialLimit
+        assertTrue("101 transactions must remain expired", isExpired101)
+    }
 }

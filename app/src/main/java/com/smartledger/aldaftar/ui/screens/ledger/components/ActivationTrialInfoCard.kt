@@ -162,9 +162,9 @@ fun ActivationActivatedBody(
                             Spacer(modifier = Modifier.width(6.dp))
                             Column {
                                 Text(
-                                    text = storedEmail,
+                                    text = stringResource(R.string.licensing_google_account_linked),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
+                                    fontSize = 11.5.sp,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis

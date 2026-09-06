@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -44,6 +45,7 @@ object FirebaseLicenseManager {
     private const val PATH_REFRESH = "/v1/license/refresh"
     private const val PATH_UNLINK = "/v1/license/unlink"
     private const val PATH_SESSION = "/v1/license/session/"
+    private const val PATH_SUPPORT_IDENTITY = "/v1/support/identity"
     private const val POLL_INTERVAL_MS = 60_000L
 
     private val httpClient = OkHttpClient.Builder()
@@ -177,6 +179,30 @@ object FirebaseLicenseManager {
         } catch (t: Throwable) {
             Log.w(TAG, "Current-device license unlink failed: ${t.javaClass.simpleName}")
             false
+        }
+    }
+
+    /**
+     * Future-ready contract to fetch opaque customer Support ID from the license worker.
+     * GET /v1/support/identity
+     * Expected response: { "supportId": "SD-XXXX-XXXX" }
+     * Returns failure cleanly if endpoint is not implemented or unavailable.
+     */
+    suspend fun fetchSupportIdentity(): Result<String> {
+        return try {
+            val result = get(PATH_SUPPORT_IDENTITY)
+            if (result.code in 200..299) {
+                val sid = result.requireJson().optString("supportId").trim()
+                if (sid.isNotBlank()) {
+                    Result.success(sid)
+                } else {
+                    Result.failure(LicenseClientException(result.code, "Empty support ID received"))
+                }
+            } else {
+                Result.failure(LicenseClientException(result.code, result.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

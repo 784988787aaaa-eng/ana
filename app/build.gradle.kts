@@ -92,7 +92,7 @@ android {
 
   val licenseBackendUrl = providers.gradleProperty("LICENSE_BACKEND_URL").orNull
     ?: System.getenv("LICENSE_BACKEND_URL")
-    ?: "https://REPLACE_WITH_LICENSE_WORKER.workers.dev"
+    ?: "https://al-daftar-license-api.mansour-ghawy.workers.dev"
   defaultConfig {
     buildConfigField("String", "LICENSE_BACKEND_URL", "\"$licenseBackendUrl\"")
   }

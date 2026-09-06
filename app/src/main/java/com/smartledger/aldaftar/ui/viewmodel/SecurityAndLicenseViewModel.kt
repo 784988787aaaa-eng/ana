@@ -32,15 +32,34 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     private val repository: FinanceRepository
     private val securityManager: AppSecurityManager = AppSecurityManager.getInstance(application)
     private val licenseAndTrialManager: LicenseAndTrialManager = LicenseAndTrialManager(application)
+    private val supportIdentityRepo: com.smartledger.aldaftar.domain.SupportIdentityRepository =
+        com.smartledger.aldaftar.domain.SupportIdentityRepositoryImpl(application)
+
+    private val _supportIdentityState = MutableStateFlow<com.smartledger.aldaftar.domain.SupportIdentityState>(
+        com.smartledger.aldaftar.domain.SupportIdentityState.Idle
+    )
+    val supportIdentityState: StateFlow<com.smartledger.aldaftar.domain.SupportIdentityState> = _supportIdentityState.asStateFlow()
+
+    fun loadSupportIdentity() {
+        val cached = supportIdentityRepo.getCachedSupportId()
+        if (!cached.isNullOrBlank()) {
+            _supportIdentityState.value = com.smartledger.aldaftar.domain.SupportIdentityState.Available(cached)
+            return
+        }
+        viewModelScope.launch {
+            _supportIdentityState.value = com.smartledger.aldaftar.domain.SupportIdentityState.Loading
+            val state = supportIdentityRepo.getSupportIdentity()
+            _supportIdentityState.value = state
+        }
+    }
 
     private val _activationTrigger = MutableStateFlow(0)
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == AppSecurityManager.PREF_M_ACT_CODE ||
-            key == AppSecurityManager.PREF_M_ACTIVATED_EMAIL ||
-            key == AppSecurityManager.PREF_IS_ACTIVATED_CACHED ||
+        if (key == AppSecurityManager.PREF_M_ACTIVATED_EMAIL ||
             key == AppSecurityManager.PREF_LICENSE_SESSION_ID ||
             key == AppSecurityManager.PREF_LICENSE_LEASE_JSON ||
             key == AppSecurityManager.PREF_LICENSE_SIGNATURE ||
+            key == AppSecurityManager.PREF_SUPPORT_ID ||
             key == AppSecurityManager.PREF_BIOMETRIC_ENABLED ||
             key == AppSecurityManager.PREF_FAST_PASSCODE_ENABLED
         ) {
@@ -108,7 +127,10 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         if (activatedEmail.isNotBlank() && licenseAndTrialManager.isAppActivated()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    FirebaseLicenseManager.syncAndVerifyLocalEmailLicense(getApplication())
+                    val stillValid = FirebaseLicenseManager.syncAndVerifyLocalEmailLicense(getApplication())
+                    if (stillValid) {
+                        startRealtimeMonitoring(getApplication())
+                    }
                 } catch (t: Throwable) {
                     Log.w(TAG, "Offline or error syncing license safely: ${t.message}")
                 } finally {
@@ -173,6 +195,9 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             _isLicenseLoading.value = true
             try {
                 val result = FirebaseLicenseManager.verifyAndActivateEmail(getApplication(), email, deviceId)
+                if (result is LicenseCheckResult.Success) {
+                    startRealtimeMonitoring(getApplication())
+                }
                 onResult(result)
             } catch (t: Throwable) {
                 Log.e(TAG, "Error activating with Firebase email", t)
@@ -212,6 +237,8 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     fun clearLocalActivationData() {
         try {
             licenseAndTrialManager.clearLocalActivation()
+            supportIdentityRepo.clearSupportIdentity()
+            _supportIdentityState.value = com.smartledger.aldaftar.domain.SupportIdentityState.Idle
             _activationTrigger.value += 1
         } catch (t: Throwable) {
             Log.e(TAG, "Error clearing local activation data", t)
