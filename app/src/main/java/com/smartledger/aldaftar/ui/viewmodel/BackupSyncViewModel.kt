@@ -11,6 +11,10 @@ import com.smartledger.aldaftar.data.GoogleDriveSyncHelper
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.repository.FinanceRepository
+import com.smartledger.aldaftar.data.repository.LicenseAndTrialManager
+import com.smartledger.aldaftar.domain.AppSecurityManager
+import com.smartledger.aldaftar.domain.FirebaseLicenseManager
+import com.google.firebase.auth.FirebaseAuth
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupPayloadBuilder
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupSearchMatcher
 import com.smartledger.aldaftar.ui.viewmodel.backup.OAuthCodeParser
@@ -125,14 +129,32 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         handleGoogleOAuthCode(finalCode, email, redirectUri, onComplete)
     }
 
-    fun googleDriveLogout(onComplete: (() -> Unit)? = null) {
+    fun googleDriveLogout(
+        onComplete: (() -> Unit)? = null,
+        onFailure: (() -> Unit)? = null
+    ) {
         viewModelScope.launch {
+            val security = AppSecurityManager.getInstance(getApplication())
+            val email = security.getActivatedEmail()
+            val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
+            val licenseActive = security.getLicenseSessionId().isNotBlank()
+
+            if (licenseActive) {
+                val unlinked = FirebaseLicenseManager.unlinkDevice(getApplication(), email, deviceId)
+                if (!unlinked) {
+                    onFailure?.invoke()
+                    return@launch
+                }
+                security.clearActivationData()
+            }
+
             val current = repository.getSettingsDirect() ?: AppSettings()
             repository.saveSettings(current.copy(isCloudSyncEnabled = false))
-        }
-        googleDriveSyncHelper.logoutAsync {
-            _cloudBackupsList.value = emptyList()
-            onComplete?.invoke()
+            googleDriveSyncHelper.logoutAsync {
+                FirebaseAuth.getInstance().signOut()
+                _cloudBackupsList.value = emptyList()
+                onComplete?.invoke()
+            }
         }
     }
 

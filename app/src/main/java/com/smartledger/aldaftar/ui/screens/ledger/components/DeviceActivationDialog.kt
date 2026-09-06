@@ -6,7 +6,6 @@ import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -30,8 +29,6 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.LicenseCheckResult
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
 
 /**
  * Unified Facade for Device Activation & Licensing Dialog.
@@ -50,9 +47,6 @@ fun DeviceActivationDialog(
     val isLicenseLoading by viewModel.isLicenseLoading.collectAsStateWithLifecycle()
     val storedEmail by com.smartledger.aldaftar.domain.GoogleAuthSessionManager.currentEmail.collectAsStateWithLifecycle()
 
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Google / Cloud, 1: Product Key
-    var activationCodeInput by remember { mutableStateOf("") }
-    var isCodeError by remember { mutableStateOf(false) }
     var actionFeedbackMessage by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
@@ -85,7 +79,6 @@ fun DeviceActivationDialog(
                         viewModel.activateWithFirebaseEmail(outcome.email) { res ->
                             actionFeedbackMessage = when (res) {
                                 is LicenseCheckResult.Success -> null
-                                is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
                                 is LicenseCheckResult.NotLicensed -> res.message
                                 is LicenseCheckResult.NetworkOutage -> res.message
                                 is LicenseCheckResult.Error -> res.message
@@ -151,88 +144,51 @@ fun DeviceActivationDialog(
                         storedEmail = storedEmail,
                         activatedEmail = activatedEmail,
                         onLogout = {
-                            backupSyncViewModel?.googleDriveLogout {
-                                viewModel.clearLocalActivationData()
-                                actionFeedbackMessage = null
-                                Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                            }
+                            backupSyncViewModel?.googleDriveLogout(
+                                onComplete = {
+                                    actionFeedbackMessage = null
+                                    Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
+                                },
+                                onFailure = {
+                                    actionFeedbackMessage = context.getString(R.string.licensing_error_no_internet)
+                                }
+                            )
                         },
                         onDismiss = onDismiss
                     )
                 } else {
-                    // Segmented Tabs
-                    ActivationSegmentedTabs(
-                        selectedTab = selectedTab,
-                        onTabSelected = {
-                            selectedTab = it
-                            actionFeedbackMessage = null
-                            isCodeError = false
+                    ActivationGoogleTabContent(
+                        storedEmail = storedEmail,
+                        isLicenseLoading = isLicenseLoading,
+                        onGoogleSignInClick = {
+                            val client = googleSignInClient
+                            if (client != null) {
+                                try {
+                                    com.smartledger.aldaftar.domain.GoogleAuthSessionManager.setSigningIn()
+                                    googleSignInLauncher.launch(client.signInIntent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_google_failed), Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_google_unavailable), Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onGoogleActivateClick = {
+                            storedEmail?.takeIf { it.isNotBlank() }?.let { email ->
+                                viewModel.activateWithFirebaseEmail(email) { res ->
+                                    actionFeedbackMessage = when (res) {
+                                        is LicenseCheckResult.Success -> null
+                                        is LicenseCheckResult.NotLicensed -> res.message
+                                        is LicenseCheckResult.NetworkOutage -> res.message
+                                        is LicenseCheckResult.Error -> res.message
+                                    }
+                                    if (res is LicenseCheckResult.Success) {
+                                        Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
                         }
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    AnimatedContent(
-                        targetState = selectedTab,
-                        transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
-                        label = "TabContentTransition"
-                    ) { tabIndex ->
-                        if (tabIndex == 0) {
-                            ActivationGoogleTabContent(
-                                storedEmail = storedEmail,
-                                isLicenseLoading = isLicenseLoading,
-                                onGoogleSignInClick = {
-                                    val client = googleSignInClient
-                                    if (client != null) {
-                                        try {
-                                            com.smartledger.aldaftar.domain.GoogleAuthSessionManager.setSigningIn()
-                                            googleSignInLauncher.launch(client.signInIntent)
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_google_failed), Toast.LENGTH_SHORT).show()
-                                        }
-                                    } else {
-                                        Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_google_unavailable), Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                onGoogleActivateClick = {
-                                    storedEmail?.takeIf { it.isNotBlank() }?.let { email ->
-                                        viewModel.activateWithFirebaseEmail(email) { res ->
-                                            actionFeedbackMessage = when (res) {
-                                                is LicenseCheckResult.Success -> null
-                                                is LicenseCheckResult.DeviceMismatch -> context.getString(R.string.licensing_fluent_mismatch_error)
-                                                is LicenseCheckResult.NotLicensed -> res.message
-                                                is LicenseCheckResult.NetworkOutage -> res.message
-                                                is LicenseCheckResult.Error -> res.message
-                                            }
-                                            if (res is LicenseCheckResult.Success) {
-                                                Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-                                    }
-                                }
-                            )
-                        } else {
-                            ActivationKeyInputSection(
-                                activationCodeInput = activationCodeInput,
-                                isCodeError = isCodeError,
-                                onCodeInputChange = {
-                                    activationCodeInput = it
-                                    isCodeError = false
-                                },
-                                onVerifyManualCode = {
-                                    val cleanInput = activationCodeInput.trim().uppercase()
-                                    val success = viewModel.activateLicense(cleanInput)
-                                    if (success) {
-                                        Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
-                                        onDismiss()
-                                    } else {
-                                        isCodeError = true
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    }
-                                }
-                            )
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 

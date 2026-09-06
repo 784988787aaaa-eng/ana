@@ -183,6 +183,37 @@ class AppSecurityManager private constructor(context: Context) {
      *
      * @return true إذا كان الترخيص مفعلاً محلياً.
      */
+    fun saveLicenseLease(
+        email: String,
+        deviceId: String,
+        sessionId: String,
+        leaseJson: String,
+        signature: String
+    ) {
+        check(securePrefs !== legacyPrefs) { "Encrypted storage is required for the license lease" }
+        securePrefs.edit()
+            .putString(PREF_M_ACTIVATED_EMAIL, email.trim().lowercase())
+            .putString(PREF_CACHED_FOR_DEVICE, deviceId)
+            .putString(PREF_LICENSE_SESSION_ID, sessionId)
+            .putString(PREF_LICENSE_LEASE_JSON, leaseJson)
+            .putString(PREF_LICENSE_SIGNATURE, signature)
+            .putBoolean(PREF_IS_ACTIVATED_CACHED, true)
+            .putBoolean(PREF_IS_PREMIUM, true)
+            .apply()
+    }
+
+    fun getLicenseSessionId(): String = if (securePrefs !== legacyPrefs) {
+        securePrefs.getString(PREF_LICENSE_SESSION_ID, "") ?: ""
+    } else ""
+
+    fun getLicenseLeaseJson(): String = if (securePrefs !== legacyPrefs) {
+        securePrefs.getString(PREF_LICENSE_LEASE_JSON, "") ?: ""
+    } else ""
+
+    fun getLicenseLeaseSignature(): String = if (securePrefs !== legacyPrefs) {
+        securePrefs.getString(PREF_LICENSE_SIGNATURE, "") ?: ""
+    } else ""
+
     fun isActivatedCached(): Boolean {
         return securePrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false) || legacyPrefs.getBoolean(PREF_IS_ACTIVATED_CACHED, false)
     }
@@ -238,6 +269,9 @@ class AppSecurityManager private constructor(context: Context) {
             .putBoolean(PREF_IS_ACTIVATED_CACHED, false)
             .remove(PREF_CACHED_FOR_CODE)
             .remove(PREF_CACHED_FOR_DEVICE)
+            .remove(PREF_LICENSE_SESSION_ID)
+            .remove(PREF_LICENSE_LEASE_JSON)
+            .remove(PREF_LICENSE_SIGNATURE)
             .apply()
 
         if (securePrefs !== legacyPrefs) {
@@ -248,6 +282,9 @@ class AppSecurityManager private constructor(context: Context) {
                 .putBoolean(PREF_IS_ACTIVATED_CACHED, false)
                 .remove(PREF_CACHED_FOR_CODE)
                 .remove(PREF_CACHED_FOR_DEVICE)
+                .remove(PREF_LICENSE_SESSION_ID)
+                .remove(PREF_LICENSE_LEASE_JSON)
+                .remove(PREF_LICENSE_SIGNATURE)
                 .apply()
         }
     }
@@ -462,6 +499,9 @@ class AppSecurityManager private constructor(context: Context) {
         const val PREF_IS_PREMIUM = "is_premium"
         const val PREF_IS_PERMANENT = "is_permanent"
         const val PREF_UNIFIED_DEVICE_ID = "unified_device_id"
+        const val PREF_LICENSE_SESSION_ID = "license_session_id"
+        const val PREF_LICENSE_LEASE_JSON = "license_lease_json"
+        const val PREF_LICENSE_SIGNATURE = "license_lease_signature"
         const val PREF_FAST_PASSCODE_ENABLED = "fast_passcode_enabled"
         const val PREF_BIOMETRIC_ENABLED = "biometric_enabled"
         const val PREF_ADMIN_PIN_HASH = "admin_pin_hash"

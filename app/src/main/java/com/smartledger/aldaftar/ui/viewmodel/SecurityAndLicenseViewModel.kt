@@ -18,7 +18,6 @@ import com.smartledger.aldaftar.domain.FirebaseLicenseManager
 import com.smartledger.aldaftar.domain.GoogleAuthSessionManager
 import com.smartledger.aldaftar.domain.HashUtils
 import com.smartledger.aldaftar.domain.LicenseCheckResult
-import com.smartledger.aldaftar.domain.LicenseManager
 import com.smartledger.aldaftar.domain.LicenseState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -39,6 +38,9 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         if (key == AppSecurityManager.PREF_M_ACT_CODE ||
             key == AppSecurityManager.PREF_M_ACTIVATED_EMAIL ||
             key == AppSecurityManager.PREF_IS_ACTIVATED_CACHED ||
+            key == AppSecurityManager.PREF_LICENSE_SESSION_ID ||
+            key == AppSecurityManager.PREF_LICENSE_LEASE_JSON ||
+            key == AppSecurityManager.PREF_LICENSE_SIGNATURE ||
             key == AppSecurityManager.PREF_BIOMETRIC_ENABLED ||
             key == AppSecurityManager.PREF_FAST_PASSCODE_ENABLED
         ) {
@@ -61,7 +63,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
 
     fun startRealtimeMonitoring(context: Context) {
         val activatedEmail = securityManager.getActivatedEmail()
-        if (activatedEmail.isBlank() || !securityManager.isActivatedCached()) {
+        if (activatedEmail.isBlank() || !licenseAndTrialManager.isAppActivated()) {
             // لا يتم تشغيل المراقبة اللحظية لطرد الأجهزة إلا إذا كان التفعيل محلياً ومسجلاً مسبقاً
             return
         }
@@ -103,7 +105,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     fun checkFirebaseLicenseStatus() {
         val activatedEmail = securityManager.getActivatedEmail()
 
-        if (activatedEmail.isNotBlank() && securityManager.isActivatedCached()) {
+        if (activatedEmail.isNotBlank() && licenseAndTrialManager.isAppActivated()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     FirebaseLicenseManager.syncAndVerifyLocalEmailLicense(getApplication())
@@ -165,83 +167,44 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, LicenseState.Unknown)
 
-    fun activateLicense(code: String): Boolean {
-        return try {
-            val isValid = licenseAndTrialManager.activateLicenseWithCode(code)
-            if (isValid) {
-                _activationTrigger.value += 1
-            }
-            isValid
-        } catch (t: Throwable) {
-            Log.e(TAG, "Error activating license code", t)
-            false
-        }
-    }
-
-    private fun isNetworkAvailable(): Boolean {
-        return try {
-            val cm = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
-            if (cm != null) {
-                val activeNetwork = cm.activeNetwork ?: return false
-                val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
-                capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            } else false
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     fun activateWithFirebaseEmail(email: String, onResult: (LicenseCheckResult) -> Unit) {
-        if (!isNetworkAvailable()) {
-            onResult(
-                LicenseCheckResult.Error(
-                    getApplication<Application>().getString(R.string.licensing_error_no_internet)
-                )
-            )
-            return
-        }
         val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
         viewModelScope.launch {
             _isLicenseLoading.value = true
             try {
                 val result = FirebaseLicenseManager.verifyAndActivateEmail(getApplication(), email, deviceId)
-                if (result is LicenseCheckResult.Success) {
-                    saveEmailActivationLocally(result.email, result.deviceId)
-                }
                 onResult(result)
             } catch (t: Throwable) {
                 Log.e(TAG, "Error activating with Firebase email", t)
                 onResult(
                     LicenseCheckResult.Error(
-                        getApplication<Application>().getString(R.string.licensing_error_no_internet)
+                        getApplication<Application>().getString(R.string.licensing_error_connection)
                     )
                 )
             } finally {
                 _isLicenseLoading.value = false
+                _activationTrigger.value += 1
             }
         }
     }
 
     fun unlinkCurrentDevice(onResult: (Boolean) -> Unit) {
         val email = securityManager.getActivatedEmail()
+        val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
         viewModelScope.launch {
             _isLicenseLoading.value = true
-            var success = false
             try {
-                success = if (email.isNotBlank()) {
-                    FirebaseLicenseManager.unlinkDevice(email)
-                } else true
-
+                val success = email.isBlank() ||
+                    FirebaseLicenseManager.unlinkDevice(getApplication(), email, deviceId)
                 if (success) {
                     clearLocalActivationData()
                 }
+                onResult(success)
             } catch (t: Throwable) {
-                Log.e(TAG, "Error unlinking current device", t)
-                clearLocalActivationData()
-                success = true
+                Log.w(TAG, "Current-device license unlink failed: ${t.javaClass.simpleName}")
+                onResult(false)
             } finally {
                 _isLicenseLoading.value = false
-                onResult(success)
             }
         }
     }
@@ -253,11 +216,6 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         } catch (t: Throwable) {
             Log.e(TAG, "Error clearing local activation data", t)
         }
-    }
-
-    private fun saveEmailActivationLocally(email: String, deviceId: String) {
-        licenseAndTrialManager.saveEmailActivation(email, deviceId)
-        _activationTrigger.value += 1
     }
 
     val totalTransactionsCount: StateFlow<Int> = combine(

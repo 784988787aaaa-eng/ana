@@ -43,3 +43,18 @@
 
 ## 📄 الترخيص والدعم
 تم تطوير التطبيق وفق أعلى معايير الجودة وهندسة البرمجيات لتوفير تجربة مستخدم موثوقة وآمنة تماماً لإدارة الأموال.
+
+
+## ☁️ منظومة الترخيص السحابي
+
+- Firebase Authentication: هوية حساب Google.
+- Firebase App Check: إثبات أن الطلب صادر من التطبيق.
+- Cloudflare Worker + D1: سلطة الترخيص وإدارة الأجهزة والجلسات.
+- RSA-3072 / SHA-256: توقيع Lease على الخادم والتحقق منه داخل Android بالمفتاح العام.
+- Offline Lease: صالح لمدة 30 يومًا كما في المنظومة السابقة.
+
+لا يعتمد نظام الترخيص على Firebase Cloud Functions أو خطة Blaze.
+
+## Cloudflare deployment identity
+
+The production Worker created in Cloudflare is `al-daftar-license-api` and the production D1 database is `al-daftar-license-db`. The Wrangler configuration has been aligned to those names. The D1 `database_id` is intentionally left as `76b6b20b-6780-4706-bc3c-e1a2c68a35bd` until the real ID is copied from the Cloudflare D1 dashboard; do not replace it with a guessed value.

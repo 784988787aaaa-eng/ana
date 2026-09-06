@@ -1,376 +1,299 @@
-/**
- * =====================================================================
- * ملف: مدير تراخيص وتفعيل التطبيق عبر Firebase (FirebaseLicenseManager.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف المحرك السحابي للتحقق من تراخيص التطبيق وإدارتها عبر قاعدة
- * بيانات Google Firestore السحابية. يتيح للمستخدمين تفعيل النسخة المدفوعة/المميزة
- * بواسطة البريد الإلكتروني، ويطبق خوارزمية ذكية لإدارة الأجهزة المتعددة عبر طابور
- * الإخراج التناوبي (FIFO: First-In-First-Out)، بالإضافة إلى المراقبة اللحظية
- * للتراخيص لرصد عمليات الإلغاء أو نقل التفعيل لأجهزة أخرى فور حدوثها.
- * 
- * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. نمذجة نتائج فحص الترخيص (License Result Modeling):
- *    - استخدام [LicenseState] و [LicenseCheckResult] لتصنيف حالات الترخيص بوضوح.
- * 2. التفعيل السحابي المعاملاتي (Transactional Cloud Activation):
- *    - استخدام معاملات Firestore [runTransaction] لضمان اتساق تسجيل الأجهزة ومنع التضارب.
- * 3. خوارزمية طابور الأجهزة المتعددة (FIFO Device Management):
- *    - السماح بعدد محدد من الأجهزة المصرحة [devices_max]، وطرد الجهاز الأقدم تلقائياً
- *      عند تفعيل جهاز جديد يتجاوز الحد الأقصى.
- * 4. المراقبة اللحظية للتراخيص وإدارة دورة الحياة الآمنة (Lifecycle-Safe Listener):
- *    - مزامنة كائن [ListenerRegistration] مع إلغاء آمن لمنع تسريب الذاكرة أو مضاعفة المستمعين.
- * 5. مبدأ سلامة الترخيص دون اتصال (Offline-Safe License Resilience):
- *    - القاعدة الإلزامية: انقطاع الشبكة ليس إلغاءً للترخيص (NETWORK OUTAGE != LICENSE REVOCATION).
- *    - عند انقطاع الإنترنت أو الخطأ المؤقت يتم الاحتفاظ بالكاش المحلي المشفر دون مسحه أو تعطيل التطبيق.
- */
 package com.smartledger.aldaftar.domain
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد، وسجلات النظام، وموارد التطبيق، ومكتبات Firebase
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.util.Log
-import com.smartledger.aldaftar.R
-import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.smartledger.aldaftar.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.SetOptions
+import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.repository.LicenseAndTrialManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
-import java.util.Date
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
-// =========================================================================
-// قسم: نمذجة حالات ونتائج التحقق من الترخيص (SEALED RESULT CLASS)
-// =========================================================================
-
-/**
- * [فئة نتائج فحص وتفعيل الترخيص - LicenseCheckResult]:
- * فئة مغلقة (Sealed Class) تمثل كافة الاحتمالات الممكنة لعملية التحقق من الترخيص السحابي.
- */
 sealed class LicenseCheckResult {
-    /** نجاح التحقق وربط الجهاز بالترخيص السحابي (مع بيان ما إذا تم نقله من جهاز آخر) */
-    data class Success(val email: String, val deviceId: String, val isTransferred: Boolean = false) : LicenseCheckResult()
-    /** عدم تطابق الجهاز الحالي مع الأجهزة المسجلة في الوثيقة السحابية */
-    data class DeviceMismatch(val email: String, val activeDeviceId: String, val currentDeviceId: String) : LicenseCheckResult()
-    /** الحساب غير مسجل كمرخص أو تم تعطيله من قبل الإدارة */
+    data class Success(
+        val email: String,
+        val deviceId: String,
+        val isTransferred: Boolean = false
+    ) : LicenseCheckResult()
+
     data class NotLicensed(val email: String, val message: String) : LicenseCheckResult()
-    /** انقطاع الشبكة المؤقت مع الحفاظ على التفعيل المحلي */
     data class NetworkOutage(val message: String) : LicenseCheckResult()
-    /** حدوث خطأ في الشبكة أو في صحة البريد الإلكتروني المدخل */
     data class Error(val message: String) : LicenseCheckResult()
 }
 
-// =========================================================================
-// قسم: الكائن الأحادي لمدير التراخيص السحابي (FIREBASE LICENSE MANAGER)
-// =========================================================================
-
 /**
- * [الكائن الأحادي لإدارة تراخيص Firebase - FirebaseLicenseManager]:
- * يحتوي على منطق الاتصال بالسحابة والتحقق اللحظي وإدارة وثائق الترخيص في Firestore.
+ * Client facade for the Cloudflare Worker license authority.
+ * Firebase Authentication remains the identity provider; Android never writes license state directly.
  */
 object FirebaseLicenseManager {
-
-    /** وسم السجلات التشخيصية */
     private const val TAG = "FirebaseLicenseManager"
-    /** اسم مجموعة وثائق التراخيص في Firestore */
-    private const val COLLECTION_LICENSES = "licenses"
-    
-    /** قفل التزامن لإدارة المستمع اللحظي بأمان خيطي كامل */
-    private val listenerLock = Any()
-    /** كائن مراقبة التغييرات اللحظية في الوثيقة السحابية */
-    private var licenseListenerRegistration: ListenerRegistration? = null
+    private const val PATH_ACTIVATE = "/v1/license/activate"
+    private const val PATH_REFRESH = "/v1/license/refresh"
+    private const val PATH_UNLINK = "/v1/license/unlink"
+    private const val PATH_SESSION = "/v1/license/session/"
+    private const val POLL_INTERVAL_MS = 60_000L
 
-    /**
-     * [تنظيف وتوحيد البريد الإلكتروني - normalizeEmail]:
-     * إزالة الفراغات الزائدة وتحويل الأحرف لصغيرة لتجنب أخطاء المطابقة.
-     */
-    private fun normalizeEmail(email: String): String {
-        return email.trim().lowercase()
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
+        .build()
+
+    private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var monitorJob: Job? = null
+
+    private fun normalizeEmail(email: String): String = email.trim().lowercase(Locale.ROOT)
+
+    private fun backendUrl(): String = BuildConfig.LICENSE_BACKEND_URL.trim().trimEnd('/')
+
+    private fun requireBackendUrl(): String {
+        val url = backendUrl()
+        check(url.startsWith("https://") && url.length > "https://".length) {
+            "License backend URL is not configured"
+        }
+        return url
     }
 
-    /**
-     * [التحقق من حالة المصادقة - ensureAuthenticated]:
-     * فحص أولي للمستخدم المسجل في Firebase لضمان توفر الصلاحيات الأمنية.
-     */
-    private fun ensureAuthenticated() {
-        try {
-            val auth = FirebaseAuth.getInstance()
-            if (auth.currentUser == null) {
-                Log.d(TAG, "Current Firebase user is unauthenticated; requests will proceed with default credentials")
+    private suspend fun authHeaders(): Pair<String, String> {
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: throw LicenseClientException(401, "Authentication is required.")
+        val idToken = user.getIdToken(false).await()?.token
+            ?: throw LicenseClientException(401, "Authentication token is unavailable.")
+        val appCheckToken = FirebaseAppCheck.getInstance().getAppCheckToken(false).await().token
+        return idToken to appCheckToken
+    }
+
+    private suspend fun post(path: String, body: JSONObject): HttpResult {
+        val (idToken, appCheckToken) = authHeaders()
+        val request = Request.Builder()
+            .url(requireBackendUrl() + path)
+            .header("Authorization", "Bearer $idToken")
+            .header("X-Firebase-AppCheck", appCheckToken)
+            .header("Accept", "application/json")
+            .post(body.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
+            .build()
+        return execute(request)
+    }
+
+    private suspend fun get(path: String): HttpResult {
+        val (idToken, appCheckToken) = authHeaders()
+        val request = Request.Builder()
+            .url(requireBackendUrl() + path)
+            .header("Authorization", "Bearer $idToken")
+            .header("X-Firebase-AppCheck", appCheckToken)
+            .header("Accept", "application/json")
+            .get()
+            .build()
+        return execute(request)
+    }
+
+    private suspend fun execute(request: Request): HttpResult {
+        return kotlinx.coroutines.withContext(Dispatchers.IO) {
+            try {
+                httpClient.newCall(request).execute().use { response ->
+                    val raw = response.body?.string().orEmpty()
+                    val json = runCatching { JSONObject(raw) }.getOrNull()
+                    val message = json?.optJSONObject("error")?.optString("message")
+                        ?.takeIf { it.isNotBlank() }
+                        ?: json?.optString("message")?.takeIf { it.isNotBlank() }
+                        ?: response.message
+                    HttpResult(response.code, json, message)
+                }
+            } catch (t: Throwable) {
+                throw LicenseClientException(0, t.message ?: "Network error")
             }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Firebase auth state check notice: ${t.message}")
         }
     }
 
-    /**
-     * [التحقق من الترخيص والتفعيل - verifyAndActivateEmail]:
-     * الدالة العامة لتفعيل البريد وتفويض منطق الطابور التناوبي (FIFO).
-     */
-    suspend fun verifyAndActivateEmail(context: Context, email: String, currentDeviceId: String): LicenseCheckResult {
-        return verifyAndActivateEmailWithFifo(context, email, currentDeviceId)
-    }
-
-    /**
-     * [التحقق والتفعيل بنظام طابور الأجهزة التناوبي - verifyAndActivateEmailWithFifo]:
-     * ينفذ معاملة ذرية (Atomic Transaction) على Firestore للتحقق من صلاحية البريد،
-     * وإضافة الجهاز الحالي لقائمة الأجهزة النشطة مع طرد الجهاز الأقدم إن تم بلوغ الحد الأقصى.
-     *
-     * @param context سياق التطبيق للوصول لنصوص الخطأ المترجمة.
-     * @param email البريد الإلكتروني للمستخدم.
-     * @param currentDeviceId البصمة الموحدة للجهاز الحالي.
-     * @return نتيجة العملية من نوع [LicenseCheckResult].
-     */
-    suspend fun verifyAndActivateEmailWithFifo(context: Context, email: String, currentDeviceId: String): LicenseCheckResult {
+    suspend fun verifyAndActivateEmail(
+        context: Context,
+        email: String,
+        currentDeviceId: String
+    ): LicenseCheckResult {
         val cleanEmail = normalizeEmail(email)
-        // التحقق من صحة صياغة البريد الإلكتروني
-        if (cleanEmail.isEmpty() || !cleanEmail.contains("@")) {
-            return LicenseCheckResult.Error(context.getString(R.string.licensing_error_invalid_email))
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: return LicenseCheckResult.Error(context.getString(R.string.licensing_error_connection))
+        val authEmail = normalizeEmail(user.email.orEmpty())
+        if (authEmail.isBlank() || authEmail != cleanEmail) {
+            return LicenseCheckResult.NotLicensed(
+                cleanEmail,
+                context.getString(R.string.licensing_error_account_disabled)
+            )
         }
 
         return try {
-            ensureAuthenticated()
-            val db = FirebaseFirestore.getInstance()
-            val docRef = db.collection(COLLECTION_LICENSES).document(cleanEmail)
-
-            var isTransferred = false
-
-            // تنفيذ العملية داخل معاملة لضمان التزامن الذري
-            db.runTransaction { transaction ->
-                val snapshot = transaction.get(docRef)
-
-                // إذا لم تكن وثيقة الترخيص موجودة
-                if (!snapshot.exists()) {
-                    throw IllegalStateException("NOT_REGISTERED")
+            val result = post(
+                PATH_ACTIVATE,
+                JSONObject()
+                    .put("deviceId", currentDeviceId)
+                    .put("appVersion", currentAppVersion(context))
+            )
+            when {
+                result.code in 200..299 -> {
+                    persistLease(context, result.requireJson(), cleanEmail, currentDeviceId)
+                    LicenseCheckResult.Success(
+                        email = cleanEmail,
+                        deviceId = currentDeviceId,
+                        isTransferred = result.requireJson().optBoolean("replaced", false)
+                    )
                 }
-
-                // التحقق من أن الحساب نشط وغير معطل من قبل المشرف
-                val isActivated = snapshot.getBoolean("is_activated") ?: false
-                if (!isActivated) {
-                    throw IllegalStateException("ACCOUNT_DISABLED")
-                }
-
-                // قراءة الحد الأقصى للأجهزة المسموح بها (افتراضياً جهاز واحد)
-                val devicesMax = (snapshot.getLong("devices_max") ?: 1L).toInt().coerceAtLeast(1)
-                @Suppress("UNCHECKED_CAST")
-                val activeDevices = (snapshot.get("active_devices") as? List<String>)?.toMutableList()
-                    ?: mutableListOf()
-
-                val legacyActiveDevice = snapshot.getString("active_device_id") ?: ""
-                if (activeDevices.isEmpty() && legacyActiveDevice.isNotEmpty()) {
-                    activeDevices.add(legacyActiveDevice)
-                }
-
-                // إذا لم يكن الجهاز الحالي مسجلاً بالفعل في القائمة
-                if (!activeDevices.contains(currentDeviceId)) {
-                    isTransferred = activeDevices.isNotEmpty()
-
-                    // تطبيق خوارزمية FIFO: إزالة أقدم جهاز مسجل عند امتلاء السعة
-                    while (activeDevices.size >= devicesMax && activeDevices.isNotEmpty()) {
-                        activeDevices.removeAt(0)
-                    }
-                    activeDevices.add(currentDeviceId)
-                }
-
-                // تحديث بيانات الوثيقة السحابية
-                val updates = mapOf(
-                    "email" to cleanEmail,
-                    "is_activated" to true,
-                    "devices_max" to devicesMax,
-                    "active_devices" to activeDevices,
-                    "active_device_id" to currentDeviceId, // للتوافقية مع الإصدارات السابقة
-                    "last_updated" to SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-                )
-
-                transaction.set(docRef, updates, SetOptions.merge())
-            }.await()
-
-            LicenseCheckResult.Success(email = cleanEmail, deviceId = currentDeviceId, isTransferred = isTransferred)
-        } catch (e: IllegalStateException) {
-            when (e.message) {
-                "ACCOUNT_DISABLED" -> LicenseCheckResult.NotLicensed(cleanEmail, context.getString(R.string.licensing_error_account_disabled))
-                else -> LicenseCheckResult.NotLicensed(cleanEmail, context.getString(R.string.licensing_error_not_registered))
+                result.code == 401 || result.code == 403 || result.code == 404 ->
+                    LicenseCheckResult.NotLicensed(cleanEmail, result.message)
+                result.code == 408 || result.code == 429 || result.code >= 500 ->
+                    LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
+                else -> LicenseCheckResult.Error(result.message)
             }
-        } catch (e: FirebaseNetworkException) {
-            Log.w(TAG, "Network outage during email license verification: ${e.message}")
-            LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
-        } catch (e: FirebaseFirestoreException) {
-            Log.e(TAG, "Firestore exception (${e.code}): ${e.message}")
-            if (e.code == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
-            } else {
-                LicenseCheckResult.Error(e.localizedMessage ?: "Firestore error")
-            }
+        } catch (e: LicenseClientException) {
+            if (e.status in 401..403) LicenseCheckResult.NotLicensed(cleanEmail, e.message.orEmpty())
+            else LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
         } catch (t: Throwable) {
-            Log.e(TAG, "Error verifying email license safely: ${t.javaClass.simpleName}", t)
-            LicenseCheckResult.Error(context.getString(R.string.licensing_error_not_registered))
+            Log.w(TAG, "License activation failed safely: ${t.javaClass.simpleName}")
+            LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
         }
     }
 
-    // =========================================================================
-    // قسم: المراقبة اللحظية للترخيص (REALTIME MONITORING)
-    // =========================================================================
+    suspend fun unlinkDevice(context: Context, email: String, currentDeviceId: String): Boolean {
+        val user = FirebaseAuth.getInstance().currentUser ?: return false
+        if (!normalizeEmail(user.email.orEmpty()).equals(normalizeEmail(email), ignoreCase = true)) return false
+        return try {
+            val result = post(PATH_UNLINK, JSONObject().put("deviceId", currentDeviceId))
+            if (result.code in 200..299) {
+                stopRealtimeLicenseMonitoring()
+                true
+            } else false
+        } catch (t: Throwable) {
+            Log.w(TAG, "Current-device license unlink failed: ${t.javaClass.simpleName}")
+            false
+        }
+    }
 
-    /**
-     * [بدء المراقبة اللحظية لصلاحية الترخيص - startRealtimeLicenseMonitoring]:
-     * يربط مستمع لحظي مع وثيقة المستخدم في Firestore للتنبه فور قيام المشرف بتعطيل الحساب
-     * أو في حال تم طرد الجهاز الحالي بواسطة جهاز آخر جديد (FIFO Ejection).
-     *
-     * @param context سياق التطبيق للوصول للنصوص.
-     * @param email بريد المستخدم المرخص.
-     * @param currentDeviceId بصمة الجهاز الحالي.
-     * @param onKickedOrDisabled دالة رد النداء عند إلغاء الصلاحية أو طرد الجهاز.
-     */
+    suspend fun syncAndVerifyLocalEmailLicense(context: Context): Boolean {
+        val security = AppSecurityManager.getInstance(context.applicationContext)
+        val email = security.getActivatedEmail()
+        val deviceId = LicenseManager.getOrGenerateUnifiedDeviceId(context)
+        val sessionId = security.getLicenseSessionId()
+        if (email.isBlank() || sessionId.isBlank()) return false
+
+        val localValid = LicenseAndTrialManager(context).isAppActivated()
+        if (!localValid) return false
+
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !normalizeEmail(user.email.orEmpty()).equals(normalizeEmail(email), ignoreCase = true)) {
+            return localValid
+        }
+
+        return try {
+            val result = post(
+                PATH_REFRESH,
+                JSONObject().put("deviceId", deviceId).put("sessionId", sessionId)
+            )
+            when {
+                result.code in 200..299 -> {
+                    persistLease(context, result.requireJson(), email, deviceId)
+                    true
+                }
+                result.code == 401 || result.code == 403 || result.code == 404 -> {
+                    security.clearActivationData()
+                    false
+                }
+                else -> localValid
+            }
+        } catch (_: Throwable) {
+            localValid
+        }
+    }
+
     fun startRealtimeLicenseMonitoring(
         context: Context,
         email: String,
         currentDeviceId: String,
         onKickedOrDisabled: (reason: String) -> Unit
     ) {
-        val cleanEmail = normalizeEmail(email)
-        if (cleanEmail.isEmpty()) return
+        val security = AppSecurityManager.getInstance(context.applicationContext)
+        val sessionId = security.getLicenseSessionId()
+        if (sessionId.isBlank()) return
 
-        synchronized(listenerLock) {
-            // إيقاف أي مستمع نشط سابقاً لمنع تكرار المستمعين
-            stopRealtimeLicenseMonitoring()
-
-            val db = FirebaseFirestore.getInstance()
-            val docRef = db.collection(COLLECTION_LICENSES).document(cleanEmail)
-
-            // تسجيل مستمع اللقطات اللحظية
-            licenseListenerRegistration = docRef.addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    // أخطاء الشبكة المؤقتة في المستمع لا تؤدي لطرد المستخدم
-                    Log.w(TAG, "Realtime listener error notice (${error.code}): ${error.message}")
-                    return@addSnapshotListener
-                }
-
-                val securityManager = AppSecurityManager.getInstance(context.applicationContext)
-                if (!securityManager.isActivatedCached()) {
-                    // لا يتم طرد أي جهاز إلا إذا كان مفعلاً ومسجلاً رسمياً بالترخيص
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null && snapshot.exists()) {
-                    val isActivated = snapshot.getBoolean("is_activated") ?: false
-                    @Suppress("UNCHECKED_CAST")
-                    val activeDevices = snapshot.get("active_devices") as? List<String> ?: emptyList()
-                    val legacyActiveDevice = snapshot.getString("active_device_id") ?: ""
-
-                    val isDeviceAuthorized = activeDevices.contains(currentDeviceId) || legacyActiveDevice == currentDeviceId
-
-                    if (!isActivated) {
-                        Log.w(TAG, "Account disabled remotely by Admin.")
-                        onKickedOrDisabled(context.getString(R.string.licensing_error_account_disabled))
-                    } else if (!isDeviceAuthorized && (activeDevices.isNotEmpty() || legacyActiveDevice.isNotEmpty())) {
-                        Log.w(TAG, "Device kicked out due to multi-device FIFO limit or unlinking.")
+        stopRealtimeLicenseMonitoring()
+        monitorJob = monitorScope.launch {
+            while (isActive) {
+                try {
+                    val result = get(PATH_SESSION + java.net.URLEncoder.encode(sessionId, Charsets.UTF_8.name()))
+                    if (result.code == 403 || result.code == 404) {
+                        security.clearActivationData()
                         onKickedOrDisabled(context.getString(R.string.licensing_device_kicked))
+                        break
                     }
-                } else if (snapshot != null && !snapshot.exists()) {
-                    Log.w(TAG, "License document deleted.")
-                    onKickedOrDisabled(context.getString(R.string.licensing_license_deleted))
+                    if (result.code in 200..299) {
+                        val status = result.requireJson().optString("status")
+                        if (status != "active") {
+                            security.clearActivationData()
+                            onKickedOrDisabled(context.getString(R.string.licensing_device_kicked))
+                            break
+                        }
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "License session polling failed safely: ${t.javaClass.simpleName}")
                 }
+                delay(POLL_INTERVAL_MS)
             }
         }
     }
 
-    /**
-     * [إيقاف المراقبة اللحظية للترخيص - stopRealtimeLicenseMonitoring]:
-     * إلغاء تسجيل المستمع اللحظي لتحرير الموارد بأمان خيطي عند إغلاق الشاشة أو تسجيل الخروج.
-     */
     fun stopRealtimeLicenseMonitoring() {
-        synchronized(listenerLock) {
-            licenseListenerRegistration?.remove()
-            licenseListenerRegistration = null
-        }
+        monitorJob?.cancel()
+        monitorJob = null
     }
 
-    // =========================================================================
-    // قسم: إلغاء الربط ومزامنة التراخيص (UNLINKING & SYNC)
-    // =========================================================================
+    private fun persistLease(
+        context: Context,
+        data: JSONObject,
+        email: String,
+        deviceId: String
+    ) {
+        val sessionId = data.optString("sessionId").takeIf { it.isNotBlank() }
+            ?: error("Missing license session")
+        val signature = data.optString("signature").takeIf { it.isNotBlank() }
+            ?: error("Missing license signature")
+        val lease = data.optJSONObject("lease") ?: error("Missing license lease")
+        val leaseJson = lease.toString()
+        val verified = LicenseLeaseVerifier.isValidForDevice(
+            leaseJson,
+            signature,
+            email,
+            deviceId
+        )
+        check(verified) { "Server returned an invalid license lease" }
 
-    /**
-     * [إلغاء ربط الجهاز بالترخيص - unlinkDevice]:
-     * يمسح معرفات الأجهزة النشطة من الوثيقة السحابية لإتاحة تفعيل أجهزة جديدة.
-     *
-     * @param email بريد الحساب المرخص.
-     * @return true إذا تم إلغاء الربط بنجاح، وإلا false.
-     */
-    suspend fun unlinkDevice(email: String): Boolean {
-        val cleanEmail = normalizeEmail(email)
-        if (cleanEmail.isEmpty()) return false
-        return try {
-            ensureAuthenticated()
-            val db = FirebaseFirestore.getInstance()
-            val docRef = db.collection(COLLECTION_LICENSES).document(cleanEmail)
-
-            val updates = mapOf<String, Any>(
-                "active_device_id" to "",
-                "active_devices" to emptyList<String>(),
-                "last_updated" to SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-            )
-            docRef.set(updates, SetOptions.merge()).await()
-            true
-        } catch (t: Throwable) {
-            Log.e(TAG, "Error unlinking device safely: ${t.javaClass.simpleName}")
-            false
-        }
+        AppSecurityManager.getInstance(context.applicationContext).saveLicenseLease(
+            email = email,
+            deviceId = deviceId,
+            sessionId = sessionId,
+            leaseJson = leaseJson,
+            signature = signature
+        )
     }
 
-    /**
-     * [مزامنة والتحقق من الترخيص المحلي - syncAndVerifyLocalEmailLicense]:
-     * يفحص مطابقة الترخيص السحابي مع الذاكرة المشفرة على الجهاز الحالي،
-     * مع توفير آلية التراجع الآمن للعمل دون اتصال بالاعتماد على الكاش المحلي.
-     *
-     * @param context سياق التطبيق للوصول لمدير الأمان وبصمة الجهاز.
-     * @return true إذا كان التطبيق مرخصاً ومصرحاً له بالعمل، وإلا false.
-     */
-    suspend fun syncAndVerifyLocalEmailLicense(context: Context): Boolean {
-        val securityManager = AppSecurityManager.getInstance(context)
-        val email = securityManager.getActivatedEmail()
-        if (email.isBlank()) return false
+    private fun currentAppVersion(context: Context): String =
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
+        }.getOrDefault("unknown")
 
-        val currentDeviceId = LicenseManager.getOrGenerateUnifiedDeviceId(context)
-
-        return try {
-            ensureAuthenticated()
-            val cleanEmail = normalizeEmail(email)
-            val db = FirebaseFirestore.getInstance()
-            val snapshot = db.collection(COLLECTION_LICENSES).document(cleanEmail).get().await()
-
-            if (snapshot != null && snapshot.exists()) {
-                val isActivated = snapshot.getBoolean("is_activated") ?: false
-                val activeDeviceId = snapshot.getString("active_device_id") ?: ""
-                @Suppress("UNCHECKED_CAST")
-                val activeDevices = snapshot.get("active_devices") as? List<String> ?: emptyList()
-
-                val isAuthorized = activeDevices.contains(currentDeviceId) || activeDeviceId == currentDeviceId
-
-                if (isActivated && isAuthorized) {
-                    // الترخيص صالح على Firebase لهذا الجهاز: مزامنة وحفظ التفعيل المحلي المشفر
-                    securityManager.setCachedActivation(true, currentDeviceId)
-                    true
-                } else {
-                    // الترخيص ملغى أو نُقل لجهاز آخر: مسح بيانات التفعيل المحلية
-                    securityManager.clearActivationData()
-                    false
-                }
-            } else {
-                // الوثيقة غير موجودة أو حذفت
-                securityManager.clearActivationData()
-                false
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Sync email license check failed safely (offline or transient exception): ${t.message}")
-            // التراجع الآمن عند انقطاع الإنترنت: الوثوق بالكاش المشفر المحلي إن تطابقت بصمة الجهاز
-            // NETWORK OUTAGE != LICENSE REVOCATION
-            val cachedIsActivated = securityManager.isActivatedCached()
-            val cachedForDevice = securityManager.getCachedDeviceId()
-            cachedIsActivated && (cachedForDevice == currentDeviceId || cachedForDevice.isBlank())
-        }
+    private data class HttpResult(val code: Int, val json: JSONObject?, val message: String) {
+        fun requireJson(): JSONObject = json ?: error("Invalid license response")
     }
+
+    private class LicenseClientException(val status: Int, message: String) : Exception(message)
 }

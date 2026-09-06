@@ -37,6 +37,7 @@ class FinanceApplication : Application(), Configuration.Provider {
      */
     override fun onCreate() {
         super.onCreate()
+        FirebaseSecurityInitializer.initialize(this)
 
         // تنفيذ التهيئة الخلفية بشكل غير متزامن لتفادي حظر المسار الرئيسي (Main Thread)
         CoroutineScope(Dispatchers.IO).launch {

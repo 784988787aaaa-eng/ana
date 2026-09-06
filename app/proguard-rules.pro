@@ -20,12 +20,6 @@
 -keep class com.smartledger.aldaftar.data.local.entities.** { *; }
 -keep interface com.smartledger.aldaftar.data.local.dao.** { *; }
 
-# Keep security & licensing logic methods intact
--keepclassmembers class com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel {
-    *** isTrialExpired(...);
-    *** activateLicense(...);
-}
-
 # --- Compose and UI State Optimizations ---
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 -keepclassmembers class * {
@@ -49,3 +43,6 @@
 
 
 
+
+# License lease verification is intentionally self-contained and referenced directly.
+-keep class com.smartledger.aldaftar.domain.LicenseLeaseVerifier { *; }

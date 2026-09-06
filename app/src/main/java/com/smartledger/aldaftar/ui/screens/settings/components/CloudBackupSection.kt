@@ -88,10 +88,16 @@ fun CloudBackupSection(
             },
             onLogoutClick = {
                 isSyncLoggingOut = true
-                backupSyncViewModel.googleDriveLogout {
-                    isSyncLoggingOut = false
-                    Toast.makeText(context, context.getString(R.string.settings_toast_gdrive_logout_success), Toast.LENGTH_SHORT).show()
-                }
+                backupSyncViewModel.googleDriveLogout(
+                    onComplete = {
+                        isSyncLoggingOut = false
+                        Toast.makeText(context, context.getString(R.string.settings_toast_gdrive_logout_success), Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = {
+                        isSyncLoggingOut = false
+                        Toast.makeText(context, context.getString(R.string.licensing_error_no_internet), Toast.LENGTH_LONG).show()
+                    }
+                )
             },
             onManualAuthCodeSubmit = { code ->
                 backupSyncViewModel.handleRawOAuthCodeOrUrl(code, null, "http://localhost/oauth2callback") { success ->

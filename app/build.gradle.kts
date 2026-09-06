@@ -89,6 +89,13 @@ android {
     compose = true
     buildConfig = true
   }
+
+  val licenseBackendUrl = providers.gradleProperty("LICENSE_BACKEND_URL").orNull
+    ?: System.getenv("LICENSE_BACKEND_URL")
+    ?: "https://REPLACE_WITH_LICENSE_WORKER.workers.dev"
+  defaultConfig {
+    buildConfigField("String", "LICENSE_BACKEND_URL", "\"$licenseBackendUrl\"")
+  }
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
@@ -168,7 +175,9 @@ dependencies {
   implementation(libs.androidx.room.paging)
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.auth)
-  implementation(libs.firebase.firestore)
+  implementation(libs.firebase.appcheck)
+  implementation(libs.firebase.appcheck.playintegrity)
+  implementation(libs.firebase.appcheck.debug)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

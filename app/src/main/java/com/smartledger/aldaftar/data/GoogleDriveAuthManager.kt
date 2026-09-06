@@ -34,6 +34,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -223,6 +224,11 @@ class GoogleDriveAuthManager(
     fun getGoogleSignInClient(): GoogleSignInClient {
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
+            .apply {
+                if (clientId.isNotBlank()) {
+                    requestIdToken(clientId)
+                }
+            }
             .requestScopes(
                 Scope(SCOPE_DRIVE_APPDATA),
                 Scope(SCOPE_DRIVE_FILE)
