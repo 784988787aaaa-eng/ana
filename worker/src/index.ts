@@ -33,6 +33,12 @@ type SessionRow = {
   revoked_reason: string | null;
 };
 
+type SupportIdentityRow = {
+  uid: string;
+  support_id: string;
+  created_at_ms: number;
+};
+
 type AuthContext = { uid: string; email: string };
 
 type ApiErrorCode =
@@ -59,6 +65,9 @@ const MAX_DEVICE_ID_LENGTH = 128;
 const MAX_APP_VERSION_LENGTH = 32;
 const FIREBASE_ID_TOKEN_CERTS = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
 const FIREBASE_APPCHECK_JWKS = "https://firebaseappcheck.googleapis.com/v1/jwks";
+
+// أحرف وأرقام آمنة بصرياً (تم استبعاد 0, O, 1, I, L)
+const SUPPORT_ID_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
 let privateKeyPromise: Promise<KeyLike> | undefined;
 let firebaseCertCache: { expiresAt: number; keys: Map<string, KeyLike> } | undefined;
@@ -161,6 +170,18 @@ function bytesToBase64Url(bytes: Uint8Array): string {
 
 function createSessionId(): string {
   return bytesToBase64Url(crypto.getRandomValues(new Uint8Array(24)));
+}
+
+/**
+ * توليد Support ID عشوائي وآمن بصيغة: SD-XXXX-XXXX-XX
+ */
+function generateRandomSupportId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  const chars: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    chars.push(SUPPORT_ID_ALPHABET[bytes[i] % SUPPORT_ID_ALPHABET.length]);
+  }
+  return `SD-${chars.slice(0, 4).join("")}-${chars.slice(4, 8).join("")}-${chars.slice(8, 10).join("")}`;
 }
 
 async function signLease(env: Env, payload: Record<string, unknown>): Promise<string> {
@@ -288,6 +309,87 @@ async function getLicense(env: Env, uid: string, email: string): Promise<License
   return env.DB.prepare("SELECT * FROM licenses WHERE uid = ?1").bind(uid).first<LicenseRow>();
 }
 
+/**
+ * الحصول على Support ID للمستخدم الحالي (مع ضمان الثبات Idempotency ومعالجة Race Conditions)
+ */
+async function getOrCreateSupportIdentity(env: Env, auth: AuthContext): Promise<Response> {
+  // 1. التحقق إن كان المستخدم يملك Support ID سابق
+  const existing = await env.DB.prepare("SELECT * FROM support_identities WHERE uid = ?1")
+    .bind(auth.uid)
+    .first<SupportIdentityRow>();
+
+  if (existing) {
+    return ok({ supportId: existing.support_id });
+  }
+
+  // 2. محاولة توليد Support ID فريد (بحد أقصى 5 محاولات لمنع التصادم)
+  const nowMs = Date.now();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidateId = generateRandomSupportId();
+    try {
+      await env.DB.prepare(
+        `INSERT INTO support_identities (uid, support_id, created_at_ms)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT(uid) DO NOTHING`,
+      ).bind(auth.uid, candidateId, nowMs).run();
+
+      // قراءة السجل للتأكد (سواء تم إدخاله للتو أو كان هناك سباق متزامن)
+      const current = await env.DB.prepare("SELECT * FROM support_identities WHERE uid = ?1")
+        .bind(auth.uid)
+        .first<SupportIdentityRow>();
+
+      if (current) {
+        return ok({ supportId: current.support_id });
+      }
+    } catch (error) {
+      // في حال حدوث تعارض UNIQUE على support_id، سيعيد المحاولة برمز جديد
+      console.warn("Support ID collision or insert retry", error);
+    }
+  }
+
+  throw new LicenseError("internal", "Unable to generate a unique support identity. Please retry.", 500);
+}
+
+/**
+ * مسار إداري للبحث عن العميل وتفاصيل حسابه باستخدام Support ID (للمطور فقط)
+ */
+async function adminLookupSupportIdentity(env: Env, request: Request, supportId: string): Promise<Response> {
+  await adminAuthorize(request, env);
+
+  const cleanSupportId = supportId.trim().toUpperCase();
+  if (!cleanSupportId) {
+    throw new LicenseError("invalid-argument", "Missing support ID parameter.", 400);
+  }
+
+  const identity = await env.DB.prepare("SELECT * FROM support_identities WHERE support_id = ?1")
+    .bind(cleanSupportId)
+    .first<SupportIdentityRow>();
+
+  if (!identity) {
+    throw new LicenseError("not-found", "Support identity not found.", 404);
+  }
+
+  const license = await env.DB.prepare("SELECT * FROM licenses WHERE uid = ?1")
+    .bind(identity.uid)
+    .first<LicenseRow>();
+
+  return ok({
+    ok: true,
+    supportId: identity.support_id,
+    uid: identity.uid,
+    createdAtMs: identity.created_at_ms,
+    license: license
+      ? {
+          email: license.email,
+          is_activated: Boolean(license.is_activated),
+          devices_max: license.devices_max,
+          license_version: license.license_version,
+          updated_at_ms: license.updated_at_ms,
+        }
+      : null,
+  });
+}
+
 async function activateLicense(env: Env, auth: AuthContext, body: Record<string, unknown>, retry = true): Promise<Response> {
   const deviceId = normalizeDeviceId(body.deviceId);
   const appVersion = normalizeAppVersion(body.appVersion);
@@ -368,8 +470,6 @@ async function activateLicense(env: Env, auth: AuthContext, body: Record<string,
   try {
     await env.DB.batch(statements);
   } catch (error) {
-    // D1 batches are atomic. The trigger prevents concurrent activations from
-    // exceeding devices_max; retry once against the now-current license order.
     if (retry && error instanceof Error && error.message.includes("DEVICE_LIMIT_REACHED")) {
       return activateLicense(env, auth, body, false);
     }
@@ -529,12 +629,24 @@ export default {
     try {
       if (url.pathname === "/health") return ok({ ok: true, service: "al-daftar-license-api" });
 
+      // المسارات الإدارية (Admin Only)
       if (url.pathname === "/v1/admin/licenses" && request.method === "POST") {
         return await adminUpsertLicense(env, request);
       }
+      if (url.pathname.startsWith("/v1/admin/support-identities/") && request.method === "GET") {
+        const supportId = decodeURIComponent(url.pathname.slice("/v1/admin/support-identities/".length)).trim();
+        return await adminLookupSupportIdentity(env, request, supportId);
+      }
 
+      // مسارات المستخدم المحمية بالمصادقة (Firebase Auth + App Check)
       const auth = await authenticate(request, env);
 
+      // مسار جلب Support ID
+      if (url.pathname === "/v1/support/identity" && request.method === "GET") {
+        return await getOrCreateSupportIdentity(env, auth);
+      }
+
+      // مسارات الترخيص الأساسية (دون أي تعديل)
       if (url.pathname === "/v1/license/activate" && request.method === "POST") {
         return await activateLicense(env, auth, await readJson(request));
       }
