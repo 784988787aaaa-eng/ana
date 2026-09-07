@@ -40,7 +40,8 @@ fun ActivationGoogleTabContent(
     storedEmail: String?,
     isLicenseLoading: Boolean,
     onGoogleSignInClick: () -> Unit,
-    onGoogleActivateClick: () -> Unit
+    onGoogleActivateClick: () -> Unit,
+    onGoogleSignOutClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -77,7 +78,7 @@ fun ActivationGoogleTabContent(
                         Spacer(modifier = Modifier.width(6.dp))
                         Column {
                             Text(
-                                text = stringResource(R.string.licensing_google_account_connected),
+                                text = storedEmail,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -92,27 +93,44 @@ fun ActivationGoogleTabContent(
                         }
                     }
 
-                    Button(
-                        onClick = onGoogleActivateClick,
-                        enabled = !isLicenseLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                        modifier = Modifier.height(32.dp)
-                    ) {
-                        if (isLicenseLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(12.dp),
-                                strokeWidth = 1.5.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.licensing_fluent_btn_activate_now),
-                                fontSize = 10.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (onGoogleSignOutClick != null) {
+                            IconButton(
+                                onClick = onGoogleSignOutClick,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Logout,
+                                    contentDescription = stringResource(R.string.licensing_fluent_btn_signout),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+
+                        Button(
+                            onClick = onGoogleActivateClick,
+                            enabled = !isLicenseLoading,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            if (isLicenseLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(12.dp),
+                                    strokeWidth = 1.5.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.licensing_fluent_btn_activate_now),
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
                     }
                 }
@@ -151,7 +169,8 @@ fun ActivationGoogleTabContent(
 @Composable
 fun ActivationSupportIdCard(
     supportState: com.smartledger.aldaftar.domain.SupportIdentityState,
-    onCopyClick: () -> Unit
+    onCopyClick: () -> Unit,
+    onRetryClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -218,7 +237,30 @@ fun ActivationSupportIdCard(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    else -> Unit
+                    else -> {
+                        if (onRetryClick != null) {
+                            FilledTonalButton(
+                                onClick = onRetryClick,
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .height(28.dp)
+                                    .testTag("retry_support_id_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.licensing_support_id_refresh),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

@@ -73,6 +73,8 @@
     <string name="licensing_trial_exhausted_title">انتهت المعاملات المجانية المتاحة</string>
     <string name="licensing_trial_exhausted_desc">للاستمرار، يرجى التواصل مع المطور وذكر معرّف الدعم الخاص بك.</string>
     <string name="licensing_fluent_desc_default">سجّل الدخول بحساب Google المرخص لتفعيل الترخيص السحابي على هذا الهاتف.</string>
+    <string name="licensing_connected_unlicensed_desc">حسابك متصل • النسخة الأساسية (المعاملات محدودة) • النسخ الاحتياطي السحابي والاستعادة متاحان بالكامل.</string>
+    <string name="licensing_connected_trial_exhausted_desc">انتهت المعاملات المجانية المتاحة (100 معاملة). النسخ السحابي والاستعادة يعملان بشكل طبيعي. لتسجيل معاملات إضافية يمكنك طلب ترخيص النسخة الكاملة.</string>
     <string name="licensing_fluent_cloud_synced_badge">رخصة معتمدة ✨</string>
     <string name="licensing_fluent_cloud_backup_only">نسخ احتياطي سحابي فقط</string>
     <string name="licensing_fluent_btn_google_signin">تسجيل الدخول باستخدام Google</string>
@@ -82,6 +84,7 @@
     <string name="licensing_support_id_label">معرّف الدعم</string>
     <string name="licensing_support_id_pending">قيد التجهيز من الخادم</string>
     <string name="licensing_support_id_loading">جاري جلب معرّف الدعم...</string>
+    <string name="licensing_support_id_refresh">إعادة المحاولة</string>
     <string name="licensing_copy_support_id">نسخ معرّف الدعم</string>
     <string name="licensing_support_id_copied_toast">تم نسخ معرّف الدعم إلى الحافظة بنجاح 📋</string>
     <string name="licensing_support_id_pending_toast">معرّف الدعم قيد التجهيز من الخادم حالياً</string>
@@ -100,7 +103,7 @@
     <string name="licensing_fluent_toast_google_unavailable">خدمة Google Sign-In غير متوفرة حالياً</string>
     <string name="licensing_fluent_toast_whatsapp_missing">تطبيق واتساب غير مثبت على هذا الجهاز</string>
     <string name="licensing_fluent_unregistered_email">غير مسجل</string>
-    <string name="licensing_dialog_desc">انتهت الفترة التجريبية. الرجاء إدخال رمز تفعيل الجهاز لمواصلة العمل بكامل الميزات.</string>
+    <string name="licensing_dialog_desc">انتهت المعاملات المجانية المتاحة. الرجاء تفعيل ترخيص التطبيق لمواصلة تسجيل المعاملات.</string>
     <string name="licensing_browse_offline">تخطي مؤقتاً</string>
     <string name="licensing_tab_email">تفعيل بالبريد 📧</string>
     <string name="licensing_error_invalid_email">يرجى إدخال بريد إلكتروني صحيح</string>

@@ -77,22 +77,13 @@ fun DeviceActivationDialog(
         ) { outcome ->
             when (outcome) {
                 is com.smartledger.aldaftar.domain.GoogleSignInOutcome.Success -> {
-                    if (outcome.isDriveAuthorized) {
-                        Toast.makeText(context, context.getString(R.string.backup_toast_linked_success, outcome.email), Toast.LENGTH_LONG).show()
+                    actionFeedbackMessage = null
+                    val toastMsg = if (outcome.isDriveAuthorized) {
+                        context.getString(R.string.backup_toast_linked_success, outcome.email)
+                    } else {
+                        context.getString(R.string.licensing_google_account_connected)
                     }
-                    if (outcome.email.isNotEmpty()) {
-                        viewModel.activateWithFirebaseEmail(outcome.email) { res ->
-                            actionFeedbackMessage = when (res) {
-                                is LicenseCheckResult.Success -> null
-                                is LicenseCheckResult.NotLicensed -> res.message
-                                is LicenseCheckResult.NetworkOutage -> res.message
-                                is LicenseCheckResult.Error -> res.message
-                            }
-                            if (res is LicenseCheckResult.Success) {
-                                Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_active_success), Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
+                    Toast.makeText(context, toastMsg, Toast.LENGTH_SHORT).show()
                 }
                 is com.smartledger.aldaftar.domain.GoogleSignInOutcome.Cancelled -> {
                     Toast.makeText(context, context.getString(R.string.backup_toast_cancelled), Toast.LENGTH_SHORT).show()
@@ -138,7 +129,8 @@ fun DeviceActivationDialog(
                 // Status Banner
                 ActivationStatusBanner(
                     isActivated = isActivated,
-                    isAutoTriggered = isAutoTriggered
+                    isAutoTriggered = isAutoTriggered,
+                    storedEmail = storedEmail
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -149,15 +141,18 @@ fun DeviceActivationDialog(
                         storedEmail = storedEmail,
                         activatedEmail = activatedEmail,
                         onLogout = {
-                            backupSyncViewModel?.googleDriveLogout(
-                                onComplete = {
-                                    actionFeedbackMessage = null
-                                    Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                                },
-                                onFailure = {
-                                    actionFeedbackMessage = context.getString(R.string.licensing_error_no_internet)
-                                }
-                            )
+                            viewModel.unlinkCurrentDevice {
+                                backupSyncViewModel?.googleDriveLogout(
+                                    onComplete = {
+                                        actionFeedbackMessage = null
+                                        Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
+                                    },
+                                    onFailure = {
+                                        actionFeedbackMessage = null
+                                        Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            }
                         },
                         onDismiss = onDismiss
                     )
@@ -177,6 +172,18 @@ fun DeviceActivationDialog(
                             } else {
                                 Toast.makeText(context, context.getString(R.string.licensing_fluent_toast_google_unavailable), Toast.LENGTH_SHORT).show()
                             }
+                        },
+                        onGoogleSignOutClick = {
+                            backupSyncViewModel?.googleDriveLogout(
+                                onComplete = {
+                                    actionFeedbackMessage = null
+                                    Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
+                                },
+                                onFailure = {
+                                    actionFeedbackMessage = null
+                                    Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         },
                         onGoogleActivateClick = {
                             storedEmail?.takeIf { it.isNotBlank() }?.let { email ->
@@ -211,6 +218,9 @@ fun DeviceActivationDialog(
                             } else {
                                 Toast.makeText(context, context.getString(R.string.licensing_support_id_pending_toast), Toast.LENGTH_SHORT).show()
                             }
+                        },
+                        onRetryClick = {
+                            viewModel.loadSupportIdentity()
                         }
                     )
 

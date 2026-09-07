@@ -11,9 +11,6 @@ import com.smartledger.aldaftar.data.GoogleDriveSyncHelper
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.data.repository.LicenseAndTrialManager
-import com.smartledger.aldaftar.domain.AppSecurityManager
-import com.smartledger.aldaftar.domain.FirebaseLicenseManager
 import com.google.firebase.auth.FirebaseAuth
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupPayloadBuilder
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupSearchMatcher
@@ -134,26 +131,17 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
         onFailure: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
-            val security = AppSecurityManager.getInstance(getApplication())
-            val email = security.getActivatedEmail()
-            val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
-            val licenseActive = security.getLicenseSessionId().isNotBlank()
-
-            if (licenseActive) {
-                val unlinked = FirebaseLicenseManager.unlinkDevice(getApplication(), email, deviceId)
-                if (!unlinked) {
-                    onFailure?.invoke()
-                    return@launch
+            try {
+                val current = repository.getSettingsDirect() ?: AppSettings()
+                repository.saveSettings(current.copy(isCloudSyncEnabled = false))
+                googleDriveSyncHelper.logoutAsync {
+                    FirebaseAuth.getInstance().signOut()
+                    _cloudBackupsList.value = emptyList()
+                    onComplete?.invoke()
                 }
-                security.clearActivationData()
-            }
-
-            val current = repository.getSettingsDirect() ?: AppSettings()
-            repository.saveSettings(current.copy(isCloudSyncEnabled = false))
-            googleDriveSyncHelper.logoutAsync {
-                FirebaseAuth.getInstance().signOut()
-                _cloudBackupsList.value = emptyList()
-                onComplete?.invoke()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error during googleDriveLogout", e)
+                onFailure?.invoke()
             }
         }
     }
@@ -287,9 +275,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     val jsonStr = googleDriveSyncHelper.downloadBackupFromDrive()
                     if (jsonStr != null) {
                         val result = repository.executeMasterRestore(jsonStr)
-                        if (repository.isTrialExpiredDirect()) {
-                            showActivationRequired.value = true
-                        }
                         refreshLocalBackups()
                         launch(Dispatchers.Main) {
                             com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
@@ -328,9 +313,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                     val jsonStr = googleDriveSyncHelper.downloadBackupFromDriveById(fileId)
                     if (jsonStr != null) {
                         val result = repository.executeMasterRestore(jsonStr)
-                        if (repository.isTrialExpiredDirect()) {
-                            showActivationRequired.value = true
-                        }
                         refreshLocalBackups()
                         launch(Dispatchers.Main) {
                             com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
@@ -474,10 +456,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
             backupRestoreMutex.withLock {
                 try {
                     val result = repository.executeMasterRestore(rawJsonString)
-
-                    if (repository.isTrialExpiredDirect()) {
-                        showActivationRequired.value = true
-                    }
 
                     val successMessageRes = if (result.isLegacy) com.smartledger.aldaftar.R.string.toast_restore_legacy_migrated else com.smartledger.aldaftar.R.string.cloud_toast_restore_success
 

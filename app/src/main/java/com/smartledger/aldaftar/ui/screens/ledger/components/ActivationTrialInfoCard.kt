@@ -26,28 +26,35 @@ import com.smartledger.aldaftar.ui.theme.mizanColors
 @Composable
 fun ActivationStatusBanner(
     isActivated: Boolean,
-    isAutoTriggered: Boolean
+    isAutoTriggered: Boolean,
+    storedEmail: String? = null
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val errorColor = MaterialTheme.colorScheme.error
+    val isConnected = !storedEmail.isNullOrBlank()
 
     val bannerBg = when {
         isActivated -> mizanColors.creditContainer
         isAutoTriggered -> errorColor.copy(alpha = 0.08f)
+        isConnected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
         else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
     }
     val bannerBorder = when {
         isActivated -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
         isAutoTriggered -> errorColor.copy(alpha = 0.25f)
+        isConnected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
         else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
     }
     val textColor = when {
         isActivated -> mizanColors.onCredit
         isAutoTriggered -> errorColor
+        isConnected -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurface
     }
     val descText = when {
         isActivated -> stringResource(R.string.licensing_fluent_desc_active)
+        isConnected && isAutoTriggered -> stringResource(R.string.licensing_connected_trial_exhausted_desc)
+        isConnected -> stringResource(R.string.licensing_connected_unlicensed_desc)
         isAutoTriggered -> stringResource(R.string.licensing_fluent_desc_trial)
         else -> stringResource(R.string.licensing_fluent_desc_default)
     }
