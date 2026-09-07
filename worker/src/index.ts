@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, importPKCS8, importX509, jwtVerify, type KeyLike } from "jose";
+import { createRemoteJWKSet, importPKCS8, importX509, jwtVerify } from "jose";
 
 type LicenseRow = {
   uid: string;
@@ -69,8 +69,8 @@ const FIREBASE_APPCHECK_JWKS = "https://firebaseappcheck.googleapis.com/v1/jwks"
 // أحرف وأرقام آمنة بصرياً (تم استبعاد 0, O, 1, I, L)
 const SUPPORT_ID_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
-let privateKeyPromise: Promise<KeyLike> | undefined;
-let firebaseCertCache: { expiresAt: number; keys: Map<string, KeyLike> } | undefined;
+let privateKeyPromise: Promise<CryptoKey> | undefined;
+let firebaseCertCache: { expiresAt: number; keys: Map<string, CryptoKey> } | undefined;
 const appCheckJWKS = createRemoteJWKSet(new URL(FIREBASE_APPCHECK_JWKS));
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}): Response {
@@ -213,14 +213,14 @@ function leasePayload(input: {
   };
 }
 
-async function getFirebaseCerts(): Promise<Map<string, KeyLike>> {
+async function getFirebaseCerts(): Promise<Map<string, CryptoKey>> {
   const now = Date.now();
   if (firebaseCertCache && firebaseCertCache.expiresAt > now) return firebaseCertCache.keys;
 
   const response = await fetch(FIREBASE_ID_TOKEN_CERTS);
   if (!response.ok) throw new LicenseError("internal", "Unable to load Firebase signing keys.", 500);
   const certificates = await response.json() as Record<string, string>;
-  const keys = new Map<string, KeyLike>();
+  const keys = new Map<string, CryptoKey>();
   for (const [kid, certificate] of Object.entries(certificates)) {
     keys.set(kid, await importX509(certificate, "RS256"));
   }
