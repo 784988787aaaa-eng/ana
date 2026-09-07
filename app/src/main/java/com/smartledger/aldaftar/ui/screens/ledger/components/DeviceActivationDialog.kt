@@ -229,10 +229,13 @@ fun DeviceActivationDialog(
                         actionFeedbackMessage = actionFeedbackMessage,
                         onWhatsAppRequestClick = {
                             val supportId = (supportState as? com.smartledger.aldaftar.domain.SupportIdentityState.Available)?.supportId
+                            val emailToUse = storedEmail?.takeIf { it.isNotBlank() }
+                                ?: context.getString(R.string.licensing_fluent_unregistered_email)
+                            val devIdToUse = deviceId.takeIf { it.isNotBlank() } ?: "—"
                             val msg = if (!supportId.isNullOrBlank()) {
-                                context.getString(R.string.licensing_whatsapp_support_request_template, supportId)
+                                context.getString(R.string.licensing_whatsapp_support_request_template, emailToUse, devIdToUse, supportId)
                             } else {
-                                context.getString(R.string.licensing_whatsapp_support_request_pending_template)
+                                context.getString(R.string.licensing_whatsapp_support_request_pending_template, emailToUse, devIdToUse)
                             }
                             openWhatsAppSupportDirect(context, msg)
                         }
@@ -244,10 +247,13 @@ fun DeviceActivationDialog(
                     ActivationActionsFooter(
                         onWhatsAppClick = {
                             val supportId = (supportState as? com.smartledger.aldaftar.domain.SupportIdentityState.Available)?.supportId
+                            val emailToUse = storedEmail?.takeIf { it.isNotBlank() }
+                                ?: context.getString(R.string.licensing_fluent_unregistered_email)
+                            val devIdToUse = deviceId.takeIf { it.isNotBlank() } ?: "—"
                             val msg = if (!supportId.isNullOrBlank()) {
-                                context.getString(R.string.licensing_whatsapp_support_request_template, supportId)
+                                context.getString(R.string.licensing_whatsapp_support_request_template, emailToUse, devIdToUse, supportId)
                             } else {
-                                context.getString(R.string.licensing_whatsapp_support_request_pending_template)
+                                context.getString(R.string.licensing_whatsapp_support_request_pending_template, emailToUse, devIdToUse)
                             }
                             openWhatsAppSupportDirect(context, msg)
                         },

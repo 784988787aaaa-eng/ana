@@ -158,9 +158,9 @@
     <string name="drawer_activate_pro">تفعيل النسخة الكاملة Pro 👑</string>
     <string name="drawer_activate_pro_success">النسخة الكاملة Pro مفعّلة ✨</string>
     <string name="licensing_btn_whatsapp_request">طلب الترخيص عبر واتساب 💬</string>
-    <string name="licensing_whatsapp_support_request_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n🎫 معرّف الدعم: %1$s</string>
-    <string name="licensing_whatsapp_support_request_pending_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.</string>
-    <string name="licensing_whatsapp_email_request_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n🎫 معرّف الدعم: %1$s</string>
+    <string name="licensing_whatsapp_support_request_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n📧 البريد: %1$s\n📱 معرّف الجهاز: %2$s\n🎫 معرّف الدعم: %3$s</string>
+    <string name="licensing_whatsapp_support_request_pending_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n📧 البريد: %1$s\n📱 معرّف الجهاز: %2$s</string>
+    <string name="licensing_whatsapp_email_request_template">مرحباً، أود طلب وتفعيل ترخيص النسخة الكاملة لتطبيق الدفتر الذكي.\n\n📧 البريد: %1$s\n📱 معرّف الجهاز: %2$s\n🎫 معرّف الدعم: %3$s</string>
 
     <!-- ============================================================================== -->
     <!-- 03. قسم الحبايب والديون (Habayeb Module, Customers, Debts & Transactions)         -->
