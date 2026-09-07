@@ -31,6 +31,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,7 +95,8 @@ object GoogleAuthSessionManager {
     fun initialize(context: Context) {
         try {
             val authManager = GoogleDriveAuthManager(context)
-            val email = authManager.getStoredEmail()
+            val firebaseEmail = FirebaseAuth.getInstance().currentUser?.email
+            val email = firebaseEmail ?: authManager.getStoredEmail()
             val cleanEmail = email?.trim()?.lowercase()
             if (!cleanEmail.isNullOrBlank()) {
                 _currentEmail.value = cleanEmail
@@ -190,32 +193,41 @@ object GoogleAuthSessionManager {
                     "GoogleSignIn resultCode=RESULT_OK, account=${account != null}, email=${email.isNotEmpty()}, serverAuthCode=${!authCode.isNullOrEmpty()}"
                 )
 
-                if (email.isBlank()) {
+                if (email.isBlank() || account?.idToken.isNullOrBlank()) {
                     val msg = context.getString(R.string.backup_toast_connect_failed)
                     setAuthFailed(msg)
                     onOutcome(GoogleSignInOutcome.Failed(msg))
                 } else {
-                    updateEmail(email)
-                    if (!authCode.isNullOrEmpty() && backupSyncViewModel != null) {
-                        backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { driveSuccess ->
-                            Log.i(TAG, "Google Drive OAuth exchange completed: success=$driveSuccess")
+                    authenticateFirebase(account!!.idToken!!, email) { firebaseSuccess ->
+                        if (!firebaseSuccess) {
+                            val msg = context.getString(R.string.licensing_error_connection)
+                            setAuthFailed(msg)
+                            onOutcome(GoogleSignInOutcome.Failed(msg))
+                            return@authenticateFirebase
+                        }
+
+                        updateEmail(email)
+                        if (!authCode.isNullOrEmpty() && backupSyncViewModel != null) {
+                            backupSyncViewModel.handleGoogleOAuthCode(authCode, email) { driveSuccess ->
+                                Log.i(TAG, "Google OAuth server code exchange result: driveSuccess=$driveSuccess")
+                                onOutcome(
+                                    GoogleSignInOutcome.Success(
+                                        email = email,
+                                        serverAuthCode = authCode,
+                                        isDriveAuthorized = driveSuccess
+                                    )
+                                )
+                            }
+                        } else {
+                            backupSyncViewModel?.googleDriveSyncHelper?.storeEmail(email)
                             onOutcome(
                                 GoogleSignInOutcome.Success(
                                     email = email,
-                                    serverAuthCode = authCode,
-                                    isDriveAuthorized = driveSuccess
+                                    serverAuthCode = null,
+                                    isDriveAuthorized = false
                                 )
                             )
                         }
-                    } else {
-                        backupSyncViewModel?.googleDriveSyncHelper?.storeEmail(email)
-                        onOutcome(
-                            GoogleSignInOutcome.Success(
-                                email = email,
-                                serverAuthCode = authCode,
-                                isDriveAuthorized = false
-                            )
-                        )
                     }
                 }
             } catch (e: Exception) {
@@ -228,15 +240,23 @@ object GoogleAuthSessionManager {
                     val account = task.getResult(ApiException::class.java)
                     val email = account?.email?.trim()?.lowercase() ?: ""
                     val authCode = account?.serverAuthCode
-                    if (email.isNotEmpty()) {
-                        updateEmail(email)
-                        onOutcome(
-                            GoogleSignInOutcome.Success(
-                                email = email,
-                                serverAuthCode = authCode,
-                                isDriveAuthorized = false
+                    if (email.isNotEmpty() && !account?.idToken.isNullOrBlank()) {
+                        authenticateFirebase(account!!.idToken!!, email) { firebaseSuccess ->
+                            if (!firebaseSuccess) {
+                                val msg = context.getString(R.string.licensing_error_connection)
+                                setAuthFailed(msg)
+                                onOutcome(GoogleSignInOutcome.Failed(msg))
+                                return@authenticateFirebase
+                            }
+                            updateEmail(email)
+                            onOutcome(
+                                GoogleSignInOutcome.Success(
+                                    email = email,
+                                    serverAuthCode = authCode,
+                                    isDriveAuthorized = false
+                                )
                             )
-                        )
+                        }
                     } else {
                         val msg = context.getString(R.string.backup_toast_connect_failed)
                         setAuthFailed(msg)
@@ -251,6 +271,24 @@ object GoogleAuthSessionManager {
                 onOutcome(GoogleSignInOutcome.Cancelled)
             }
         }
+    }
+
+    private fun authenticateFirebase(
+        idToken: String,
+        email: String,
+        onComplete: (Boolean) -> Unit
+    ) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        FirebaseAuth.getInstance().signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val firebaseEmail = task.result?.user?.email?.trim()?.lowercase()
+                    onComplete(firebaseEmail == email)
+                } else {
+                    Log.w(TAG, "Firebase Google authentication failed: ${task.exception?.javaClass?.simpleName}")
+                    onComplete(false)
+                }
+            }
     }
 
     private fun restoreSessionOrSignedOut() {

@@ -138,8 +138,20 @@ class GoogleDriveSyncHelper(private val context: Context) {
     val clientId: String
         get() = authManager.clientId
 
+    val clientSecret: String
+        get() = authManager.clientSecret
+
     val scope: String
         get() = authManager.scope
+
+    fun getClientIdOverride(): String = authManager.getClientIdOverride()
+    fun getClientSecretOverride(): String = authManager.getClientSecretOverride()
+
+    fun saveClientCredentialsOverride(clientIdStr: String?, clientSecretStr: String?) {
+        authManager.saveClientCredentialsOverride(clientIdStr, clientSecretStr)
+    }
+
+    fun getAppSignatureSHA1(): String = authManager.getAppSignatureSHA1()
 
     /**
      * [كتلة التهيئة - init]:

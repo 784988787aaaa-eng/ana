@@ -21,12 +21,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
 
       - name: Install Worker Dependencies
         working-directory: worker
@@ -36,34 +36,10 @@ jobs:
         working-directory: worker
         run: npm run check
 
-      - name: Verify required Cloudflare configuration
-        working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
-            echo "ERROR: GitHub Secret CLOUDFLARE_API_TOKEN is missing."
-            exit 1
-          fi
-          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "ERROR: GitHub Secret CLOUDFLARE_ACCOUNT_ID is missing."
-            exit 1
-          fi
-
-          if ! npx wrangler secret list --name al-daftar-license-api --account-id "$CLOUDFLARE_ACCOUNT_ID" | grep -q 'GOOGLE_OAUTH_CLIENT_SECRET'; then
-            echo "ERROR: Cloudflare Worker secret GOOGLE_OAUTH_CLIENT_SECRET is not configured."
-            echo "Add it in Cloudflare Worker > Settings > Variables and Secrets before deploying."
-            exit 1
-          fi
-
-          echo "Cloudflare OAuth secret configuration: PASS"
-
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v4
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: 'worker'
-          command: deploy --var GOOGLE_OAUTH_CLIENT_ID:${{ secrets.GOOGLE_CLIENT_ID }}
+          command: deploy

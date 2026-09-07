@@ -3,8 +3,6 @@ package com.smartledger.aldaftar.domain
 import android.content.Context
 import android.util.Log
 import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.firebase.auth.GoogleAuthProvider
 import com.smartledger.aldaftar.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
 import com.smartledger.aldaftar.R
@@ -71,30 +69,6 @@ object FirebaseLicenseManager {
         return url
     }
 
-    /**
-     * يفتح جلسة Firebase فقط عند طلب وظيفة ترخيص/دعم. هذا المسار لا يُستدعى من Google Drive.
-     */
-    suspend fun ensureFirebaseSession(context: Context, expectedEmail: String): Boolean {
-        val cleanEmail = normalizeEmail(expectedEmail)
-        val auth = FirebaseAuth.getInstance()
-        val current = auth.currentUser
-        if (current != null && normalizeEmail(current.email.orEmpty()) == cleanEmail) return true
-
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-        val accountEmail = normalizeEmail(account.email.orEmpty())
-        val idToken = account.idToken
-        if (accountEmail != cleanEmail || idToken.isNullOrBlank()) return false
-
-        return try {
-            val credential = GoogleAuthProvider.getCredential(idToken, null)
-            val result = auth.signInWithCredential(credential).await()
-            normalizeEmail(result.user?.email.orEmpty()) == cleanEmail
-        } catch (t: Throwable) {
-            Log.w(TAG, "Firebase authentication for licensing failed: ${t.javaClass.simpleName}")
-            false
-        }
-    }
-
     private suspend fun authHeaders(): Pair<String, String> {
         val user = FirebaseAuth.getInstance().currentUser
             ?: throw LicenseClientException(401, "Authentication is required.")
@@ -152,11 +126,9 @@ object FirebaseLicenseManager {
         currentDeviceId: String
     ): LicenseCheckResult {
         val cleanEmail = normalizeEmail(email)
-        if (!ensureFirebaseSession(context, cleanEmail)) {
-            return LicenseCheckResult.Error(context.getString(R.string.licensing_error_auth_required))
-        }
         val user = FirebaseAuth.getInstance().currentUser
-        val authEmail = normalizeEmail(user?.email.orEmpty())
+            ?: return LicenseCheckResult.Error(context.getString(R.string.licensing_error_auth_required))
+        val authEmail = normalizeEmail(user.email.orEmpty())
         if (authEmail.isBlank() || authEmail != cleanEmail) {
             return LicenseCheckResult.NotLicensed(
                 cleanEmail,

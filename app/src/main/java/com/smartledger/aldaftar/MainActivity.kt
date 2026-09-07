@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smartledger.aldaftar.ui.components.WelcomeOnboardingDialog
+import android.content.pm.PackageManager
+import java.security.MessageDigest
 import com.smartledger.aldaftar.ui.main.MainAppLayout
 import com.smartledger.aldaftar.ui.screens.AppLockScreen
 import com.smartledger.aldaftar.ui.theme.AppTheme
@@ -75,6 +77,7 @@ class MainActivity : FragmentActivity() {
 
         // إطلاق مهام التهيئة الخلفية المستقلة عن مسار الواجهة
         lifecycleScope.launch(Dispatchers.IO) {
+            logAppSignatureSHA1(this@MainActivity)
             AutoBackupWorker.scheduleDailyBackupWorker(this@MainActivity)
             AutoBackupWorker.checkAndTriggerBackupIfMissed(this@MainActivity)
             BackupReminderWorker.scheduleReminder(this@MainActivity)
@@ -263,5 +266,38 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-
+    /**
+     * [دالة مساعدة لطباعة توقيع التطبيق]:
+     * تستخرج وتطبع بصمة SHA-1 في سجلات التصحيح.
+     */
+    private fun logAppSignatureSHA1(context: android.content.Context) {
+        try {
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                val signingInfo = info.signingInfo
+                if (signingInfo != null) {
+                    if (signingInfo.hasMultipleSigners()) {
+                        signingInfo.apkContentsSigners
+                    } else {
+                        signingInfo.signingCertificateHistory
+                    }
+                } else null
+            } else {
+                @Suppress("DEPRECATION")
+                val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES)
+                @Suppress("DEPRECATION")
+                info.signatures
+            }
+            if (signatures != null) {
+                for (signature in signatures) {
+                    val md = MessageDigest.getInstance("SHA1")
+                    val publicKey = md.digest(signature.toByteArray())
+                    val hexString = publicKey.joinToString(":") { String.format("%02X", it) }
+                    android.util.Log.d("GOOGLE_AUTH_DEBUG", "SHA-1 ACTUAL SIGNATURE: $hexString")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("GOOGLE_AUTH_DEBUG", "Error getting signature", e)
+        }
+    }
 }

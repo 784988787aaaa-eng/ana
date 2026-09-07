@@ -3,8 +3,6 @@ interface Env {
   FIREBASE_PROJECT_ID: string;
   FIREBASE_PROJECT_NUMBER: string;
   FIREBASE_APP_ID: string;
-  GOOGLE_OAUTH_CLIENT_ID: string;
-  GOOGLE_OAUTH_CLIENT_SECRET: string;
   LICENSE_PRIVATE_KEY: string;
   ADMIN_TOKEN: string;
 }

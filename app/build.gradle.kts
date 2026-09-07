@@ -104,10 +104,12 @@ android {
 val envFile = rootProject.file(".env")
 if (!envFile.exists()) {
   val googleClientId = System.getenv("GOOGLE_CLIENT_ID") ?: ""
+  val googleClientSecret = System.getenv("GOOGLE_CLIENT_SECRET") ?: ""
   val geminiApiKey = System.getenv("GEMINI_API_KEY") ?: ""
-  if (googleClientId.isNotEmpty() || geminiApiKey.isNotEmpty()) {
+  if (googleClientId.isNotEmpty() || googleClientSecret.isNotEmpty() || geminiApiKey.isNotEmpty()) {
     envFile.writeText("""
       GOOGLE_CLIENT_ID=$googleClientId
+      GOOGLE_CLIENT_SECRET=$googleClientSecret
       GEMINI_API_KEY=$geminiApiKey
     """.trimIndent())
   }

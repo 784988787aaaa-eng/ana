@@ -78,7 +78,6 @@ fun DeviceActivationDialog(
             when (outcome) {
                 is com.smartledger.aldaftar.domain.GoogleSignInOutcome.Success -> {
                     actionFeedbackMessage = null
-                    viewModel.loadSupportIdentity()
                     val toastMsg = if (outcome.isDriveAuthorized) {
                         context.getString(R.string.backup_toast_linked_success, outcome.email)
                     } else {

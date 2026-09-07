@@ -6,8 +6,6 @@ compatibility_date = "2026-09-06"
 FIREBASE_PROJECT_ID = "al-daftar-android"
 FIREBASE_PROJECT_NUMBER = "512516697236"
 FIREBASE_APP_ID = "1:512516697236:android:2516cb9d724a44710c9881"
-# Public OAuth client identifier. The matching client secret is a Cloudflare Worker secret.
-GOOGLE_OAUTH_CLIENT_ID = ""
 
 [[d1_databases]]
 binding = "DB"

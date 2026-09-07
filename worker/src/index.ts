@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, importPKCS8, importX509, jwtVerify } from "jose";
+import { createRemoteJWKSet, importPKCS8, importX509, jwtVerify, type KeyLike } from "jose";
 
 type LicenseRow = {
   uid: string;
@@ -69,8 +69,8 @@ const FIREBASE_APPCHECK_JWKS = "https://firebaseappcheck.googleapis.com/v1/jwks"
 // أحرف وأرقام آمنة بصرياً (تم استبعاد 0, O, 1, I, L)
 const SUPPORT_ID_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
-let privateKeyPromise: Promise<CryptoKey> | undefined;
-let firebaseCertCache: { expiresAt: number; keys: Map<string, CryptoKey> } | undefined;
+let privateKeyPromise: Promise<KeyLike> | undefined;
+let firebaseCertCache: { expiresAt: number; keys: Map<string, KeyLike> } | undefined;
 const appCheckJWKS = createRemoteJWKSet(new URL(FIREBASE_APPCHECK_JWKS));
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}): Response {
@@ -213,14 +213,14 @@ function leasePayload(input: {
   };
 }
 
-async function getFirebaseCerts(): Promise<Map<string, CryptoKey>> {
+async function getFirebaseCerts(): Promise<Map<string, KeyLike>> {
   const now = Date.now();
   if (firebaseCertCache && firebaseCertCache.expiresAt > now) return firebaseCertCache.keys;
 
   const response = await fetch(FIREBASE_ID_TOKEN_CERTS);
   if (!response.ok) throw new LicenseError("internal", "Unable to load Firebase signing keys.", 500);
   const certificates = await response.json() as Record<string, string>;
-  const keys = new Map<string, CryptoKey>();
+  const keys = new Map<string, KeyLike>();
   for (const [kid, certificate] of Object.entries(certificates)) {
     keys.set(kid, await importX509(certificate, "RS256"));
   }
@@ -557,137 +557,6 @@ async function getSessionStatus(env: Env, auth: AuthContext, sessionId: string):
   });
 }
 
-const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
-const GOOGLE_USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v2/userinfo";
-
-function normalizeOAuthCode(value: unknown): string {
-  if (typeof value !== "string") {
-    throw new LicenseError("invalid-argument", "Authorization code is required.", 400);
-  }
-  const code = value.trim();
-  if (!code || code.length > 4096) {
-    throw new LicenseError("invalid-argument", "Invalid authorization code.", 400);
-  }
-  return code;
-}
-
-function normalizeRefreshToken(value: unknown): string {
-  if (typeof value !== "string") {
-    throw new LicenseError("invalid-argument", "Refresh token is required.", 400);
-  }
-  const token = value.trim();
-  if (!token || token.length > 8192) {
-    throw new LicenseError("invalid-argument", "Invalid refresh token.", 400);
-  }
-  return token;
-}
-
-async function exchangeGoogleAuthorizationCode(env: Env, request: Request): Promise<Response> {
-  const body = await readJson(request);
-  const code = normalizeOAuthCode(body.code);
-  const redirectUri = typeof body.redirectUri === "string" ? body.redirectUri.trim().slice(0, 512) : "";
-
-  if (!env.GOOGLE_OAUTH_CLIENT_ID || !env.GOOGLE_OAUTH_CLIENT_SECRET) {
-    throw new LicenseError("internal", "Google OAuth service is not configured.", 500);
-  }
-
-  const form = new URLSearchParams({
-    code,
-    client_id: env.GOOGLE_OAUTH_CLIENT_ID,
-    client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-    grant_type: "authorization_code",
-  });
-  if (redirectUri) form.set("redirect_uri", redirectUri);
-
-  const tokenResponse = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
-    body: form.toString(),
-  });
-
-  const raw = await tokenResponse.text();
-  if (!tokenResponse.ok) {
-    console.warn("Google OAuth authorization-code exchange failed", tokenResponse.status);
-    throw new LicenseError("failed-precondition", "Google authorization could not be completed.", 400);
-  }
-
-  let token: Record<string, unknown>;
-  try {
-    token = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    throw new LicenseError("internal", "Google returned an invalid token response.", 502);
-  }
-
-  const accessToken = typeof token.access_token === "string" ? token.access_token : "";
-  const refreshToken = typeof token.refresh_token === "string" ? token.refresh_token : "";
-  const expiresIn = Number(token.expires_in ?? 3600);
-  if (!accessToken) throw new LicenseError("internal", "Google did not return an access token.", 502);
-
-  let email = "";
-  try {
-    const userResponse = await fetch(GOOGLE_USERINFO_ENDPOINT, {
-      headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
-    });
-    if (userResponse.ok) {
-      const user = await userResponse.json() as Record<string, unknown>;
-      email = normalizeEmail(user.email);
-    }
-  } catch {
-    // The access token is still usable; Android may already know the account email.
-  }
-
-  return ok({
-    access_token: accessToken,
-    refresh_token: refreshToken || undefined,
-    expires_in: Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn : 3600,
-    email: email || undefined,
-  });
-}
-
-async function refreshGoogleAccessToken(env: Env, request: Request): Promise<Response> {
-  const body = await readJson(request);
-  const refreshToken = normalizeRefreshToken(body.refreshToken);
-
-  if (!env.GOOGLE_OAUTH_CLIENT_ID || !env.GOOGLE_OAUTH_CLIENT_SECRET) {
-    throw new LicenseError("internal", "Google OAuth service is not configured.", 500);
-  }
-
-  const form = new URLSearchParams({
-    refresh_token: refreshToken,
-    client_id: env.GOOGLE_OAUTH_CLIENT_ID,
-    client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-    grant_type: "refresh_token",
-  });
-
-  const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
-    body: form.toString(),
-  });
-
-  const raw = await response.text();
-  if (!response.ok) {
-    console.warn("Google OAuth refresh failed", response.status);
-    throw new LicenseError("failed-precondition", "Google session refresh failed.", 401);
-  }
-
-  let token: Record<string, unknown>;
-  try {
-    token = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    throw new LicenseError("internal", "Google returned an invalid refresh response.", 502);
-  }
-
-  const accessToken = typeof token.access_token === "string" ? token.access_token : "";
-  const expiresIn = Number(token.expires_in ?? 3600);
-  if (!accessToken) throw new LicenseError("internal", "Google did not return an access token.", 502);
-
-  return ok({
-    access_token: accessToken,
-    expires_in: Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn : 3600,
-  });
-}
-
 async function adminAuthorize(request: Request, env: Env): Promise<void> {
   const authorization = request.headers.get("authorization") ?? "";
   const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1] ?? "";
@@ -767,14 +636,6 @@ export default {
       if (url.pathname.startsWith("/v1/admin/support-identities/") && request.method === "GET") {
         const supportId = decodeURIComponent(url.pathname.slice("/v1/admin/support-identities/".length)).trim();
         return await adminLookupSupportIdentity(env, request, supportId);
-      }
-
-      // Google Drive OAuth is intentionally independent of licensing and Firebase.
-      if (url.pathname === "/v1/google/oauth/exchange" && request.method === "POST") {
-        return await exchangeGoogleAuthorizationCode(env, request);
-      }
-      if (url.pathname === "/v1/google/oauth/refresh" && request.method === "POST") {
-        return await refreshGoogleAccessToken(env, request);
       }
 
       // مسارات المستخدم المحمية بالمصادقة (Firebase Auth + App Check)

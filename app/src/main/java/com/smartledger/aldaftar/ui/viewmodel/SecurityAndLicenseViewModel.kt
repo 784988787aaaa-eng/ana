@@ -46,12 +46,8 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
             _supportIdentityState.value = com.smartledger.aldaftar.domain.SupportIdentityState.Available(cached)
             return
         }
-        val email = GoogleAuthSessionManager.currentEmail.value?.trim().orEmpty()
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             _supportIdentityState.value = com.smartledger.aldaftar.domain.SupportIdentityState.Loading
-            if (email.isNotBlank()) {
-                FirebaseLicenseManager.ensureFirebaseSession(getApplication(), email)
-            }
             val state = supportIdentityRepo.getSupportIdentity()
             _supportIdentityState.value = state
         }
@@ -92,18 +88,14 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         }
         val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(context)
 
-        viewModelScope.launch(Dispatchers.IO) {
-            val authenticated = FirebaseLicenseManager.ensureFirebaseSession(context, activatedEmail)
-            if (!authenticated) return@launch
-            FirebaseLicenseManager.startRealtimeLicenseMonitoring(
-                context = context,
-                email = activatedEmail,
-                currentDeviceId = deviceId
-            ) { reason ->
-                viewModelScope.launch {
-                    clearLocalActivationData()
-                    _kickoutEvent.emit(reason)
-                }
+        FirebaseLicenseManager.startRealtimeLicenseMonitoring(
+            context = context,
+            email = activatedEmail,
+            currentDeviceId = deviceId
+        ) { reason ->
+            viewModelScope.launch {
+                clearLocalActivationData()
+                _kickoutEvent.emit(reason)
             }
         }
     }
@@ -227,10 +219,8 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         viewModelScope.launch {
             _isLicenseLoading.value = true
             try {
-                val authenticated = email.isBlank() ||
-                    FirebaseLicenseManager.ensureFirebaseSession(getApplication(), email)
-                val success = email.isBlank() || (authenticated &&
-                    FirebaseLicenseManager.unlinkDevice(getApplication(), email, deviceId))
+                val success = email.isBlank() ||
+                    FirebaseLicenseManager.unlinkDevice(getApplication(), email, deviceId)
                 if (success) {
                     clearLocalActivationData()
                 }
