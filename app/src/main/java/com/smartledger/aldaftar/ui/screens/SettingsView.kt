@@ -37,7 +37,6 @@ import com.smartledger.aldaftar.ui.screens.settings.components.SettingsDeveloper
 import com.smartledger.aldaftar.ui.screens.settings.components.SettingsDialogHost
 import com.smartledger.aldaftar.ui.screens.settings.components.SettingsHeaderCard
 import com.smartledger.aldaftar.ui.screens.settings.components.SettingsSecurityCard
-import com.smartledger.aldaftar.ui.screens.settings.components.SignatureCard
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
@@ -206,10 +205,6 @@ fun SettingsView(
                     }
                 }
             )
-        }
-
-        item(key = "business_signature_card") {
-            SignatureCard()
         }
 
         item(key = "security_portal_button") {

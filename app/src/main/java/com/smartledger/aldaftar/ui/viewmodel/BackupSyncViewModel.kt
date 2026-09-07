@@ -11,7 +11,6 @@ import com.smartledger.aldaftar.data.GoogleDriveSyncHelper
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.google.firebase.auth.FirebaseAuth
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupPayloadBuilder
 import com.smartledger.aldaftar.ui.viewmodel.backup.BackupSearchMatcher
 import com.smartledger.aldaftar.ui.viewmodel.backup.OAuthCodeParser
@@ -97,14 +96,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     // مصادقة Google Drive والمزامنة
-    fun getClientIdOverride(): String = googleDriveSyncHelper.getClientIdOverride()
-    fun getClientSecretOverride(): String = googleDriveSyncHelper.getClientSecretOverride()
-    fun getAppSignatureSHA1(): String = googleDriveSyncHelper.getAppSignatureSHA1()
-
-    fun saveClientCredentialsOverride(clientId: String?, clientSecret: String?) {
-        googleDriveSyncHelper.saveClientCredentialsOverride(clientId, clientSecret)
-    }
-
     fun updateCloudSyncState(state: CloudSyncState) {
         googleDriveSyncHelper.updateSyncState(state)
     }
@@ -135,7 +126,6 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
                 val current = repository.getSettingsDirect() ?: AppSettings()
                 repository.saveSettings(current.copy(isCloudSyncEnabled = false))
                 googleDriveSyncHelper.logoutAsync {
-                    FirebaseAuth.getInstance().signOut()
                     _cloudBackupsList.value = emptyList()
                     onComplete?.invoke()
                 }

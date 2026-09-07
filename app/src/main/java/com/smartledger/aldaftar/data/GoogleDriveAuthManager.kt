@@ -11,7 +11,6 @@
  * 2. تبادل رمز التفويض (Authorization Code Exchange) للحصول على الرموز المميزة.
  * 3. التجديد التلقائي لرمز الوصول (Token Refresh) عند اقتراب انتهاء صلاحيته عبر [CloudNetworkEngine].
  * 4. إدارة تسجيل الدخول والخروج وإلغاء الصلاحيات (Revoke Access) وحذف الجلسة بأمان.
- * 5. استخراج بصمة الشهادة الرقمية (SHA-1) واسم الحزمة لمطابقتها في وحدة تحكم Google Cloud.
  * 
  * [قواعد الأمان والخصوصية]:
  * - عدم طباعة رموز الوصول الحساسة (Access Tokens / Authorization Headers) في سجلات التطبيق (Logcat).
@@ -34,7 +33,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -82,8 +80,6 @@ class GoogleDriveAuthManager(
         const val KEY_REFRESH_TOKEN = "refresh_token"
         const val KEY_TOKEN_EXPIRY = "token_expiry"
         const val KEY_EMAIL = "email"
-        const val KEY_CLIENT_ID_OVERRIDE = "client_id_override"
-        const val KEY_CLIENT_SECRET_OVERRIDE = "client_secret_override"
 
         // نطاقات الصلاحيات المطلوبة (مجلد التطبيق المعزول وملفات التطبيق والبريد)
         const val SCOPE_DRIVE_APPDATA = "https://www.googleapis.com/auth/drive.appdata"
@@ -93,16 +89,10 @@ class GoogleDriveAuthManager(
 
         // روابط نقاط نهاية خوادم Google OAuth 2.0
         const val AUTH_ENDPOINT_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-        const val TOKEN_ENDPOINT_URL = "https://oauth2.googleapis.com/token"
         const val USERINFO_ENDPOINT_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
         const val REDIRECT_URI_LOCAL = "http://localhost/oauth2callback"
 
-        private const val GRANT_TYPE_REFRESH_TOKEN = "refresh_token"
-        private const val GRANT_TYPE_AUTH_CODE = "authorization_code"
-        private const val PARAM_CLIENT_ID = "client_id"
-        private const val PARAM_CLIENT_SECRET = "client_secret"
         private const val PARAM_REFRESH_TOKEN = "refresh_token"
-        private const val PARAM_GRANT_TYPE = "grant_type"
         private const val PARAM_CODE = "code"
         private const val PARAM_REDIRECT_URI = "redirect_uri"
 
@@ -111,6 +101,8 @@ class GoogleDriveAuthManager(
         private const val RESPONSE_EXPIRES_IN = "expires_in"
         private const val TOKEN_EXPIRY_BUFFER_MS = 300_000L // 5 دقائق كمهلة أمان استباقية قبل الانتهاء الفعلي
         private const val DEFAULT_EXPIRES_IN_SEC = 3600L
+        private const val GOOGLE_OAUTH_EXCHANGE_PATH = "/v1/google/oauth/exchange"
+        private const val GOOGLE_OAUTH_REFRESH_PATH = "/v1/google/oauth/refresh"
     }
 
     // محرك الشبكة السحابي الموحد لإعادة المحاولة عند التقلبات
@@ -137,75 +129,12 @@ class GoogleDriveAuthManager(
         }
     }
 
-    // قراءة معرف العميل وسر العميل مع دعم التجاوز المخصص (Override)
+    // معرف عميل OAuth عام مطلوب لبدء Google Sign-In. لا يُعامل كسِر.
     val clientId: String
-        get() = sharedPrefs.getString(KEY_CLIENT_ID_OVERRIDE, null)?.takeIf { it.isNotEmpty() } ?: BuildConfig.GOOGLE_CLIENT_ID
-
-    val clientSecret: String
-        get() = sharedPrefs.getString(KEY_CLIENT_SECRET_OVERRIDE, null)?.takeIf { it.isNotEmpty() } ?: BuildConfig.GOOGLE_CLIENT_SECRET
+        get() = BuildConfig.GOOGLE_CLIENT_ID.trim()
 
     val scope: String
         get() = FULL_OAUTH_SCOPES
-
-    fun getClientIdOverride(): String = sharedPrefs.getString(KEY_CLIENT_ID_OVERRIDE, "") ?: ""
-    fun getClientSecretOverride(): String = sharedPrefs.getString(KEY_CLIENT_SECRET_OVERRIDE, "") ?: ""
-
-    /**
-     * [دالة حفظ تجاوز بيانات العميل]:
-     * تتيح للمستخدم إدخال بيانات اعتماد مخصصة في حال الرغبة بمشروع Google خاص به.
-     */
-    fun saveClientCredentialsOverride(clientIdStr: String?, clientSecretStr: String?) {
-        val editor = sharedPrefs.edit()
-        if (clientIdStr.isNullOrEmpty()) {
-            editor.remove(KEY_CLIENT_ID_OVERRIDE)
-        } else {
-            editor.putString(KEY_CLIENT_ID_OVERRIDE, clientIdStr.trim())
-        }
-        if (clientSecretStr.isNullOrEmpty()) {
-            editor.remove(KEY_CLIENT_SECRET_OVERRIDE)
-        } else {
-            editor.putString(KEY_CLIENT_SECRET_OVERRIDE, clientSecretStr.trim())
-        }
-        editor.apply()
-    }
-
-    /**
-     * [دالة استخراج بصمة التطبيق SHA-1]:
-     * تستخرج البصمة الرقمية لشهادة الـ APK لعرضها في شاشة الإعدادات للتأكد من ربط Console.
-     */
-    fun getAppSignatureSHA1(): String {
-        try {
-            val info = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                context.packageManager.getPackageInfo(
-                    context.packageName,
-                    android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(
-                    context.packageName,
-                    android.content.pm.PackageManager.GET_SIGNATURES
-                )
-            }
-
-            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                info.signingInfo?.apkContentsSigners
-            } else {
-                @Suppress("DEPRECATION")
-                info.signatures
-            }
-
-            if (signatures != null && signatures.isNotEmpty()) {
-                val sig = signatures[0]
-                val md = java.security.MessageDigest.getInstance("SHA-1")
-                val publicKey = md.digest(sig.toByteArray())
-                return publicKey.joinToString(":") { String.format("%02X", it) }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "فشل استخراج بصمة التطبيق SHA-1", e)
-        }
-        return context.getString(com.smartledger.aldaftar.R.string.gdrive_sha1_fetch_failed)
-    }
 
     /**
      * [دالة التحقق من تسجيل الدخول الحقيقي]:
@@ -235,9 +164,8 @@ class GoogleDriveAuthManager(
             )
         if (clientId.isNotBlank()) {
             try {
-                // تفعيل forceCodeForRefreshToken = true إلزامي لضمان إرجاع Google لرمز التجديد (refresh_token)
-                // حتى في حال سبق للمستخدم الموافقة أو عند إعادة تثبيت التطبيق.
-                builder.requestServerAuthCode(clientId, true)
+                // يطلب رمز خادم مرة واحدة بصورة طبيعية؛ Google يمنح refresh token عند أول تبادل ناجح.
+                builder.requestServerAuthCode(clientId, false)
             } catch (e: Exception) {
                 Log.e(TAG, "تعذر تعيين serverAuthCode في GoogleSignInOptions", e)
             }
@@ -386,61 +314,34 @@ class GoogleDriveAuthManager(
      */
     suspend fun refreshAccessTokenIfNeeded(): String? = refreshMutex.withLock {
         withContext(Dispatchers.IO) {
-            // 1. التحقق أولاً من صلاحية رمز الوصول الحالي لتجنب استدعاء الشبكة دون داعٍ
             if (!isTokenExpired()) {
-                val currentToken = getStoredAccessToken()
-                if (!currentToken.isNullOrEmpty()) {
-                    return@withContext currentToken
-                }
+                getStoredAccessToken()?.takeIf { it.isNotEmpty() }?.let { return@withContext it }
             }
 
-            // 2. إذا لم يكن هناك رمز وصول صالح، يلزم وجود Refresh Token للتجديد
-            val refreshToken = getStoredRefreshToken()
-            if (refreshToken.isNullOrEmpty()) {
-                Log.w(TAG, "لا يوجد رمز تجديد محفوظ لتجديد الجلسة")
-                return@withContext null
-            }
+            val refreshToken = getStoredRefreshToken()?.takeIf { it.isNotEmpty() }
+                ?: return@withContext null
 
             try {
-                cloudEngine.executeWithRetry(
-                    operationName = "RefreshAccessToken",
-                    maxRetries = 2,
-                    initialDelayMs = 250L
-                ) {
-                    val formBuilder = FormBody.Builder()
-                        .add(PARAM_CLIENT_ID, clientId)
-                        .add(PARAM_REFRESH_TOKEN, refreshToken)
-                        .add(PARAM_GRANT_TYPE, GRANT_TYPE_REFRESH_TOKEN)
-                    if (clientSecret.isNotEmpty()) {
-                        formBuilder.add(PARAM_CLIENT_SECRET, clientSecret)
-                    }
+                val request = Request.Builder()
+                    .url(BuildConfig.LICENSE_BACKEND_URL.trim().trimEnd('/') + GOOGLE_OAUTH_REFRESH_PATH)
+                    .header("Accept", "application/json")
+                    .post(FormBody.Builder().add(PARAM_REFRESH_TOKEN, refreshToken).build())
+                    .build()
 
-                    val request = Request.Builder()
-                        .url(TOKEN_ENDPOINT_URL)
-                        .post(formBuilder.build())
-                        .build()
-
-                    cloudEngine.client.newCall(request).execute().use { response ->
-                        if (response.isSuccessful) {
-                            val rawBody = response.body?.string() ?: ""
-                            val json = JSONObject(rawBody)
-                            val accessToken = json.getString(RESPONSE_ACCESS_TOKEN)
-                            val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
-
-                            storeTokens(accessToken, refreshToken, expiresIn)
-                            Log.d(TAG, "تم تجديد رمز الوصول بنجاح.")
-                            accessToken
-                        } else {
-                            val rawBody = response.body?.string() ?: ""
-                            Log.w(TAG, "استجابة غير ناجحة عند تجديد رمز الوصول (رمز الحالة: ${response.code})")
-                            if (response.code == 400 || response.code == 401) {
-                                if (rawBody.contains("invalid_grant") || rawBody.contains("unauthorized_client")) {
-                                    clearAuthData()
-                                }
-                            }
-                            null
+                cloudEngine.client.newCall(request).execute().use { response ->
+                    val rawBody = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) {
+                        if (response.code == 400 || response.code == 401) {
+                            clearAuthData()
                         }
+                        return@withContext null
                     }
+                    val json = JSONObject(rawBody)
+                    val accessToken = json.optString(RESPONSE_ACCESS_TOKEN).takeIf { it.isNotBlank() }
+                        ?: return@withContext null
+                    val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
+                    storeTokens(accessToken, refreshToken, expiresIn)
+                    accessToken
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "تعذر تجديد رمز الوصول: ${e.javaClass.simpleName}")
@@ -459,84 +360,52 @@ class GoogleDriveAuthManager(
         redirectUri: String = ""
     ): Boolean = withContext(Dispatchers.IO) {
         updateState?.invoke(CloudSyncState.Authenticating)
-        val sanitizedCode = code.trim()
-            .replace("\\s".toRegex(), "")
-            .filter { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it in listOf('-', '_', '/', '.') }
+        val sanitizedCode = code.trim().replace("\\s".toRegex(), "")
+        if (sanitizedCode.isBlank()) {
+            updateState?.invoke(CloudSyncState.Error(context.getString(com.smartledger.aldaftar.R.string.gdrive_error_link_failed)))
+            return@withContext false
+        }
 
         try {
-            cloudEngine.executeWithRetry(
-                operationName = "ExchangeAuthCode",
-                maxRetries = 2,
-                initialDelayMs = 500L
-            ) {
-                val builder = FormBody.Builder()
-                    .add(PARAM_CODE, sanitizedCode)
-                    .add(PARAM_CLIENT_ID, clientId.trim())
-                    .add(PARAM_GRANT_TYPE, GRANT_TYPE_AUTH_CODE)
+            val form = FormBody.Builder()
+                .add(PARAM_CODE, sanitizedCode)
+                .apply { if (redirectUri.isNotBlank()) add(PARAM_REDIRECT_URI, redirectUri.trim()) }
+                .build()
+            val request = Request.Builder()
+                .url(BuildConfig.LICENSE_BACKEND_URL.trim().trimEnd('/') + GOOGLE_OAUTH_EXCHANGE_PATH)
+                .header("Accept", "application/json")
+                .post(form)
+                .build()
 
-                val trimmedSecret = clientSecret.trim()
-                if (trimmedSecret.isNotEmpty() && trimmedSecret != "YOUR_GOOGLE_CLIENT_SECRET") {
-                    builder.add(PARAM_CLIENT_SECRET, trimmedSecret)
+            cloudEngine.client.newCall(request).execute().use { response ->
+                val rawBody = response.body?.string().orEmpty()
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "فشل تبادل رمز Google OAuth (رمز الحالة: ${response.code})")
+                    updateState?.invoke(
+                        CloudSyncState.Error(context.getString(com.smartledger.aldaftar.R.string.gdrive_error_link_failed))
+                    )
+                    return@withContext false
                 }
-                if (redirectUri.isNotEmpty()) {
-                    builder.add(PARAM_REDIRECT_URI, redirectUri.trim())
-                }
+                val json = JSONObject(rawBody)
+                val accessToken = json.optString(RESPONSE_ACCESS_TOKEN).takeIf { it.isNotBlank() }
+                    ?: return@withContext false
+                val refreshToken = json.optString(RESPONSE_REFRESH_TOKEN).takeIf { it.isNotBlank() }
+                    ?: getStoredRefreshToken()
+                val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
+                val email = json.optString(KEY_EMAIL).trim().lowercase().takeIf { it.isNotBlank() }
+                    ?: inputEmail?.trim()?.lowercase()
+                    ?: fetchUserEmail(accessToken)
+                    ?: return@withContext false
 
-                val request = Request.Builder()
-                    .url(TOKEN_ENDPOINT_URL)
-                    .post(builder.build())
-                    .build()
-
-                cloudEngine.client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        val rawBody = response.body?.string() ?: ""
-                        val json = JSONObject(rawBody)
-                        val accessToken = json.getString(RESPONSE_ACCESS_TOKEN)
-                        val refreshToken = json.optString(RESPONSE_REFRESH_TOKEN, "").takeIf { it.isNotEmpty() } ?: getStoredRefreshToken()
-                        val expiresIn = json.optLong(RESPONSE_EXPIRES_IN, DEFAULT_EXPIRES_IN_SEC)
-
-                        storeTokens(accessToken, refreshToken, expiresIn)
-
-                        val email = inputEmail ?: fetchUserEmail(accessToken) ?: "account@google.com"
-                        storeEmail(email)
-
-                        updateState?.invoke(CloudSyncState.Authenticated(email))
-                        true
-                    } else {
-                        val errorMsg = response.body?.string() ?: "Authorization code exchange error"
-                        Log.e(TAG, "فشل تبادل رمز التفويض (رمز الحالة: ${response.code})")
-
-                        var detailedError = ""
-                        try {
-                            val json = JSONObject(errorMsg)
-                            val err = json.optString("error")
-                            val desc = json.optString("error_description")
-                            detailedError = if (err.isNotEmpty() && desc.isNotEmpty()) {
-                                "$err: $desc"
-                            } else if (err.isNotEmpty()) {
-                                err
-                            } else {
-                                errorMsg
-                            }
-                        } catch (_: Exception) {
-                            detailedError = errorMsg
-                        }
-
-                        updateState?.invoke(
-                            CloudSyncState.Error(
-                                context.getString(com.smartledger.aldaftar.R.string.gdrive_error_link_failed) + "\n($detailedError)"
-                            )
-                        )
-                        false
-                    }
-                }
+                storeTokens(accessToken, refreshToken, expiresIn)
+                storeEmail(email)
+                updateState?.invoke(CloudSyncState.Authenticated(email))
+                true
             }
         } catch (e: Exception) {
-            Log.e(TAG, "فشل الاتصال أثناء تبادل رمز التفويض: ${e.javaClass.simpleName}")
+            Log.e(TAG, "فشل الاتصال أثناء تبادل رمز Google OAuth: ${e.javaClass.simpleName}")
             updateState?.invoke(
-                CloudSyncState.Error(
-                    context.getString(com.smartledger.aldaftar.R.string.gdrive_error_network_unstable) + "\n(${e.localizedMessage ?: ""})"
-                )
+                CloudSyncState.Error(context.getString(com.smartledger.aldaftar.R.string.gdrive_error_network_unstable))
             )
             false
         }

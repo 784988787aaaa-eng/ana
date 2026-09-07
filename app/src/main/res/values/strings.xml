@@ -583,10 +583,6 @@
     <string name="settings_currency_hint">رمز العملة (مثال: ر.ي، $)</string>
     <string name="settings_signature_title">بصمة وتوقيع التطبيق 🔐</string>
     <string name="settings_signature_desc">التطبيق مؤمّن ويعمل بالبصمة الرسمية المعتمدة للمزامنة السحابية وتوافق الحزم.</string>
-    <string name="settings_sha1_label">بصمة SHA-1:</string>
-    <string name="settings_sha256_label">بصمة SHA-256:</string>
-    <string name="settings_sha1_copied">تم نسخ بصمة SHA-1 📋</string>
-    <string name="settings_sha256_copied">تم نسخ بصمة SHA-256 📋</string>
     <string name="settings_quad_backup_title">النسخ الاحتياطي والمزامنة</string>
     <string name="settings_quad_backup_subtitle">إدارة النسخ السحابي والمحلي واستعادة السجلات</string>
     <string name="settings_backup_portable_title">النسخ الاحتياطي المحلي (.mzd)</string>
@@ -811,15 +807,12 @@
     <string name="autobackup_notification_text_failure">تعذر الاتصال لحفظ البيانات، ستتم إعادة المحاولة تلقائياً.</string>
     <string name="autobackup_path_prefix">المسار: %1$s</string>
     <string name="backup_reminder_title">تأمين وحفظ البيانات 🔒</string>
-    <string name="gdrive_sha1_fetch_failed">غير قادر على جلب بصمة SHA-1</string>
     <string name="gdrive_error_link_failed">فشلت عملية ربط الحساب.</string>
     <string name="gdrive_error_network_unstable">الشبكة غير مستقرة. يرجى التحقق من اتصالك وإعادة محاولة الربط.</string>
     <string name="gdrive_error_network_failed">تعذر الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت وإعادة المحاولة.</string>
     <string name="gdrive_error_server_failed">تعذر الاتصال بخدمات Google، يرجى التحقق من جودة الشبكة وإعادة المحاولة.</string>
     <string name="gdrive_error_backups_not_found">⚠️ لم يتم العثور على أي نسخ احتياطية (.mzd) في حسابك السحابي.</string>
     <string name="settings_signature_unavailable">غير متوفر</string>
-    <string name="settings_signature_desc_sha1">نسخ بصمة SHA-1</string>
-    <string name="settings_signature_desc_sha256">نسخ بصمة SHA-256</string>
     <string name="biz_zoom_and_pan">تقريب وتحريك الصورة:</string>
     <string name="cloud_google_connected">حساب Google متصل</string>
     <string name="backup_folder_name">الدفتر الذكي</string>

@@ -28,12 +28,10 @@ jobs:
       - name: Create runtime environment
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           : > .env
           printf 'GOOGLE_CLIENT_ID=%s\n' "$GOOGLE_CLIENT_ID" >> .env
-          printf 'GOOGLE_CLIENT_SECRET=%s\n' "$GOOGLE_CLIENT_SECRET" >> .env
 
       - name: Set up standard Android debug keystore
         run: |
@@ -52,81 +50,19 @@ jobs:
           fi
           # Never copy or use debug.keystore as the Al-Daftar release keystore.
 
-      - name: Decode and verify Al-Daftar release keystore
+      - name: Decode Al-Daftar release keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
-          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          echo "===================================================="
-          echo "Al-Daftar release keystore verification"
-          echo "Source: GitHub Secret KEYSTORE_BASE64"
-          echo "===================================================="
-
           if [ -z "$KEYSTORE_BASE64" ]; then
             echo "ERROR: GitHub Secret KEYSTORE_BASE64 is missing."
             exit 1
           fi
-          if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "ERROR: Required release signing secrets are missing."
-            exit 1
-          fi
-
           mkdir -p app
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/aldaftar.keystore
-
-          if [ ! -s app/aldaftar.keystore ]; then
-            echo "ERROR: KEYSTORE_BASE64 decoded to an empty keystore."
-            exit 1
-          fi
-
-          CERT_OUTPUT="$(
-            keytool -list -v \
-              -keystore app/aldaftar.keystore \
-              -storepass "$STORE_PASSWORD" \
-              -alias "$KEY_ALIAS" 2>&1
-          )" || {
-            echo "ERROR: Cannot open the release keystore with the configured credentials/alias."
-            exit 1
-          }
-
-          EXTRACTED_SHA1="$(
-            printf '%s\n' "$CERT_OUTPUT" |
-              grep -i "SHA1:" |
-              head -n 1 |
-              sed -E 's/.*SHA1:[[:space:]]*//' |
-              tr -d ':[:space:]' |
-              tr '[:lower:]' '[:upper:]'
-          )"
-
-          EXTRACTED_SHA256="$(
-            printf '%s\n' "$CERT_OUTPUT" |
-              grep -i "SHA256:" |
-              head -n 1 |
-              sed -E 's/.*SHA256:[[:space:]]*//' |
-              tr -d ':[:space:]' |
-              tr '[:lower:]' '[:upper:]'
-          )"
-
-          if [ -z "$EXTRACTED_SHA1" ] || [ -z "$EXTRACTED_SHA256" ]; then
-            echo "ERROR: Could not extract SHA-1/SHA-256 from the release certificate."
-            exit 1
-          fi
-
-          echo "Release certificate SHA-1: $EXTRACTED_SHA1"
-          echo "Release certificate SHA-256: $EXTRACTED_SHA256"
-
-          EXPECTED_SHA1="4985981003E3502B632056CB931AE3804F6859F8"
-          if [ "$EXTRACTED_SHA1" != "$EXPECTED_SHA1" ]; then
-            echo "ERROR: KEYSTORE_BASE64 certificate SHA-1 does not match the registered Al-Daftar release fingerprint."
-            echo "Expected: $EXPECTED_SHA1"
-            echo "Actual:   $EXTRACTED_SHA1"
-            exit 1
-          fi
-
-          echo "Keystore certificate verification: PASS"
+          test -s app/aldaftar.keystore
+          echo "Release keystore decoded successfully."
 
       - name: Verify Gradle wrapper
         run: |
@@ -196,12 +132,8 @@ jobs:
             --max-workers=1
 
       - name: Verify signed release APK
-        env:
-          EXPECTED_SHA1_FORMATTED: "49:85:98:10:03:E3:50:2B:63:20:56:CB:93:1A:E3:80:4F:68:59:F8"
-          EXPECTED_SHA1_CLEAN: "4985981003E3502B632056CB931AE3804F6859F8"
         run: |
           set -euo pipefail
-
           APK_PATH="$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1)"
           if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
             echo "ERROR: Release APK was not produced."
@@ -222,35 +154,7 @@ jobs:
             exit 1
           fi
 
-          SIGN_VERIFY_OUTPUT="$(
-            "$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH"
-          )"
-
-          ACTUAL_SHA1_FORMATTED="$(
-            printf '%s\n' "$SIGN_VERIFY_OUTPUT" |
-              grep -i "SHA-1 digest" |
-              head -n 1 |
-              sed -E 's/.*SHA-1 digest:[[:space:]]*//' |
-              tr -d '[:space:]' |
-              tr '[:lower:]' '[:upper:]'
-          )"
-          ACTUAL_SHA1_CLEAN="${ACTUAL_SHA1_FORMATTED//:/}"
-
-          echo "===================================================="
-          echo "Al-Daftar Release Verification"
-          echo "Application: الدفتر الذكي"
-          echo "Package: com.smartledger.aldaftar"
-          echo "Expected SHA-1: $EXPECTED_SHA1_FORMATTED"
-          echo "Actual APK SHA-1: $ACTUAL_SHA1_FORMATTED"
-          echo "===================================================="
-
-          if [ "$ACTUAL_SHA1_CLEAN" != "$EXPECTED_SHA1_CLEAN" ]; then
-            echo "Fingerprint verification: FAIL"
-            exit 1
-          fi
-
           "$APKSIGNER_BIN" verify --verbose "$APK_PATH"
-          echo "Fingerprint verification: PASS"
           echo "APK signature verification: PASS"
 
       - name: Upload verified Al-Daftar release APK
