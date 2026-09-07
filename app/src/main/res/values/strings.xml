@@ -72,7 +72,7 @@
     <string name="licensing_fluent_desc_trial">للاستمرار، يرجى التواصل مع المطور وذكر معرّف الدعم الخاص بك.</string>
     <string name="licensing_trial_exhausted_title">انتهت المعاملات المجانية المتاحة</string>
     <string name="licensing_trial_exhausted_desc">للاستمرار، يرجى التواصل مع المطور وذكر معرّف الدعم الخاص بك.</string>
-    <string name="licensing_fluent_desc_default">سجّل الدخول بحساب Google المرخص لتفعيل الترخيص السحابي على هذا الهاتف.</string>
+    <string name="licensing_fluent_desc_default">إذا لم يكن هناك حساب متصل، سجّل الدخول بحساب Google أولاً، ثم يمكنك تنشيط ترخيص النسخة الكاملة إذا كان حسابك مرخصاً.</string>
     <string name="licensing_connected_unlicensed_desc">حسابك متصل • النسخة الأساسية (المعاملات محدودة) • النسخ الاحتياطي السحابي والاستعادة متاحان بالكامل.</string>
     <string name="licensing_connected_trial_exhausted_desc">انتهت المعاملات المجانية المتاحة (100 معاملة). النسخ السحابي والاستعادة يعملان بشكل طبيعي. لتسجيل معاملات إضافية يمكنك طلب ترخيص النسخة الكاملة.</string>
     <string name="licensing_fluent_cloud_synced_badge">رخصة معتمدة ✨</string>
@@ -82,12 +82,12 @@
     <string name="licensing_fluent_copy_device_id">نسخ المعرّف</string>
     <string name="licensing_fluent_copied_toast">تم نسخ معرّف الجهاز إلى الحافظة بنجاح 📋</string>
     <string name="licensing_support_id_label">معرّف الدعم</string>
-    <string name="licensing_support_id_pending">قيد التجهيز من الخادم</string>
+    <string name="licensing_support_id_pending">قيد التجهيز</string>
     <string name="licensing_support_id_loading">جاري جلب معرّف الدعم...</string>
     <string name="licensing_support_id_refresh">إعادة المحاولة</string>
     <string name="licensing_copy_support_id">نسخ معرّف الدعم</string>
     <string name="licensing_support_id_copied_toast">تم نسخ معرّف الدعم إلى الحافظة بنجاح 📋</string>
-    <string name="licensing_support_id_pending_toast">معرّف الدعم قيد التجهيز من الخادم حالياً</string>
+    <string name="licensing_support_id_pending_toast">معرّف الدعم قيد التجهيز حالياً، يرجى الانتظار قليلاً</string>
     <string name="licensing_google_account_connected">حساب Google متصل</string>
     <string name="licensing_google_account_linked">حساب Google معتمد</string>
     <string name="licensing_fluent_btn_activate_now">تنشيط الترخيص الآن</string>
@@ -107,10 +107,11 @@
     <string name="licensing_browse_offline">تخطي مؤقتاً</string>
     <string name="licensing_tab_email">تفعيل بالبريد 📧</string>
     <string name="licensing_error_invalid_email">يرجى إدخال بريد إلكتروني صحيح</string>
-    <string name="licensing_error_not_registered">عذراً، حسابك غير مرخص. يرجى طلب الترخيص.</string>
-    <string name="licensing_error_account_disabled">عذراً، حسابك غير مرخص. يرجى طلب الترخيص.</string>
-    <string name="licensing_error_connection">عذراً، تعذر الاتصال بالسيرفر. يرجى التحقق من الشبكة.</string>
-    <string name="licensing_error_no_internet">عفواً، لا يوجد اتصال بالإنترنت. يرجى التوصيل بالشبكة لتفعيل الترخيص الإلكتروني.</string>
+    <string name="licensing_error_not_registered">هذا الحساب غير مرخص. يمكنك التواصل مع المطور لطلب الترخيص.</string>
+    <string name="licensing_error_account_disabled">هذا الحساب غير مرخص. يرجى التواصل مع المطور لتفعيل الترخيص.</string>
+    <string name="licensing_error_connection">تعذر التحقق من الترخيص، يرجى التحقق من اتصال الإنترنت وإعادة المحاولة.</string>
+    <string name="licensing_error_no_internet">لا يوجد اتصال بالإنترنت. يرجى الاتصال بالشبكة للتحقق من الترخيص.</string>
+    <string name="licensing_error_auth_required">يرجى تسجيل الدخول بحساب Google أولاً لمتابعة التنشيط.</string>
     <string name="licensing_whatsapp_short">واتساب</string>
     <string name="sec_hint_display_pattern">تلميح: %1$s</string>
     <string name="sec_hint_toggle_show">إظهار تلميح رمز الأمان</string>
@@ -618,7 +619,7 @@
     <string name="settings_toast_permission_manage_files">يرجى تفعيل صلاحية إدارة الملفات لحفظ النسخ في مجلد المستندات.</string>
     <string name="settings_toast_permission_denied_err">تعذر إكمال العملية لعدم توفر صلاحيات التخزين.</string>
     <string name="settings_gdrive_link_success_pattern">تم ربط الحساب (%s) بنجاح</string>
-    <string name="settings_gdrive_link_failed_network">تعذر الاتصال بخوادم Google، يرجى التحقق من جودة الشبكة وإعادة المحاولة.</string>
+    <string name="settings_gdrive_link_failed_network">تعذر الاتصال بخدمات Google، يرجى التحقق من جودة الشبكة وإعادة المحاولة.</string>
     <string name="settings_gdrive_link_failed_invalid_code">تعذر التحقق من كود الربط الصادر من Google.</string>
     <string name="settings_gdrive_link_failed_error_pattern">تعذر الاتصال بخدمات Google: %s</string>
     <string name="settings_gdrive_link_failed_api_code_pattern">خطأ في تهيئة الحساب السحابي (كود %d)</string>
@@ -652,7 +653,7 @@
     <string name="settings_desc_call_support">اتصال هاتفي بالدعم</string>
     <string name="settings_desc_whatsapp">مراسلة واتساب مستعجلة</string>
     <string name="backup_toast_linked_success">تم ربط الحساب (%s) بنجاح</string>
-    <string name="backup_toast_connect_failed">تعذر الاتصال بخوادم Google، يرجى التحقق من الشبكة وإعادة المحاولة.</string>
+    <string name="backup_toast_connect_failed">تعذر الاتصال بخدمات Google، يرجى التحقق من الشبكة وإعادة المحاولة.</string>
     <string name="backup_toast_invalid_code">تعذر التحقق من كود الربط الصادر من Google.</string>
     <string name="backup_toast_connect_error">تعذر الاتصال بخدمات Google: %s</string>
     <string name="backup_toast_config_error">خطأ في تهيئة الحساب السحابي (كود %d)</string>
@@ -814,7 +815,7 @@
     <string name="gdrive_error_link_failed">فشلت عملية ربط الحساب.</string>
     <string name="gdrive_error_network_unstable">الشبكة غير مستقرة. يرجى التحقق من اتصالك وإعادة محاولة الربط.</string>
     <string name="gdrive_error_network_failed">تعذر الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت وإعادة المحاولة.</string>
-    <string name="gdrive_error_server_failed">تعذر الاتصال بخوادم Google، يرجى التحقق من جودة الشبكة وإعادة المحاولة.</string>
+    <string name="gdrive_error_server_failed">تعذر الاتصال بخدمات Google، يرجى التحقق من جودة الشبكة وإعادة المحاولة.</string>
     <string name="gdrive_error_backups_not_found">⚠️ لم يتم العثور على أي نسخ احتياطية (.mzd) في حسابك السحابي.</string>
     <string name="settings_signature_unavailable">غير متوفر</string>
     <string name="settings_signature_desc_sha1">نسخ بصمة SHA-1</string>
@@ -1005,7 +1006,7 @@
     <string name="btn_pay">سداد</string>
     <string name="toast_delete_failed">فشل الحذف</string>
     <string name="toast_cloud_restore_success">تم استعادة النسخة الاحتياطية بنجاح</string>
-    <string name="toast_cloud_restore_failed_or_missing">تعذر الاتصال بخوادم Google أو لم يتم العثور على أي نسخ احتياطية في حسابك السحابي.</string>
+    <string name="toast_cloud_restore_failed_or_missing">تعذر الاتصال بخدمات Google أو لم يتم العثور على أي نسخ احتياطية في حسابك السحابي.</string>
     <string name="btn_cloud_restore">استعادة نسخة احتياطية</string>
     <string name="toast_restore_legacy_migrated">تم استيراد النسخة السابقة وترقيتها بنجاح.</string>
     <string name="toast_save_failed">فشل حفظ البيانات</string>

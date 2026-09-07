@@ -287,8 +287,8 @@ function decodeJwtHeaderPayload(token: string): { protectedHeader: Record<string
 }
 
 function assertEnabledLicense(license: LicenseRow | null): asserts license is LicenseRow {
-  if (!license) throw new LicenseError("permission-denied", "This Google account is not licensed.", 403);
-  if (license.is_activated !== 1) throw new LicenseError("permission-denied", "This license is disabled.", 403);
+  if (!license) throw new LicenseError("permission-denied", "هذا الحساب غير مرخص.", 403);
+  if (license.is_activated !== 1) throw new LicenseError("permission-denied", "هذا الحساب غير مرخص.", 403);
 }
 
 async function getLicense(env: Env, uid: string, email: string): Promise<LicenseRow | null> {
@@ -398,7 +398,7 @@ async function activateLicense(env: Env, auth: AuthContext, body: Record<string,
 
   const licenseEmail = normalizeEmail(license.email || auth.email);
   if (licenseEmail !== auth.email) {
-    throw new LicenseError("permission-denied", "The signed-in Google account does not match the license.", 403);
+    throw new LicenseError("permission-denied", "هذا الحساب غير مرخص.", 403);
   }
 
   const maxDevices = Math.max(1, Math.min(20, Number(license.devices_max || 1)));

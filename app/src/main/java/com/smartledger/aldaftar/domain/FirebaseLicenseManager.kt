@@ -127,12 +127,12 @@ object FirebaseLicenseManager {
     ): LicenseCheckResult {
         val cleanEmail = normalizeEmail(email)
         val user = FirebaseAuth.getInstance().currentUser
-            ?: return LicenseCheckResult.Error(context.getString(R.string.licensing_error_connection))
+            ?: return LicenseCheckResult.Error(context.getString(R.string.licensing_error_auth_required))
         val authEmail = normalizeEmail(user.email.orEmpty())
         if (authEmail.isBlank() || authEmail != cleanEmail) {
             return LicenseCheckResult.NotLicensed(
                 cleanEmail,
-                context.getString(R.string.licensing_error_account_disabled)
+                context.getString(R.string.licensing_error_not_registered)
             )
         }
 
@@ -153,13 +153,21 @@ object FirebaseLicenseManager {
                     )
                 }
                 result.code == 401 || result.code == 403 || result.code == 404 ->
-                    LicenseCheckResult.NotLicensed(cleanEmail, result.message)
+                    LicenseCheckResult.NotLicensed(
+                        cleanEmail,
+                        context.getString(R.string.licensing_error_not_registered)
+                    )
                 result.code == 408 || result.code == 429 || result.code >= 500 ->
                     LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
-                else -> LicenseCheckResult.Error(result.message)
+                else -> LicenseCheckResult.Error(
+                    context.getString(R.string.licensing_error_connection)
+                )
             }
         } catch (e: LicenseClientException) {
-            if (e.status in 401..403) LicenseCheckResult.NotLicensed(cleanEmail, e.message.orEmpty())
+            if (e.status in 401..403) LicenseCheckResult.NotLicensed(
+                cleanEmail,
+                context.getString(R.string.licensing_error_not_registered)
+            )
             else LicenseCheckResult.NetworkOutage(context.getString(R.string.licensing_error_no_internet))
         } catch (t: Throwable) {
             Log.w(TAG, "License activation failed safely: ${t.javaClass.simpleName}")
