@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "512516697236",
+    "project_id": "al-daftar-android",
+    "storage_bucket": "al-daftar-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512516697236:android:2516cb9d724a44710c9881",
+        "android_client_info": {
+          "package_name": "com.smartledger.aldaftar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "512516697236-me2buttgah3mdc3hugpdv3t46vdqdvag.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJF2dNfr0f9cWE_A0-e7kDmsIG15eb9Vk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "512516697236-me2buttgah3mdc3hugpdv3t46vdqdvag.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
