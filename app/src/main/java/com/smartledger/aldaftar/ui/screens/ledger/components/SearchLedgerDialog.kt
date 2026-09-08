@@ -54,7 +54,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.domain.DateUtils
+import com.smartledger.aldaftar.presentation.utils.DateUtils
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.theme.CreditGreen
 import com.smartledger.aldaftar.ui.theme.DebtRed

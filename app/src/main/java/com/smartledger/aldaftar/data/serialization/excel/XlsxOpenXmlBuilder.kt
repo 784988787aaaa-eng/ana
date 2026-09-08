@@ -1,76 +1,18 @@
-/**
- * =====================================================================
- * ملف: منشئ ملفات إكسل منخفض المستوى (XlsxOpenXmlBuilder.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن محركاً برمجياً منخفض المستوى لبناء مستندات Office Open XML (.xlsx)
- * مباشرة من الصفر دون أي اعتماد على مكتبات خارجية ثقيلة (Zero-Dependency Spreadsheet Engine).
- * يقوم بتوليد الأجزاء الهيكلية لحزمة الـ ZIP القياسية لملفات إكسل:
- * `[Content_Types].xml` و `_rels/.rels` و `workbook.xml` و `styles.xml` و `sheet1.xml`،
- * مع ضبط أصيل لمحاذاة الجداول من اليمين إلى اليسار (RTL) للغة العربية.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. حزم وضغط حزمة OpenXML (ZIP Packaging):
- *    - استخدام [ZipOutputStream] لكتابة الملفات الفرعية بصيغة UTF-8 وضغطها في ملف واحد.
- * 2. ترجمة عناوين الخلايا (Cell Coordinate Mapping):
- *    - تحويل المؤشرات الرقمية (0, 0) إلى التسمية المعيارية لإكسل (مثل A1, Z1, AA1).
- * 3. تشفير وحماية النصوص (XML Escaping):
- *    - استبدال الرموز الخاصة (`&`, `<`, `>`, `"`, `'`) لحماية هيكلية ملفات الـ XML من التلف.
- * 4. إدارة نظام الأنماط والألوان والحدود (Styles & Formatting):
- *    - تعريف قوالب الخطوط (Fonts)، التعبئة (Fills)، الحدود (Borders)، وتنسيقات الأرقام والعملات (numFmts).
- */
 package com.smartledger.aldaftar.data.serialization.excel
 
-// ---------------------------------------------------------------------
-// استيراد حزم إدخال وإخراج الملفات وضغط ZIP
-// ---------------------------------------------------------------------
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-/**
- * [الكائن الأحادي لمنشئ حزم OpenXML - XlsxOpenXmlBuilder]:
- * يبني ملفات جداول البيانات المتوافقة مع معايير Microsoft Excel.
- */
 object XlsxOpenXmlBuilder {
 
-    /**
-     * [تحديد أبعاد وعرض العمود - SheetColumn]:
-     * يحدد النطاق وعرض العمود الافتراضي بالسنتيمتر/النقاط.
-     *
-     * @property min مؤشر بداية نطاق الأعمدة (يبدأ من 1).
-     * @property max مؤشر نهاية نطاق الأعمدة.
-     * @property width عرض العمود في ورقة العمل.
-     */
     class SheetColumn(val min: Int, val max: Int, val width: Double)
 
-    /**
-     * [نطاق دمج الخلايا - MergeRange]:
-     * يحدد مراجع الخلايا المدمجة (مثل "A1:E1").
-     *
-     * @property ref المرجع النصي لنطاق الدمج.
-     */
     class MergeRange(val ref: String)
 
-    /**
-     * [نموذج الخلية المنفردة - Cell]:
-     * يمثل خلية واحدة في جدول البيانات بنوع قيمتها ورقم نمطها التنسيقي.
-     *
-     * @property col مؤشر العمود (يبدأ من 0).
-     * @property value القيمة المخزنة (رقم، نص، أو قيمة منطقية).
-     * @property styleId معرف النمط في جدول الأنماط styles.xml.
-     */
     class Cell(val col: Int, val value: Any?, val styleId: Int) {
 
-        /**
-         * [تحويل الخلية إلى وسم XML - toXml]:
-         * يولد وسم `<c>` المناسب لنوع البيانات مع ترميز الحروف الخاصة.
-         *
-         * @param row رقم الصف (يبدأ من 1).
-         * @return السلسلة النصية لوسم الخلية في XML.
-         */
         fun toXml(row: Int): String {
             val ref = getCellRef(col, row)
             if (value == null) return "<c r=\"$ref\" s=\"$styleId\"/>"
@@ -85,32 +27,13 @@ object XlsxOpenXmlBuilder {
         }
     }
 
-    /**
-     * [نموذج صف جدول البيانات - Row]:
-     * يمثل صفاً يحتوي على مجموعة من الخلايا مع تحديد الارتفاع المخصص.
-     *
-     * @property r رقم الصف (يبدأ من 1).
-     * @property ht ارتفاع الصف بالنقاط.
-     */
     class Row(val r: Int, val ht: Int = 24) {
-        /** قائمة الخلايا المنتمية لهذا الصف */
         val cells = mutableListOf<Cell>()
 
-        /**
-         * [إضافة خلية للصف - cell]:
-         *
-         * @param col رقم العمود (0 = A, 1 = B, ...).
-         * @param value القيمة المراد إدراجها.
-         * @param styleId معرف التنسيق المطلوب.
-         */
         fun cell(col: Int, value: Any?, styleId: Int) {
             cells.add(Cell(col, value, styleId))
         }
 
-        /**
-         * [تحويل الصف إلى وسم XML - toXml]:
-         * يرتب الخلايا تصاعدياً حسب العمود ويولد وسم `<row>`.
-         */
         fun toXml(): String {
             val sb = StringBuilder()
             sb.append("<row r=\"$r\" ht=\"$ht\" customHeight=\"1\">")
@@ -123,14 +46,6 @@ object XlsxOpenXmlBuilder {
         }
     }
 
-    /**
-     * [تحويل إحداثيات الخلية إلى مرجع نصي - getCellRef]:
-     * يحول المؤشرات الرقمية (0, 1) إلى التسمية الأبجدية لإكسل (مثل A1, B1, AA1).
-     *
-     * @param colIndex مؤشر العمود (يبدأ من 0).
-     * @param rowIndex رقم الصف (يبدأ من 1).
-     * @return المرجع النصي للخلية (مثل "C5").
-     */
     fun getCellRef(colIndex: Int, rowIndex: Int): String {
         var temp = colIndex
         val colName = StringBuilder()
@@ -141,10 +56,6 @@ object XlsxOpenXmlBuilder {
         return "$colName$rowIndex"
     }
 
-    /**
-     * [دالة التوسيع لتأمين نصوص XML - xmlEscape]:
-     * تستبدل المحارف الخاصة غير المسموح بها في XML بكياناتها القياسية.
-     */
     fun String.xmlEscape(): String {
         return this.replace("&", "&amp;")
             .replace("<", "&lt;")
@@ -153,10 +64,6 @@ object XlsxOpenXmlBuilder {
             .replace("'", "&apos;")
     }
 
-    /**
-     * [توليد وثيقة الأنماط والتنسيقات - getStylesXml]:
-     * يبني ملف `styles.xml` الذي يحدد ألوان التعبئة والخطوط والحدود وتنسيقات الأرقام المالية.
-     */
     private fun getStylesXml(): String {
         return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -303,16 +210,6 @@ object XlsxOpenXmlBuilder {
 </styleSheet>"""
     }
 
-    /**
-     * [تجميع وبناء ملف الـ XLSX المضغوط - buildXlsxFile]:
-     * يجمع كافة مكونات XML لورقة العمل والمصنف والعلاقات والأنماط ويضغطها في حزمة ZIP صالحة كملف .xlsx.
-     *
-     * @param sheetName اسم ورقة العمل المعروض في التبويب السفلي.
-     * @param columns قائمة مواصفات وعروض الأعمدة.
-     * @param rows قائمة الصفوف والخلايا المراد رسمها.
-     * @param merges قائمة نطاقات دمج الخلايا.
-     * @param file الملف الهدف للكتابة.
-     */
     fun buildXlsxFile(
         sheetName: String,
         columns: List<SheetColumn>,

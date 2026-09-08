@@ -54,14 +54,6 @@ import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import kotlin.math.abs
 
-/**
- * Pinned Action Filter Ribbon (High-Density & Clean Layout):
- * 1. Pinned Right (Start RTL): Fixed "All" category chip ("الكل 66")
- * 2. Scrollable Center (Weight 1f): Custom categories with Drag-to-Reorder & Option triggers
- * 3. Pinned Left (End RTL): Fixed Action Buttons:
- *     - Dedicated Quick Add Category Button (+) 32dp Circle
- *     - Sort Menu Trigger (⇅) with Dropdown Filter options
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HabayebFilterToolbar(
@@ -93,12 +85,10 @@ fun HabayebFilterToolbar(
     var activeCategoryOptions by remember { mutableStateOf<String?>(null) }
     var categoryToDelete by remember { mutableStateOf<CustomCategory?>(null) }
 
-    // Intercept hardware/system back button when options panel is visible
     BackHandler(enabled = activeCategoryOptions != null) {
         activeCategoryOptions = null
     }
 
-    // Drag-to-reorder state management
     var draggedCategoryKey by remember { mutableStateOf<String?>(null) }
     var dragOffsetX by remember { mutableStateOf(0f) }
     val itemPositions = remember { mutableStateMapOf<String, Float>() }
@@ -115,7 +105,6 @@ fun HabayebFilterToolbar(
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
-        // High-Density Toolbar Row: Pinned All -> Scrollable Custom Categories -> Pinned Actions (+, Sort)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -126,7 +115,6 @@ fun HabayebFilterToolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 1. PINNED RIGHT (RTL Start): Fixed "All" category chip ("الكل")
             val isAllSelected = selectedCategory == null
             val allCount = activeCustomersCount
             CustomCategoryChip(
@@ -142,7 +130,6 @@ fun HabayebFilterToolbar(
                 onLongClick = {}
             )
 
-            // 2. SCROLLABLE CENTER: Custom Categories (Drag-to-Reorder supported)
             val scrollState = rememberScrollState()
             Row(
                 modifier = Modifier
@@ -280,12 +267,10 @@ fun HabayebFilterToolbar(
                 }
             }
 
-            // 3. PINNED LEFT (RTL End): Fixed Action Buttons (+ Quick Add, ⇅ Sort Menu)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                // (+) Dedicated Quick Add Category Button
                 CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                     Box(
                         modifier = Modifier
@@ -307,7 +292,6 @@ fun HabayebFilterToolbar(
                     }
                 }
 
-                // Sort Dropdown Button (⇅)
                 Box {
                     val isSortActive = financialSortMode != 0 || historicalSortMode != 1
                     val sortBtnBg = if (isSortActive) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant
@@ -350,7 +334,6 @@ fun HabayebFilterToolbar(
             }
         }
 
-        // Category Options Sub-panel (When user long-presses or taps a category for options)
         activeCategoryOptions?.let { categoryKey ->
             Spacer(modifier = Modifier.height(4.dp))
             CategoryOptionsPanel(
@@ -368,7 +351,6 @@ fun HabayebFilterToolbar(
         }
     }
 
-    // Category Delete Confirmation Dialog
     categoryToDelete?.let { cat ->
         CategoryDeleteConfirmationDialog(
             categoryName = cat.name,

@@ -70,7 +70,6 @@ fun HabayebFilterTabs(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. كبسولة لي عند الناس (المدينين)
         val isOwedByThemSelected = selectedFilterTab == 1
         FilterTabChip(
             title = stringResource(id = R.string.habayeb_filter_owed_by),
@@ -86,7 +85,6 @@ fun HabayebFilterTabs(
             onClick = { onFilterTabSelected(if (isOwedByThemSelected) 0 else 1) }
         )
 
-        // 2. كبسولة علي للناس (الدائنين)
         val isOwedToThemSelected = selectedFilterTab == 2
         FilterTabChip(
             title = stringResource(id = R.string.habayeb_filter_owed_to),

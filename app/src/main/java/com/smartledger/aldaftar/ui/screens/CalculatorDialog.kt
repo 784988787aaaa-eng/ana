@@ -41,10 +41,8 @@ fun CalculatorDialog(
 ) {
     var rawExpression by remember { mutableStateOf("") }
     
-    // Fallback to app's primary theme color dynamically
     val brandPrimary = activeThemeColor ?: MaterialTheme.colorScheme.primary
 
-    // Single derived evaluation result for the current expression
     val calculatedResult = remember(rawExpression) {
         if (rawExpression.isEmpty()) null
         else evaluateSimpleExpression(rawExpression)
@@ -64,7 +62,6 @@ fun CalculatorDialog(
         try {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         } catch (e: Exception) {
-            // Ignore in environment without active haptic device
         }
     }
 
@@ -131,7 +128,6 @@ fun CalculatorDialog(
     }
 
     val surfaceVarColor = MaterialTheme.colorScheme.surfaceVariant
-    // Calculate background color with clean theme tokens
     val calcBgColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, surfaceVarColor) {
         when {
             isIncomeTheme -> mizanColors.creditContainer
@@ -140,7 +136,6 @@ fun CalculatorDialog(
         }
     }
 
-    // Border color matching the mode
     val calcBorderColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, brandPrimary) {
         when {
             isIncomeTheme -> mizanColors.credit
@@ -156,7 +151,7 @@ fun CalculatorDialog(
                 containerColor = calcBgColor
             ),
             border = BorderStroke(2.dp, calcBorderColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // Zero elevation to remove automatic gray overlays
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // دون ارتفاع. to remove automatic gray overlays
             modifier = Modifier
                 .widthIn(max = 360.dp)
                 .fillMaxWidth()
@@ -168,7 +163,6 @@ fun CalculatorDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header of Calculator
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,7 +187,6 @@ fun CalculatorDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Digital Display Screen
                 val displayBgColor = MaterialTheme.colorScheme.surface
                 
                 val displayBorderColor = when {
@@ -219,7 +212,6 @@ fun CalculatorDialog(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.End
                     ) {
-                        // Expression Line
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.End,
@@ -236,7 +228,6 @@ fun CalculatorDialog(
                             )
                         }
 
-                        // Preview / Result Line
                         if (calculatedResult != null && calculatedResult.toPlainString() != rawExpression) {
                             val formattedPreview = if (calculatedResult.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
                                 calculatedResult.toBigInteger().toString()
@@ -268,13 +259,11 @@ fun CalculatorDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Arabic Right-to-Left Layout Keyboard
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Row 1: [⌫] [9] [8] [7]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -285,7 +274,6 @@ fun CalculatorDialog(
                             CalcButton(text = "7", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("7") }
                         }
 
-                        // Row 2: [×] [6] [5] [4]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -296,7 +284,6 @@ fun CalculatorDialog(
                             CalcButton(text = "4", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("4") }
                         }
 
-                        // Row 3: [-] [3] [2] [1]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -307,7 +294,6 @@ fun CalculatorDialog(
                             CalcButton(text = "1", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("1") }
                         }
 
-                        // Row 4: [+] [C] [0] [.]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -318,7 +304,6 @@ fun CalculatorDialog(
                             CalcButton(text = ".", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit(".") }
                         }
 
-                        // Row 5: [=] [÷] [OK]
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -350,7 +335,6 @@ fun CalcButton(
     val isIncomeTheme = brandPrimary == MaterialTheme.mizanColors.credit || brandPrimary == MaterialTheme.mizanColors.selection
     val isExpenseTheme = brandPrimary == MaterialTheme.mizanColors.debt
 
-    // Determine button colors dynamically based on active semantic roles
     val backgroundColor = when {
         isEquals -> brandPrimary
         isBackspace || isOp || isAction -> {

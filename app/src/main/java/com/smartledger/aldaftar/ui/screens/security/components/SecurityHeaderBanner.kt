@@ -50,7 +50,6 @@ fun SecurityHeaderBanner(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // هندسة محاذاة النص والبدء من اليمين لتناسب القراءة العربية الطبيعية
             Column(
                 horizontalAlignment = Alignment.Start,
                 modifier = Modifier.weight(1f)
@@ -74,7 +73,6 @@ fun SecurityHeaderBanner(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // شارة الأمان الذكية مستقرة في جهة اليسار بصورة عصرية متزنة
             Box(
                 modifier = Modifier
                     .size(40.dp)

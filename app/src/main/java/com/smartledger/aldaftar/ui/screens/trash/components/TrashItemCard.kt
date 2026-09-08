@@ -146,13 +146,11 @@ fun TrashItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Start: Avatar & Text Content
             Row(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Avatar Circle or Selection Checkmark
                 if (isSelected) {
                     Box(
                         modifier = Modifier
@@ -187,12 +185,10 @@ fun TrashItemCard(
                     }
                 }
 
-                // Middle Text Hierarchy: Title, Customer/Account Line, Date & Foreign Metadata
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    // Line 1: Title & Type Badge
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -222,7 +218,6 @@ fun TrashItemCard(
                         }
                     }
 
-                    // Line 2: Full Context / Associated Account Subtext (Clean & Unsquished)
                     if (parsedData.subText.isNotEmpty()) {
                         Text(
                             text = parsedData.subText,
@@ -234,7 +229,6 @@ fun TrashItemCard(
                         )
                     }
 
-                    // Line 3: Date & Foreign Currency Badge
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -274,12 +268,10 @@ fun TrashItemCard(
 
             Spacer(modifier = Modifier.width(6.dp))
 
-            // End: Financial Amount & Clean Frameless Icon Actions
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                // Financial Amount with directional arrow
                 if (parsedData.amountText.isNotEmpty()) {
                     val amountColor = if (parsedData.isExpense) debtColor else creditColor
                     val arrow = if (parsedData.isExpense) "↗️" else "↙️"
@@ -303,7 +295,6 @@ fun TrashItemCard(
                     }
                 }
 
-                // Actions: Sleek, Frameless, Clean Icon Buttons (Zero Bloat, Zero Clunky Frames)
                 if (isSelected) {
                     Box(
                         modifier = Modifier
@@ -324,7 +315,6 @@ fun TrashItemCard(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Frameless Clean Restore Icon Button
                         IconButton(
                             onClick = onRestore,
                             modifier = Modifier.size(30.dp)
@@ -337,7 +327,6 @@ fun TrashItemCard(
                             )
                         }
 
-                        // Frameless Clean Delete Permanently Icon Button
                         IconButton(
                             onClick = { showDeleteConfirm = true },
                             modifier = Modifier.size(30.dp)

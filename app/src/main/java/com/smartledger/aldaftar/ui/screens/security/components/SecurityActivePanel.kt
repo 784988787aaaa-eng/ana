@@ -34,7 +34,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
-import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
+import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 
@@ -74,7 +74,6 @@ fun SecurityActivePanel(
             val deactivateContent = mizanColors.debt
             val deactivateBorder = mizanColors.debtBorder
 
-            // Shield Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -161,7 +160,6 @@ fun SecurityActivePanel(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
 
-            // CHANGE PIN BUTTON
             OutlinedButton(
                 onClick = { pendingAction = SecurityActiveAction.CHANGE_PIN },
                 shape = RoundedCornerShape(12.dp),
@@ -187,7 +185,6 @@ fun SecurityActivePanel(
                 }
             }
 
-            // DEACTIVATE SECURITY BUTTON
             OutlinedButton(
                 onClick = { pendingAction = SecurityActiveAction.DEACTIVATE },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = deactivateContent),
@@ -217,7 +214,6 @@ fun SecurityActivePanel(
         }
     }
 
-    // Modal verification dialog requiring Old PIN or Recovery Phrase
     val activePendingAction = pendingAction
     if (activePendingAction != null) {
         VerifyOldPinDialog(

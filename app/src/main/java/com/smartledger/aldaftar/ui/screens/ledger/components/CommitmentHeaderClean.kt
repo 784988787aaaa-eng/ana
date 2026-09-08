@@ -32,7 +32,6 @@ fun CommitmentHeaderClean(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Close Button ✕
         IconButton(
             onClick = onCloseClick,
             modifier = Modifier
@@ -48,7 +47,6 @@ fun CommitmentHeaderClean(
             )
         }
 
-        // Title
         Text(
             text = "الأهداف والالتزامات",
             fontWeight = FontWeight.Bold,
@@ -56,7 +54,6 @@ fun CommitmentHeaderClean(
             fontSize = 16.sp
         )
 
-        // Share Button 🔗
         IconButton(
             onClick = onShareClick,
             modifier = Modifier

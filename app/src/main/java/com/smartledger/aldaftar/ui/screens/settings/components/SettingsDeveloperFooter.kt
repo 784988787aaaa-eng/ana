@@ -51,13 +51,11 @@ fun SettingsDeveloperFooter(
         )
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Subtle centered Circular social rows
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Call Button
             IconButton(
                 onClick = {
                     val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:774004399"))
@@ -76,7 +74,6 @@ fun SettingsDeveloperFooter(
                 )
             }
 
-            // WhatsApp Direct Chat Button
             IconButton(
                 onClick = {
                     val waUrl = "https://wa.me/967774004399"

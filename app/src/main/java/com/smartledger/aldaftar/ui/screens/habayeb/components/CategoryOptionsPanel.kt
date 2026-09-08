@@ -82,7 +82,6 @@ fun CategoryOptionsPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Move Right (Icon > moves category physically to the RIGHT)
                 OptionCircularIconButton(
                     onClick = { onMoveRight(categoryKey) },
                     icon = Icons.Default.KeyboardArrowRight,
@@ -90,7 +89,6 @@ fun CategoryOptionsPanel(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Move Left (Icon < moves category physically to the LEFT)
                 OptionCircularIconButton(
                     onClick = { onMoveLeft(categoryKey) },
                     icon = Icons.Default.KeyboardArrowLeft,
@@ -98,7 +96,6 @@ fun CategoryOptionsPanel(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Edit Name
                 var showRenameDialog by remember { mutableStateOf(false) }
                 OptionCircularIconButton(
                     onClick = { showRenameDialog = true },
@@ -127,7 +124,6 @@ fun CategoryOptionsPanel(
                 }
 
                 if (!isSystem && customCat != null) {
-                    // Delete Category
                     OptionCircularIconButton(
                         onClick = { onDelete(customCat) },
                         icon = Icons.Default.Delete,
@@ -137,7 +133,6 @@ fun CategoryOptionsPanel(
                     )
                 }
 
-                // Close Options
                 OptionCircularIconButton(
                     onClick = onDismiss,
                     icon = Icons.Default.Close,

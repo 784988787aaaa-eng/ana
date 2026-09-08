@@ -1,34 +1,12 @@
-/**
- * =====================================================================
- * ملف: محرك جداول إكسل لكشف حساب العميل الفردي (SingleCustomerExcelEngine.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المحرك المسؤول عن إنشاء كشف حساب مالي تفصيلي بصيغة OpenXML (.xlsx)
- * لعميل أو مورد محدد، مع دعم كامل للرصيد التراكمي المستمر (Running Balance)،
- * وعزل العملات الأجنبية غير المحولة، وتطبيق القواعد المحاسبية لجهة الحساب (لنا/له).
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. التكيف المحاسبي مع طبيعة الحساب (Account Nature Adaptation):
- *    - إذا كان الحساب "له" (مورد): يعكس مسميات الأعمدة (مدين/دائن) لتناسب التزامات المنشأة.
- * 2. الحساب التراكمي الآني للأرصدة (Running Balance Calculation):
- *    - تحديث الرصيد سطراً بسطر بدقة [BigDecimal] لمنع تراكم أخطاء الفاصلة العائمة.
- * 3. توضيح أسعار الصرف والمعاملات الأجنبية:
- *    - إضافة نصوص وصفية دقيقة للعملة الأصلية وسعر التحويل إن وجد.
- * 4. توليد خلايا وجداول وبطاقات إجمالية منسقة بالكامل:
- *    - بناء بطاقة تعريف العميل، جدول الحركات، بطاقة الصافي النهائي، والعملات غير المحولة.
- */
 package com.smartledger.aldaftar.data.serialization.excel
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والسجلات والكيانات والنماذج والحسابات والمساعدات
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.util.Log
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.data.serialization.BusinessProfileLoader
+import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
 import com.smartledger.aldaftar.data.serialization.pdf.PdfReportCalculator
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
@@ -39,43 +17,22 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * [الكائن الأحادي لمحرك إكسل كشف الحساب الفردي - SingleCustomerExcelEngine]:
- * يولد ملف .xlsx مصمم هندسياً لعرض حركة ورصيد حساب شخص أو جهة واحدة.
- */
 object SingleCustomerExcelEngine {
 
-    /** وسم السجلات التشخيصية */
     private const val TAG = "SingleCustomerExcel"
-    /** رمز اللغة العربية */
     private const val LOCALE_AR = "ar"
-    /** رمز اللغة الإنجليزية */
     private const val LOCALE_EN = "en"
-    /** بادئة اسم ملف كشف الحساب */
     private const val FILE_PREFIX = "statement_"
 
-    /** منسق التاريخ الإنجليزي الآمن متعدد الخيوط */
     private val DATE_FORMATTER_EN = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale(LOCALE_EN)) }
-    /** منسق الوقت العربي الآمن متعدد الخيوط */
     private val TIME_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", Locale(LOCALE_AR)) }
-    /** منسق اسم اليوم العربي الآمن متعدد الخيوط */
     private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", Locale(LOCALE_AR)) }
 
-    /**
-     * [توليد كشف حساب إكسل للعميل - generate]:
-     * يبني مصنف عمل إكسل كامل يضم بيانات المنشأة، بطاقة العميل، جدول الحركات، والرصيد النهائي.
-     *
-     * @param context سياق التطبيق لجلب النصوص والموارد.
-     * @param customer بيانات بطاقة العميل المستهدف.
-     * @param transactions قائمة معاملات العميل.
-     * @param currencySymbol رمز العملة الأساسية للتطبيق.
-     * @param exchangeRatesJson مصفوفة أسعار الصرف المخزنة (احتياطياً).
-     * @return ملف הـ XLSX المتولد في التخزين المؤقت، أو null عند الفشل.
-     */
     fun generate(
         context: Context,
         customer: HabayebCustomer,
         transactions: List<HabayebTransaction>,
+        businessProfile: BusinessProfile,
         currencySymbol: String,
         exchangeRatesJson: String = "{}"
     ): File? {
@@ -84,7 +41,7 @@ object SingleCustomerExcelEngine {
         val file = File(context.cacheDir, fileName)
 
         try {
-            val bizHeader = BusinessProfileLoader.load(context)
+            val bizHeader = BusinessProfileLoader.load(context, businessProfile)
             val now = Date()
             val dayName = try { DAY_FORMATTER_AR.get().format(now) } catch (e: Exception) { "" }
             val dateFormatted = try { DATE_FORMATTER_EN.get().format(now) } catch (e: Exception) { "" }
@@ -110,13 +67,11 @@ object SingleCustomerExcelEngine {
             val rowsList = mutableListOf<XlsxOpenXmlBuilder.Row>()
             val mergesList = mutableListOf<XlsxOpenXmlBuilder.MergeRange>()
 
-            // 1. Header Row
             val rTitle = XlsxOpenXmlBuilder.Row(1, ht = 32)
             rTitle.cell(0, context.getString(R.string.excel_single_title), 15)
             rowsList.add(rTitle)
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A1:F1"))
 
-            // 2. Biz Profile
             val rBiz = XlsxOpenXmlBuilder.Row(2, ht = 22)
             rBiz.cell(0, bizHeader.displayedName + " - " + bizHeader.displayedDesc, 16)
             rBiz.cell(3, context.getString(R.string.excel_date_format, docDateText), 17)
@@ -124,7 +79,6 @@ object SingleCustomerExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A2:C2"))
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("D2:F2"))
 
-            // 3. Sub Biz / Meta
             val rBizSub = XlsxOpenXmlBuilder.Row(3, ht = 22)
             rBizSub.cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16)
             rBizSub.cell(3, "", 17)
@@ -132,10 +86,8 @@ object SingleCustomerExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A3:C3"))
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("D3:F3"))
 
-            // Spacer
             rowsList.add(XlsxOpenXmlBuilder.Row(4, ht = 12))
 
-            // 4. Customer Card Row
             val rCard = XlsxOpenXmlBuilder.Row(5, ht = 28)
             val phoneText = customer.phone.ifEmpty { context.getString(R.string.csv_not_registered) }
             val cardText = context.getString(R.string.excel_account_card_format, customer.name, phoneText, accountTypeDesc)
@@ -143,10 +95,8 @@ object SingleCustomerExcelEngine {
             rowsList.add(rCard)
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A5:F5"))
 
-            // Spacer
             rowsList.add(XlsxOpenXmlBuilder.Row(6, ht = 12))
 
-            // 5. Table Headers Row
             val rTableHeader = XlsxOpenXmlBuilder.Row(7, ht = 28)
             rTableHeader.cell(0, context.getString(R.string.excel_col_seq), 1)
             rTableHeader.cell(1, context.getString(R.string.pdf_col_date), 1)
@@ -156,7 +106,6 @@ object SingleCustomerExcelEngine {
             rTableHeader.cell(5, context.getString(R.string.pdf_col_remaining) + " ($currencySymbol)", 1)
             rowsList.add(rTableHeader)
 
-            // 6. Transactions loop
             var rIdx = 8
             val sortedTxs = summary.sortedProcessedTxs
             if (sortedTxs.isEmpty()) {
@@ -249,7 +198,6 @@ object SingleCustomerExcelEngine {
                     rIdx++
                 }
 
-                // Independent Totals
                 val rTotals = XlsxOpenXmlBuilder.Row(rIdx, ht = 28)
                 rTotals.cell(0, context.getString(R.string.excel_totals_icon, context.getString(R.string.pdf_summary_independent_totals)), 11)
                 rTotals.cell(3, summary.totalDebts, 12)
@@ -260,11 +208,9 @@ object SingleCustomerExcelEngine {
                 rIdx++
             }
 
-            // Spacer
             rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 12))
             rIdx++
 
-            // Net balance Banner
             val rawPositive = summary.calculatedNetDebt.compareTo(BigDecimal.ZERO) > 0
             val rawNegative = summary.calculatedNetDebt.compareTo(BigDecimal.ZERO) < 0
             val isOwedToThemStatus = if (isOwedToThemAccount) rawPositive else rawNegative
@@ -284,7 +230,6 @@ object SingleCustomerExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:F$rIdx"))
             rIdx++
 
-            // Unconverted Foreign summary
             if (summary.uncalculatedForeignSums.isNotEmpty()) {
                 rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 12))
                 rIdx++
@@ -310,7 +255,6 @@ object SingleCustomerExcelEngine {
                 }
             }
 
-            // Certified Signature
             rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 16))
             rIdx++
 

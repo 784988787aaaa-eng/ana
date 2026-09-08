@@ -101,7 +101,6 @@ fun TrashTransactionDetailBottomSheet(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -146,14 +145,12 @@ fun TrashTransactionDetailBottomSheet(
                 }
             }
 
-            // Prominent Financial Amount Card
             TrashDetailAmountCard(
                 parsedData = parsedData,
                 amountColor = amountColor,
                 isDark = isDark
             )
 
-            // Linked Customer Section
             if (parsedData.customerName.isNotEmpty()) {
                 TrashDetailCustomerSection(
                     parsedData = parsedData,
@@ -161,7 +158,6 @@ fun TrashTransactionDetailBottomSheet(
                 )
             }
 
-            // Description / Statement Section
             if (parsedData.rawDescription.isNotEmpty() || parsedData.titleText.isNotEmpty()) {
                 val fullDescription = parsedData.rawDescription.ifEmpty { parsedData.titleText }
                 TrashDetailInfoCard(
@@ -178,15 +174,12 @@ fun TrashTransactionDetailBottomSheet(
                 }
             }
 
-            // Foreign Currency & Exchange Info (if applicable)
             if (parsedData.isForeign) {
                 TrashDetailForeignCurrencySection(parsedData = parsedData)
             }
 
-            // Timestamps Card
             TrashDetailTimestampsSection(parsedData = parsedData)
 
-            // Action Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,7 +187,6 @@ fun TrashTransactionDetailBottomSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Restore Button
                 Button(
                     onClick = {
                         onRestore()
@@ -221,7 +213,6 @@ fun TrashTransactionDetailBottomSheet(
                     )
                 }
 
-                // Delete Permanently Button
                 OutlinedButton(
                     onClick = { showDeleteConfirm = true },
                     modifier = Modifier

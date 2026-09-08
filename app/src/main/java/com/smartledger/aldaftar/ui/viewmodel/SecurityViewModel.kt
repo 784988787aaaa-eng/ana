@@ -1,17 +1,12 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
-import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.domain.AppSecurityManager
-import com.smartledger.aldaftar.domain.BiometricAuthHelper
-import com.smartledger.aldaftar.domain.DatabaseSecurityGuard
+import com.smartledger.aldaftar.platform.security.AppSecurityManager
+import com.smartledger.aldaftar.platform.security.BiometricAuthHelper
 import com.smartledger.aldaftar.domain.HashUtils
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,9 +15,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Coordinates local application security (passcode, biometrics and privacy mode). */
-class SecurityViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = FinanceRepository(AppDatabase.getDatabase(application), application)
+class SecurityViewModel(
+    application: Application,
+    private val repository: com.smartledger.aldaftar.data.repository.SettingsRepository
+) : AndroidViewModel(application) {
     private val securityManager = AppSecurityManager.getInstance(application)
 
     val settingsState: StateFlow<AppSettings> = repository.settingsFlow
@@ -46,22 +42,18 @@ class SecurityViewModel(application: Application) : AndroidViewModel(application
 
     fun saveSettings(settings: AppSettings) {
         securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
-        viewModelScope.launch(Dispatchers.IO) {
-            try { repository.saveSettings(settings) }
-            catch (t: Throwable) { Log.e("SecurityViewModel", "Error saving settings", t) }
+        viewModelScope.launch {
+            repository.saveSettings(settings)
         }
     }
 
     fun verifyCredentials(input: String): Boolean {
         val inputChars = input.trim().toCharArray()
         return try {
-            val hashed = HashUtils.hashString(String(inputChars))
+            val value = String(inputChars)
             val settings = settingsState.value
-            (settings.passcodeHash != null && DatabaseSecurityGuard.secureEqual(hashed, settings.passcodeHash)) ||
-                (settings.recoveryPhraseHash != null && DatabaseSecurityGuard.secureEqual(hashed, settings.recoveryPhraseHash))
-        } catch (t: Throwable) {
-            Log.e("SecurityViewModel", "Error verifying credentials", t)
-            false
+            HashUtils.verifyPin(value, settings.passcodeHash) ||
+                HashUtils.verifyPin(value, settings.recoveryPhraseHash)
         } finally { HashUtils.wipeCharArray(inputChars) }
     }
 }

@@ -63,7 +63,6 @@ fun MainLedgerSelectionBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Cancel Button
             IconButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -81,7 +80,6 @@ fun MainLedgerSelectionBar(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Selection Info & Select All (for days)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -122,7 +120,6 @@ fun MainLedgerSelectionBar(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Delete Button
             IconButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)

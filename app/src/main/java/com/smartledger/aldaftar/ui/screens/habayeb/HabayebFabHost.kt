@@ -10,10 +10,6 @@ import androidx.compose.ui.zIndex
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.ui.screens.habayeb.components.HabayebFab
 
-/**
- * Manages the floating action button (FAB) lifecycle and external overlay synchronization
- * for adding customers or transactions seamlessly across views.
- */
 @Composable
 fun HabayebFabHost(
     targetCustomer: HabayebCustomer?,
@@ -25,6 +21,8 @@ fun HabayebFabHost(
     isHistoryTxMultiSelectActive: Boolean,
     onAddCustomerClick: () -> Unit,
     onAddTransactionForCustomer: (HabayebCustomer) -> Unit,
+    persisted: com.smartledger.aldaftar.data.repository.FloatingAddState,
+    onPersist: (com.smartledger.aldaftar.data.repository.FloatingAddState) -> Unit,
     onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null
 ) {
     if (onFabOverlayChanged != null) {
@@ -45,7 +43,9 @@ fun HabayebFabHost(
                         containerColor = activeSubColor,
                         haptic = haptic,
                         onAddCustomerClick = onAddCustomerClick,
-                        onAddTransactionForCustomer = onAddTransactionForCustomer
+                        onAddTransactionForCustomer = onAddTransactionForCustomer,
+                        persisted = persisted,
+                        onPersist = onPersist
                     )
                 }
             } else {
@@ -65,6 +65,8 @@ fun HabayebFabHost(
                 haptic = haptic,
                 onAddCustomerClick = onAddCustomerClick,
                 onAddTransactionForCustomer = onAddTransactionForCustomer,
+                persisted = persisted,
+                onPersist = onPersist,
                 modifier = Modifier.zIndex(25f)
             )
         }

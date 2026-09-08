@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 
-// Presentation helper for sharing an exported file using FileProvider
 fun shareExportedFile(context: Context, file: File) {
     try {
         val uri = FileProvider.getUriForFile(
@@ -22,14 +21,12 @@ fun shareExportedFile(context: Context, file: File) {
         }
         context.startActivity(Intent.createChooser(intent, context.getString(com.smartledger.aldaftar.R.string.intent_share_backup_title)))
     } catch (e: Exception) {
-        // حماية تجربة المستخدم من الرسائل التقنية غير المفهومة مع تسجيل الخطأ في السجلات
         android.util.Log.e("IntentHelper", "Failed to share exported file", e)
         Toast.makeText(context, context.getString(com.smartledger.aldaftar.R.string.toast_operation_failed), Toast.LENGTH_SHORT).show()
     }
 }
 
 
-// Helper to dial a phone number
 fun dialPhoneNumber(context: Context, phoneNumber: String) {
     try {
         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
@@ -40,7 +37,6 @@ fun dialPhoneNumber(context: Context, phoneNumber: String) {
     }
 }
 
-// Helper to open WhatsApp chat with a message
 fun openWhatsAppChat(context: Context, phoneNumber: String, message: String) {
     try {
         val cleanNumber = phoneNumber.replace("+", "").replace(" ", "").trim()

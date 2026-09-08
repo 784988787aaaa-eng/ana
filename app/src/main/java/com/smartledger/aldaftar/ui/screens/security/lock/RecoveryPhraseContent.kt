@@ -43,12 +43,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
+import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
-/**
- * Visual content for the Recovery Phrase screen when the user forgets the PIN.
- */
 @Composable
 fun RecoveryPhraseContent(
     recoveryPhraseInput: String,

@@ -74,10 +74,6 @@ import java.math.BigDecimal
 
 private const val TAG = "CurrencySettingsDialog"
 
-/**
- * نافذة ضبط وتعديل أسعار صرف العملات والعملة الافتراضية للتطبيق
- * توفر تجربة مدمجة وسلسة لضبط أزواج الصرف وإعادة تقييم العمليات السابقة أو اللاحقة بدقة متناهية.
- */
 @Composable
 fun CurrencySettingsDialog(
     settings: AppSettings,
@@ -90,7 +86,6 @@ fun CurrencySettingsDialog(
     val currencySar = stringResource(id = R.string.currency_sar)
     val currencyUsd = stringResource(id = R.string.currency_usd)
 
-    // تم فصل حالة العرض عن مكونات الواجهة للحفاظ على مسؤولية واحدة دون تغيير تجربة المستخدم.
     val state = rememberCurrencySettingsState(
         settings = settings,
         currencyYer = currencyYer,
@@ -213,9 +208,6 @@ fun CurrencySettingsDialog(
     }
 }
 
-/**
- * شريط العنوان وزر الإغلاق المصغر لنافذة إعدادات العملة
- */
 @Composable
 private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
     Box(
@@ -246,9 +238,6 @@ private fun CurrencyDialogHeader(onDismiss: () -> Unit) {
     }
 }
 
-/**
- * أعمدة الاختيار الثنائي بين العملة الافتراضية للتطبيق وأزواج الصرف المستهدفة
- */
 @Composable
 private fun CurrencySelectorColumns(
     currenciesToDisplay: List<String>,
@@ -267,7 +256,6 @@ private fun CurrencySelectorColumns(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // العمود الأيمن: العملة الافتراضية للتطبيق
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -315,7 +303,6 @@ private fun CurrencySelectorColumns(
             }
         }
 
-        // العمود الأيسر: عملات الصرف وحقل إدخال المعادلة
         Column(
             modifier = Modifier.weight(1.3f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -366,7 +353,6 @@ private fun CurrencySelectorColumns(
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // حقل إدخال معادلة الصرف بدقة
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -435,9 +421,6 @@ private fun CurrencySelectorColumns(
     }
 }
 
-/**
- * أزرار الحفظ والإلغاء لنافذة إعدادات العملة
- */
 @Composable
 private fun CurrencyActionButtons(
     haptic: HapticFeedback,

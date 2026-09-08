@@ -76,7 +76,6 @@ fun CommitmentSummaryGradientCard(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Line 1: Coverage title & Percentage capsule
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -104,7 +103,6 @@ fun CommitmentSummaryGradientCard(
                 }
             }
 
-            // Line 2: Matching Gradient Progress Bar (6dp)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +125,6 @@ fun CommitmentSummaryGradientCard(
                 }
             }
 
-            // Line 3: Financial Summary Text
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

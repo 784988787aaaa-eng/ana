@@ -1,33 +1,9 @@
-/**
- * =====================================================================
- * ملف: حاسبة الإجماليات والتصفيات المالية لعملاء الحبايب (HabayebFinancialCalculator.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن محرك الحسابات المالية، والتجميع الإحصائي، والفلترة المتقدمة لعملاء
- * قسم "الحبايب". يقوم بحساب صافي الديون بالعملة الافتراضية والعملات الأجنبية، وحساب
- * مجاميع (لنا / لهم) وفلترة الحسابات حسب التصنيف، التبويب، البحث، والتثبيت.
- * 
- * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. حساب ملخصات الديون الموحدة (Unified Customer Debt Computation):
- *    - الاعتماد على [CustomerHistoryCalculator] كمصدر موحد للحقيقة لضمان تطابق الأرقام مع التقارير والـ PDF.
- * 2. الفرز والفلترة متعددة المعايير (Multi-Criteria Filtering & Sorting):
- *    - معالجة تبويبات الديون (لنا، عليهم، الكل)، البحث الموحد بالنصوص المعربة والأرقام، وتجاهل الحسابات المخفية.
- * 3. دعم تثبيت الحسابات في أعلى القائمة (Pinned Accounts Precedence):
- *    - فرز وتثبيت الحسابات المميزة في أعلى القائمة مع فرز بقية الحسابات مالياً أو زمنياً.
- * 4. تجميع الإحصائيات والأعداد (Category Counter & Aggregate Totals):
- *    - حساب عدد الحسابات النشطة، والحسابات المقفلة، وعدد العملاء في كل تصنيف بشكل فوري.
- */
 package com.smartledger.aldaftar.domain.usecase.habayeb
 
-// ---------------------------------------------------------------------
-// استيراد حزم الإعدادات والكيانات ومكتبات الحسابات المحاسبية
-// ---------------------------------------------------------------------
-import android.content.SharedPreferences
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.state.CustomersUiState
@@ -35,19 +11,9 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
-// =========================================================================
-// قسم: الثوابت ونماذج معلمات الفلترة والنتائج المالية
-// =========================================================================
 
-/** بادئة مفاتيح ربط العميل بالتصنيف في التفضيلات */
-private const val PREFIX_CAT_LINK = HabayebCategoryManager.PREFIX_CAT_LINK
-/** المعرف الثابت لتصنيف الحسابات المقفلة */
 private const val CATEGORY_CLOSED = FinanceConstants.CATEGORY_CLOSED
 
-/**
- * [معلمات فلترة وتصفية قائمة الحبايب - HabayebFilterParameters]:
- * تغلف كافة خيارات التصفية والبحث والترتيب في كائن واحد متكامل.
- */
 data class HabayebFilterParameters(
     val query: String,
     val tab: Int,
@@ -58,7 +24,6 @@ data class HabayebFilterParameters(
     val pinnedIds: Set<String>
 )
 
-/** مجموعة المعلمات الأولى المستخدمة لتحسين إعادة الحساب (Memoization) */
 data class HabayebFilterGroup1(
     val query: String,
     val tab: Int,
@@ -66,17 +31,12 @@ data class HabayebFilterGroup1(
     val histSort: Int
 )
 
-/** مجموعة المعلمات الثانية للروابط والتصنيفات والتثبيتات */
 data class HabayebFilterGroup2(
     val hiddenIds: Set<String>,
     val selectedCat: String?,
     val pinnedIds: Set<String>
 )
 
-/**
- * [نتيجة الفلترة والتجميع المالي - FilteredResult]:
- * تحتوي على القائمة المصفاة للعملاء بالإضافة إلى الإجماليات المالية وإحصائيات التصنيفات.
- */
 data class FilteredResult(
     val filteredCustomers: List<CustomerUiState>,
     val totalOwedByThem: BigDecimal,
@@ -85,21 +45,8 @@ data class FilteredResult(
     val activeCustomersCount: Int = 0
 )
 
-/**
- * [الكائن الأحادي لمحرك حسابات الحبايب - HabayebFinancialCalculator]:
- * يوفر دوال حساب الحالة المالية وتطبيق الفلاتر والفرز المالي المتقدم.
- */
 object HabayebFinancialCalculator {
 
-    /**
-     * [حساب حالة واجهة المستخدم الشاملة للعملاء - calculateCustomersUiState]:
-     * يجمع الحركات لكل عميل، ويحسب صافي الدين بالعملة المحلية والأجنبية، ومجاميع الديون الإجمالية.
-     *
-     * @param customers قائمة عملاء الحبايب من قاعدة البيانات.
-     * @param allTransactions كافة الحركات المالية المسجلة.
-     * @param settings إعدادات التطبيق متضمنة أسعار الصرف والعملة الافتراضية.
-     * @return كائن [CustomersUiState] المتكامل للواجهة.
-     */
     fun calculateCustomersUiState(
         customers: List<HabayebCustomer>,
         allTransactions: List<HabayebTransaction>,
@@ -174,34 +121,6 @@ object HabayebFinancialCalculator {
         )
     }
 
-    /**
-     * [استخراج خارطة التصنيفات من التفضيلات - extractCategoryMap]:
-     */
-    fun extractCategoryMap(sharedPrefs: SharedPreferences): Map<String, String> {
-        val map = mutableMapOf<String, String>()
-        sharedPrefs.all.forEach { (key, value) ->
-            if (key.startsWith(PREFIX_CAT_LINK) && value is String) {
-                map[key.removePrefix(PREFIX_CAT_LINK)] = value
-            }
-        }
-        return map
-    }
-
-    /**
-     * [حساب النتيجة المصفاة باستخدام التفضيلات]:
-     */
-    fun calculateFilteredResult(
-        uiState: CustomersUiState,
-        params: HabayebFilterParameters,
-        sharedPrefs: SharedPreferences
-    ): FilteredResult {
-        return calculateFilteredResult(uiState, params, extractCategoryMap(sharedPrefs))
-    }
-
-    /**
-     * [تطبيق الفلترة والفرز والإحصاءات المتقدمة - calculateFilteredResult]:
-     * يمر على العملاء لتطبيق فلاتر البحث، التبويب، والتصنيف، وحساب المجاميع وإحصائيات العدادات.
-     */
     fun calculateFilteredResult(
         uiState: CustomersUiState,
         params: HabayebFilterParameters,

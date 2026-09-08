@@ -1,15 +1,12 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.domain.DateUtils
+import com.smartledger.aldaftar.presentation.utils.DateUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import java.math.BigDecimal
 
-/**
- * حاسبة دفتر اليومية الرئيسي (LedgerCalculator)
- * تُشكل المصدر الوحيد المعتمد لحساب الأرصدة المنقولة والصافيات الشهرية واليومية في الدفتر.
- * تعتمد الحسابات التراكمية على الدقة الكاملة لـ BigDecimal لتجنب أي تفاوت في الحسابات الدورية.
- */
 object LedgerCalculator {
 
     fun computeMonthlyLedger(txList: List<TransactionDb>): List<MonthLedger> {

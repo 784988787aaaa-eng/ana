@@ -77,13 +77,9 @@ fun MicroAddCategoryDialog(
     }
 
     LaunchedEffect(Unit) {
-        try {
-            delay(150)
+delay(150)
             focusRequester.requestFocus()
             keyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     Dialog(

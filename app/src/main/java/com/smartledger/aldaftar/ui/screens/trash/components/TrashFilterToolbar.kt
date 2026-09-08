@@ -64,7 +64,6 @@ fun TrashFilterToolbar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Quick Category Badges
         val filters = listOf(
             TrashFilterType.ALL to stringResource(id = R.string.trash_filter_all_label),
             TrashFilterType.TRANSACTIONS to stringResource(id = R.string.trash_filter_transactions),
@@ -96,7 +95,6 @@ fun TrashFilterToolbar(
             }
         }
 
-        // Sort Dropdown Button
         Box {
             Surface(
                 onClick = { showSortMenu = true },
@@ -178,7 +176,6 @@ fun TrashFilterToolbar(
             }
         }
 
-        // Compact Auto-Cleanup Pill
         Box {
             val selectedCleanupLabel = when (autoCleanupPeriod) {
                 "week" -> stringResource(R.string.trash_auto_cleanup_week)

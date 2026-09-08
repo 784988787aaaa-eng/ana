@@ -5,14 +5,6 @@ import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Locale
 
-/**
- * مساعد العمليات الحسابية والتقريب المالي لحبايب (Habayeb Mathematical & Formatting Helper)
- *
- * المسؤوليات المعمارية:
- * 1. الدقة الحسابية الإلزامية: استخدام BigDecimal حصراً مع التقريب المصرفي (HALF_EVEN) لمنع تراكم أخطاء الفاصلة العائمة.
- * 2. أمان الخيوط: استخدام ThreadLocal لـ NumberFormat لتفادي تسريب الذاكرة ومشاكل التزامن عند تعدد خيوط العرض.
- * 3. التنسيق الذكي: إزالة الأصفار الزائدة على يمين الفاصلة مع الحفاظ على وضوح وقراءة الأرقام الكبيرة.
- */
 object HabayebMathHelper {
     private val numberFormatThreadLocal = ThreadLocal.withInitial {
         NumberFormat.getNumberInstance(Locale.US)
@@ -47,7 +39,6 @@ object HabayebMathHelper {
         return a.divide(b, 10, RoundingMode.HALF_EVEN)
     }
 
-    // دالة التنسيق الذكي لجمالية الواجهات والدقة المطلقة
     fun formatSmart(value: BigDecimal): String {
         if (value.compareTo(BigDecimal.ZERO) == 0) return "0"
         val rounded = value.setScale(2, RoundingMode.HALF_EVEN)

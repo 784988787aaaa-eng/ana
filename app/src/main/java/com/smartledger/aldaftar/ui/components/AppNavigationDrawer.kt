@@ -1,30 +1,5 @@
-/**
- * =====================================================================
- * ملف: درج التنقل الجانبي للتطبيق (AppNavigationDrawer.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا المكون واجهة درج التنقل الجانبي الرئيسية (Navigation Drawer) في التطبيق،
- * مبنياً باستخدام Jetpack Compose و Material 3. يتيح للمستخدم الوصول السريع إلى
- * ملف النشاط التجاري، التقارير الشاملة، إعدادات العملة، إعدادات الأمان والقفل،
- * سلة المحذوفات، النسخ الاحتياطي، والتبديل الفوري بين الوضع الليلي والنهاري.
- * 
- * [المسؤوليات المعمارية والتقنية للملف]:
- * 1. واجهة التنقل الموحدة (Unified Navigation Sheet):
- *    - استخدام [ModalDrawerSheet] مع مراعاة حواف الشاشة والـ Insets والتجاوب مع مختلف قياسات الشاشات.
- * 2. التحكم السريع في المظهر (Fast Theme Toggle):
- *    - زر تفاعلي في رأس القائمة للتبديل الفوري بين المظهر الفاتح والداكن وحفظ التفضيل سريعاً.
- * 3. إدارة الحوارات المنبثقة المتكاملة (Integrated Modal Dialogs Management):
- *    - فتح وإغلاق حوارات العملات [CurrencySettingsDialog]، الهوية التجارية [BusinessProfileDialog]، والأمان [SecurityDialog].
- * 4. التغذية اللمسية والتواصل والدعم (Haptic Feedback & Direct Support Action):
- *    - تفعيل الاهتزازات التفاعلية عند النقر، وتوفير أزرار مباشرة للاتصال بالدعم الفني أو المراسلة عبر واتساب.
- */
 package com.smartledger.aldaftar.ui.components
 
-// ---------------------------------------------------------------------
-// استيراد حزم Compose ومكونات Material 3 والرموز والمساعدات
-// ---------------------------------------------------------------------
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -58,19 +33,6 @@ import com.smartledger.aldaftar.ui.screens.SecurityDialog
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 
-/**
- * [مكون درج التنقل الجانبي الرئيسي - AppNavigationDrawer]:
- * 
- * @param currentScreen الشاشة النشطة الحالية لتحديد العنصر المختار.
- * @param onScreenSelected حدث الانتقال لشاشة محددة.
- * @param onBackupClick حدث فتح شاشة النسخ الاحتياطي.
- * @param settings إعدادات التطبيق الحالية (المظهر، العملات، وغيرها).
- * @param securityViewModel نموذج العرض الخاص بإدارة الأمان وكلمات المرور.
- * @param onSaveSettings دالة حفظ الإعدادات المحدثة.
- * @param versionName رقم إصدار التطبيق للعرض في التذييل.
- * @param onComprehensiveReportClick حدث فتح التقرير الشامل.
- * @param modifier مخصصات التنسيق الخارجي.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigationDrawer(
@@ -79,6 +41,7 @@ fun AppNavigationDrawer(
     onBackupClick: () -> Unit,
     settings: AppSettings,
     securityViewModel: SecurityViewModel,
+    businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
     versionName: String,
     onComprehensiveReportClick: () -> Unit,
@@ -88,7 +51,6 @@ fun AppNavigationDrawer(
     val haptic = LocalHapticFeedback.current
     val supportPhoneNumber = stringResource(id = R.string.support_phone_number)
     
-    // حالات التحكم بظهور النوافذ المنبثقة من الدرج
     var isShowingCurrencySettings by remember { mutableStateOf(false) }
     var isShowingBusinessProfile by remember { mutableStateOf(false) }
     var isShowingSecuritySettings by remember { mutableStateOf(false) }
@@ -101,9 +63,6 @@ fun AppNavigationDrawer(
             .fillMaxHeight(),
         windowInsets = WindowInsets(0, 0, 0, 0)
     ) {
-        // =====================================================================
-        // قسم: رأس الدرج الجانبي (Drawer Header) مع زر تبديل الوضع الليلي
-        // =====================================================================
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -118,7 +77,6 @@ fun AppNavigationDrawer(
                 IconButton(
                     onClick = {
                         val newMode = if (isDark) 1 else 2
-                        saveFastThemePreference(context, newMode)
                         onSaveSettings(settings.copy(themeMode = newMode), "", 0.0, false)
                     },
                     modifier = Modifier
@@ -172,9 +130,6 @@ fun AppNavigationDrawer(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // =====================================================================
-        // قسم: قائمة عناصر الدرج القابلة للتمرير (Scrollable Items Column)
-        // =====================================================================
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -239,9 +194,6 @@ fun AppNavigationDrawer(
             )
         }
         
-        // =====================================================================
-        // قسم: تذييل الدرج (Drawer Footer) ومعلومات المطور وروابط الاتصال
-        // =====================================================================
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -294,7 +246,6 @@ fun AppNavigationDrawer(
         }
     }
 
-    // عرض الحوارات المنبثقة عند تفعيل حالتها
     if (isShowingCurrencySettings) {
         CurrencySettingsDialog(
             settings = settings,
@@ -305,6 +256,7 @@ fun AppNavigationDrawer(
 
     if (isShowingBusinessProfile) {
         BusinessProfileDialog(
+            viewModel = businessProfileViewModel,
             onDismiss = { isShowingBusinessProfile = false }
         )
     }
@@ -317,13 +269,3 @@ fun AppNavigationDrawer(
         )
     }
 }
-
-/**
- * [دالة مساعدة لحفظ وضع الثيم السريع في التفضيلات - saveFastThemePreference]:
- * تخزن خيار المظهر بشكل متزامن سريع ليتم تطبيقه فورياً دون تأخير.
- */
-private fun saveFastThemePreference(context: Context, newMode: Int) {
-    val sharedPrefs = context.getSharedPreferences("fast_theme_prefs", Context.MODE_PRIVATE)
-    sharedPrefs.edit().putInt("key_fast_theme_mode", newMode).apply()
-}
-

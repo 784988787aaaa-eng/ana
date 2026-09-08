@@ -1,32 +1,5 @@
-/**
- * =====================================================================
- * ملف: رسام صفوف المعاملات الفردية في PDF (PdfTransactionRowRenderer.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يختص هذا الكائن بالرسم التفصيلي الدقيق لكل معاملة مالية داخل جدول كشف حساب العميل.
- * يتولى مسؤولية صياغة الوصف المالي المفصل (نوع العملية، البيان، ملاحظات سعر الصرف أو النقد الأجنبي)،
- * وقياس الارتفاع الرأسي الديناميكي للصف بناءً على طول الوصف، ورسم الخلايا الست:
- * 1. رقم التسلسل (#).
- * 2. التاريخ واسم اليوم بالعربية.
- * 3. البيان وتفاصيل الصرف بـ [StaticLayout].
- * 4. المبلغ المدين (لنا) مع شارة ملونة.
- * 5. المبلغ الدائن (علينا / دفعة) مع شارة ملونة.
- * 6. الرصيد التراكمي بعد العملية بتلوين دلالي.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. الصياغة الوصفية المتقدمة للمعاملات (Rich Description Formatting):
- *    - إظهار عمليات تحويل العملات مع سعر الصرف المعتمد والمبلغ الأصلي.
- * 2. الحساب الديناميكي لارتفاع الصف (Dynamic Row Height Calculation):
- *    - قياس أسطر البيان لتفادي تداخل النصوص أو اقتطاعها.
- * 3. رسم الشارات الملونة للأرقام (Visual Badge Embellishment):
- *    - رسم مستطيلات ذات حواف منحنية خلف المبالغ للتمييز السريع بين المقبوضات والمديونيات.
- */
 package com.smartledger.aldaftar.data.serialization.pdf
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والرسومات وتخطيط النصوص والرياضيات والتواريخ
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -40,21 +13,8 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
 import java.util.Date
 
-/**
- * [الكائن الأحادي لرسم صفوف المعاملات - PdfTransactionRowRenderer]:
- * يقدم وظائف بناء البيان وحساب الارتفاع ورسم صفوف المعاملات الفردية.
- */
 object PdfTransactionRowRenderer {
 
-    /**
-     * [بناء النص التوضيحي المفصل للمعاملة - buildTransactionDescriptionText]:
-     * يجمع نوع الحركة مع البيان المخصص ومعلومات سعر الصرف أو النقد الأجنبي.
-     *
-     * @param context سياق التطبيق لجلب مسميات أنواع المعاملات.
-     * @param pt كائن المعاملة المعالجة.
-     * @param initialType طبيعة الحساب الأصلية (لنا أم علينا).
-     * @return النص التوضيحي المكتمل للطباعة.
-     */
     fun buildTransactionDescriptionText(
         context: Context,
         pt: ProcessedTransaction,
@@ -93,16 +53,6 @@ object PdfTransactionRowRenderer {
         }
     }
 
-    /**
-     * [حساب الارتفاع الرأسي لصف المعاملة - calculateTransactionRowHeight]:
-     * يقيس ارتفاع النص المتولد ضمن العرض المتاح مع إضافة الهوامش القياسية.
-     *
-     * @param context سياق التطبيق.
-     * @param pt كائن المعاملة المعالجة.
-     * @param initialType طبيعة الحساب.
-     * @param availableWidth العرض المخصص لعمود البيان بالنقاط (افتراضياً 190).
-     * @return الارتفاع الرأسي المحسوب بالنقاط (بحد أدنى 32 نقطة).
-     */
     fun calculateTransactionRowHeight(
         context: Context,
         pt: ProcessedTransaction,
@@ -114,19 +64,6 @@ object PdfTransactionRowRenderer {
         return (textHeight + 14f).coerceAtLeast(32f)
     }
 
-    /**
-     * [رسم صف معاملة فردية في كشف الحساب - drawSingleTransactionRow]:
-     * يرسم خلايا الصف الست وخطوط الشبكة والشارات التوضيحية للأرصدة.
-     *
-     * @param canvas لوحة الرسم.
-     * @param context سياق التطبيق.
-     * @param index ترتيب المعاملة التسلسلي (يبدأ من 0).
-     * @param pt كائن المعاملة المعالجة.
-     * @param currentY الإحداثي الرأسي للرسم.
-     * @param rowHeight الارتفاع المحسوب للصف.
-     * @param runningBal الرصيد التراكمي المحسوب بعد هذه المعاملة.
-     * @param initialType طبيعة الحساب.
-     */
     fun drawSingleTransactionRow(
         canvas: Canvas,
         context: Context,
@@ -145,10 +82,8 @@ object PdfTransactionRowRenderer {
             canvas.drawRect(25f, currentY, 570f, currentY + rowHeight, PdfPaints.paintForeignBg)
         }
 
-        // Horizontal bottom divider
         canvas.drawLine(25f, currentY + rowHeight, 570f, currentY + rowHeight, PdfPaints.paintRowDivider)
 
-        // Vertical grid lines between columns
         canvas.drawLine(545f, currentY, 545f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(455f, currentY, 455f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(260f, currentY, 260f, currentY + rowHeight, PdfPaints.paintRowDivider)
@@ -157,11 +92,9 @@ object PdfTransactionRowRenderer {
 
         val textYOffset = (rowHeight - 12f) / 2f
 
-        // Col 1: Sequence Number (#)
         val seqNo = (index + 1).toString()
         drawArabicText(canvas, seqNo, 545f, currentY + textYOffset, 25, PdfPaints.paintCellNormal, Layout.Alignment.ALIGN_CENTER)
 
-        // Col 2: Date & Day together in a single row
         val txTimestampMs = if (tx.timestamp > 1000000000000L) tx.timestamp else tx.timestamp * 1000
         val txDate = Date(txTimestampMs)
         val dayName = try { PdfPageRenderer.formatDayAr(txDate) } catch (e: Exception) { "" }
@@ -172,18 +105,15 @@ object PdfTransactionRowRenderer {
         val dateYOffset = ((rowHeight - layoutDate.height) / 2f).coerceAtLeast(2f)
         PdfDrawingUtils.drawStaticLayout(canvas, layoutDate, 455f, currentY + dateYOffset)
 
-        // Col 3: Details with Dynamic StaticLayout
         val txLabel = buildTransactionDescriptionText(context, pt, initialType)
         val layoutDesc = PdfDrawingUtils.createStaticLayout(txLabel, PdfPaints.textPaintDesc, 190, Layout.Alignment.ALIGN_NORMAL)
         val descYOffset = ((rowHeight - layoutDesc.height) / 2f).coerceAtLeast(2f)
         PdfDrawingUtils.drawStaticLayout(canvas, layoutDesc, 262f, currentY + descYOffset)
 
-        // Amounts
         val formattedAmount = if (hasBaseAmount) {
             HabayebMathHelper.formatSmart(pt.baseCurrencyAmount)
         } else "-"
 
-        // Col 4 & Col 5
         val isOwedToThemAccount = initialType == TransactionType.OWED_TO_THEM.value
         val isCol4 = if (isOwedToThemAccount) {
             tx.type == TransactionType.OWED_TO_THEM.value || tx.type == TransactionType.PAYMENT_BY_THEM.value
@@ -193,7 +123,6 @@ object PdfTransactionRowRenderer {
 
         if (hasBaseAmount) {
             if (isCol4) {
-                // Col 4 Badge & Text (180f)
                 val badgeLeft = 184f
                 val badgeTop = currentY + ((rowHeight - 18f) / 2f)
                 val badgeRight = 256f
@@ -204,13 +133,10 @@ object PdfTransactionRowRenderer {
                 canvas.drawRoundRect(badgeLeft, badgeTop, badgeRight, badgeBottom, 3f, 3f, badgePaint)
                 drawArabicText(canvas, formattedAmount, 180f, currentY + textYOffset, 80, textPaint, Layout.Alignment.ALIGN_CENTER)
 
-                // Col 5: empty dash (-)
                 drawArabicText(canvas, "-", 100f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
             } else {
-                // Col 4: empty dash (-)
                 drawArabicText(canvas, "-", 180f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
 
-                // Col 5 Badge & Text (100f)
                 val badgeLeft = 104f
                 val badgeTop = currentY + ((rowHeight - 18f) / 2f)
                 val badgeRight = 176f
@@ -222,7 +148,6 @@ object PdfTransactionRowRenderer {
                 drawArabicText(canvas, formattedAmount, 100f, currentY + textYOffset, 80, textPaint, Layout.Alignment.ALIGN_CENTER)
             }
 
-            // Col 6: Running Balance (الرصيد)
             val formattedRunning = HabayebMathHelper.formatSmart(runningBal.abs())
             val isBalanced = runningBal.compareTo(BigDecimal.ZERO) == 0
             val isPositive = runningBal.compareTo(BigDecimal.ZERO) > 0
@@ -235,7 +160,6 @@ object PdfTransactionRowRenderer {
             val balText = if (isBalanced) "-" else formattedRunning
             drawArabicText(canvas, balText, 25f, currentY + textYOffset, 75, paintRunning, Layout.Alignment.ALIGN_CENTER)
         } else {
-            // Transaction belongs to another currency ledger, so it doesn't affect this ledger's amounts
             drawArabicText(canvas, "-", 180f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
             drawArabicText(canvas, "-", 100f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
             drawArabicText(canvas, "-", 25f, currentY + textYOffset, 75, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)

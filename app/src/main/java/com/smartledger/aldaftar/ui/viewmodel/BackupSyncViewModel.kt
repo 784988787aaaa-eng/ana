@@ -4,24 +4,17 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
-import com.smartledger.aldaftar.data.repository.FinanceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
-/**
- * Presentation-only state holder for the existing Backup/Restore UI.
- *
- * This presentation holder contains no external-service implementation.
- * The public callbacks remain only so the preserved UI can compile while
- * the implementation is rebuilt in a later phase.
- */
-class BackupSyncViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = FinanceRepository(AppDatabase.getDatabase(application), application)
+class BackupSyncViewModel(
+    application: Application,
+    private val maintenanceRepository: com.smartledger.aldaftar.data.repository.DataMaintenanceRepository
+) : AndroidViewModel(application) {
 
     private val _cloudBackupsList = MutableStateFlow<List<CloudBackupFile>>(emptyList())
     val cloudBackupsList: StateFlow<List<CloudBackupFile>> = _cloudBackupsList.asStateFlow()
@@ -51,7 +44,7 @@ class BackupSyncViewModel(application: Application) : AndroidViewModel(applicati
     fun deleteMultipleCloudBackupsByIds(fileIds: List<String>, onComplete: (Boolean) -> Unit) { onComplete(false) }
 
     fun clearLocalCopyAndWipeMemory(context: Context) {
-        viewModelScope.launch { repository.deleteAllData() }
+        viewModelScope.launch { maintenanceRepository.deleteAllData() }
     }
 
     fun executeMasterRestore(

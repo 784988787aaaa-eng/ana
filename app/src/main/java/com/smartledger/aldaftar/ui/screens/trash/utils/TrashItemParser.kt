@@ -1,5 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.trash.utils
-import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
+import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 
 import android.util.Log
 import androidx.compose.ui.graphics.Color
@@ -15,14 +15,6 @@ import java.math.BigDecimal
 import java.util.Locale
 import org.json.JSONObject
 
-/**
- * محلل ومحوّل عناصر سلة المحذوفات (Trash Item Parser & Deserializer)
- *
- * المسؤوليات المعمارية:
- * 1. فك تشفير حزم المحذوفات JSON (Bundles) واستخراج الكيانات المالية (Customers, Transactions, Commitments).
- * 2. الحفاظ الصارم على الدقة المالية (BigDecimal) ومنع تسرب أو تشويه أرقام المبالغ أو أسعار الصرف.
- * 3. صياغة نماذج العرض المستقلة وغير القابلة للتغيير (@Immutable ParsedTrashData) لدعم أداء التمرير العالي في سلة المهملات.
- */
 @androidx.compose.runtime.Immutable
 data class ParsedBundleTransaction(
     val id: String,
@@ -120,7 +112,8 @@ object TrashItemParser {
             phone = custData.optString("phone", ""),
             notes = custData.optString("notes", ""),
             createdAt = custData.optLong("createdAt", System.currentTimeMillis()),
-            initialType = custData.optString("initialType", custData.optString("initial_type", TransactionType.OWED_BY_THEM.value))
+            initialType = custData.optString("initialType", custData.optString("initial_type", TransactionType.OWED_BY_THEM.value)),
+            categoryId = if (custData.has("categoryId") && !custData.isNull("categoryId")) custData.optInt("categoryId") else null
         )
     }
 
@@ -463,7 +456,7 @@ object TrashItemParser {
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to parse trash item: ${e.message}", e)
+            Log.w(TAG, "Failed to parse trash item: ${e.javaClass.simpleName}", e)
         }
 
         val cleanSearchableText = searchTokens.filter { it.isNotBlank() }.joinToString(" ")

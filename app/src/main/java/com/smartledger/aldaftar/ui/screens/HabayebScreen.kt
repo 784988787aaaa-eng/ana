@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.screens.habayeb.HabayebDialogHost
@@ -69,18 +70,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-// Re-export HabayebDialogState for zero broken references
-typealias HabayebDialogState = HabayebDialogState
-
-/**
- * Clean architectural coordinator for the Habayeb Customers & Ledger screen.
- * Acts as the unified stable Facade entry point for navigation and hosts dedicated sub-managers.
- */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HabayebScreen(
     viewModel: HabayebFinanceViewModel,
     securityViewModel: SecurityViewModel,
+    businessProfile: BusinessProfile,
     onMenuClick: () -> Unit,
     onClose: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
@@ -361,6 +356,8 @@ fun HabayebScreen(
                 onAddTransactionForCustomer = { c ->
                     activeDialogState = HabayebDialogState.AddTransaction(c)
                 },
+                persisted = viewModel.floatingAddState(),
+                onPersist = viewModel::saveFloatingAddState,
                 onFabOverlayChanged = onFabOverlayChanged
             )
 
@@ -390,6 +387,7 @@ fun HabayebScreen(
                     CustomerHistoryOverlay(
                         customer = customer,
                         viewModel = viewModel,
+                        businessProfile = businessProfile,
                         onDismiss = { activeCustomerForHistory = null },
                         activeThemeColor = activeThemeColor,
                         activeSubColor = activeSubColor,

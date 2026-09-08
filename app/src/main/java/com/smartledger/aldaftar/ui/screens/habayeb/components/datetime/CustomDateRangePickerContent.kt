@@ -44,11 +44,6 @@ import java.util.Locale
 
 enum class RangeTab { START, END }
 
-/**
- * Intelligent Date Range and Time Picker Dialog Engine.
- * Used for Scheduling/Recurring transactions (From, To, Execution Time)
- * and History Filtering (From, To).
- */
 @Composable
 fun CustomDateRangePickerContent(
     initialStartMillis: Long,
@@ -83,7 +78,6 @@ fun CustomDateRangePickerContent(
         })
     }
 
-    // Common Time Calendar for Execution Time if includeTime is true
     var timeCalendar by remember {
         mutableStateOf(Calendar.getInstance().apply {
             val h = initialHour ?: startCalendar.get(Calendar.HOUR_OF_DAY)
@@ -118,7 +112,6 @@ fun CustomDateRangePickerContent(
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Header Title
                     Text(
                         text = title ?: if (includeTime) {
                             stringResource(id = R.string.datetime_picker_schedule_title)
@@ -131,7 +124,6 @@ fun CustomDateRangePickerContent(
                         modifier = Modifier.padding(bottom = 10.dp)
                     )
 
-                    // Range Switcher Tabs (من / إلى)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -142,7 +134,6 @@ fun CustomDateRangePickerContent(
                             .padding(3.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // Start Date Tab (من)
                         val isStart = activeTab == RangeTab.START
                         Box(
                             modifier = Modifier
@@ -171,7 +162,6 @@ fun CustomDateRangePickerContent(
                             }
                         }
 
-                        // End Date Tab (إلى)
                         val isEnd = activeTab == RangeTab.END
                         Box(
                             modifier = Modifier
@@ -203,14 +193,12 @@ fun CustomDateRangePickerContent(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Active Tab Content
                     val activeCalendar = if (activeTab == RangeTab.START) startCalendar else endCalendar
                     DateAndTimeSection(
                         calendar = activeCalendar,
                         onCalendarChange = { updated ->
                             if (activeTab == RangeTab.START) {
                                 startCalendar = updated
-                                // Ensure end date is not before start date
                                 if (endCalendar.timeInMillis < updated.timeInMillis) {
                                     endCalendar = (updated.clone() as Calendar).apply {
                                         add(Calendar.DAY_OF_MONTH, 30)
@@ -223,11 +211,9 @@ fun CustomDateRangePickerContent(
                         showTime = false
                     )
 
-                    // Optional Quick Adjust & Execution Time section for Scheduling
                     if (includeTime) {
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Time Picker Card
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -271,7 +257,6 @@ fun CustomDateRangePickerContent(
                         }
                     }
 
-                    // Quick Action Chips (اليوم / +30 يوم)
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -324,7 +309,6 @@ fun CustomDateRangePickerContent(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Dialog Actions (إلغاء وموافق)
                     DialogActionButtons(
                         onDismiss = onDismiss,
                         onConfirm = {

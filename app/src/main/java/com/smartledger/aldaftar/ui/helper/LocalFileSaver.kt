@@ -10,28 +10,9 @@ import android.widget.Toast
 import com.smartledger.aldaftar.R
 import java.io.File
 
-/**
- * مساعد حفظ الملفات المصدرة في مجلد التنزيلات العام (Local File Saver to Public Downloads)
- *
- * المسؤوليات والمعايير الأمنية:
- * 1. التوافق التام مع التخزين المحدود (Scoped Storage): استخدام واجهة MediaStore على Android 10+ (API 29+) مع إدارة علم IS_PENDING لمنع قراءة الملفات غير المكتملة.
- * 2. العزل الآمن: نسخ الملفات المؤقتة من cacheDir إلى مجلد التنزيلات العام بطريقة حتمية وإغلاق مسارات التدفق بأمان (use blocks).
- * 3. عدم تسريب مسارات النظام الداخلية للمستخدمين أو التطبيقات الأخرى.
- */
 object LocalFileSaver {
     private const val TAG = "LocalFileSaver"
 
-    /**
-     * Saves a cached file to the device's public Downloads directory.
-     * Uses MediaStore API on Android 10+ (API 29+) to avoid requiring runtime storage permissions.
-     * Uses standard file copy on Android 9 and below.
-     *
-     * @param context Android context
-     * @param cachedFile The temporary file in cacheDir
-     * @param mimeType MIME type of the file (e.g. "application/pdf", "text/csv")
-     * @param displayName Desired file name (e.g. "statement_John_123.pdf")
-     * @return Boolean indicating success
-     */
     fun saveFileToPublicDownloads(
         context: Context,
         cachedFile: File,
@@ -51,7 +32,6 @@ object LocalFileSaver {
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
-                // Query existing file with the same name to overwrite or resolve uniqueness
                 val collectionUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
                 val uri = resolver.insert(collectionUri, contentValues)
 
@@ -71,7 +51,6 @@ object LocalFileSaver {
                     false
                 }
             } else {
-                // Fallback for Android 9 and below (requires WRITE_EXTERNAL_STORAGE permission, which is declared)
                 val targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 if (!targetDir.exists()) {
                     targetDir.mkdirs()
@@ -90,9 +69,6 @@ object LocalFileSaver {
         }
     }
 
-    /**
-     * Helper to show toast messages upon saving.
-     */
     fun saveAndShowToast(
         context: Context,
         cachedFile: File,

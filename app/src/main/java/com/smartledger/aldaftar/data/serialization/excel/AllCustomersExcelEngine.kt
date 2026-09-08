@@ -1,33 +1,10 @@
-/**
- * =====================================================================
- * ملف: محرك جداول إكسل الشاملة لكافة العملاء (AllCustomersExcelEngine.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يتولى هذا المحرك المتخصص بناء وتوليد ملفات إكسل (.xlsx) عالية التنسيق والجودة
- * لتقرير الأرصدة الشامل لجميع العملاء، بالاعتماد على محرك OpenXML الداخلي الخفيف
- * دون الحاجة لمكتبات خارجية ثقيلة (مثل Apache POI).
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. التجميع الحسابي الدقيق:
- *    - حساب إجمالي ما لنا (له) وما علينا (عليه) وصافي الأرصدة بدقة [BigDecimal].
- *    - تجميع وتحليل ديون العملات الأجنبية لكل عميل ودمجها في خريطة إحصائية شاملة.
- * 2. بناء هيكل جداول OpenXML المنسقة:
- *    - تحديد عروض الأعمدة ونطاقات الدمج (Merge Ranges) وصفوف الترويسة وبطاقة الإحصاءات.
- * 3. تطبيق أنماط التلوين التمييزي:
- *    - تلوين المبالغ الدائنة باللون الأحمر/المدين بالأخضر/المتزنة بالرمادي لتسهيل القراءة السريعة.
- * 4. إدارة التواريخ والأمان:
- *    - استخدام [ThreadLocal] لمفرقات التواريخ لضمان الأمان المتزامن في بيئات الكوروتين المتعددة.
- */
 package com.smartledger.aldaftar.data.serialization.excel
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والسجلات والواجهات والعمليات الحسابية والملفات
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.util.Log
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.data.serialization.BusinessProfileLoader
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
+import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import java.io.File
@@ -36,47 +13,28 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * [الكائن الأحادي لمحرك إكسل الشامل - AllCustomersExcelEngine]:
- * يبني مصنف عمل إكسل يعرض كشفاً تفصيلياً بجميع حسابات العملاء وأرصدتهم.
- */
 object AllCustomersExcelEngine {
 
-    /** وسم السجلات التشخيصية */
     private const val TAG = "AllCustomersExcel"
-    /** رمز اللغة العربية */
     private const val LOCALE_AR = "ar"
-    /** رمز اللغة الإنجليزية */
     private const val LOCALE_EN = "en"
-    /** بادئة اسم ملف التقرير الشامل */
     private const val FILE_PREFIX_ALL = "all_accounts_"
 
-    /** منسق التاريخ الإنجليزي الآمن متعدد الخيوط */
     private val DATE_FORMATTER_EN = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale(LOCALE_EN)) }
-    /** منسق الوقت العربي الآمن متعدد الخيوط */
     private val TIME_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", Locale(LOCALE_AR)) }
-    /** منسق اسم اليوم العربي الآمن متعدد الخيوط */
     private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", Locale(LOCALE_AR)) }
 
-    /**
-     * [توليد ملف إكسل لجميع الحسابات - generate]:
-     * يجمع الحسابات ويبني ورقة العمل والجداول وخلايا الدمج ثم ينشئ الملف في مجلد التخزين المؤقت.
-     *
-     * @param context سياق التطبيق لجلب النصوص والموارد.
-     * @param customers قائمة العملاء مع حالات أرصدتهم.
-     * @param currencySymbol رمز العملة المحلية الأساسية.
-     * @return ملف الـ XLSX المتولد، أو null عند حدوث استثناء.
-     */
     fun generate(
         context: Context,
         customers: List<CustomerUiState>,
+        businessProfile: BusinessProfile,
         currencySymbol: String
     ): File? {
         val fileName = "${FILE_PREFIX_ALL}${System.currentTimeMillis() % 100000}.xlsx"
         val file = File(context.cacheDir, fileName)
 
         try {
-            val bizHeader = BusinessProfileLoader.load(context)
+            val bizHeader = BusinessProfileLoader.load(context, businessProfile)
             val now = Date()
             val dayName = try { DAY_FORMATTER_AR.get().format(now) } catch (e: Exception) { "" }
             val dateFormatted = try { DATE_FORMATTER_EN.get().format(now) } catch (e: Exception) { "" }
@@ -113,13 +71,11 @@ object AllCustomersExcelEngine {
             val rowsList = mutableListOf<XlsxOpenXmlBuilder.Row>()
             val mergesList = mutableListOf<XlsxOpenXmlBuilder.MergeRange>()
 
-            // 1. Title Row
             val rTitle = XlsxOpenXmlBuilder.Row(1, ht = 32)
             rTitle.cell(0, context.getString(R.string.excel_all_title), 15)
             rowsList.add(rTitle)
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A1:E1"))
 
-            // 2. Biz info
             val rBiz = XlsxOpenXmlBuilder.Row(2, ht = 22)
             rBiz.cell(0, bizHeader.displayedName + " - " + bizHeader.displayedDesc, 16)
             rBiz.cell(3, context.getString(R.string.excel_date_format, docDateText), 17)
@@ -127,7 +83,6 @@ object AllCustomersExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A2:C2"))
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("D2:E2"))
 
-            // 3. Phone / Certified Badge
             val rBizSub = XlsxOpenXmlBuilder.Row(3, ht = 22)
             rBizSub.cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16)
             rBizSub.cell(3, "", 17)
@@ -135,10 +90,8 @@ object AllCustomersExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A3:C3"))
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("D3:E3"))
 
-            // Spacer
             rowsList.add(XlsxOpenXmlBuilder.Row(4, ht = 12))
 
-            // 4. Summary card overview
             val rStats = XlsxOpenXmlBuilder.Row(5, ht = 28)
             val statsText = context.getString(
                 R.string.excel_all_stats_format,
@@ -152,10 +105,8 @@ object AllCustomersExcelEngine {
             rowsList.add(rStats)
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A5:E5"))
 
-            // Spacer
             rowsList.add(XlsxOpenXmlBuilder.Row(6, ht = 12))
 
-            // 5. Table Header Row
             val rHeader = XlsxOpenXmlBuilder.Row(7, ht = 28)
             rHeader.cell(0, context.getString(R.string.excel_col_seq), 1)
             rHeader.cell(1, context.getString(R.string.pdf_col_account_name), 1)
@@ -164,7 +115,6 @@ object AllCustomersExcelEngine {
             rHeader.cell(4, context.getString(R.string.pdf_col_status), 1)
             rowsList.add(rHeader)
 
-            // 6. Customers Loop
             var rIdx = 8
             customers.forEachIndexed { index, c ->
                 val bdVal = c.defaultCurrencyTotal
@@ -203,7 +153,6 @@ object AllCustomersExcelEngine {
                 rIdx++
             }
 
-            // Totals Row
             val rTotals = XlsxOpenXmlBuilder.Row(rIdx, ht = 28)
             rTotals.cell(0, context.getString(R.string.excel_totals_icon, context.getString(R.string.pdf_summary_independent_totals)), 11)
             rTotals.cell(2, grandNetBalance.abs(), 14)
@@ -213,11 +162,9 @@ object AllCustomersExcelEngine {
             mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:B$rIdx"))
             rIdx++
 
-            // Spacer
             rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 16))
             rIdx++
 
-            // Certified Signature Footer
             val rFooter = XlsxOpenXmlBuilder.Row(rIdx, ht = 24)
             rFooter.cell(0, context.getString(R.string.excel_footer_certified_icon, context.getString(R.string.pdf_footer_certified)), 17)
             rFooter.cell(3, context.getString(R.string.excel_footer_signature), 16)

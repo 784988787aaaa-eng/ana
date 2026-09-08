@@ -38,7 +38,7 @@ import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.theme.isDark
 import com.smartledger.aldaftar.ui.theme.mizanColors
-import com.smartledger.aldaftar.ui.viewmodel.DayLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,7 +76,6 @@ fun DayCard(
     var txIdToDelete by remember { mutableStateOf<String?>(null) }
     val isDark = MaterialTheme.isDark
 
-    // Format: [اسم اليوم] [اليوم/الشهر] (مثال: الأربعاء 19/08)
     val formattedDateHeader = remember(dayLedger) {
         val tx = dayLedger.transactions.firstOrNull()
         if (tx != null) {
@@ -137,7 +136,6 @@ fun DayCard(
             )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // 1. Sleek Day Card Header
             DayCardHeader(
                 formattedDateHeader = formattedDateHeader,
                 formattedNetAmount = formattedNetAmount,
@@ -147,7 +145,6 @@ fun DayCard(
                 isDaySelectionMode = isDaySelectionMode
             )
 
-            // 2. Expandable Body: Dense Transactions List, 3-Metric Summary Bar, and WhatsApp Share Button
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = expandVertically() + fadeIn(),
@@ -181,7 +178,6 @@ fun DayCard(
                             textAlign = TextAlign.Center
                         )
                     } else {
-                        // High-Density Clean Transaction Rows
                         sortedTxs.forEachIndexed { index, tx ->
                             val isSelected = selectedTxIds.contains(tx.id)
 
@@ -207,7 +203,6 @@ fun DayCard(
                             )
                         }
 
-                        // Calculations: Daily Totals
                         val (dailyIncome, dailyExpense) = remember(dayLedger.transactions) {
                             var inc = BigDecimal.ZERO
                             var exp = BigDecimal.ZERO
@@ -230,7 +225,6 @@ fun DayCard(
                                 .padding(top = 2.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            // 3. Compact 3-Metric Summary Bar
                             DayCardSummaryBar(
                                 dailyIncome = dailyIncome,
                                 dailyExpense = dailyExpense,
@@ -240,7 +234,6 @@ fun DayCard(
                                 formatCurrency = formatCurrency
                             )
 
-                            // 4. WhatsApp Share Action Button
                             DayCardWhatsAppShareButton(
                                 dayLedger = dayLedger,
                                 dailyIncome = dailyIncome,

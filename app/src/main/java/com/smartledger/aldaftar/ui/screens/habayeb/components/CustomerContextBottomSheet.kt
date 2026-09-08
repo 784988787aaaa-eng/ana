@@ -52,10 +52,6 @@ import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
-/**
- * نافذة تحكم الحساب المبتكرة والأنيقة للغاية:
- * تم تصميمها لتعبر عن طابع عصري رشيق، وتضم خيار الحذف المباشر السهل والسريع.
- */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CustomerContextBottomSheet(
@@ -101,11 +97,9 @@ fun CustomerContextBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // رأس النافذة: أزرار الركن العلوية بدون خلفيات دائرية، مع توسيط عنوان النافذة واسم العميل بالكامل
                         Box(
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // أزرار الحذف والتعديل في الركن العلوي بدون خلفية دائرية
                             Row(
                                 modifier = Modifier.align(Alignment.TopStart),
                                 horizontalArrangement = Arrangement.spacedBy(0.dp),
@@ -142,7 +136,6 @@ fun CustomerContextBottomSheet(
                                 }
                             }
 
-                            // عنوان النافذة واسم العميل في المنتصف تماماً
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -168,19 +161,16 @@ fun CustomerContextBottomSheet(
                             }
                         }
 
-                        // فاصل بصري رقيق للغاية أسفل صف الاسم
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f),
                             thickness = 0.5.dp,
                             modifier = Modifier.padding(vertical = 1.dp)
                         )
 
-                        // خيارات الإدارة مرتفعة للأعلى بمكان احترافي وبلا مساحات ضائعة
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
-                            // 1. تثبيت / إلغاء تثبيت الحساب
                             ContextMenuItem(
                                 icon = Icons.Default.Star,
                                 text = stringResource(if (isPinned) R.string.context_menu_unpin_customer else R.string.context_menu_pin_customer),
@@ -192,7 +182,6 @@ fun CustomerContextBottomSheet(
                                 }
                             )
 
-                            // 2. تصنيف الحساب
                             ContextMenuItem(
                                 icon = Icons.Default.Folder,
                                 text = stringResource(R.string.context_menu_add_to_category),
@@ -203,7 +192,6 @@ fun CustomerContextBottomSheet(
                                 }
                             )
 
-                            // إزالة من هذا التصنيف (تظهر فقط عند تصفح الحساب داخل تصنيف مخصص)
                             if (currentActiveCategory != null && currentActiveCategory != FinanceConstants.CATEGORY_CLOSED) {
                                 ContextMenuItem(
                                     icon = Icons.Default.Close,
@@ -218,7 +206,6 @@ fun CustomerContextBottomSheet(
                                 )
                             }
 
-                            // 3. تحديد متعدد للحسابات
                             ContextMenuItem(
                                 icon = Icons.Default.Check,
                                 text = stringResource(R.string.context_menu_multi_select),
@@ -231,14 +218,12 @@ fun CustomerContextBottomSheet(
                             )
                         }
 
-                        // فاصل بصري رقيق للغاية قبل خيار تغيير نوع الحساب بالأسفل
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f),
                             thickness = 0.5.dp,
                             modifier = Modifier.padding(vertical = 2.dp)
                         )
 
-                        // قسم تغيير نوع الحساب معزول بصرياً بالأسفل بشكل فائق الأناقة والرشاقة
                         CustomerTypeChangeSection(
                             currentType = customer.originalCustomer.initialType,
                             activeThemeColor = activeThemeColor,

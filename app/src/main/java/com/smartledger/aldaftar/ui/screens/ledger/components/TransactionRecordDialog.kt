@@ -99,7 +99,6 @@ fun TransactionRecordDialog(
 
     val isIncome = txDialogType == "INCOME"
 
-    // Colors: Green for Income (وارد), Red for Expense (منصرف) matching action buttons
     val themeColor = if (isIncome) {
         mizanColors.credit
     } else {
@@ -107,7 +106,6 @@ fun TransactionRecordDialog(
     }
     val themeColorSub = themeColor.copy(alpha = 0.85f)
 
-    // Dialog background & inputs using MaterialTheme color scheme
     val dialogBgColor = MaterialTheme.colorScheme.surface
     val textInputBgColor = if (isIncome) mizanColors.creditContainer.copy(alpha = 0.35f) else mizanColors.debtContainer.copy(alpha = 0.35f)
     val textColor = MaterialTheme.colorScheme.onSurface
@@ -122,7 +120,7 @@ fun TransactionRecordDialog(
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = dialogBgColor,
-            tonalElevation = 0.dp, // Disable tonal elevation to prevent neutral gray overlays
+            tonalElevation = 0.dp, // تعطيل الارتفاع اللوني. to prevent neutral gray overlays
             border = BorderStroke(2.dp, themeColor),
             modifier = Modifier
                 .width(280.dp)
@@ -135,7 +133,6 @@ fun TransactionRecordDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -154,12 +151,10 @@ fun TransactionRecordDialog(
                     )
                 }
 
-                // Compact fields column with distinct borders
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Amount Input
                     OutlinedTextField(
                         value = numAmountTfv,
                         onValueChange = { numAmountTfv = it },
@@ -213,7 +208,6 @@ fun TransactionRecordDialog(
                         )
                     )
 
-                    // Description Input
                     OutlinedTextField(
                         value = descriptionTfv,
                         onValueChange = { descriptionTfv = it },
@@ -271,13 +265,11 @@ fun TransactionRecordDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Cancel button
                     TextButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
@@ -292,7 +284,6 @@ fun TransactionRecordDialog(
                         )
                     }
 
-                    // Save button
                     Button(
                         enabled = isConfirmButtonEnabled,
                         onClick = {

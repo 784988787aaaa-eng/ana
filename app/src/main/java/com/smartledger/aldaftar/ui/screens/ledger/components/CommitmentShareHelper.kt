@@ -17,13 +17,6 @@ private fun String.toWesternDigits(): String {
     return result
 }
 
-/**
- * مساعد مشاركة الالتزامات المالية والمصروفات الثابتة (Commitments Sharing Helper)
- *
- * المسؤوليات المعمارية:
- * 1. تلخيص مصفوفة الالتزامات المالية وحساب المبالغ المستهدفة والمتبقية بدقة (BigDecimal).
- * 2. توفير مسار مشاركة مباشر مع WhatsApp مع تراجع فوري لمنظومة المشاركة العامة للنظام (Android Sharesheet).
- */
 object CommitmentShareHelper {
     private const val TAG = "CommitmentShareHelper"
 

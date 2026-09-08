@@ -6,16 +6,10 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 
-/**
- * Haptic feedback types for application lock interactions.
- */
 enum class LockHapticType {
     KEYPRESS, SUCCESS, ERROR
 }
 
-/**
- * Utility helper providing tactile and haptic vibration feedback for lock screen interactions.
- */
 object LockHapticHelper {
 
     fun getVibrator(context: Context): Vibrator? {
@@ -64,7 +58,6 @@ object LockHapticHelper {
                 }
             }
         } catch (_: Exception) {
-            // Fallback safely if device lacks vibration hardware permission
         }
     }
 }

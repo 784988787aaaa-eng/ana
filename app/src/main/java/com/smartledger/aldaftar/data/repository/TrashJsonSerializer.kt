@@ -1,28 +1,5 @@
-/**
- * =====================================================================
- * ملف: محول بيانات سلة المهملات إلى JSON (TrashJsonSerializer.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يوفر هذا الكائن الأحادي (Singleton Object) آليات تحويل وتغليف الكيانات المحذوفة
- * من جداول قاعدة البيانات المختلفة إلى نصوص مهيكلة بصيغة JSON، لحفظها داخل جدول
- * سلة المهملات العام [DeletedItemEntity] تمهيداً لاسترجاعها لاحقاً دون فقدان أي حقل.
- * 
- * [المسؤوليات المعمارية ونمط التغليف المتعدد]:
- * 1. التغليف الفردي للكيانات (Single Entity Serialization):
- *    - تحويل القيود المحاسبية، الالتزامات المالية، أو بطاقات العملاء إلى كائنات JSON مستقلة.
- * 2. التغليف المركب كحزم ذرية (Compound Bundle Serialization):
- *    - حزمة عميل الحبايب (Habayeb Bundle): تغليف بيانات العميل وتصنيفه وحالات تثبيته مع كامل كشف حساب معاملاته في حمولة واحدة.
- *    - حزمة القيود المجمعة (Transaction Bundle): تغليف مجموعة من قيود اليومية المحذوفة دفعة واحدة مع حساب صافي السيولة المجمعة [totalNet].
- * 3. حفظ بيانات العملات الأجنبية:
- *    - الحفاظ الكامل على حقول أسعار الصرف والمبالغ المعادلة والعملات الأجنبية.
- */
 package com.smartledger.aldaftar.data.repository
 
-// ---------------------------------------------------------------------
-// استيراد حزم التفضيلات والكيانات ونماذج النطاق ومكتبات JSON
-// ---------------------------------------------------------------------
-import android.content.SharedPreferences
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
@@ -32,23 +9,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
 
-/**
- * [الكائن الأحادي لمحول سلة المهملات - TrashJsonSerializer]:
- * يحول الكائنات إلى تمثيلات JSON آمنة ومكتملة للتخزين في سلة المهملات.
- */
 object TrashJsonSerializer {
 
-    /** بادئة مفتاح ربط العميل بالتصنيف في التفضيلات */
-    private const val PREF_CAT_LINK_PREFIX = "CAT_LINK_"
-    /** بادئة مفتاح العملاء المثبتين في التصنيفات */
-    private const val PREF_KEY_PINNED_PREFIX = "KEY_PINNED_IN_"
-
-    /**
-     * [تحويل الالتزام المالي الثابت إلى JSON - serializeCommitment]:
-     *
-     * @param fc كائن الالتزام المالي.
-     * @return نص JSON يحمل حقول الالتزام والهدف ونسبة الإنجاز.
-     */
     fun serializeCommitment(fc: FixedCommitment): String {
         return JSONObject().apply {
             put("name", fc.name)
@@ -58,58 +20,27 @@ object TrashJsonSerializer {
         }.toString()
     }
 
-    /**
-     * [تحويل حزمة عميل كاملة مع كشف حسابه إلى JSON - serializeHabayebBundle]:
-     * يجمع بيانات العميل والتصنيف المربوط وقوائم التثبيت وجميع المعاملات في حزمة واحدة.
-     *
-     * @param customer بطاقة العميل.
-     * @param transactions قائمة معاملات العميل المرتبطة.
-     * @param sharedPrefs كائن التفضيلات لاستخراج الروابط وحالات التثبيت.
-     * @return نص JSON شامل لحزمة العميل.
-     */
     fun serializeHabayebBundle(
         customer: HabayebCustomer,
         transactions: List<HabayebTransaction>,
-        sharedPrefs: SharedPreferences
+        categoryLink: String?,
+        pinnedCategories: Set<Int>
     ): String {
-        val categoryLink = sharedPrefs.getString("$PREF_CAT_LINK_PREFIX${customer.id}", null)
-        val pinnedCats = JSONArray()
-        for ((key, value) in sharedPrefs.all) {
-            if (key.startsWith(PREF_KEY_PINNED_PREFIX) && value is Set<*> && value.contains(customer.id)) {
-                pinnedCats.put(key.removePrefix(PREF_KEY_PINNED_PREFIX))
-            }
-        }
-
+        val pinnedCats = JSONArray(); pinnedCategories.forEach(pinnedCats::put)
         return JSONObject().apply {
             put("customer", JSONObject().apply {
-                put("id", customer.id)
-                put("name", customer.name)
-                put("phone", customer.phone)
-                put("notes", customer.notes)
-                put("createdAt", customer.createdAt)
-                if (categoryLink != null) {
-                    put("categoryLink", categoryLink)
-                }
-                if (pinnedCats.length() > 0) {
-                    put("pinnedCategories", pinnedCats)
-                }
+                put("id", customer.id); put("name", customer.name); put("phone", customer.phone)
+                put("notes", customer.notes); put("createdAt", customer.createdAt)
+                put("initialType", customer.initialType)
+                put("categoryId", customer.categoryId ?: JSONObject.NULL)
+                categoryLink?.let { put("categoryName", it) }
+                if (pinnedCats.length() > 0) put("pinnedScopeCategoryIds", pinnedCats)
             })
-            val txsArray = JSONArray()
-            transactions.forEach { tx ->
-                txsArray.put(serializeHabayebTransactionJsonObject(tx))
-            }
-            put("transactions", txsArray)
-            put("totalTransactions", transactions.size)
-            put("name", customer.name)
+            put("transactions", JSONArray().apply { transactions.forEach { put(serializeHabayebTransactionJsonObject(it)) } })
+            put("totalTransactions", transactions.size); put("name", customer.name)
         }.toString()
     }
 
-    /**
-     * [تحويل بطاقة عميل فردية إلى JSON - serializeHabayebCustomer]:
-     *
-     * @param customer كائن العميل.
-     * @return نص JSON للعميل.
-     */
     fun serializeHabayebCustomer(customer: HabayebCustomer): String {
         return JSONObject().apply {
             put("id", customer.id)
@@ -117,27 +48,15 @@ object TrashJsonSerializer {
             put("phone", customer.phone)
             put("notes", customer.notes)
             put("createdAt", customer.createdAt)
+            put("initialType", customer.initialType)
+            put("categoryId", customer.categoryId ?: JSONObject.NULL)
         }.toString()
     }
 
-    /**
-     * [تحويل قيد يومية فردي إلى JSON - serializeTransaction]:
-     *
-     * @param tx قيد اليومية العام.
-     * @return نص JSON للقيد.
-     */
     fun serializeTransaction(tx: TransactionDb): String {
         return serializeTransactionJsonObject(tx).toString()
     }
 
-    /**
-     * [تحويل حزمة قيود يومية مجمعة إلى JSON - serializeTransactionBundle]:
-     * يجمع عدة قيود محذوفة دفعة واحدة مع احتساب الصافي الإجمالي.
-     *
-     * @param transactions قائمة القيود المحذوفة.
-     * @param title عنوان الحزمة المعروض للمستخدم.
-     * @return نص JSON لحزمة القيود.
-     */
     fun serializeTransactionBundle(transactions: List<TransactionDb>, title: String): String {
         return JSONObject().apply {
             val txsArray = JSONArray()
@@ -154,19 +73,10 @@ object TrashJsonSerializer {
         }.toString()
     }
 
-    /**
-     * [تحويل قيد ديون حبايب فردي إلى JSON - serializeHabayebTransaction]:
-     *
-     * @param tx قيد معاملة العميل.
-     * @return نص JSON للمعاملة.
-     */
     fun serializeHabayebTransaction(tx: HabayebTransaction): String {
         return serializeHabayebTransactionJsonObject(tx).toString()
     }
 
-    /**
-     * بناء كائن JSONObject لقيد اليومية العام الداخلي
-     */
     private fun serializeTransactionJsonObject(tx: TransactionDb): JSONObject {
         return JSONObject().apply {
             put("id", tx.id)
@@ -178,9 +88,6 @@ object TrashJsonSerializer {
         }
     }
 
-    /**
-     * بناء كائن JSONObject لقيد الحبايب والعملات الأجنبية الداخلي
-     */
     private fun serializeHabayebTransactionJsonObject(tx: HabayebTransaction): JSONObject {
         return JSONObject().apply {
             put("id", tx.id)

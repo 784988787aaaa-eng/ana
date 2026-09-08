@@ -1,6 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
-import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -44,27 +43,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.repository.FloatingAddState
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.ui.helper.VibrationHelper
 import kotlin.math.roundToInt
 
-/**
- * مفاتيح حفظ تموضع وحالة زر الإدخال / الإضافة العائم
- */
-object FloatingAddPrefsKeys {
-    const val PREFS_NAME = "floating_add_fab_prefs"
-    const val KEY_SIZE_LEVEL = "fab_size_level"
-    const val KEY_RATIO_X = "fab_ratio_x"
-    const val KEY_RATIO_Y = "fab_ratio_y"
-    const val KEY_LOCKED = "KEY_ADD_FAB_LOCKED"
-}
-
-/**
- * زر الإدخال والإضافة العائم فائق الانسيابية والاحترافية (Free-Floating Add FAB)
- * - يتم قفله بشكل افتراضي بدون أي رموز قفل مزعجة.
- * - يتحرك بالضغط المطول مع السحب، وعند ترك الضغط يتقفل دائماً في موقعه الجديد.
- * - يتبع ثيم التطبيق الأساسي بالكامل ويدعم الوضعين النهاري والليلي بوضوح ممتاز.
- */
 @Composable
 fun HabayebFab(
     targetCustomer: HabayebCustomer?,
@@ -74,33 +57,21 @@ fun HabayebFab(
     haptic: HapticFeedback,
     onAddCustomerClick: () -> Unit,
     onAddTransactionForCustomer: (HabayebCustomer) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    persisted: com.smartledger.aldaftar.data.repository.FloatingAddState,
+    onPersist: (com.smartledger.aldaftar.data.repository.FloatingAddState) -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember {
-        context.getSharedPreferences(FloatingAddPrefsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    // قراءة الإعدادات المحفوظة مع قيم افتراضية أنيقة ومريحة ليد المستخدم (افتراضي: الحجم المتوسط 1)
-    val initialSizeLevel = remember(prefs) {
-        prefs.getInt(FloatingAddPrefsKeys.KEY_SIZE_LEVEL, 1)
-    }
-    val hasSavedRatio = remember(prefs) {
-        prefs.contains(FloatingAddPrefsKeys.KEY_RATIO_X) && prefs.contains(FloatingAddPrefsKeys.KEY_RATIO_Y)
-    }
-    val initialRatioX = remember(prefs, hasSavedRatio) {
-        if (hasSavedRatio) prefs.getFloat(FloatingAddPrefsKeys.KEY_RATIO_X, -1f) else -1f
-    }
-    val initialRatioY = remember(prefs, hasSavedRatio) {
-        if (hasSavedRatio) prefs.getFloat(FloatingAddPrefsKeys.KEY_RATIO_Y, -1f) else -1f
-    }
+    val initialSizeLevel = persisted.sizeLevel
+    val hasSavedRatio = persisted.hasPosition
+    val initialRatioX = if (hasSavedRatio) persisted.ratioX else -1f
+    val initialRatioY = if (hasSavedRatio) persisted.ratioY else -1f
 
-    // إدارة مستوى الحجم (0: مجهري 40dp، 1: قياسي 52dp، 2: كبير ومريح 62dp)
     var sizeLevel by remember { mutableStateOf(initialSizeLevel) }
     val bubbleSize = when (sizeLevel) {
         0 -> 40.dp
@@ -120,14 +91,12 @@ fun HabayebFab(
 
     var isInteracting by remember { mutableStateOf(false) }
 
-    // تحريكات انسيابية للتفاعل
     val scaleAnim by animateFloatAsState(
         targetValue = if (isInteracting) 1.10f else 1.0f,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
         label = "FabScaleAnim"
     )
 
-    // استخدام لون الثيم الرئيسي النقاطي للتطابق التام مع ثيم التطبيق
     val effectivePrimary = if (primaryColor != Color.Unspecified) primaryColor else MaterialTheme.colorScheme.primary
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -143,7 +112,6 @@ fun HabayebFab(
                 (screenHeightPx - bubbleSizePx).coerceAtLeast(0f)
             }
 
-            // Default Center-Dock Position: Center X = 50%, Center Y = Resting over top edge of bottom navigation capsule
             val defaultDockX = remember(screenWidthPx, bubbleSizePx) {
                 if (screenWidthPx > 0) (screenWidthPx - bubbleSizePx) / 2f else 0f
             }
@@ -195,12 +163,7 @@ fun HabayebFab(
                             onDragEnd = {
                                 isInteracting = false
                                 if (ratioX >= 0f && ratioY >= 0f) {
-                                    prefs.edit().apply {
-                                        putFloat(FloatingAddPrefsKeys.KEY_RATIO_X, ratioX)
-                                        putFloat(FloatingAddPrefsKeys.KEY_RATIO_Y, ratioY)
-                                        putBoolean(FloatingAddPrefsKeys.KEY_LOCKED, true)
-                                        apply()
-                                    }
+onPersist(FloatingAddState(sizeLevel, ratioX, ratioY, true))
                                 }
                                 VibrationHelper.triggerSuccessVibration(context)
                             },
@@ -234,7 +197,7 @@ fun HabayebFab(
                             onDoubleTap = {
                                 val newSizeLevel = (sizeLevel + 1) % 3
                                 sizeLevel = newSizeLevel
-                                prefs.edit().putInt(FloatingAddPrefsKeys.KEY_SIZE_LEVEL, newSizeLevel).apply()
+                                onPersist(FloatingAddState(newSizeLevel, ratioX, ratioY, hasSavedRatio))
                                 VibrationHelper.triggerSuccessVibration(context)
                             }
                         )
@@ -242,7 +205,6 @@ fun HabayebFab(
                     .testTag("floating_add_fab"),
                 contentAlignment = Alignment.Center
             ) {
-                // أيقونة الإضافة المركزية الفاتنة
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = stringResource(

@@ -74,7 +74,6 @@ fun DangerDeleteButton(onDeleteConfirmed: () -> Unit) {
             },
         contentAlignment = Alignment.Center
     ) {
-        // Internal slide filler on hold
         Box(
             modifier = Modifier
                 .fillMaxHeight()

@@ -52,26 +52,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private suspend fun saveSecurityPasscode(
+private fun buildSecuritySettings(
     passcode: String,
     recoveryPhrase: String,
     recoveryHint: String,
-    currentSettings: AppSettings,
-    viewModel: SecurityViewModel,
-    onSuccess: () -> Unit
-) {
+    currentSettings: AppSettings
+): AppSettings {
     val pHash = HashUtils.hashString(passcode)
     val rHash = HashUtils.hashString(recoveryPhrase.trim())
-    val updated = currentSettings.copy(
+    return currentSettings.copy(
         isPasscodeEnabled = true,
         passcodeHash = pHash,
         recoveryPhraseHash = rHash,
         recoveryHint = recoveryHint.trim().takeIf { it.isNotBlank() }
     )
-    viewModel.saveSettings(updated)
-    withContext(Dispatchers.Main) {
-        onSuccess()
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -167,19 +161,15 @@ fun SecurityScreen(
                                 !isSaving
                         if (isValid) {
                             isSaving = true
-                            coroutineScope.launch(Dispatchers.Default) {
-                                saveSecurityPasscode(
-                                    passcode = passcode,
-                                    recoveryPhrase = recoveryPhrase,
-                                    recoveryHint = recoveryHint,
-                                    currentSettings = currentSettings,
-                                    viewModel = viewModel
-                                ) {
-                                    isSaving = false
-                                    isEditingPasscode = false
-                                    Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                    onBack()
+                            coroutineScope.launch {
+                                val updated = withContext(Dispatchers.Default) {
+                                    buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                 }
+                                viewModel.saveSettings(updated)
+                                isSaving = false
+                                isEditingPasscode = false
+                                Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
+                                onBack()
                             }
                         }
                     }
@@ -260,7 +250,6 @@ fun SecurityDialog(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header with Title and Close Icon (Aligned nicely)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -339,19 +328,15 @@ fun SecurityDialog(
                                         !isSaving
                                 if (isValid) {
                                     isSaving = true
-                                    coroutineScope.launch(Dispatchers.Default) {
-                                        saveSecurityPasscode(
-                                            passcode = passcode,
-                                            recoveryPhrase = recoveryPhrase,
-                                            recoveryHint = recoveryHint,
-                                            currentSettings = currentSettings,
-                                            viewModel = viewModel
-                                        ) {
-                                            isSaving = false
-                                            isEditingPasscodeInDialog = false
-                                            Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                            onDismiss()
+                                    coroutineScope.launch {
+                                        val updated = withContext(Dispatchers.Default) {
+                                            buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                         }
+                                        viewModel.saveSettings(updated)
+                                        isSaving = false
+                                        isEditingPasscodeInDialog = false
+                                        Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
+                                        onDismiss()
                                     }
                                 }
                             }

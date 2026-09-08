@@ -44,7 +44,6 @@ fun CustomerHistoryTableSection(
     isDark: Boolean = false
 ) {
     Box(modifier = modifier) {
-        // HIGH-DENSITY HIGH-FIDELITY TRANSACTION LIST DIRECTLY BELOW BALANCE CARDS
         if (displayedTxs.isEmpty()) {
             Box(
                 modifier = Modifier

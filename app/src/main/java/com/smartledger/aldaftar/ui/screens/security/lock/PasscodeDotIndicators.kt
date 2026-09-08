@@ -21,9 +21,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
-/**
- * Animated Dot Indicators showing filled PIN progress with bouncy scaling and error shake offset.
- */
 @Composable
 fun PasscodeDotIndicators(
     enteredLength: Int,

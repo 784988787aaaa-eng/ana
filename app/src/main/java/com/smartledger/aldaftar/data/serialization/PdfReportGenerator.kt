@@ -1,30 +1,5 @@
-/**
- * =====================================================================
- * ملف: محرك ومنسق تقارير PDF المالية (PdfReportGenerator.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المحرك التنفيذي الأساسي لرسم وتوليد مستندات PDF الاحترافية
- * المعتمدة على لوحة رسم أندرويد الأصلية [android.graphics.pdf.PdfDocument].
- * يقوم بحساب المسافات وقياس النصوص العربية وتوزيع السجلات على صفحات متعددة (Pagination)
- * وفق المقاس العالمي A4 (595x842 نقطة)، مع معالجة ذكية للترويسة التجارية وشعار المنشأة
- * وخاتمة الصفحات والتقارير الشاملة لكافة العملاء.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. الجولة التجريبية الاستباقية (Dry Run Pass):
- *    - محاكاة رسم الجداول لحساب العدد الدقيق للصفحات الإجمالية قبل الرسم الفعلي (مثال: صفحة 1 من 3).
- * 2. معالجة النصوص والاتجاه العربي الأصيل (RTL):
- *    - التوافق مع [StaticLayout] لرسم النصوص العربية والوصف المالي دون تقطيع أو تشويه.
- * 3. التدوير الذكي للموارد والتنظيف:
- *    - إدارة وتفريغ صور الشعارات والبيتماب [recycleBitmapsSafely] لمنع تسريب الذاكرة (Memory Leaks).
- * 4. إدارة قنوات التصدير والإرسال:
- *    - دعم المشاركة عبر النظام، الحفظ المباشر بذاكرة الجهاز، والإرسال الفوري عبر تطبيق واتساب.
- */
 package com.smartledger.aldaftar.data.serialization
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والرسومات والطباعة ووثائق PDF والكيانات وتزامن كوتلن
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -37,6 +12,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.serialization.pdf.BusinessHeaderData
@@ -57,36 +33,16 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Date
 
-typealias PdfAction = PdfAction
-typealias BusinessHeaderData = BusinessHeaderData
-typealias BusinessProfileLoader = BusinessProfileLoader
-
-/**
- * [الكائن الأحادي لمحرك تقارير PDF - PdfReportGenerator]:
- * يوفر واجهات توليد وتصدير كشوف الحسابات الفردية والتقارير الشاملة بصيغة PDF.
- */
 object PdfReportGenerator {
 
-    /** وسم السجلات التشخيصية */
     private const val TAG = "PdfReportGenerator"
-    /** نوع الوسائط المعياري لمستندات PDF */
     private const val MIME_TYPE_PDF = "application/pdf"
 
-    /**
-     * [التوليد الداخلي لكشف حساب العميل الفردي - generatePdfFileInternal]:
-     * يبني مستند PDF متعدد الصفحات يتضمن ترويسة العمل وكشف حركة الحساب والخاتمة.
-     *
-     * @param context سياق التطبيق.
-     * @param customer بيانات العميل المستهدف.
-     * @param transactions قائمة معاملات العميل.
-     * @param currencySymbol رمز العملة الرئيسية.
-     * @param primaryColorHex لون السمة التنسيقي.
-     * @return ملف الـ PDF المؤقت المنشأ، أو null عند الفشل.
-     */
     private fun generatePdfFileInternal(
         context: Context,
         customer: HabayebCustomer,
         transactions: List<HabayebTransaction>,
+        businessProfile: BusinessProfile,
         currencySymbol: String,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD
     ): File? {
@@ -98,7 +54,6 @@ object PdfReportGenerator {
             originalCustomer = customer
         )
 
-        // 1. الجولة التجريبية (Dry Run) لحساب إجمالي عدد الصفحات بدقة متناهية
         var totalPages = 1
         var dryPageCount = 1
         PdfPageRenderer.drawCustomerStatementSheet(
@@ -118,7 +73,7 @@ object PdfReportGenerator {
         )
         totalPages = dryPageCount
 
-        val header = BusinessProfileLoader.load(context)
+        val header = BusinessProfileLoader.load(context, businessProfile)
         val pdfDocument = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
@@ -151,7 +106,6 @@ object PdfReportGenerator {
             }
             PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, 74f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
-            // بدء رسم جدول المعاملات
             PdfPageRenderer.drawCustomerStatementSheet(
                 canvas = canvas,
                 context = context,
@@ -199,20 +153,16 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [التوليد الداخلي لتقرير كافة العملاء الشامل - generateAllCustomersPdfFileInternal]:
-     * يبني وثيقة PDF تحوي بطاقة ملخص الأرصدة الكلية وجدول كافة العملاء وأرصدتهم.
-     */
     private fun generateAllCustomersPdfFileInternal(
         context: Context,
         customers: List<CustomerUiState>,
+        businessProfile: BusinessProfile,
         currencySymbol: String,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD
     ): File? {
         val summary = PdfReportCalculator.calculateComprehensiveReport(customers)
         val totalItems = customers.size
 
-        // 1. الجولة التجريبية لحساب إجمالي عدد الصفحات
         var totalPages = 1
         run {
             var dryY = 186f
@@ -228,7 +178,7 @@ object PdfReportGenerator {
             totalPages = dryPages
         }
 
-        val header = BusinessProfileLoader.load(context)
+        val header = BusinessProfileLoader.load(context, businessProfile)
         val pdfDocument = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
@@ -336,65 +286,16 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [إطلاق نية المشاركة أو العرض - triggerShareOrViewIntent]:
-     * يفوض الإطلاق إلى [PdfIntentLauncher].
-     */
     fun triggerShareOrViewIntent(context: Context, file: File?, action: PdfAction) {
         PdfIntentLauncher.triggerShareOrViewIntent(context, file, action)
     }
 
-    /** إطلاق نية المشاركة بنص الإجراء */
-    fun triggerShareOrViewIntent(context: Context, file: File?, action: String) {
-        PdfIntentLauncher.triggerShareOrViewIntent(context, file, PdfAction.from(action))
-    }
-
-    /**
-     * [توليد ومعالجة تقرير العميل بنطاق كوروتين ممرر - generateAndHandleCustomerPdfReport]:
-     */
-    fun generateAndHandleCustomerPdfReport(
-        context: Context,
-        scope: CoroutineScope,
-        customer: HabayebCustomer,
-        transactions: List<HabayebTransaction>,
-        currencySymbol: String,
-        action: String,
-        primaryColorHex: String = PdfColors.PRIMARY_EMERALD
-    ) {
-        generateAndHandleCustomerPdfReportAsync(context, scope, customer, transactions, currencySymbol, PdfAction.from(action), primaryColorHex)
-    }
-
-    /**
-     * [توليد ومعالجة تقرير العميل بنطاق رئيسي افتراضي - generateAndHandleCustomerPdfReport]:
-     */
-    fun generateAndHandleCustomerPdfReport(
-        context: Context,
-        customer: HabayebCustomer,
-        transactions: List<HabayebTransaction>,
-        currencySymbol: String,
-        action: String,
-        primaryColorHex: String = PdfColors.PRIMARY_EMERALD
-    ) {
-        generateAndHandleCustomerPdfReportAsync(
-            context,
-            CoroutineScope(Dispatchers.Main),
-            customer,
-            transactions,
-            currencySymbol,
-            PdfAction.from(action),
-            primaryColorHex
-        )
-    }
-
-    /**
-     * [توليد ومعالجة تقرير العميل اللاتزامني الأساسي - generateAndHandleCustomerPdfReportAsync]:
-     * يبني ملف الـ PDF ثم يوجهه للمشاركة، أو الحفظ المحلي، أو الإرسال المباشر عبر واتساب.
-     */
     fun generateAndHandleCustomerPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
         customer: HabayebCustomer,
         transactions: List<HabayebTransaction>,
+        businessProfile: BusinessProfile,
         currencySymbol: String,
         action: PdfAction,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
@@ -402,7 +303,7 @@ object PdfReportGenerator {
     ) {
         scope.launch(Dispatchers.IO) {
             try {
-                val file = generatePdfFileInternal(context, customer, transactions, currencySymbol, primaryColorHex)
+                val file = generatePdfFileInternal(context, customer, transactions, businessProfile, currencySymbol, primaryColorHex)
                 withContext(Dispatchers.Main) {
                     if (action == PdfAction.SAVE_LOCAL) {
                         if (file != null) {
@@ -440,32 +341,11 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [توليد ومعالجة تقرير العميل اللاتزامني بنص الإجراء - generateAndHandleCustomerPdfReportAsync]:
-     */
-    fun generateAndHandleCustomerPdfReportAsync(
-        context: Context,
-        scope: CoroutineScope,
-        customer: HabayebCustomer,
-        transactions: List<HabayebTransaction>,
-        currencySymbol: String,
-        action: String,
-        primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
-        onFinished: () -> Unit = {}
-    ) {
-        generateAndHandleCustomerPdfReportAsync(
-            context, scope, customer, transactions, currencySymbol, PdfAction.from(action), primaryColorHex, onFinished
-        )
-    }
-
-    /**
-     * [توليد ومعالجة تقرير كافة العملاء اللاتزامني - generateAndHandleAllCustomersPdfReportAsync]:
-     * يبني تقرير PDF شامل يضم جميع العملاء وأرصدتهم الإجمالية.
-     */
     fun generateAndHandleAllCustomersPdfReportAsync(
         context: Context,
         scope: CoroutineScope,
         customers: List<CustomerUiState>,
+        businessProfile: BusinessProfile,
         currencySymbol: String,
         action: PdfAction,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
@@ -473,7 +353,7 @@ object PdfReportGenerator {
     ) {
         scope.launch(Dispatchers.IO) {
             try {
-                val file = generateAllCustomersPdfFileInternal(context, customers, currencySymbol, primaryColorHex)
+                val file = generateAllCustomersPdfFileInternal(context, customers, businessProfile, currencySymbol, primaryColorHex)
                 withContext(Dispatchers.Main) {
                     triggerShareOrViewIntent(context, file, action)
                 }
@@ -487,22 +367,7 @@ object PdfReportGenerator {
         }
     }
 
-    /**
-     * [توليد ومعالجة تقرير كافة العملاء بنص الإجراء - generateAndHandleAllCustomersPdfReportAsync]:
-     */
-    fun generateAndHandleAllCustomersPdfReportAsync(
-        context: Context,
-        scope: CoroutineScope,
-        customers: List<CustomerUiState>,
-        currencySymbol: String,
-        action: String,
-        primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
-        onFinished: () -> Unit = {}
-    ) {
-        generateAndHandleAllCustomersPdfReportAsync(
-            context, scope, customers, currencySymbol, PdfAction.from(action), primaryColorHex, onFinished
-        )
-    }
+
 }
 
 

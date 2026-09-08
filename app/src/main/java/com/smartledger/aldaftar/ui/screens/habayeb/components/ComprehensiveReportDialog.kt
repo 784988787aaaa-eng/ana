@@ -55,7 +55,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.serialization.PdfReportGenerator
+import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.data.serialization.pdf.MasterBookletPdfEngine
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -68,13 +70,14 @@ fun ComprehensiveReportDialog(
     activeThemeColor: Color,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    selectedCustomerIds: List<String> = emptyList()
+    selectedCustomerIds: List<String> = emptyList(),
+    businessProfile: BusinessProfile,
+    loadTransactionsForReport: suspend (Collection<String>) -> Map<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isGeneratingPdf by remember { mutableStateOf(false) }
 
-    // Booklet states
     var isGeneratingBooklet by remember { mutableStateOf(false) }
     var bookletProgress by remember { mutableStateOf(0) }
     var bookletTotal by remember { mutableStateOf(0) }
@@ -82,7 +85,6 @@ fun ComprehensiveReportDialog(
 
     val selectedIdsSet = remember(selectedCustomerIds) { selectedCustomerIds.toSet() }
 
-    // Aggregate statistics wrapped in remember to avoid heavy recount during scroll
     val aggregateStats = remember(customers) {
         var owedByThem = BigDecimal.ZERO
         var owedToThem = BigDecimal.ZERO
@@ -136,7 +138,6 @@ fun ComprehensiveReportDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Header Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -176,7 +177,6 @@ fun ComprehensiveReportDialog(
                         stringResource(id = R.string.report_status_balanced)
                     }
 
-                    // Main Hero Card (highly compact)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = activeThemeColor.copy(alpha = 0.05f)),
@@ -204,7 +204,6 @@ fun ComprehensiveReportDialog(
                                 )
                             }
                             
-                            // Active accounts count badge
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
@@ -221,7 +220,6 @@ fun ComprehensiveReportDialog(
                         }
                     }
 
-                    // Foreign Currencies (if any, super compact row)
                     if (nonZeroForeign.isNotEmpty()) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -274,7 +272,6 @@ fun ComprehensiveReportDialog(
                         }
                     }
 
-                    // Scope Indicator Text
                     val scopeText = if (selectedCustomerIds.isNotEmpty()) {
                         stringResource(id = R.string.report_scope_selected_only, selectedCustomerIds.size)
                     } else {
@@ -290,7 +287,6 @@ fun ComprehensiveReportDialog(
                         textAlign = TextAlign.Start
                     )
 
-                    // Two Buttons Row
                     val bookletErrorToastStr = stringResource(id = R.string.report_booklet_error_toast)
                     val bookletCancelledToastStr = stringResource(id = R.string.report_booklet_cancelled_toast)
                     Row(
@@ -298,7 +294,6 @@ fun ComprehensiveReportDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // General Report Button (soft color, tonal style)
                         Button(
                             onClick = {
                                 if (!isGeneratingPdf) {
@@ -312,8 +307,9 @@ fun ComprehensiveReportDialog(
                                         context = context,
                                         scope = coroutineScope,
                                         customers = targetCustomers,
+                                        businessProfile = businessProfile,
                                         currencySymbol = currencySymbol,
-                                        action = "SHARE",
+                                        action = PdfAction.SHARE,
                                         onFinished = {
                                             isGeneratingPdf = false
                                         }
@@ -349,7 +345,6 @@ fun ComprehensiveReportDialog(
                             }
                         }
 
-                        // Detailed Report Button (solid primary style)
                         Button(
                             onClick = {
                                 val job = coroutineScope.launch {
@@ -358,6 +353,8 @@ fun ComprehensiveReportDialog(
                                     bookletTotal = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds.size else customers.size
 
                                     val hexColor = "#" + Integer.toHexString(activeThemeColor.toArgb()).substring(2)
+                                    val targetIds = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds else customers.map { it.id }
+                                    val transactionsByCustomer = loadTransactionsForReport(targetIds)
                                     MasterBookletPdfEngine.generateBookletPdfAsync(
                                         context = context,
                                         allCustomers = customers,
@@ -365,6 +362,8 @@ fun ComprehensiveReportDialog(
                                         onlySelected = selectedCustomerIds.isNotEmpty(),
                                         currencySymbol = currencySymbol,
                                         primaryColorHex = hexColor,
+                                        businessProfile = businessProfile,
+                                        transactionsByCustomer = transactionsByCustomer,
                                         onProgress = { processed, total ->
                                             bookletProgress = processed
                                             bookletTotal = total
@@ -373,7 +372,7 @@ fun ComprehensiveReportDialog(
                                             isGeneratingBooklet = false
                                             bookletJob = null
                                             if (file != null) {
-                                                PdfReportGenerator.triggerShareOrViewIntent(context, file, "SHARE")
+                                                PdfReportGenerator.triggerShareOrViewIntent(context, file, PdfAction.SHARE)
                                             } else {
                                                 Toast.makeText(context, bookletErrorToastStr, Toast.LENGTH_LONG).show()
                                             }
@@ -410,10 +409,9 @@ fun ComprehensiveReportDialog(
         }
     }
 
-    // Modern Progress Dialog for Booklet
     if (isGeneratingBooklet) {
         Dialog(
-            onDismissRequest = { /* Prevent dismiss */ },
+            onDismissRequest = { },
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
         ) {
             Surface(

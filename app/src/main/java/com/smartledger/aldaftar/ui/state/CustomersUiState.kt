@@ -5,15 +5,6 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/**
- * نماذج حالة العرض والتجميع المحاسبي لعملاء الحبايب (Habayeb Presentation & Aggregate State Models)
- *
- * التوثيق المعماري وفصل المسؤوليات:
- * 1. `CustomerUiState`: نموذج عرض غير قابل للتغيير (@Immutable) يغذي بطاقات العملاء في واجهة المستخدم،
- *    ويفصل بين المبالغ المالية الدقيقة (BigDecimal) وبين القيم السريعة لتحديث الرسوم.
- * 2. `CustomerBalancesPojo` و `CustomerCurrencyBalancePojo`: كائنات وسيطة خفيفة الوزن لاستقبال نتائج استعلامات
- *    Room المجمعة (Aggregations) مباشرة من قاعدة البيانات دون تحميل جميع سجلات المعاملات في الذاكرة.
- */
 @Immutable
 data class CustomerUiState(
     val id: String,

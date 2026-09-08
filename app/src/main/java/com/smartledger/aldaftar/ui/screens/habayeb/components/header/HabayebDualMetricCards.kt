@@ -49,7 +49,6 @@ fun HabayebDualMetricCards(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right Card: "لنا" (Red Color - Solid Safe Background)
         val isOwedBySelected = selectedFilterTab == 1
         val owedByCardBg = if (isOwedBySelected) mizanColors.chipDebtSelectedBackground else mizanColors.chipDebtUnselectedBackground
         val owedByBorderColor = if (isOwedBySelected) effectiveDebtColor else mizanColors.chipDebtUnselectedBorder
@@ -108,7 +107,6 @@ fun HabayebDualMetricCards(
             }
         }
 
-        // Left Card: "علينا" (Emerald Green Color - Solid Safe Background)
         val isOwedToSelected = selectedFilterTab == 2
         val owedToCardBg = if (isOwedToSelected) mizanColors.chipCreditSelectedBackground else mizanColors.chipCreditUnselectedBackground
         val owedToBorderColor = if (isOwedToSelected) effectiveCreditColor else mizanColors.chipCreditUnselectedBorder

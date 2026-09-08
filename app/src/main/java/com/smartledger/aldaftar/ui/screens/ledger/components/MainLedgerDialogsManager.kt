@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.MonthLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import kotlinx.coroutines.CoroutineScope
 import java.math.BigDecimal
 

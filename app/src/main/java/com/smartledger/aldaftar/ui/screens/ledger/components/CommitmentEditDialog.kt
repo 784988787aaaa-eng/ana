@@ -152,7 +152,6 @@ fun CommitmentEditDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // 1. Clean Title without emoji
                     Text(
                         text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_title_edit) else stringResource(id = R.string.ledger_commitment_dialog_title_add),
                         fontWeight = FontWeight.Bold,
@@ -164,7 +163,6 @@ fun CommitmentEditDialog(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // 2. Goal Name Input Field (Full Width, Sleek)
                     OutlinedTextField(
                         value = obligationNameTfv,
                         onValueChange = { if (editingCommitment == null) obligationNameTfv = it },
@@ -201,12 +199,10 @@ fun CommitmentEditDialog(
                         )
                     )
 
-                    // 3. Amount Inputs: Target (Right) & Current (Left) Side-by-Side
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Target Amount Field (Right in RTL)
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
                                 value = targetAmtTfv,
@@ -247,7 +243,6 @@ fun CommitmentEditDialog(
                             )
                         }
 
-                        // Current Available Amount Field (Left in RTL, Optional)
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
                                 value = progressAmtTfv,
@@ -291,13 +286,11 @@ fun CommitmentEditDialog(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // 4. Sleek Actions: Save & Cancel Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Cancel Button (Soft & Minimalist)
                         OutlinedButton(
                             onClick = onDismissRequest,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
@@ -317,7 +310,6 @@ fun CommitmentEditDialog(
                             )
                         }
 
-                        // Save Button (Luxurious Capsule)
                         Button(
                             onClick = {
                                 val tar = targetAmtStr.toBigDecimalOrNull() ?: BigDecimal.ZERO

@@ -61,7 +61,6 @@ fun ResetTrapDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Soft Primary Safety Button
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
@@ -80,7 +79,6 @@ fun ResetTrapDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Tiny Unshaded Reset Button
                 TextButton(
                     onClick = onConfirmDelete,
                     modifier = Modifier.fillMaxWidth()

@@ -1,5 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components.row
-import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
+import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -90,7 +90,6 @@ object RowColors {
         @ReadOnlyComposable
         get() = MaterialTheme.mizanColors.contentSecondary
 
-    // Backwards compatibility helpers
     fun creditGreen(isDark: Boolean) = financialCreditColor(isDark)
     fun debtRed(isDark: Boolean) = financialDebtColor(isDark)
     fun mutedGray(isDark: Boolean): Color = financialDebtColor(isDark)

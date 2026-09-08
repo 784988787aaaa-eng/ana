@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 
 @Composable
 fun rememberContactPicker(

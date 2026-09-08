@@ -79,9 +79,6 @@ fun DrawerItem(
     }
 }
 
-/**
- * مكون أيقونة التواصل الاجتماعي مع الحفاظ على مساحة لمس مريحة متوافقة مع معايير إمكانية الوصول.
- */
 @Composable
 fun ContactIcon(
     icon: ImageVector,

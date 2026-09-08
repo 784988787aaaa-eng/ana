@@ -1,27 +1,5 @@
-/**
- * =====================================================================
- * ملف: رسام إجماليات كشف الحساب وأشرطة الصافي (PdfStatementTotalsRenderer.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يختص هذا الكائن برسم وتنسيق الخواتيم المالية لكشوف حسابات العملاء في تقارير PDF.
- * يشمل ذلك صف مجموع المديونيات والمقبوضات [drawTotalsRow]،
- * والشريط البارز الملون لصافي الرصيد النهائي مع تحديد حالته (رصيد لنا / رصيد له / الحساب متزن) [drawFinalNetBanner]،
- * وصندوق ملخص مديونيات العملات الأجنبية غير المحولة [drawForeignCurrenciesSummary].
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. رسم صف إجماليات العمليات (Totals Row Rendering):
- *    - محاذاة مجاميع المدين والدائن مع أعمدة الجدول وتطبيق الألوان الدلالية.
- * 2. التلوين الشرطي لشريط الصافي النهائي (Conditional Net Balance Banner):
- *    - تطبيق اللون الأخضر للمستحقات (له)، والأحمر للمديونيات (لنا)، والرمادي للاتزان التام.
- * 3. حصر وتنسيق العملات الأجنبية المستقلة (Multi-Currency Breakdown):
- *    - رسم صندوق ذي زوايا منحنية يعرض تفاصيل أرصدة العملات الأجنبية كلاً على حدة.
- */
 package com.smartledger.aldaftar.data.serialization.pdf
 
-// ---------------------------------------------------------------------
-// استيراد حزم سياق أندرويد والرسومات وتخطيط النصوص والرياضيات المالية
-// ---------------------------------------------------------------------
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -34,25 +12,8 @@ import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import java.math.BigDecimal
 
-/**
- * [الكائن الأحادي لرسم إجماليات كشف الحساب - PdfStatementTotalsRenderer]:
- * يحتوي على دوال رسم الصفوف الختامية وصناديق ملخصات الأرصدة.
- */
 object PdfStatementTotalsRenderer {
 
-    /**
-     * [رسم صف إجماليات كشف الحساب - drawTotalsRow]:
-     * يرسم صفاً مميزاً بلون خلفية خاص يجمع عمودي المدين والدائن.
-     *
-     * @param canvas لوحة الرسم الحالية.
-     * @param context سياق التطبيق لجلب النصوص المترجمة.
-     * @param currentY الإحداثي الرأسي لبدء رسم الصف.
-     * @param totalDebts إجمالي المبالغ المدينة.
-     * @param totalPayments إجمالي المقبوضات/المسددات.
-     * @param currencySymbol رمز العملة.
-     * @param initialType طبيعة الحساب الأصلية (لنا أم علينا).
-     * @return الإحداثي الرأسي Y بعد اكتمال رسم الصف.
-     */
     fun drawTotalsRow(
         canvas: Canvas,
         context: Context,
@@ -71,7 +32,6 @@ object PdfStatementTotalsRenderer {
         canvas.drawLine(25f, currentY, 570f, currentY, PdfPaints.paintRowDivider)
         canvas.drawLine(25f, currentY + rowHeight, 570f, currentY + rowHeight, PdfPaints.paintRowDivider)
 
-        // Draw vertical column dividers
         canvas.drawLine(545f, currentY, 545f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(455f, currentY, 455f, currentY + rowHeight, PdfPaints.paintRowDivider)
         canvas.drawLine(260f, currentY, 260f, currentY + rowHeight, PdfPaints.paintRowDivider)
@@ -110,18 +70,6 @@ object PdfStatementTotalsRenderer {
         return currentY + rowHeight
     }
 
-    /**
-     * [رسم شريط الصافي النهائي الملون - drawFinalNetBanner]:
-     * يرسم صندوقاً عريضاً بحواف مستديرة ولون دلالي يوضح موقف الحساب الإجمالي.
-     *
-     * @param canvas لوحة الرسم.
-     * @param context سياق التطبيق.
-     * @param currentY الإحداثي الرأسي.
-     * @param netBalance صافي الرصيد المحسوب.
-     * @param currencySymbol رمز العملة.
-     * @param initialType طبيعة الحساب.
-     * @return الإحداثي الرأسي Y التالي.
-     */
     fun drawFinalNetBanner(
         canvas: Canvas,
         context: Context,
@@ -184,17 +132,6 @@ object PdfStatementTotalsRenderer {
         return currentY + bannerHeight + 8f
     }
 
-    /**
-     * [رسم ملخص مديونيات العملات الأجنبية - drawForeignCurrenciesSummary]:
-     * يرسم صندوقاً تفصيلياً يوضح أرصدة كل عملة أجنبية لم يتم تحويلها بسعر صرف.
-     *
-     * @param canvas لوحة الرسم.
-     * @param context سياق التطبيق.
-     * @param currentY الإحداثي الرأسي.
-     * @param uncalculatedForeignSums خريطة أرصدة العملات الأجنبية.
-     * @param currencySymbol رمز العملة الأساسية.
-     * @return الإحداثي الرأسي Y التالي.
-     */
     fun drawForeignCurrenciesSummary(
         canvas: Canvas,
         context: Context,

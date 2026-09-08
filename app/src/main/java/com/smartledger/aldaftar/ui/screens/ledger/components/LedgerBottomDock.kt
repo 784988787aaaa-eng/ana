@@ -56,7 +56,6 @@ fun LedgerBottomDock(
                 val incomeBg = mizanColors.credit
                 val expenseBg = mizanColors.debt
 
-                // Add Income Button (First element - Right side in RTL)
                 Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -74,7 +73,6 @@ fun LedgerBottomDock(
                     Text(stringResource(id = R.string.ledger_add_income), color = mizanColors.onCredit, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
 
-                // Center Target Button (Goals/Commitments)
                 Box(
                     modifier = Modifier
                         .size(42.dp)
@@ -93,7 +91,6 @@ fun LedgerBottomDock(
                     )
                 }
 
-                // Add Expense Button (Third element - Left side in RTL)
                 Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)

@@ -58,14 +58,6 @@ import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/**
- * Unified High-Density Pinned Header for Smart Ledger (الدفتر الذكي)
- * - Single curved purple banner with:
- *     Top Row: Menu (Right) | Centered "المبلغ المتاح" + Large Bold Amount + Eye (Center) | Search & Toggle (Left)
- *     Conditional Row: Debt Inclusion Switch + Coverage Ratio Progress Bar (Only when commitments exist)
- * - Below Curved Banner: Independent Dual Metric Cards («الصافي» & «باقي الالتزامات»)
- * - 0% wasted space, 50%+ vertical height saved when no commitments are active!
- */
 @Composable
 fun PinnedMainLedgerHeader(
     isDaySelectionMode: Boolean,
@@ -101,7 +93,6 @@ fun PinnedMainLedgerHeader(
             .zIndex(10f)
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Purple Curved Header Banner
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -112,7 +103,6 @@ fun PinnedMainLedgerHeader(
                 .padding(bottom = if (commitments.isNotEmpty()) 8.dp else 6.dp)
         ) {
             if (isDaySelectionMode) {
-                // Selection Mode Action Bar
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -187,12 +177,10 @@ fun PinnedMainLedgerHeader(
                     }
                 }
             } else {
-                // Standard Smart Ledger Header Content
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Top Row: Menu (Right), Available Cash & Amount (Center), Search (Left)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -200,7 +188,6 @@ fun PinnedMainLedgerHeader(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Right: Navigation Menu Button
                         IconButton(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -218,7 +205,6 @@ fun PinnedMainLedgerHeader(
                             )
                         }
 
-                        // Center: "المبلغ المتاح" (Line 1) + Amount & Visibility Eye (Line 2)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
@@ -271,7 +257,6 @@ fun PinnedMainLedgerHeader(
                             }
                         }
 
-                        // Left: Tiny Floating Bubble Toggle + Search Button
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -302,8 +287,6 @@ fun PinnedMainLedgerHeader(
                         }
                     }
 
-                    // Conditional: Debt Inclusion Switch & Coverage Ratio Progress Bar
-                    // Only rendered when commitments are present
                     if (commitments.isNotEmpty()) {
                         val percentFloat = remember(commitments, computedCommitments) {
                             val totalTarget = commitments.fold(BigDecimal.ZERO) { acc, fc -> acc.add(fc.targetAmount) }
@@ -330,7 +313,6 @@ fun PinnedMainLedgerHeader(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Debt Inclusion Toggle (Switch)
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -356,7 +338,6 @@ fun PinnedMainLedgerHeader(
                                     )
                                 }
 
-                                // Commitments Coverage Ratio Percentage Badge
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -426,8 +407,6 @@ fun PinnedMainLedgerHeader(
             }
         }
 
-        // 2. Dual Metric Cards («الصافي» & «باقي الالتزامات»)
-        // Conditional: Only rendered when commitments exist
         if (!isDaySelectionMode && commitments.isNotEmpty()) {
             CommitmentsSummaryCards(
                 commitments = commitments,

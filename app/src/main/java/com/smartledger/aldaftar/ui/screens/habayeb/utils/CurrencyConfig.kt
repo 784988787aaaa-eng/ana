@@ -77,10 +77,6 @@ object CurrencyConfig {
         }
     )
 
-    /**
-     * Cleans transaction description by stripping hidden currency tags like [$currencyCode] or [$currencySymbol]
-     * and trimming whitespace. Returns an empty string if description is empty or contained only currency tags.
-     */
     fun getCleanDetails(description: String): String {
         if (description.isBlank()) return ""
         var clean = description.trim()
@@ -103,16 +99,11 @@ object CurrencyConfig {
         return clean
     }
 
-    /**
-     * Extracts the currency symbol and clean description from a transaction's description.
-     * If no currency is tagged, returns the provided defaultCurrencySymbol.
-     */
     fun parseTransactionCurrency(description: String, defaultCurrencySymbol: String): Pair<String, String> {
         val cacheKey = "$description::$defaultCurrencySymbol"
         val cached = parseCache[cacheKey]
         if (cached != null) return cached
 
-        // Look for [Symbol] pattern at the beginning
         for (currency in currencies) {
             val tag = "[${currency.symbol}]"
             if (description.startsWith(tag)) {
@@ -133,16 +124,14 @@ object CurrencyConfig {
             sym == "ر.ي" || sym == "YER" || sym.contains("يمن") -> 1
             sym == "ر.س" || sym == "SAR" || sym.contains("سعود") -> 2
             sym == "$" || sym == "USD" || sym.contains("دولار") -> 3
-            else -> 2 // default to medium strength
+            else -> 2 // القيمة الافتراضية متوسطة.
         }
     }
 
-    // دالة لاستخراج المبلغ الأصلي الفعلي للمعاملة بالعملة التي سجلت بها
     fun getOriginalAmount(tx: HabayebTransaction): BigDecimal {
         return tx.foreignAmount
     }
     
-    // دالة التحويل الآمنة بين العملات بناءً على أسعار الصرف الحالية
     fun convert(amount: BigDecimal, rate: BigDecimal, toWeaker: Boolean): BigDecimal {
         if (rate <= BigDecimal.ZERO) return amount.setScale(4, RoundingMode.HALF_EVEN)
         return if (toWeaker) {
@@ -201,11 +190,6 @@ object CurrencyConfig {
         return convertAmountBigDecimal(amountBD, baseCurrencySymbol, foreignCurrencySymbol, rateBD).toDouble()
     }
 
-    /**
-     * Resolves the true currency code and transaction amount for a given transaction as BigDecimal with scale 4,
-     * handling both modern schema fields and legacy description tags,
-     * fully taking into account base currency shifts dynamically without relying on is_foreign.
-     */
     fun getTransactionCurrencyAndAmountBigDecimal(
         tx: HabayebTransaction,
         defaultCurrencySymbol: String,
@@ -243,11 +227,6 @@ object CurrencyConfig {
         }
     }
 
-    /**
-     * Resolves the true currency code and transaction amount for a given transaction,
-     * handling both modern schema fields and legacy description tags,
-     * fully taking into account base currency shifts dynamically without relying on is_foreign.
-     */
     fun getTransactionCurrencyAndAmount(
         tx: HabayebTransaction,
         defaultCurrencySymbol: String,
@@ -257,17 +236,10 @@ object CurrencyConfig {
         return Pair(curr, bd.toDouble())
     }
 
-    /**
-     * Helper to wrap a transaction description with a currency tag.
-     */
     fun formatDescriptionWithCurrency(description: String, symbol: String): String {
         return "[$symbol] $description"
     }
 
-    /**
-     * Normalizes Arabic and Farsi digits to Western Arabic (English) digits, and replaces commas with dots.
-     * Centralized via StringUtils.normalizeDigits.
-     */
-    fun normalizeDigits(input: String): String = com.smartledger.aldaftar.domain.StringUtils.normalizeDigits(input)
+    fun normalizeDigits(input: String): String = com.smartledger.aldaftar.platform.contacts.StringUtils.normalizeDigits(input)
 }
 

@@ -39,18 +39,8 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.navigation.Screen
 
-/**
- * بادئة وسم انتقال ألوان التبويبات في شريط التنقل السفلي.
- */
 private const val LABEL_TAB_COLOR_PREFIX = "tab_color_"
 
-/**
- * Floating Navigation Capsule (Floating Segmented Island):
- * - Geometry & Insets: Positioned at BottomCenter with navigationBarsPadding + 12dp bottom padding.
- * - Height: 46dp, Shape: CircleShape, Width: adaptive wrap content (268dp).
- * - Aesthetics: surfaceColorAtElevation(3dp), 0.5dp soft outline border, 4dp shadow elevation.
- * - Interaction: Smooth sliding pill indicator with spring physics and animated color transitions.
- */
 @Composable
 fun MainBottomNavigation(
     currentScreen: Screen,

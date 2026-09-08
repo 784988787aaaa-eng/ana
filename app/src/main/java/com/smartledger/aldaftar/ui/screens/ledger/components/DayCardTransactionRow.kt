@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.domain.DateUtils
+import com.smartledger.aldaftar.presentation.utils.DateUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
@@ -99,13 +99,11 @@ fun DayCardTransactionRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right in RTL (Start): 16dp Sleek Vector Icon + Description & Time
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             modifier = Modifier.weight(1f, fill = false)
         ) {
-            // Selection Mode Checkbox
             if (isSelectionMode) {
                 Box(
                     modifier = Modifier
@@ -134,7 +132,6 @@ fun DayCardTransactionRow(
                 }
             }
 
-            // Minimal Vector Directional Icon (16dp)
             Icon(
                 imageVector = if (isIncome) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                 contentDescription = null,
@@ -142,7 +139,6 @@ fun DayCardTransactionRow(
                 modifier = Modifier.size(16.dp)
             )
 
-            // Description (Line 1) and Time (Line 2) with zero wasted space
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -167,12 +163,10 @@ fun DayCardTransactionRow(
             }
         }
 
-        // Left in RTL (End): Amount + Compact Actions (Edit & Delete)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            // Amount Text
             Text(
                 text = formattedTxAmount,
                 fontWeight = FontWeight.Bold,
@@ -180,7 +174,6 @@ fun DayCardTransactionRow(
                 color = txAmountColor
             )
 
-            // Edit icon button (Ultra compact & clean)
             IconButton(
                 modifier = Modifier.size(20.dp),
                 onClick = {
@@ -196,7 +189,6 @@ fun DayCardTransactionRow(
                 )
             }
 
-            // Delete icon button (Ultra compact & clean)
             IconButton(
                 modifier = Modifier.size(20.dp),
                 onClick = {

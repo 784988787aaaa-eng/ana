@@ -63,7 +63,6 @@ fun AddCustomerFormFields(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. الاسم (Account Name Input)
         OutlinedTextField(
             value = nameStr,
             onValueChange = onNameChange,
@@ -90,7 +89,6 @@ fun AddCustomerFormFields(
             )
         }
 
-        // 2. المبلغ (Initial Amount Input)
         OutlinedTextField(
             value = initialAmountStr,
             onValueChange = onInitialAmountChange,
@@ -125,7 +123,6 @@ fun AddCustomerFormFields(
             }
         )
 
-        // 3. بيان العملية (Details/Statement field)
         OutlinedTextField(
             value = notesStr,
             onValueChange = onNotesChange,
@@ -154,7 +151,6 @@ fun AddCustomerFormFields(
             }
         )
 
-        // 4. رقم الهاتف (Phone Input)
         OutlinedTextField(
             value = phoneStr,
             onValueChange = onPhoneChange,

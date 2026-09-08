@@ -1,15 +1,3 @@
-/**
- * =====================================================================
- * ملف: إدارة نقل وتصدير ملفات النسخ المحلي (FileTransferManager.kt)
- * =====================================================================
- * 
- * [الغرض من الملف]:
- * توفير واجهة مستخدم مبسطة ومباشرة لعمليات تصدير واستيراد النسخ الاحتياطية
- * المحلية بصيغة (.aldabackup) دون عرض قوائم شجرية مزدحمة.
- * 
- * [المسار المعتمد]:
- * الحفظ المركزي المباشر في: /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
- */
 package com.smartledger.aldaftar.ui.screens.settings.components
 
 import android.content.Context
@@ -52,7 +40,6 @@ fun FileTransferManager(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // تصدير واستيراد ملفات (.aldabackup)
         QuadBackupItem(
             title = stringResource(R.string.settings_backup_portable_title),
             description = stringResource(R.string.settings_backup_portable_desc),
@@ -70,7 +57,6 @@ fun FileTransferManager(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // زر تصدير النسخة الاحتياطية
                 Button(
                     onClick = {
                         val runBackup = {
@@ -101,10 +87,9 @@ fun FileTransferManager(
                     )
                 }
 
-                // زر استيراد النسخة الاحتياطية عبر SAF
                 Button(
                     onClick = {
-                        safRestoreLauncher.launch(arrayOf("application/*", "*/*"))
+                        safRestoreLauncher.launch(arrayOf("application*"))
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                     shape = RoundedCornerShape(10.dp),

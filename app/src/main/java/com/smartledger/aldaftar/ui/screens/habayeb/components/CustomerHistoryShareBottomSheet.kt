@@ -19,11 +19,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.serialization.CsvReportGenerator
 import com.smartledger.aldaftar.data.serialization.PdfReportGenerator
-import com.smartledger.aldaftar.data.serialization.PdfAction
+import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
 import com.smartledger.aldaftar.ui.theme.CreditContainerLight
@@ -37,6 +38,7 @@ import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 fun CustomerHistoryShareBottomSheet(
     showShareSheet: Boolean,
     activeCustomer: HabayebCustomer,
+    businessProfile: BusinessProfile,
     allCustomerTxs: List<HabayebTransaction>,
     currencySymbol: String,
     exchangeRatesJson: String,
@@ -49,7 +51,7 @@ fun CustomerHistoryShareBottomSheet(
     if (!showShareSheet) return
 
     val context = LocalContext.current
-    val appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
+    val appScope = rememberCoroutineScope()
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
 
     ModalBottomSheet(
@@ -66,7 +68,6 @@ fun CustomerHistoryShareBottomSheet(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Sheet Header Title
             Text(
                 text = stringResource(id = R.string.habayeb_share_options),
                 fontSize = 16.sp,
@@ -76,7 +77,6 @@ fun CustomerHistoryShareBottomSheet(
                 textAlign = TextAlign.Center
             )
 
-            // 1. Elegant Customer Info Card
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
@@ -90,7 +90,6 @@ fun CustomerHistoryShareBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Circular Avatar
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -106,7 +105,6 @@ fun CustomerHistoryShareBottomSheet(
                         )
                     }
 
-                    // Customer Name and Phone Column
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = activeCustomer.name,
@@ -121,7 +119,6 @@ fun CustomerHistoryShareBottomSheet(
                         )
                     }
 
-                    // Account Balance Status Chip
                     Column(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.Center
@@ -154,7 +151,6 @@ fun CustomerHistoryShareBottomSheet(
                 }
             }
 
-            // 2. Document & Report Files Section
             Text(
                 text = stringResource(id = R.string.share_section_reports),
                 fontSize = 13.sp,
@@ -163,7 +159,6 @@ fun CustomerHistoryShareBottomSheet(
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // PDF Option Row
             FileShareOptionRow(
                 icon = Icons.Default.PictureAsPdf,
                 iconTint = DebtRed,
@@ -179,6 +174,7 @@ fun CustomerHistoryShareBottomSheet(
                         scope = appScope,
                         customer = activeCustomer,
                         transactions = allCustomerTxs,
+                        businessProfile = businessProfile,
                         currencySymbol = currencySymbol,
                         action = PdfAction.WHATSAPP_DIRECT,
                         onFinished = onPdfExportFinish
@@ -192,6 +188,7 @@ fun CustomerHistoryShareBottomSheet(
                         scope = appScope,
                         customer = activeCustomer,
                         transactions = allCustomerTxs,
+                        businessProfile = businessProfile,
                         currencySymbol = currencySymbol,
                         action = PdfAction.SHARE,
                         onFinished = onPdfExportFinish
@@ -205,6 +202,7 @@ fun CustomerHistoryShareBottomSheet(
                         scope = appScope,
                         customer = activeCustomer,
                         transactions = allCustomerTxs,
+                        businessProfile = businessProfile,
                         currencySymbol = currencySymbol,
                         action = PdfAction.SAVE_LOCAL,
                         onFinished = onPdfExportFinish
@@ -212,7 +210,6 @@ fun CustomerHistoryShareBottomSheet(
                 }
             )
 
-            // Excel (CSV) Option Row
             FileShareOptionRow(
                 icon = Icons.Default.GridOn,
                 iconTint = CreditGreen,
@@ -228,6 +225,7 @@ fun CustomerHistoryShareBottomSheet(
                         scope = appScope,
                         customer = activeCustomer,
                         transactions = allCustomerTxs,
+                        businessProfile = businessProfile,
                         currencySymbol = currencySymbol,
                         exchangeRatesJson = exchangeRatesJson,
                         action = CsvReportGenerator.CsvAction.WHATSAPP_DIRECT,
@@ -242,6 +240,7 @@ fun CustomerHistoryShareBottomSheet(
                         scope = appScope,
                         customer = activeCustomer,
                         transactions = allCustomerTxs,
+                        businessProfile = businessProfile,
                         currencySymbol = currencySymbol,
                         exchangeRatesJson = exchangeRatesJson,
                         action = CsvReportGenerator.CsvAction.SHARE,
@@ -256,6 +255,7 @@ fun CustomerHistoryShareBottomSheet(
                         scope = appScope,
                         customer = activeCustomer,
                         transactions = allCustomerTxs,
+                        businessProfile = businessProfile,
                         currencySymbol = currencySymbol,
                         exchangeRatesJson = exchangeRatesJson,
                         action = CsvReportGenerator.CsvAction.SAVE_LOCAL,
@@ -269,7 +269,6 @@ fun CustomerHistoryShareBottomSheet(
                 modifier = Modifier.padding(vertical = 4.dp)
             )
 
-            // 3. Messages & Quick Text Notifications Section
             Text(
                 text = stringResource(id = R.string.share_section_messages),
                 fontSize = 13.sp,
@@ -281,7 +280,6 @@ fun CustomerHistoryShareBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // WhatsApp Text Statement
                 Button(
                     onClick = {
                         onDismissRequest()
@@ -308,7 +306,6 @@ fun CustomerHistoryShareBottomSheet(
                     )
                 }
 
-                // SMS Text Statement
                 Button(
                     onClick = {
                         onDismissRequest()
@@ -363,7 +360,6 @@ private fun FileShareOptionRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Icon Rounded Box
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -379,7 +375,6 @@ private fun FileShareOptionRow(
                 )
             }
 
-            // Text Info Column
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -395,12 +390,10 @@ private fun FileShareOptionRow(
                 )
             }
 
-            // Action Buttons Row (WhatsApp, Share, Save)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // WhatsApp File Direct Button
                 IconButton(
                     onClick = onWhatsAppDirectClick,
                     enabled = isPhoneAvailable,
@@ -417,7 +410,6 @@ private fun FileShareOptionRow(
                     )
                 }
 
-                // General Share Chooser Button
                 IconButton(
                     onClick = onShareClick,
                     colors = IconButtonDefaults.iconButtonColors(
@@ -433,7 +425,6 @@ private fun FileShareOptionRow(
                     )
                 }
 
-                // Save Local Downloads Button
                 IconButton(
                     onClick = onSaveClick,
                     colors = IconButtonDefaults.iconButtonColors(

@@ -5,9 +5,6 @@ import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 
-/**
- * Sealed hierarchy of all dialog and bottom-sheet states managed within the Habayeb subsystem.
- */
 sealed interface HabayebDialogState {
     object None : HabayebDialogState
     object AddCustomer : HabayebDialogState

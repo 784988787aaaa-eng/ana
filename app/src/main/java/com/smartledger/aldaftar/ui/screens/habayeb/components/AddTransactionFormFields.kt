@@ -1,5 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
-import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
+import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

@@ -19,10 +19,6 @@ import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/**
- * Coordinates all dialogs, bottom sheets, and modal flows for the Habayeb Screen.
- * Isolates dialog state handling from the main screen layout tree.
- */
 @Composable
 fun HabayebDialogHost(
     activeDialogState: HabayebDialogState,

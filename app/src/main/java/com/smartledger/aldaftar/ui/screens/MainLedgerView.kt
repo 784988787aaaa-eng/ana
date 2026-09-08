@@ -34,7 +34,10 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
-import com.smartledger.aldaftar.domain.FormatUtils
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
+import com.smartledger.aldaftar.platform.contacts.FormatUtils
+import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 import com.smartledger.aldaftar.ui.components.circularReveal
 import com.smartledger.aldaftar.ui.screens.ledger.components.LedgerBottomDock
 import com.smartledger.aldaftar.ui.screens.ledger.components.MainLedgerDialogsManager
@@ -52,6 +55,7 @@ fun MainLedgerView(
     viewModel: FinanceViewModel,
     habayebViewModel: HabayebFinanceViewModel,
     securityViewModel: SecurityViewModel,
+    businessProfile: BusinessProfile,
     settings: AppSettings,
     onBackIntercept: (Boolean) -> Unit,
     onMenuClick: () -> Unit = {},
@@ -313,6 +317,7 @@ fun MainLedgerView(
             HabayebScreen(
                 viewModel = habayebViewModel,
                 securityViewModel = securityViewModel,
+                businessProfile = businessProfile,
                 onMenuClick = onMenuClick,
                 onClose = { scope.launch { uiController.isHabayebActive = false } }
             )

@@ -1,11 +1,11 @@
-package com.smartledger.aldaftar.domain
+package com.smartledger.aldaftar.platform.security
 
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import com.smartledger.aldaftar.domain.HashUtils
 
-/** Secure local storage for application security settings only. */
 class AppSecurityManager private constructor(context: Context) {
     private val appContext = context.applicationContext
     private val securePrefs: SharedPreferences by lazy { initEncryptedPreferences() }
@@ -29,7 +29,7 @@ class AppSecurityManager private constructor(context: Context) {
     fun hasAdminPin(): Boolean = !securePrefs.getString(PREF_ADMIN_PIN_HASH, null).isNullOrBlank()
     fun validateAdminPin(enteredPin: String): Boolean {
         val stored = securePrefs.getString(PREF_ADMIN_PIN_HASH, null) ?: return false
-        return DatabaseSecurityGuard.secureEqual(HashUtils.hashString(enteredPin), stored)
+        return HashUtils.verifyPin(enteredPin, stored)
     }
 
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = securePrefs.registerOnSharedPreferenceChangeListener(listener)

@@ -7,7 +7,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -54,18 +54,19 @@ fun rememberFilteredCustomerTransactions(
         return androidx.compose.runtime.rememberUpdatedState(sortedDirect)
     }
 
+    val searchDebtStr = context.getString(R.string.customer_history_search_debt)
+    val searchPaymentStr = context.getString(R.string.customer_history_search_payment)
+
     return produceState<List<HabayebTransaction>>(
         initialValue = sortedDirect,
         allCustomerTxs, txSearchQuery, dateFilterMode, customStartDate, customEndDate, typeFilterMode, selectedCurrencyFilter, currencySymbol, exchangeRatesJson, dateBoundaries
     ) {
-        withContext(Dispatchers.Default) {
+        val filtered = withContext(Dispatchers.Default) {
             val todayStart = dateBoundaries[0]
             val todayEnd = dateBoundaries[1]
             val monthStart = dateBoundaries[2]
             val monthEnd = dateBoundaries[3]
 
-            val searchDebtStr = context.getString(R.string.customer_history_search_debt)
-            val searchPaymentStr = context.getString(R.string.customer_history_search_payment)
             val normalizedQuery = if (!isSearchBlank) StringUtils.normalizeArabic(txSearchQuery) else ""
             val normalizedDebtStr = if (!isSearchBlank) StringUtils.normalizeArabic(searchDebtStr) else ""
             val normalizedPaymentStr = if (!isSearchBlank) StringUtils.normalizeArabic(searchPaymentStr) else ""
@@ -111,7 +112,8 @@ fun rememberFilteredCustomerTransactions(
 
                 matchesSearch && matchesDate && matchesType && matchesCurrency
             }
-            value = baseFiltered.sortedByDescending { it.timestamp }
+            baseFiltered.sortedByDescending { it.timestamp }
         }
+        value = filtered
     }
 }

@@ -61,12 +61,10 @@ fun BackupRestoreBottomSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. Header with Title & Status Badge
                 BackupSheetHeader(
                     isConnected = isConnected
                 )
 
-                // 2. Comprehensive Backup Card
                 QuadBackupCard(
                     backupSyncViewModel = backupSyncViewModel,
                     settings = settings,

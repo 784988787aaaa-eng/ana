@@ -114,7 +114,6 @@ fun CustomerTransactionRow(
                 .padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. Date/Time (Rightmost)
             TransactionRowDateSection(
                 isSelected = isSelected,
                 txSeqNo = txSeqNo,
@@ -126,7 +125,6 @@ fun CustomerTransactionRow(
                 modifier = Modifier.weight(1.0f)
             )
 
-            // 2. Details (Middle-Right)
             TransactionRowDetailsSection(
                 cached = cached,
                 hasActiveRecurring = hasActiveRecurring,
@@ -137,7 +135,6 @@ fun CustomerTransactionRow(
                 modifier = Modifier.weight(2.2f)
             )
 
-            // 3. Amount with colorful indicator arrow (Middle-Left)
             TransactionRowAmountSection(
                 cached = cached,
                 modifier = Modifier.weight(1.0f)

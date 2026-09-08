@@ -1,6 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
-import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -41,21 +40,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.repository.FloatingSearchState
 import com.smartledger.aldaftar.ui.helper.VibrationHelper
 import kotlin.math.roundToInt
 
-private object BubblePrefsKeys {
-    const val PREFS_NAME = "floating_search_prefs"
-    const val KEY_SIZE_LEVEL = "bubble_size_level"
-    const val KEY_RATIO_X = "bubble_ratio_x"
-    const val KEY_RATIO_Y = "bubble_ratio_y"
-    const val KEY_LOCKED = "KEY_SEARCH_BUTTON_LOCKED"
-}
-
-/**
- * زر التنشيط والتفعيل المجهري في شريط العنوان العلوي (The Tiny Toggle Button)
- * - حجم مجهري وأنيق للغاية لمنع تشويه الواجهة.
- */
 @Composable
 fun TinyFloatingSearchToggle(
     isFloatingActive: Boolean,
@@ -97,27 +85,22 @@ fun TinyFloatingSearchToggle(
     }
 }
 
-/**
- * فقاعة البحث العائمة فائقة الانسيابية (Absolute Free Floating Search Bubble)
- * - مقفلة بشكل افتراضي وتتحرك حصراً بالضغط المطول مع السحب.
- * - تنظيف تام لرموز وأكواد القفل المزعجة لتطابق ثيم التطبيق بالكامل.
- */
 @Composable
 fun FloatingSearchBubble(
     activeThemeColor: Color,
+    persisted: com.smartledger.aldaftar.data.repository.FloatingSearchState,
+    onPersist: (com.smartledger.aldaftar.data.repository.FloatingSearchState) -> Unit,
     onSearchClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences(BubblePrefsKeys.PREFS_NAME, Context.MODE_PRIVATE) }
-    
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    val initialSizeLevel = remember(prefs) { prefs.getInt(BubblePrefsKeys.KEY_SIZE_LEVEL, 1) }
-    val initialRatioX = remember(prefs) { prefs.getFloat(BubblePrefsKeys.KEY_RATIO_X, 0.80f).coerceIn(0f, 1f) }
-    val initialRatioY = remember(prefs) { prefs.getFloat(BubblePrefsKeys.KEY_RATIO_Y, 0.70f).coerceIn(0f, 1f) }
+    val initialSizeLevel = persisted.sizeLevel
+    val initialRatioX = persisted.ratioX.coerceIn(0f, 1f)
+    val initialRatioY = persisted.ratioY.coerceIn(0f, 1f)
 
     var sizeLevel by remember { mutableStateOf(initialSizeLevel) }
     val bubbleSize = when (sizeLevel) {
@@ -189,12 +172,7 @@ fun FloatingSearchBubble(
                             },
                             onDragEnd = {
                                 isInteracting = false
-                                prefs.edit().apply {
-                                    putFloat(BubblePrefsKeys.KEY_RATIO_X, ratioX)
-                                    putFloat(BubblePrefsKeys.KEY_RATIO_Y, ratioY)
-                                    putBoolean(BubblePrefsKeys.KEY_LOCKED, true)
-                                    apply()
-                                }
+onPersist(FloatingSearchState(sizeLevel, ratioX, ratioY))
                                 VibrationHelper.triggerSuccessVibration(context)
                             },
                             onDragCancel = {
@@ -223,7 +201,7 @@ fun FloatingSearchBubble(
                             onDoubleTap = {
                                 val newSizeLevel = (sizeLevel + 1) % 3
                                 sizeLevel = newSizeLevel
-                                prefs.edit().putInt(BubblePrefsKeys.KEY_SIZE_LEVEL, newSizeLevel).apply()
+                                onPersist(FloatingSearchState(newSizeLevel, ratioX, ratioY))
                                 VibrationHelper.triggerSuccessVibration(context)
                             }
                         )

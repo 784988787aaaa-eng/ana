@@ -5,15 +5,6 @@ import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/**
- * محرك وقواعد إدارة أسعار صرف العملات والتحويل المالي
- *
- * المبادئ الحاكمة:
- * 1. العملة الواحدة المتطابقة (Same Currency) تملك دائماً معامل تحويل حتمي يساوي 1 (BigDecimal.ONE).
- * 2. رفض أي سعر صرف سالب أو يساوي صفراً (Non-positive exchange rate is strictly invalid).
- * 3. الحفاظ التام على الدقة المحاسبية (Scale 4) باستخدام RoundingMode.HALF_EVEN لضمان عدم حدوث تشويه تراكمي.
- * 4. إدارة مصفوفة أزواج الصرف الثنائية (Bidirectional Currency Matrix) لضمان اتساق الحسابات عبر جميع الشاشات.
- */
 object ExchangeRateHelper {
     
     fun getCurrencyPair(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): CurrencyPair {
@@ -104,7 +95,6 @@ object ExchangeRateHelper {
         val updatedJson = try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
             
-            // 1. تثبيت سعر الصرف المباشر للعملة الأساسية
             val baseObj = if (root.has(baseNorm) && root.get(baseNorm) is JSONObject) {
                 root.getJSONObject(baseNorm)
             } else {
@@ -114,7 +104,6 @@ object ExchangeRateHelper {
             baseObj.put(foreignNorm, rateBD.toPlainString())
             root.put(baseNorm, baseObj)
             
-            // 2. مزامنة الزوج المقابل لضمان ثنائية الاتجاه
             val foreignObj = if (root.has(foreignNorm) && root.get(foreignNorm) is JSONObject) {
                 root.getJSONObject(foreignNorm)
             } else {
@@ -179,7 +168,6 @@ object ExchangeRateHelper {
                 }
             }
             
-            // مزامنة التناظر للثنائيات المدخلة فقط
             for (src in symbols) {
                 for (dst in symbols) {
                     if (src != dst) {

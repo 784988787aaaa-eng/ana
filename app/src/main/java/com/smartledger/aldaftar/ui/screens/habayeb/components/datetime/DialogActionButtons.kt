@@ -19,9 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 
-/**
- * Standard confirmation and dismissal action buttons for date/time pickers.
- */
 @Composable
 fun DialogActionButtons(
     onDismiss: () -> Unit,

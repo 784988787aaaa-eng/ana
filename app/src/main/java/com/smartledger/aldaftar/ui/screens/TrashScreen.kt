@@ -157,12 +157,10 @@ fun TrashScreen(
         errorColor, outlineColor
     ) {
         val filtered = withContext(Dispatchers.Default) {
-            // Only Habayeb Items
             val habayebOnly = items.filter {
                 it.sourceSystem == systemHabayeb || it.originalTableName.startsWith("habayeb_")
             }
 
-            // Filter by type BEFORE parsing to avoid unnecessary parsing
             val typeFiltered = when (selectedFilter) {
                 TrashFilterType.ALL -> habayebOnly
                 TrashFilterType.TRANSACTIONS -> habayebOnly.filter {
@@ -295,7 +293,6 @@ fun TrashScreen(
         }
     }
 
-    // Customer & Bundle Overlay
     (activeDialogState as? TrashDialogState.CustomerHistoryOverlay)?.let { state ->
         val currentEntity = items.find { it.id == state.wrapper.entity.id }
         if (currentEntity == null) {
@@ -333,7 +330,6 @@ fun TrashScreen(
         }
     }
 
-    // Deleted Transaction Detail Bottom Sheet
     (activeDialogState as? TrashDialogState.TransactionDetail)?.let { state ->
         val currentEntity = items.find { it.id == state.wrapper.entity.id }
         if (currentEntity == null) {

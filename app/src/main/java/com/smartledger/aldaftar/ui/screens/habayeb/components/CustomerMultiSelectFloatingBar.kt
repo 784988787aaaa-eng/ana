@@ -27,9 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 
-/**
- * شريط العمليات المتعددة العائم
- */
 @Composable
 fun CustomerMultiSelectFloatingBar(
     selectedCount: Int,

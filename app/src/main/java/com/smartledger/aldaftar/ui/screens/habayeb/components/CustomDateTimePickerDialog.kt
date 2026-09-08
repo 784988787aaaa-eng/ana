@@ -32,13 +32,6 @@ import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DialogAct
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
 import java.util.Calendar
 
-// Re-export RangeTab enum for zero broken references across callers
-typealias RangeTab = RangeTab
-
-/**
- * Standard Single Date/Time Picker Dialog for Accounts, Transactions and general entry.
- * Acts as the unified stable Facade entry point for single date & time selection.
- */
 @Composable
 fun CustomDateTimePickerDialog(
     initialMillis: Long,
@@ -74,7 +67,6 @@ fun CustomDateTimePickerDialog(
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Header Title
                     Text(
                         text = title ?: stringResource(id = R.string.datetime_picker_title),
                         fontSize = 15.sp,
@@ -83,7 +75,6 @@ fun CustomDateTimePickerDialog(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    // Single Date & Time section
                     DateAndTimeSection(
                         calendar = calendarState,
                         onCalendarChange = { calendarState = it },
@@ -92,7 +83,6 @@ fun CustomDateTimePickerDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Action Buttons (إلغاء وموافق)
                     DialogActionButtons(
                         onDismiss = onDismiss,
                         onConfirm = { onDateTimeSelected(calendarState.timeInMillis) }
@@ -103,11 +93,6 @@ fun CustomDateTimePickerDialog(
     }
 }
 
-/**
- * Intelligent Date Range and Time Picker Dialog.
- * Used for Scheduling/Recurring transactions (From, To, Execution Time)
- * and History Filtering (From, To).
- */
 @Composable
 fun CustomDateRangePickerDialog(
     initialStartMillis: Long,

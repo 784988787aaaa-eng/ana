@@ -232,7 +232,6 @@ fun SettingsView(
                         val enableAutoBackup = {
                             isAutoBackupEnabled = true
                             saveAllSettings()
-                            // Automatic backup execution is intentionally absent in Phase 1.
                             Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_enabled), Toast.LENGTH_SHORT).show()
                         }
                         if (checkBackupPermissionsGranted()) {
@@ -244,7 +243,6 @@ fun SettingsView(
                     } else {
                         isAutoBackupEnabled = false
                         saveAllSettings()
-                        // Automatic backup execution is intentionally absent in Phase 1.
                         Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_disabled), Toast.LENGTH_SHORT).show()
                     }
                 }

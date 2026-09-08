@@ -11,11 +11,7 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import java.math.BigDecimal
 
-// تم فصل حالة العرض عن مكونات الواجهة للحفاظ على مسؤولية واحدة دون تغيير تجربة المستخدم.
 
-/**
- * فئة إدارة وتخزين حالة إعدادات العملة وأسعار الصرف، منفصلة عن عناصر بناء الواجهة.
- */
 class CurrencySettingsState(
     initialSettings: AppSettings,
     val currencyYer: String,

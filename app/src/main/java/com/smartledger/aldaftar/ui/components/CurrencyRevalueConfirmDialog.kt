@@ -66,7 +66,6 @@ fun CurrencyRevalueConfirmDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // قسم: عنوان الحوار وأيقونة التحديث
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -88,7 +87,6 @@ fun CurrencyRevalueConfirmDialog(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.8.dp)
 
-                // قسم: نص رسالة الاستفسار والتوضيح للمستخدم
                 Text(
                     text = stringResource(id = R.string.currency_update_rate_confirm_msg, targetCurrency),
                     fontSize = 10.5.sp,
@@ -100,7 +98,6 @@ fun CurrencyRevalueConfirmDialog(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // قسم: أزرار الخيارات (السابق والمستقبل / المستقبل فقط)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)

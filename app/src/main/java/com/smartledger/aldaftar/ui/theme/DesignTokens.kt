@@ -10,18 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * ============================================================================
- * Design Tokens — Mizan Al Dar Design System (نظام التصميم الموحد)
- * ============================================================================
- * يحتوي هذا الملف على الثوابت التصميمية الموحدة والمعتمدة لكامل الواجهات:
- * - شبكة المسافات (Spacing Grid)
- * - أنصاف أقطار الحواف (Corner Radii)
- * - أبعاد العناصر التفاعلية والأهداف اللمسية (Dimensions & Touch Targets)
- * - الارتفاعات البصرية (Elevations)
- * - رموز الحركة والتلاشي (Animation Tokens)
- */
-
 object MizanSpacing {
     val none: Dp = 0.dp
     val xxs: Dp = 2.dp
@@ -46,7 +34,6 @@ object MizanRadii {
     val xxxl: Dp = 32.dp
     val pill: Dp = 999.dp
 
-    // Shapes
     val shapeXs = RoundedCornerShape(xs)
     val shapeSm = RoundedCornerShape(sm)
     val shapeMd = RoundedCornerShape(md)

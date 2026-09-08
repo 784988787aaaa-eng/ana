@@ -27,10 +27,6 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import java.util.Calendar
 
-/**
- * Interactive row selector for time picking (AM/PM period switch, Minutes dial, Hours dial)
- * arranged in natural RTL layout with haptic feedback.
- */
 @Composable
 fun TimeDialPickersRow(
     timeCalendar: Calendar,
@@ -46,7 +42,6 @@ fun TimeDialPickersRow(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. الفترة (AM / PM Switch)
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = 2.dp)
@@ -90,7 +85,6 @@ fun TimeDialPickersRow(
             Spacer(modifier = Modifier.height(18.dp))
         }
 
-        // 2. الدقيقة (Minute)
         RollingDialPicker(
             label = stringResource(id = R.string.datetime_picker_minute),
             value = minute,
@@ -104,7 +98,6 @@ fun TimeDialPickersRow(
             format = "%02d"
         )
 
-        // 3. الساعة (Hour)
         RollingDialPicker(
             label = stringResource(id = R.string.datetime_picker_hour),
             value = displayHour,

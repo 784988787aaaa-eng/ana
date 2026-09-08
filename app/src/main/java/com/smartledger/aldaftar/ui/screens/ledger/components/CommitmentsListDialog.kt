@@ -31,10 +31,6 @@ import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-/**
- * Unified Facade for Fixed Commitments & Goals Management Dialog.
- * Beautifully modularized into independent, reusable subcomponents.
- */
 @Composable
 fun CommitmentsListDialog(
     showCommitmentsListSheet: Boolean,
@@ -101,7 +97,6 @@ fun CommitmentsListDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // 1. Sleek Header: [ ✕ Close ] - [ الأهداف والالتزامات ] - [ 🔗 Share ]
                     CommitmentHeaderClean(
                         onCloseClick = { closeAction() },
                         onShareClick = {
@@ -146,7 +141,6 @@ fun CommitmentsListDialog(
                             Triple(target, allocated, covered)
                         }
 
-                        // 2. Matching Gradient Overview Card
                         CommitmentSummaryGradientCard(
                             totalTargetSum = totalTargetSum,
                             totalAllocatedSum = totalAllocatedSum,
@@ -156,7 +150,6 @@ fun CommitmentsListDialog(
                             formatCurrency = formatCurrency
                         )
 
-                        // 3. Goal Items (3-layer sleek cards)
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
@@ -188,7 +181,6 @@ fun CommitmentsListDialog(
                         }
                     }
 
-                    // 4. Primary Bottom Action Button: [ + إضافة التزام / هدف جديد ]
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = MaterialTheme.colorScheme.primary,
@@ -222,7 +214,6 @@ fun CommitmentsListDialog(
                     }
                 }
 
-                // Delete Confirmation Dialog
                 CommitmentDeleteConfirmationDialog(
                     commitmentName = commitmentToDelete,
                     onConfirmDelete = { name ->

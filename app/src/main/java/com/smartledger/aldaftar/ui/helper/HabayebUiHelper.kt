@@ -15,20 +15,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import com.smartledger.aldaftar.domain.FormatUtils
+import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.ui.theme.AvatarPastelPalette
 import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.math.BigDecimal
 
-// جلب لون الصورة الرمزية بالاعتماد على لوحة الألوان المركزية المعتمدة
 fun getInitialColor(name: String): Color {
     val hash = (name.hashCode() and Int.MAX_VALUE)
     return AvatarPastelPalette[hash % AvatarPastelPalette.size]
 }
 
-/**
- * دالة مركزية لتنسيق المبالغ المالية مع رمز العملة بالاعتماد حصراً على BigDecimal لمنع أخطاء التقريب.
- */
 fun formatCurrency(amount: BigDecimal, currencySymbol: String): String {
     return FormatUtils.formatCurrency(amount.abs(), currencySymbol, null)
 }

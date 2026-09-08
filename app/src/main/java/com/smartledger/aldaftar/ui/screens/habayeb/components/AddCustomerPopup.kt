@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -28,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
 import com.smartledger.aldaftar.ui.screens.CalculatorDialog
@@ -36,6 +37,7 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 @Composable
 fun AddCustomerPopup(
@@ -47,6 +49,7 @@ fun AddCustomerPopup(
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     var nameStr by rememberSaveable { mutableStateOf("") }
     var phoneStr by rememberSaveable { mutableStateOf("") }
@@ -121,13 +124,9 @@ fun AddCustomerPopup(
     }
 
     LaunchedEffect(Unit) {
-        try {
-            kotlinx.coroutines.android.awaitFrame()
+kotlinx.coroutines.android.awaitFrame()
             focusRequester.requestFocus()
             softwareKeyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     val launchContactPicker = rememberContactPicker { name, phone ->
@@ -263,18 +262,20 @@ fun AddCustomerPopup(
                                         settingsRate = settingsRate,
                                         isDuplicateName = isDuplicateName
                                     )
-                                    AddCustomerSaveHelper.handleSave(
-                                        context = context,
-                                        viewModel = viewModel,
-                                        formData = formData,
-                                        onIsSavingChange = { isSavingCustomer = it },
-                                        onShowRateSetup = { rate ->
-                                            tempRateStr = rate
-                                            showRateSetupOverlay = true
-                                        },
-                                        onSuccess = onCustomerAdded,
-                                        onDismiss = onDismiss
-                                    )
+                                    coroutineScope.launch {
+                                        AddCustomerSaveHelper.handleSave(
+                                            context = context,
+                                            viewModel = viewModel,
+                                            formData = formData,
+                                            onIsSavingChange = { isSavingCustomer = it },
+                                            onShowRateSetup = { rate ->
+                                                tempRateStr = rate
+                                                showRateSetupOverlay = true
+                                            },
+                                            onSuccess = onCustomerAdded,
+                                            onDismiss = onDismiss
+                                        )
+                                    }
                                 },
                                 activeThemeColor = dynamicThemeColor,
                                 exchangeRatesJson = settings.exchangeRatesJson,

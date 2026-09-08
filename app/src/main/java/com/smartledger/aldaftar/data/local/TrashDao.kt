@@ -1,26 +1,5 @@
-/**
- * =====================================================================
- * ملف: كائن الوصول لبيانات واستعادة سلة المهملات (TrashDao.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف صمام الأمان واسترجاع البيانات المحذوفة (Recycle Bin & Disaster Recovery).
- * يعتمد على نمط الحذف المرن (Soft Delete via JSON Bundling)، حيث يتم تحويل الكيانات
- * أو مجموعات الحسابات المحذوفة إلى نصوص JSON وحفظها في جدول `deleted_items`.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. التخزين المرن (JSON Serialization): حفظ أي نوع من السجلات المحذوفة (معاملات، عملاء، التزامات، أو حزم كاملة)
- *    في هيكل مرن دون الحاجة لتغيير جداول قاعدة البيانات عند كل تعديل.
- * 2. الاستعادة الذرية الشاملة [@Transaction]: تضمن دالة [restoreDeletedItem] فك تشفير كائن JSON
- *    وإعادة إدراج السجلات في جداولها الأصلية وحذفها من سلة المهملات في معاملة واحدة لا تقبل التجزئة.
- * 3. استعادة حركة مفردة من حزمة عميل [restoreSingleTransactionFromBundle]: تتيح للمستخدم استعادة قيد واحد
- *    من حزمة عميل محذوف مع ضمان وجود العميل في قاعدة البيانات وتحديث ما تبقى من الحزمة داخل السلة.
- */
 package com.smartledger.aldaftar.data.local
 
-// ---------------------------------------------------------------------
-// استيراد حزم قاعدة البيانات Room والكيانات ومحلل كائنات JSON والتدفقات
-// ---------------------------------------------------------------------
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -37,120 +16,63 @@ import kotlinx.coroutines.flow.Flow
 import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * [فئة الوصول لبيانات سلة المهملات - TrashDao]:
- * فئة مجردة تجمع بين استعلامات Room المجردة والدوال التنفيذية المعقدة لفك الحزم واستعادتها.
- */
 @Dao
 abstract class TrashDao {
 
-    /**
-     * [ثوابت أسماء الجداول وأنواع الحزم المحذوفة]:
-     * تُستخدم لتمييز نوع الكيان المحفوظ داخل نص JSON في سلة المهملات.
-     */
     companion object {
-        /** جدول معاملات اليومية العامة */
         const val TABLE_TRANSACTIONS = "transactions"
-        /** جدول معاملات ديون الحبايب */
         const val TABLE_HABAYEB_TRANSACTIONS = "habayeb_transactions"
-        /** جدول الالتزامات والأقساط */
         const val TABLE_FIXED_COMMITMENTS = "fixed_commitments"
-        /** جدول عملاء ديون الحبايب */
         const val TABLE_HABAYEB_CUSTOMERS = "habayeb_customers"
-        /** حزمة عميل الحبايب مع كافة كشف حسابه */
         const val BUNDLE_HABAYEB = "habayeb_bundle"
-        /** حزمة ميزان الدار المجمعة */
         const val BUNDLE_DAR = "dar_bundle"
     }
 
-    // =================================================================
-    // 1. استعلامات جدول سلة المهملات (Deleted Items Queries)
-    // =================================================================
 
-    /**
-     * [استعلام جلب عناصر السلة كتدفق حي - getAllDeletedItemsFlow]:
-     * يستعلم عن جميع العناصر المحذوفة مرتبة تنازلياً حسب توقيت الحذف [deletedAt].
-     */
     @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC")
     abstract fun getAllDeletedItemsFlow(): Flow<List<DeletedItemEntity>>
 
-    /**
-     * [استعلام جلب عناصر السلة كقائمة مباشرة - getAllDeletedItemsDirect]:
-     * دالة معلقة تجلب قائمة بالعناصر المحذوفة لمعالج التنظيف التلقائي القديم.
-     */
     @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC")
     abstract suspend fun getAllDeletedItemsDirect(): List<DeletedItemEntity>
 
-    /**
-     * [استعلام جلب عنصر سلة بالمعرف - getDeletedItemByIdDirect]:
-     * يسترجع كائن العنصر المحذوف من السلة باستخدام معرفه الفريد [id].
-     */
     @Query("SELECT * FROM deleted_items WHERE id = :id LIMIT 1")
     abstract suspend fun getDeletedItemByIdDirect(id: String): DeletedItemEntity?
 
-    /**
-     * [دالة إدراج عنصر في سلة المهملات - insertDeletedItem]:
-     * تحفظ الكيان المحذوف في جدول السلة مع بياناته بصيغة JSON وتوقيت الحذف.
-     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertDeletedItem(item: DeletedItemEntity)
 
-    /**
-     * [دالة حذف عنصر نهائياً من السلة - deleteItem]:
-     * تحذف سجل المهملات بشكل دائم.
-     */
     @Delete
     abstract suspend fun deleteItem(item: DeletedItemEntity)
 
-    /**
-     * [دالة حذف عنصر من السلة بواسطة المعرف - deleteItemById]:
-     * تحذف العنصر المحذوف نهائياً باستخدام معرفه.
-     */
     @Query("DELETE FROM deleted_items WHERE id = :id")
     abstract suspend fun deleteItemById(id: String)
 
-    /**
-     * [دالة تفريغ سلة المهملات بالكامل - clearAllDeletedItems]:
-     * تحذف كافة العناصر المتواجدة في سلة المهملات نهائياً.
-     */
     @Query("DELETE FROM deleted_items")
     abstract suspend fun clearAllDeletedItems()
 
-    // =================================================================
-    // 2. دوال إعادة الإدراج للجداول الأصلية (Target Restoration Inserts)
-    // =================================================================
 
-    /** دالة إدراج حركة يومية مستعادة */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertTransaction(tx: TransactionDb)
 
-    /** دالة إدراج حركة حبايب مستعادة */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertHabayebTransaction(tx: HabayebTransaction)
 
-    /** دالة إدراج التزام مالي مستعاد */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertFixedCommitment(commitment: FixedCommitment)
 
-    /** دالة إدراج بطاقة عميل مستعادة */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertHabayebCustomer(customer: HabayebCustomer)
 
-    /** استعلام التحقق من وجود العميل في قاعدة البيانات قبل إعادة ربط معاملاته */
     @Query("SELECT COUNT(*) FROM habayeb_customers WHERE id = :customerId")
     abstract suspend fun checkCustomerExists(customerId: String): Int
 
-    // =================================================================
-    // 3. الدوال التنفيذية للاستعادة الذرية (@Transaction Restoration Logic)
-    // =================================================================
+    @Query("SELECT COUNT(*) FROM custom_categories WHERE id = :categoryId")
+    abstract suspend fun checkCategoryExists(categoryId: Int): Int
 
-    /**
-     * [استعادة معاملة مفردة من حزمة عميل محذوف - restoreSingleTransactionFromBundle]:
-     * دالة ذرية متقدمة تتيح للمستخدم استعادة قيد مالي محدد من داخل حزمة عميل محذوف:
-     * 1. تتحقق من وجود بطاقة العميل في قاعدة البيانات، وإذا لم تكن موجودة تعيد إنشاءها أولاً.
-     * 2. تستخرج المعاملة المطلوبة وتدرجها في جدول المعاملات.
-     * 3. إذا لم يتبق معاملات أخرى في الحزمة تحذف عنصر السلة كاملاً، وإلا تحدث نص JSON المتبقي.
-     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertPinnedCustomer(pin: com.smartledger.aldaftar.data.local.entities.PinnedCustomer)
+
+
     @Transaction
     open suspend fun restoreSingleTransactionFromBundle(itemId: String, txId: String) {
         val item = getDeletedItemByIdDirect(itemId) ?: return
@@ -193,11 +115,6 @@ abstract class TrashDao {
         }
     }
 
-    /**
-     * [استعادة عنصر محذوف بالكامل - restoreDeletedItem]:
-     * عملية ذرية [@Transaction] شاملة تحلل نص JSON للعنصر المحذوف وتعيد بناء الكائنات
-     * وإدراجها في جداولها المخصصة حسب نوع الجدول الأصلي [originalTableName]، ثم تمسح عنصر السلة.
-     */
     @Transaction
     open suspend fun restoreDeletedItem(item: DeletedItemEntity) {
         val root = JSONObject(item.jsonData)
@@ -220,8 +137,18 @@ abstract class TrashDao {
             }
             BUNDLE_HABAYEB -> {
                 val custData = root.getJSONObject("customer")
-                val customer = TrashItemParser.parseHabayebCustomer(custData)
+                val parsed = TrashItemParser.parseHabayebCustomer(custData)
+                val customer = parsed.copy(categoryId = parsed.categoryId?.takeIf { checkCategoryExists(it) > 0 })
                 insertHabayebCustomer(customer)
+                if (custData.has("pinnedScopeCategoryIds")) {
+                    val scopes = custData.getJSONArray("pinnedScopeCategoryIds")
+                    for (i in 0 until scopes.length()) {
+                        val scope = scopes.optInt(i)
+                        if (scope == 0 || checkCategoryExists(scope) > 0) {
+                            insertPinnedCustomer(com.smartledger.aldaftar.data.local.entities.PinnedCustomer(scope, customer.id))
+                        }
+                    }
+                }
 
                 val txsArray = root.getJSONArray("transactions")
                 for (i in 0 until txsArray.length()) {

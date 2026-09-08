@@ -50,7 +50,6 @@ fun CustomerCategoryPickerSection(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // رأس فرعي للرجوع بلمسة جمالية هادئة
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -88,7 +87,6 @@ fun CustomerCategoryPickerSection(
                 .heightIn(max = 240.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // خيار إزالة التصنيف (بلا تصنيف)
             item {
                 Row(
                     modifier = Modifier

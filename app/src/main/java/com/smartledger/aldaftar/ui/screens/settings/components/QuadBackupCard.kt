@@ -45,7 +45,10 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.theme.DebtRed
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "QuadBackupCard"
 
@@ -65,44 +68,50 @@ fun QuadBackupCard(
     var showRestoreWarningDialog by remember { mutableStateOf(false) }
     var pendingRestoreJson by remember { mutableStateOf<String?>(null) }
 
-    // Backup SAF Create Document launcher
     val safExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
         if (uri != null) {
             backupSyncViewModel.getBackupJsonForClipboard { jsonStr ->
-                coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                    try {
-                        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                            outputStream.write(jsonStr.toByteArray())
-                            launch(kotlinx.coroutines.Dispatchers.Main) {
-                                Toast.makeText(context, context.getString(R.string.settings_toast_synced_desc), Toast.LENGTH_SHORT).show()
-                            }
+                coroutineScope.launch {
+                    val exported = try {
+                        withContext(Dispatchers.IO) {
+                            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                                outputStream.write(jsonStr.toByteArray())
+                                true
+                            } ?: false
                         }
-                    } catch (e: Exception) {
-                        launch(kotlinx.coroutines.Dispatchers.Main) {
-                            Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
-                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        false
                     }
+                    val message = if (exported) R.string.settings_toast_synced_desc else R.string.toast_backup_export_failed
+                    Toast.makeText(context, context.getString(message), Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    // Backup SAF Open Document launcher
     val safRestoreLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val jsonText = inputStream?.bufferedReader()?.use { it.readText() } ?: ""
+            coroutineScope.launch {
+                val jsonText = try {
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to read backup from SAF OpenDocument")
+                    ""
+                }
                 if (jsonText.isNotBlank()) {
                     pendingRestoreJson = jsonText
                     showRestoreWarningDialog = true
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to restore backup from SAF OpenDocument: ${e.message}")
             }
         }
     }
@@ -175,7 +184,6 @@ fun QuadBackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // تصدير واستيراد النسخ الاحتياطية المحلية
                 FileTransferManager(
                     backupSyncViewModel = backupSyncViewModel,
                     context = context,
@@ -187,7 +195,6 @@ fun QuadBackupCard(
                     }
                 )
 
-                // زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
                 Button(
                     onClick = { showResetConfirmationFlow = true },
                     colors = ButtonDefaults.buttonColors(

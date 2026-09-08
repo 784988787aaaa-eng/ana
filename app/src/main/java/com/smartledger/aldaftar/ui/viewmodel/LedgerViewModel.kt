@@ -6,15 +6,14 @@ import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,27 +24,14 @@ sealed interface LedgerUiEvent {
     data class ScrollToRecord(val recordId: String) : LedgerUiEvent
 }
 
-/**
- * LedgerViewModel handles all of the Daily Ledger and General Accounting logic,
- * cleanly isolated from the monolithic FinanceViewModel.
- *
- * It manages:
- * - Dynamic year/month/category filtered StateFlows of transactions.
- * - Reactive and leak-free balance calculations (Total Income, Total Expense, Net Balance).
- * - Full Arabic character search normalization via centralized StringUtils.
- * - Thread-safe insert, update, delete, and soft delete transactions via FinanceRepository.
- * - Custom category creation and removal.
- * - Dynamic mapping of error states to localized resource IDs with zero hardcoded strings.
- */
-class LedgerViewModel(application: Application) : AndroidViewModel(application) {
+class LedgerViewModel(
+    application: Application,
+    private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
+    private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
+    private val categoriesRepository: com.smartledger.aldaftar.data.repository.CategoryRepository,
+    private val trashRepository: com.smartledger.aldaftar.data.repository.TrashRepository
+) : AndroidViewModel(application) {
 
-    private val database = AppDatabase.getDatabase(application)
-    private val transactionDao = database.transactionDao()
-    private val customCategoryDao = database.customCategoryDao()
-    private val settingsDao = database.settingsDao()
-    private val repository = FinanceRepository(database, application)
-
-    // --- UI Event Channel ---
     private val _uiEventChannel = Channel<LedgerUiEvent>(Channel.BUFFERED)
     val uiEventFlow = _uiEventChannel.receiveAsFlow()
 
@@ -53,18 +39,16 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch { _uiEventChannel.send(LedgerUiEvent.ScrollToTop) }
     }
 
-    // --- Core Database Flows ---
-    val settingsState: StateFlow<AppSettings> = settingsDao.getSettingsFlow()
+    val settingsState: StateFlow<AppSettings> = settingsRepository.settingsFlow
         .map { it ?: AppSettings() }
         .stateIn(viewModelScope, SharingStarted.Lazily, AppSettings())
 
-    val transactionsState: StateFlow<List<TransactionDb>> = transactionDao.getAllTransactionsFlow()
+    val transactionsState: StateFlow<List<TransactionDb>> = transactionsRepository.transactionsFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val customCategoriesState: StateFlow<List<CustomCategory>> = customCategoryDao.getAllCustomCategoriesFlow()
+    val customCategoriesState: StateFlow<List<CustomCategory>> = categoriesRepository.customCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    // --- Search Query and Normalized Character Processing ---
     val searchQuery = MutableStateFlow("")
 
     val searchResultsState: StateFlow<List<TransactionDb>> = combine(
@@ -81,12 +65,10 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    // --- Interactive Filtering States ---
     val selectedYear = MutableStateFlow<Int?>(null)
     val selectedMonth = MutableStateFlow<Int?>(null)
     val selectedCategory = MutableStateFlow<String?>(null)
 
-    // Combined filtered transactions stream
     val filteredTransactionsState: StateFlow<List<TransactionDb>> = combine(
         transactionsState,
         selectedYear,
@@ -107,7 +89,6 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    // --- General Balance and Dynamic Accounting Calculations ---
     val totalIncomeState: StateFlow<BigDecimal> = filteredTransactionsState
         .map { txList ->
             var sum = BigDecimal.ZERO
@@ -140,7 +121,6 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         income.subtract(expense)
     }.stateIn(viewModelScope, SharingStarted.Lazily, BigDecimal.ZERO)
 
-    // --- Thread-Safe Core Ledger Mutations (IO-Bound) ---
 
     fun addTransaction(
         type: String,
@@ -161,9 +141,11 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
                     amount = amount,
                     description = description
                 )
-                repository.saveTransaction(tx)
+                transactionsRepository.saveTransaction(tx)
                 _uiEventChannel.send(LedgerUiEvent.ScrollToTop)
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in addTransaction: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -180,9 +162,11 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     fun updateTransaction(tx: TransactionDb) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                transactionDao.insertTransaction(tx)
+                transactionsRepository.saveTransaction(tx)
                 _uiEventChannel.send(LedgerUiEvent.ScrollToTop)
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in updateTransaction: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -199,9 +183,11 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteTransaction(tx: TransactionDb) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.softDeleteTransactionToTrash(tx)
-                transactionDao.deleteTransaction(tx)
+                trashRepository.softDeleteTransactionToTrash(tx)
+                transactionsRepository.deleteTransaction(tx)
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in deleteTransaction: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -220,10 +206,12 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val tx = transactionsState.value.find { it.id == id }
                 if (tx != null) {
-                    repository.softDeleteTransactionToTrash(tx)
+                    trashRepository.softDeleteTransactionToTrash(tx)
                 }
-                transactionDao.deleteTransactionById(id)
+                transactionsRepository.deleteTransactionById(id)
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in deleteTransactionById: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -243,10 +231,12 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
                 val allTxs = transactionsState.value
                 val toDelete = allTxs.filter { ids.contains(it.id) }
                 if (toDelete.isNotEmpty()) {
-                    repository.softDeleteTransactionBundleToTrash(toDelete, bundleTitle)
-                    toDelete.forEach { transactionDao.deleteTransactionById(it.id) }
+                    trashRepository.softDeleteTransactionBundleToTrash(toDelete, bundleTitle)
+                    toDelete.forEach { transactionsRepository.deleteTransactionById(it.id) }
                     com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in deleteTransactionsBulk: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -260,13 +250,14 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // --- Category Actions ---
 
     fun saveCustomCategory(name: String, tabType: String, emoji: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                customCategoryDao.insertCategory(CustomCategory(name = name, tabType = tabType, iconEmoji = emoji))
+                categoriesRepository.saveCustomCategory(CustomCategory(name = name, tabType = tabType, iconEmoji = emoji))
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in saveCustomCategory: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -283,8 +274,10 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteCustomCategory(customCategory: CustomCategory) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                customCategoryDao.deleteCategory(customCategory)
+                categoriesRepository.deleteCustomCategory(customCategory)
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LedgerViewModel", "Error in deleteCustomCategory: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -298,7 +291,6 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // --- Interactive Filtering Actions ---
 
     fun selectYear(year: Int?) {
         selectedYear.value = year

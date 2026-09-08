@@ -52,10 +52,6 @@ private const val LOCK_HEADER_SCALE_LABEL = "lockHeaderScale"
 private val LOCK_TEXT_COLOR = NeutralTextPrimaryDark
 private val LOCK_TEXT_SECONDARY_COLOR = NeutralTextPrimaryDark.copy(alpha = 0.62f)
 
-/**
- * Visual content for the PIN Passcode Keypad, including animated lock icon header,
- * progressive dot indicators, digit keypad, biometric action, and forgot PIN button.
- */
 @Composable
 fun PasscodeKeypadContent(
     enteredPasscode: String,
@@ -75,7 +71,6 @@ fun PasscodeKeypadContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Header Area with Micro-animation
         val lockHeaderScale by animateFloatAsState(
             targetValue = if (isCheckingPasscode) 1.15f else if (enteredPasscode.isNotEmpty()) 1.05f else 1.0f,
             animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy),
@@ -120,7 +115,6 @@ fun PasscodeKeypadContent(
             )
         }
 
-        // 4 Round Indicators
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PasscodeDotIndicators(
                 enteredLength = enteredPasscode.length,
@@ -128,7 +122,6 @@ fun PasscodeKeypadContent(
             )
         }
 
-        // Keypad Area
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -139,7 +132,6 @@ fun PasscodeKeypadContent(
                 KeypadRow(row = KEYPAD_ROW_2, onKeyClick = onKeyPress)
                 KeypadRow(row = KEYPAD_ROW_3, onKeyClick = onKeyPress)
 
-                // Last row with Biometric Icon / "0" / Delete
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(28.dp),
                     verticalAlignment = Alignment.CenterVertically

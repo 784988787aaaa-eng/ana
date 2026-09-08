@@ -36,12 +36,6 @@ data class CustomerHistoryCalculationResult(
     }
 }
 
-/**
- * حاسبة تاريخ ديون وسجلات العميل (CustomerHistoryCalculator)
- * تُشكل المصدر الموحد المعتمد لحساب رصيد العميل التراكمي وتعيين التسلسل الزمني للمعاملات.
- * يتم استخدام BigDecimal بدقة 4 أرقام عشرية للحفاظ على الدقة المالية التامة ومنع أخطاء التقريب المبكر،
- * مع إرجاع القيم المنسقة بدقة حصرية عند حدود العرض النهائي.
- */
 object CustomerHistoryCalculator {
     fun calculate(
         allCustomerTxs: List<HabayebTransaction>,
@@ -51,7 +45,6 @@ object CustomerHistoryCalculator {
         val safeRatesJson = exchangeRatesJson ?: ""
         val totalCount = allCustomerTxs.size
 
-        // Sort chronologically once (timestamp, then id for deterministic stability)
         val chronological = if (totalCount <= 1) allCustomerTxs else allCustomerTxs.sortedWith(
             compareBy<HabayebTransaction> { it.timestamp }.thenBy { it.id }
         )
@@ -76,7 +69,6 @@ object CustomerHistoryCalculator {
             val safeBd = bdAmount.setScale(4, RoundingMode.HALF_EVEN)
             val txType = TransactionType.fromValue(tx.type)
 
-            // Accumulate by type using exact BigDecimal math
             when (txType) {
                 TransactionType.OWED_BY_THEM -> owedByThemBD[txCurrency] = (owedByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
                 TransactionType.PAYMENT_BY_THEM -> paymentByThemBD[txCurrency] = (paymentByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
@@ -85,7 +77,6 @@ object CustomerHistoryCalculator {
                 else -> {}
             }
 
-            // Calculate running balance using exact BigDecimal math
             var currentBalBD = currentBalBDMap[txCurrency] ?: BigDecimal.ZERO
             currentBalBD = when (txType) {
                 TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> currentBalBD.add(safeBd)
@@ -119,7 +110,6 @@ object CustomerHistoryCalculator {
             owedToThemMap[curr] = owedTo
             paymentToThemMap[curr] = payTo
 
-            // netDebt = owedBy - payBy - owedTo + payTo
             val netDebtBD = owedBy.subtract(payBy).subtract(owedTo).add(payTo).setScale(4, RoundingMode.HALF_EVEN)
             netDebtMap[curr] = netDebtBD
             netDebtBDMap[curr] = netDebtBD

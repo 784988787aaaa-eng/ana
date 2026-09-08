@@ -74,7 +74,6 @@ fun MultiSelectFloatingBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Cancel Button
             IconButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -92,7 +91,6 @@ fun MultiSelectFloatingBar(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Selection Info & Select All
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -119,7 +117,6 @@ fun MultiSelectFloatingBar(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Delete Button
             IconButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)

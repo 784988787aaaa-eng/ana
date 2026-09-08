@@ -1,5 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
-import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
+import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -54,16 +54,6 @@ import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/**
- * Modern High-Density Customer Row (Ultra-Spacious Name & Clean Non-Breaking Badges)
- * - Right: Quick Add Action Button (+) 36dp (transforms into Checkmark when selected)
- * - Center (Weight 1f):
- *     Line 1: Full Customer Name (bold, non-breaking) + Category Micro-Badge
- *     Line 2: Short Date/Time + Non-breaking Foreign Cash Badge [🌐 نقد أجنبي]
- * - Left:
- *     Line 1: Dynamic Balance Amount & Currency + Direction Arrow (▲ / ▼)
- *     Line 2: Status Text ("بقي له" / "بقي عليه" / "مصفّى")
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CustomerItemRow(
@@ -135,7 +125,6 @@ fun CustomerItemRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Right: Quick Add Action Button (+) / Selection Check (40dp circle)
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -166,13 +155,11 @@ fun CustomerItemRow(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // 2. Middle (Weight 1f): Prominent Full Name (15.5sp SemiBold), Date (11sp) & Sleek Foreign Badge
                 Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Line 1: Prominent Full Customer Name
                     Text(
                         text = customer.name,
                         fontSize = 15.5.sp,
@@ -185,7 +172,6 @@ fun CustomerItemRow(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // Line 2: Date/Time (11sp) + Sleek Foreign Cash Micro-Tag
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -236,7 +222,6 @@ fun CustomerItemRow(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // 3. Left: Balance Amount & Currency, Debt Status
                 CustomerDebtSummarySection(
                     customer = customer,
                     textSecondaryColor = textSecondaryColor,
@@ -244,7 +229,6 @@ fun CustomerItemRow(
                 )
             }
 
-            // Pinned indicator badge
             if (isPinned) {
                 Box(
                     modifier = Modifier

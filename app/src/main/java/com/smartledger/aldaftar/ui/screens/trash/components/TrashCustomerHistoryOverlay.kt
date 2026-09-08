@@ -66,7 +66,6 @@ fun TrashCustomerHistoryOverlay(
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
-            // Header Bar
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
@@ -92,7 +91,6 @@ fun TrashCustomerHistoryOverlay(
                             )
                         }
 
-                        // Avatar
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
@@ -121,7 +119,6 @@ fun TrashCustomerHistoryOverlay(
                         }
                     }
 
-                    // Top Action Buttons
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -165,7 +162,6 @@ fun TrashCustomerHistoryOverlay(
                 }
             }
 
-            // Multi-Currency Breakdown Summary Bar
             if (parsedData.currencyBreakdown.isNotEmpty()) {
                 Row(
                     modifier = Modifier
@@ -208,7 +204,6 @@ fun TrashCustomerHistoryOverlay(
                 }
             }
 
-            // Transactions List
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 24.dp),

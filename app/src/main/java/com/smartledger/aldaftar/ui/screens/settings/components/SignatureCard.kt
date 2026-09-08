@@ -30,7 +30,6 @@ import com.smartledger.aldaftar.R
 fun SignatureCard() {
     val contextForSig = LocalContext.current
     val clipboardSigManager = androidx.compose.ui.platform.LocalClipboardManager.current
-    // تم فصل الحسابات التقنية عن واجهة العرض للحفاظ على مسؤولية كل طبقة.
     val sha1Fingerprint = remember(contextForSig) {
         SignatureFingerprintCalculator.getSha1Fingerprint(contextForSig)
     }
@@ -92,7 +91,6 @@ fun SignatureCard() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // SHA-1 field
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.End
@@ -144,7 +142,6 @@ fun SignatureCard() {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // SHA-256 field
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.End

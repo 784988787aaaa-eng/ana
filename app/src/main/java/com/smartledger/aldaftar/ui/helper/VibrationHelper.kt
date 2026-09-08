@@ -7,25 +7,11 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 
-/**
- * مساعد ردود الفعل اللمسية والاهتزاز (Haptic & Vibration Feedback Helper)
- *
- * المسؤوليات المعمارية:
- * 1. دعم التوافقية العكسية لأنظمة Android القديمة والحديثة (Vibrator vs VibratorManager).
- * 2. عزل استدعاءات عتاد الاهتزاز عن واجهة المستخدم لضمان تجربة سلسة وتفادي انهيار التطبيق حال غياب العتاد أو رفض الإذن.
- */
 object VibrationHelper {
     private const val TAG = "VibrationHelper"
 
-    /**
-     * أنماط الاهتزاز (Haptic Feedback Tokens):
-     * تمثل مؤشرات تصميمية وتجربة مستخدم حسية (UI Sensory Tokens) للتأكيد والتنبيه اللمسي
-     * وليست منطق أعمال أو حسابات مالية.
-     */
-    // نمط تأكيد النجاح والعمليات الإيجابية
     private val SUCCESS_PATTERN = longArrayOf(0, 40, 80, 80)
 
-    // نمط التحذير وحذف العناصر
     private val DELETE_PATTERN = longArrayOf(0, 100, 60, 100)
 
     private fun getVibrator(context: Context): Vibrator? {
@@ -70,19 +56,15 @@ object VibrationHelper {
         }
     }
     
-    // Custom beautiful patterns for a world-class experience
     fun triggerSuccessVibration(context: Context) {
-        // Double tap pattern: wait 0, vibrate 40, wait 80, vibrate 80
         vibratePattern(context, SUCCESS_PATTERN)
     }
 
     fun triggerDeleteVibration(context: Context) {
-        // Warning pattern: wait 0, vibrate 100, wait 60, vibrate 100
         vibratePattern(context, DELETE_PATTERN)
     }
 
     fun triggerClickVibration(context: Context) {
-        // Quick subtle tick
         vibrate(context, 25)
     }
 }

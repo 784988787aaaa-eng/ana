@@ -41,7 +41,7 @@ fun ExitConfirmDialog(
             modifier = Modifier
                 .widthIn(max = 310.dp)
                 .fillMaxWidth(0.80f)
-                .clickable(enabled = false) { } // prevent event bubbles
+                .clickable(enabled = false) { } // منع انتقال الحدث.
         ) {
             Column(
                 modifier = Modifier
@@ -53,7 +53,7 @@ fun ExitConfirmDialog(
                     text = stringResource(id = R.string.dialog_exit_title),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary, // Brand Consistency
+                    color = MaterialTheme.colorScheme.primary, // اتساق الهوية.
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -70,7 +70,6 @@ fun ExitConfirmDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // "Dont show again" Checkbox
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -97,13 +96,11 @@ fun ExitConfirmDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Buttons horizontally aligned
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // NO Keep app
                     TextButton(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(12.dp),
@@ -119,7 +116,6 @@ fun ExitConfirmDialog(
                         )
                     }
 
-                    // YES Exit - Filled Brand primary color button
                     Button(
                         onClick = { onConfirm(dontShowAgain) },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),

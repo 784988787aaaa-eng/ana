@@ -24,9 +24,6 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import java.util.Calendar
 
-/**
- * Composite visual component displaying date dials and optional time dials.
- */
 @Composable
 fun DateAndTimeSection(
     calendar: Calendar,
@@ -62,7 +59,6 @@ fun DateAndTimeSection(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Date Block
         Box(
             modifier = Modifier
                 .weight(if (showTime) 1.2f else 1f)
@@ -91,7 +87,6 @@ fun DateAndTimeSection(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Day
                     RollingDialPicker(
                         label = stringResource(id = R.string.datetime_picker_day),
                         value = day,
@@ -99,7 +94,6 @@ fun DateAndTimeSection(
                         onValueChange = { updateCalendar(Calendar.DAY_OF_MONTH, it) }
                     )
 
-                    // Month
                     RollingDialPicker(
                         label = stringResource(id = R.string.datetime_picker_month),
                         value = month,
@@ -107,7 +101,6 @@ fun DateAndTimeSection(
                         onValueChange = { updateCalendar(Calendar.MONTH, it) }
                     )
 
-                    // Year
                     RollingDialPicker(
                         label = stringResource(id = R.string.datetime_picker_year),
                         value = year,
@@ -119,7 +112,6 @@ fun DateAndTimeSection(
         }
 
         if (showTime) {
-            // Divider
             Box(
                 modifier = Modifier
                     .padding(horizontal = 6.dp)
@@ -128,7 +120,6 @@ fun DateAndTimeSection(
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             )
 
-            // Time Block
             Box(
                 modifier = Modifier
                     .weight(1f)

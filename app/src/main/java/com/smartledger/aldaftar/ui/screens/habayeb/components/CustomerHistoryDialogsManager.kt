@@ -3,6 +3,8 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -11,7 +13,6 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebRecurringManager
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import java.math.BigDecimal
@@ -53,6 +54,7 @@ fun CustomerHistoryDialogsManager(
     allCustomerTxs: List<HabayebTransaction> = emptyList()
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     fun updateState(transform: (CustomerHistoryDialogState) -> CustomerHistoryDialogState) {
         onDialogStateChange(transform)
@@ -122,7 +124,7 @@ fun CustomerHistoryDialogsManager(
         val onDeleteAutoRepeat = remember(optTx) {
             {
                 val txId = optTx.id
-                HabayebRecurringManager.deleteConfigForTransaction(context, txId)
+                coroutineScope.launch { viewModel.deleteRecurringForTransaction(txId) }
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_stop_recurring_success), Toast.LENGTH_SHORT).show()
                 onRefreshRecurringTrigger()
                 updateState { it.copy(transactionForOptionsDialog = null) }
@@ -146,7 +148,7 @@ fun CustomerHistoryDialogsManager(
             onDelete = {
                 val txId = optTx.id
                 viewModel.deleteHabayebTransaction(txId)
-                HabayebRecurringManager.deleteConfigForTransaction(context, txId)
+                coroutineScope.launch { viewModel.deleteRecurringForTransaction(txId) }
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_delete_tx_success), Toast.LENGTH_SHORT).show()
                 onRefreshRecurringTrigger()
                 updateState { it.copy(transactionForOptionsDialog = null) }
@@ -167,6 +169,7 @@ fun CustomerHistoryDialogsManager(
     if (dialogState.transactionForAutoRepeatDialog != null) {
         RecurringTransactionPopup(
             transaction = dialogState.transactionForAutoRepeatDialog,
+            viewModel = viewModel,
             customerName = activeCustomer.name,
             onDismiss = {
                 updateState { it.copy(transactionForAutoRepeatDialog = null) }
@@ -185,7 +188,7 @@ fun CustomerHistoryDialogsManager(
             val idsToDelete = selectedTxIds.toList()
             viewModel.deleteMultipleHabayebTransactions(idsToDelete)
             idsToDelete.forEach { txId ->
-                HabayebRecurringManager.deleteConfigForTransaction(context, txId)
+                coroutineScope.launch { viewModel.deleteRecurringForTransaction(txId) }
             }
             Toast.makeText(context, context.getString(R.string.habayeb_toast_delete_bulk_success), Toast.LENGTH_SHORT).show()
             selectedTxIds.clear()

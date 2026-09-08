@@ -94,7 +94,6 @@ fun AddCustomerTypeAndCurrencySelector(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. خيارات العملة (Currency selection buttons)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -150,7 +149,6 @@ fun AddCustomerTypeAndCurrencySelector(
             }
         }
 
-        // 2. سعر الصرف الاختياري (Optional currency exchange rate option)
         if (selectedTransactionCurrency != currencySymbol) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -159,7 +157,6 @@ fun AddCustomerTypeAndCurrencySelector(
                     .fillMaxWidth()
                     .padding(vertical = 2.dp)
             ) {
-                // Clickable checkbox + label
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -202,7 +199,6 @@ fun AddCustomerTypeAndCurrencySelector(
                     )
                 }
 
-                // Graceful interactive rate display badge
                 if (applyExchangeRate) {
                     val rateState = remember(exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
                         val has = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
@@ -274,7 +270,6 @@ fun AddCustomerTypeAndCurrencySelector(
             }
         }
 
-        // 3. الأفعال المدمجة ( له / عليه ) وزر الحفظ (Merged Actions Row)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -282,7 +277,6 @@ fun AddCustomerTypeAndCurrencySelector(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // له / عليه switcher
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -290,7 +284,6 @@ fun AddCustomerTypeAndCurrencySelector(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // "عليه" option
                 val isOwedByThem = initialType == TransactionType.OWED_BY_THEM.value
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -330,7 +323,6 @@ fun AddCustomerTypeAndCurrencySelector(
                     }
                 }
 
-                // "له" option
                 val isOwedToThem = initialType == TransactionType.OWED_TO_THEM.value
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -371,7 +363,6 @@ fun AddCustomerTypeAndCurrencySelector(
                 }
             }
 
-            // تأكيد وحفظ زر (Save Button)
             Button(
                 enabled = !isSavingCustomer,
                 onClick = onSaveClick,

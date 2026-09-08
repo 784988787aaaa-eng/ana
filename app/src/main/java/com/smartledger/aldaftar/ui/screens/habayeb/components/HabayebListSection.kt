@@ -65,8 +65,6 @@ fun HabayebListSection(
 
     val catKey = selectedCategory ?: "all"
 
-    // تم تكوين القائمة الممتدة (LazyColumn) باستخدام مفاتيح فريدة (keys) وتحديد أنواع العناصر (contentType)
-    // لضمان إعادة استخدام العناصر أثناء التمرير الممتد وتفادي الإعادة المفاجئة للبناء مع القوائم الكبيرة.
     LazyColumn(
         state = listState,
         modifier = modifier

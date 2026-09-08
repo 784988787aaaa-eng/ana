@@ -39,9 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.map
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebRecurringManager
+import kotlinx.coroutines.flow.first
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.rememberFilteredCustomerTransactions
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 
@@ -50,6 +51,7 @@ import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 fun CustomerHistoryOverlay(
     customer: HabayebCustomer,
     viewModel: HabayebFinanceViewModel,
+    businessProfile: BusinessProfile,
     onDismiss: () -> Unit,
     activeThemeColor: Color,
     activeSubColor: Color,
@@ -134,24 +136,15 @@ fun CustomerHistoryOverlay(
     }
 
     var refreshRecurringTrigger by remember { mutableStateOf(0) }
-    val activeRecurringTxIds = remember(activeCustomer.id, refreshRecurringTrigger, allCustomerTxs) {
+    var activeRecurringTxIds by remember(activeCustomer.id) { mutableStateOf<Set<String>>(emptySet()) }
+    LaunchedEffect(activeCustomer.id, refreshRecurringTrigger, allCustomerTxs) {
         val existingTxIds = allCustomerTxs.map { it.id }.toSet()
-        HabayebRecurringManager.getAllConfigs(context)
-            .filter { config ->
-                config.isActive &&
-                config.customerId == activeCustomer.id &&
-                config.originalTxId.isNotBlank() &&
-                !config.originalTxId.equals("null", ignoreCase = true) &&
-                config.originalTxId != "0" &&
-                existingTxIds.contains(config.originalTxId)
-            }
-            .map { it.originalTxId }
-            .toSet()
+        activeRecurringTxIds = viewModel.activeRecurringOriginalIds(activeCustomer.id, existingTxIds)
     }
 
     LaunchedEffect(activeCustomer.id) {
         listState.scrollToItem(0)
-        HabayebRecurringManager.checkAndExecuteRecurring(context, viewModel) { count ->
+        viewModel.processRecurringTransactions { count ->
             Toast.makeText(context, context.getString(R.string.customer_history_toast_recurring_added, count, activeCustomer.name), Toast.LENGTH_LONG).show()
         }
     }
@@ -297,6 +290,7 @@ fun CustomerHistoryOverlay(
     CustomerHistoryShareBottomSheet(
         showShareSheet = showShareSheet,
         activeCustomer = activeCustomer,
+        businessProfile = businessProfile,
         allCustomerTxs = allCustomerTxs,
         currencySymbol = currencySymbol,
         exchangeRatesJson = settings.exchangeRatesJson,

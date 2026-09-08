@@ -50,7 +50,6 @@ fun CategoryDeleteConfirmationDialog(
                     textAlign = TextAlign.Center
                 )
 
-                // Cancel button
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
@@ -69,7 +68,6 @@ fun CategoryDeleteConfirmationDialog(
                     )
                 }
 
-                // Delete Category Only
                 OutlinedButton(
                     onClick = {
                         onConfirmDelete(false)
@@ -91,7 +89,6 @@ fun CategoryDeleteConfirmationDialog(
                     )
                 }
 
-                // Delete Category and Linked Accounts
                 OutlinedButton(
                     onClick = {
                         onConfirmDelete(true)

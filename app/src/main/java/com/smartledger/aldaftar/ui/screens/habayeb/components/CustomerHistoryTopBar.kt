@@ -60,13 +60,9 @@ fun CustomerHistoryTopBar(
 
     LaunchedEffect(isSearchActive) {
         if (isSearchActive) {
-            try {
-                kotlinx.coroutines.android.awaitFrame()
+kotlinx.coroutines.android.awaitFrame()
                 focusRequester.requestFocus()
                 keyboardController?.show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
         }
     }
 
@@ -88,7 +84,6 @@ fun CustomerHistoryTopBar(
         }
 
         if (isSearchActive) {
-            // Search Mode View
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -151,7 +146,6 @@ fun CustomerHistoryTopBar(
                 )
             }
         } else {
-            // Standard Mode: Title containing customer name, phone, and edit pencil
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -220,12 +214,10 @@ fun CustomerHistoryTopBar(
                 }
             }
 
-            // Streamlined action bar: Smart Filter, Search, Combined Share, More Options
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // 1. Smart Filter
                 IconButton(onClick = onFilterClick, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
@@ -235,7 +227,6 @@ fun CustomerHistoryTopBar(
                     )
                 }
 
-                // 2. Search Button
                 IconButton(onClick = onSearchOpen, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -245,7 +236,6 @@ fun CustomerHistoryTopBar(
                     )
                 }
 
-                // 3. Combined Share Button
                 IconButton(onClick = onShareClick, modifier = Modifier.size(36.dp)) {
                     if (isPdfExporting) {
                         CircularProgressIndicator(
@@ -263,7 +253,6 @@ fun CustomerHistoryTopBar(
                     }
                 }
 
-                // 4. More Options Menu
                 Box {
                     IconButton(onClick = { isMenuExpanded = true }, modifier = Modifier.size(36.dp)) {
                         Icon(

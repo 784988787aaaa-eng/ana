@@ -25,11 +25,14 @@ class DatabaseSchemaV1Test {
         assertEquals(
             listOf(
                 "app_settings",
+                "business_profile",
                 "custom_categories",
                 "deleted_items",
                 "fixed_commitments",
                 "habayeb_customers",
                 "habayeb_transactions",
+                "pinned_habayeb_customers",
+                "recurring_configs",
                 "transactions"
             ),
             tables

@@ -7,11 +7,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// ============================================================================
-// A. Primitive colors
-// ============================================================================
 
-// Brand primitives
 val BrandPrimary = Color(0xFF4B36A2)
 val BrandPrimaryLight = Color(0xFF8C7CFF)
 val BrandPrimaryDark = Color(0xFF4B36A2)
@@ -27,7 +23,6 @@ val BrandSecondaryContainerDark = Color(0xFF004881)
 val BrandOnSecondaryContainerLight = Color(0xFF001C38)
 val BrandOnSecondaryContainerDark = Color(0xFFD3E4FF)
 
-// Neutral primitives
 val NeutralBackgroundLight = Color(0xFFF8F9FA)
 val NeutralBackgroundDark = Color(0xFF121212)
 val NeutralSurfaceLight = Color(0xFFFFFFFF)
@@ -52,7 +47,6 @@ val NeutralBorderDark = Color(0xFF333333)
 val NeutralBorderVariantDark = Color(0xFF2A2A2A)
 val NeutralBlack = Color(0xFF000000)
 
-// Slate primitives
 val Slate50 = Color(0xFFF8FAFC)
 val Slate100 = Color(0xFFF1F5F9)
 val Slate200 = Color(0xFFE2E8F0)
@@ -64,11 +58,9 @@ val Slate700 = Color(0xFF334155)
 val Slate800 = Color(0xFF1E293B)
 val Slate900 = Color(0xFF0F172A)
 
-// External/domain primitives
 val WhatsAppGreen = Color(0xFF128C7E)
 val WhatsAppLightGreen = Color(0xFF25D366)
 
-// Category palette: domain-specific category badges; keep ordering stable.
 object CategoryPalette {
     val AMBER_DARK = Color(0xFF451A03)
     val AMBER_LIGHT = Color(0xFFFEF3C7)
@@ -94,7 +86,6 @@ object CategoryPalette {
     val SLATE_DEFAULT_LIGHT = Slate100
 }
 
-// Avatar pastel palette: ordering is part of the user experience.
 val AvatarPastelPalette = listOf(
     Color(0xFFFCA5A5), Color(0xFFFDBA74), Color(0xFFFDE047),
     Color(0xFF86EFAC), Color(0xFF93C5FD), Color(0xFFC4B5FD),
@@ -102,11 +93,7 @@ val AvatarPastelPalette = listOf(
 )
 
 
-// ============================================================================
-// B. Semantic colors
-// ============================================================================
 
-// Financial semantics
 val CreditGreen = Color(0xFF2E7D32)
 val CreditGreenDark = Color(0xFF51CF66)
 val CreditContainerLight = Color(0xFFF0FDF4)
@@ -125,7 +112,6 @@ val FinancialSelectionGreen = Color(0xFF10B981)
 val FinancialSelectionContainerLight = Color(0xFFE6F4EA)
 val FinancialSelectionContainerDark = Color(0xFF152D1F)
 
-// Status semantics
 val StatusWarningAmber = Color(0xFFF59E0B)
 val StatusWarningAmberBg = Color(0xFFFFF8E1)
 val StatusWarningAmberBorder = Color(0xFFFFB300)
@@ -143,7 +129,6 @@ val StatusInfoBlueBgDark = Color(0xFF1E293B)
 val StatusInfoBlueTextLight = Color(0xFF1D4ED8)
 val StatusInfoBlueTextDark = Color(0xFF60A5FA)
 
-// Supporting semantic tokens
 val NeonGreen = Color(0xFF00E676)
 val NeonCyan = Color(0xFF00B0FF)
 val IndigoAccent = Color(0xFF6366F1)
@@ -167,7 +152,6 @@ val SuccessGreenBorderLight = Color(0xFF137333)
 val DarkNeutralTrack = Color(0xFF2D2D2D)
 val LightNeutralTrack = Color(0xFFEEEEEE)
 
-// Chip filter semantic tokens
 val ChipRedBgDarkSelected = Color(0xFF3B2025)
 val ChipRedBgDarkUnselected = DebtContainerDark
 val ChipRedBgLightSelected = Color(0xFFFCE8E8)
@@ -194,12 +178,8 @@ val ChipGreenTextLight = CreditGreen
 val ChipGreenHeaderDark = Color(0xFF86EFAC)
 val ChipGreenHeaderLight = Color(0xFF1B5E20)
 
-// ============================================================================
-// C. Theme color model
-// ============================================================================
 
 data class MizanColors(
-    // Brand
     val brandPrimary: Color,
     val onBrandPrimary: Color,
     val brandPrimaryContainer: Color,
@@ -209,7 +189,6 @@ data class MizanColors(
     val brandSecondaryContainer: Color,
     val onBrandSecondaryContainer: Color,
 
-    // Surface
     val appBackground: Color,
     val appSurface: Color,
     val appSurfaceContainer: Color,
@@ -217,19 +196,16 @@ data class MizanColors(
     val appSurfaceContainerHigh: Color,
     val appSurfaceVariant: Color,
 
-    // Text
     val contentPrimary: Color,
     val contentSecondary: Color,
     val contentTertiary: Color,
     val contentDisabled: Color,
     val contentOnBrand: Color,
 
-    // Borders
     val border: Color,
     val borderVariant: Color,
     val borderStrong: Color,
 
-    // Credit — علينا / دائن
     val credit: Color,
     val onCredit: Color,
     val creditContainer: Color,
@@ -238,7 +214,6 @@ data class MizanColors(
     val creditGradientStart: Color,
     val creditGradientEnd: Color,
 
-    // Debt — لنا / مدين
     val debt: Color,
     val onDebt: Color,
     val debtContainer: Color,
@@ -247,13 +222,11 @@ data class MizanColors(
     val debtGradientStart: Color,
     val debtGradientEnd: Color,
 
-    // Selection
     val selection: Color,
     val onSelection: Color,
     val selectionContainer: Color,
     val selectionBorder: Color,
 
-    // Status
     val success: Color,
     val onSuccess: Color,
     val successContainer: Color,
@@ -268,7 +241,6 @@ data class MizanColors(
     val onInfo: Color,
     val infoContainer: Color,
 
-    // Header
     val headerForeground: Color,
     val headerForegroundMuted: Color,
     val headerControlContainer: Color,
@@ -276,25 +248,21 @@ data class MizanColors(
     val headerControlContent: Color,
     val headerControlContentMuted: Color,
 
-    // Floating UI
     val floatingControlBackground: Color,
     val floatingControlBorder: Color,
     val floatingControlContent: Color,
     val floatingControlContentMuted: Color,
 
-    // Dialogs
     val dialogScrim: Color,
     val dialogActionContent: Color,
     val dialogDestructiveContent: Color,
 
-    // Inputs
     val inputBorder: Color,
     val inputBorderFocused: Color,
     val inputContent: Color,
     val inputLabel: Color,
     val inputPlaceholder: Color,
 
-    // Security
     val securityBackground: Color,
     val securityForeground: Color,
     val securityForegroundMuted: Color,
@@ -305,13 +273,11 @@ data class MizanColors(
     val securityIndicatorFilled: Color,
     val securityInputBorder: Color,
 
-    // Miscellaneous
     val separator: Color,
     val shadowTint: Color,
     val ripple: Color,
     val disabledTrack: Color,
 
-    // Metric & Filter Chips
     val chipDebtSelectedBackground: Color,
     val chipDebtUnselectedBackground: Color,
     val chipDebtSelectedBorder: Color,
@@ -323,7 +289,6 @@ data class MizanColors(
     val chipCreditUnselectedBorder: Color,
     val chipCreditText: Color,
 
-    // Row Indicators & Badges
     val alertGoldBackground: Color,
     val alertGoldBorder: Color,
     val alertGoldText: Color,
@@ -334,7 +299,6 @@ data class MizanColors(
     val successGreenBorder: Color,
     val successGreenText: Color,
 
-    // Semantic Gradients
     val brandGradient: Brush,
     val brandSecondaryGradient: Brush,
     val heroGradient: Brush,
@@ -348,9 +312,6 @@ data class MizanColors(
 )
 
 
-// ============================================================================
-// D. Light theme tokens
-// ============================================================================
 
 val LightMizanColors by lazy {
     MizanColors(
@@ -620,12 +581,7 @@ val DarkMizanColors by lazy {
     )
 }
 
-// ============================================================================
-// F. Semantic gradients
-// ============================================================================
 
-// Shared semantic gradients. MizanColors references these directly so each
-// gradient has one source of truth.
 val PrimaryGradient = Brush.linearGradient(listOf(BrandPrimary, BrandPrimaryLight))
 val CoralGradient = Brush.linearGradient(listOf(BrandSecondary, Color(0xFF0284C7)))
 
@@ -677,11 +633,7 @@ val SplashRadialGlow = Brush.radialGradient(
     )
 )
 
-// ============================================================================
-// G. Theme accessors / resolvers
-// ============================================================================
 
-// Financial semantic color resolvers
 fun financialCreditColor(isDark: Boolean): Color =
     if (isDark) CreditGreenDark else CreditGreen
 
@@ -713,9 +665,6 @@ val MaterialTheme.isDark: Boolean
     @ReadOnlyComposable
     get() = LocalIsDarkTheme.current
 
-// ============================================================================
-// 5. Document Palette (Print-Safe Adapter Mapping for PDF / Canvas)
-// ============================================================================
 
 object MizanDocumentColors {
     val brandPrimary = Color(0xFF0F4C43)

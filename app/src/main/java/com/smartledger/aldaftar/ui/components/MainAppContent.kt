@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.navigation.Screen
@@ -33,6 +35,7 @@ fun MainAppContent(
     habayebViewModel: HabayebFinanceViewModel,
     securityViewModel: SecurityViewModel,
     backupSyncViewModel: BackupSyncViewModel,
+    businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     settings: AppSettings,
     contentPadding: PaddingValues = PaddingValues(),
     onNavigate: (Screen) -> Unit,
@@ -55,6 +58,7 @@ fun MainAppContent(
         isDrawerOpen = isDrawerOpen,
         onMenuClick = onMenuClick
     )
+    val businessProfile by businessProfileViewModel.profile.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize()) {
         val navFadeSpec = remember {
@@ -77,19 +81,16 @@ fun MainAppContent(
                 val isTargetSub = targetState == Screen.SETTINGS || targetState == Screen.TRASH || targetState == Screen.BUSINESS_PROFILE || targetState == Screen.SECURITY
 
                 if (isTargetSub && !isInitialSub) {
-                    // Entering secondary/settings screen: Vertical spring entrance with subtle fade
                     val slideIn = slideInVertically(animationSpec = navOffsetSpec) { (it * 0.12f).toInt() } +
                             fadeIn(animationSpec = navFadeSpec)
                     val slideOut = fadeOut(animationSpec = navFadeSpec)
                     slideIn togetherWith slideOut
                 } else if (isInitialSub && !isTargetSub) {
-                    // Exiting secondary screen back to main: Subtle fade & slide down
                     val slideIn = fadeIn(animationSpec = navFadeSpec)
                     val slideOut = slideOutVertically(animationSpec = navOffsetSpec) { (it * 0.12f).toInt() } +
                             fadeOut(animationSpec = navFadeSpec)
                     slideIn togetherWith slideOut
                 } else {
-                    // Lateral tab switching (Ledger <-> Habayeb): Horizontal translation with clean fade
                     val isForward = targetState.ordinal > initialState.ordinal
                     val slideIn = if (isForward) {
                         slideInHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.2f).toInt() } +
@@ -115,6 +116,7 @@ fun MainAppContent(
                     HabayebScreen(
                         viewModel = habayebViewModel,
                         securityViewModel = securityViewModel,
+                        businessProfile = businessProfile,
                         onMenuClick = { drawerStateHolder.handleMenuClick() },
                         onClose = onExit,
                         contentPadding = contentPadding,
@@ -136,6 +138,7 @@ fun MainAppContent(
                         viewModel = viewModel,
                         habayebViewModel = habayebViewModel,
                         securityViewModel = securityViewModel,
+                        businessProfile = businessProfile,
                         settings = settings,
                         onBackIntercept = {},
                         onMenuClick = { drawerStateHolder.handleMenuClick() },
@@ -167,6 +170,7 @@ fun MainAppContent(
                 }
                 Screen.BUSINESS_PROFILE -> {
                     BusinessProfileScreen(
+                        viewModel = businessProfileViewModel,
                         onBack = { onNavigate(Screen.HABAYEB) },
                         contentPadding = contentPadding
                     )

@@ -14,15 +14,6 @@ import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 
-/**
- * مساعد معالجة وقص وتحجيم صور الهوية والأنشطة التجارية (Business Profile Image Processor)
- *
- * المسؤوليات المعمارية:
- * 1. قراءة وضبط أحجام الصور بأمان دون التسبب في أخطاء نفاد الذاكرة (Out of Memory prevention via inSampleSize).
- * 2. معالجة تدوير الصورة التلقائي وفق زاوية الكاميرا (EXIF Orientation).
- * 3. اقتصاص مخصص دائري ومربع مع تطبيق عمليات الرسم والتحويل الهندسي بدقة.
- * 4. إدارة دورة حياة كائنات الـ Bitmap وتفريغ الذاكرة (Recycling) بأمان.
- */
 object BusinessProfileImageHelper {
     private const val TAG = "BusinessProfileImageHelper"
 
@@ -56,7 +47,7 @@ object BusinessProfileImageHelper {
             }
             bitmap
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to load bitmap from uri: $uri", t)
+            Log.e(TAG, "Failed to load business logo bitmap", t)
             null
         }
     }

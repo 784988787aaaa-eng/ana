@@ -62,7 +62,6 @@ fun CommitmentsSummaryCards(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Card 1: Right in RTL -> "الصافي" (Credit / Green)
         Card(
             modifier = Modifier
                 .weight(1f)
@@ -106,7 +105,6 @@ fun CommitmentsSummaryCards(
             }
         }
 
-        // Card 2: Left in RTL -> "باقي الالتزامات" (Debt / Red)
         Card(
             modifier = Modifier
                 .weight(1f)

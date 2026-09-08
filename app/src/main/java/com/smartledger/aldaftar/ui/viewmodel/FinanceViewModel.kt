@@ -1,23 +1,20 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.data.local.AppDatabase
-import com.smartledger.aldaftar.data.local.NavigationPreferences
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.domain.DateUtils
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.presentation.utils.DateUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.state.MainLedgerUiState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,20 +31,20 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.UUID
-
-import com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
-import com.smartledger.aldaftar.ui.viewmodel.ledger.TrashRestoreHandler
 
-typealias MonthLedger = com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
-typealias DayLedger = com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 
-/**
- * نموذج العرض المالي الرئيسي (FinanceViewModel)
- * مسؤول عن تنسيق حالة الواجهة (UI Orchestration) وربط تفاعلات المستخدم مع المستودع المالي
- * دون تخزين منطق محاسبي أو التعامل المباشر مع طبقة التخزين.
- */
-class FinanceViewModel(application: Application) : AndroidViewModel(application) {
+class FinanceViewModel(
+    application: Application,
+    private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
+    private val commitmentsRepository: com.smartledger.aldaftar.data.repository.CommitmentRepository,
+    private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
+    private val categoriesRepository: com.smartledger.aldaftar.data.repository.CategoryRepository,
+    private val habayebRepository: com.smartledger.aldaftar.data.repository.HabayebRepository,
+    private val trashRepository: com.smartledger.aldaftar.data.repository.TrashRepository,
+    private val maintenanceRepository: com.smartledger.aldaftar.data.repository.DataMaintenanceRepository,
+    private val floatingUiRepository: com.smartledger.aldaftar.data.repository.FloatingUiPreferencesRepository
+) : AndroidViewModel(application) {
 
     companion object {
         private const val CLEANUP_PERIOD_NEVER = "never"
@@ -56,7 +53,14 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private val app = application
-    private val repository: FinanceRepository
+
+
+    fun floatingSearchState() = floatingUiRepository.search()
+    fun saveFloatingSearchState(state: com.smartledger.aldaftar.data.repository.FloatingSearchState) = floatingUiRepository.saveSearch(state)
+    fun floatingAddState() = floatingUiRepository.add()
+    fun saveFloatingAddState(state: com.smartledger.aldaftar.data.repository.FloatingAddState) = floatingUiRepository.saveAdd(state)
+    fun isFloatingSearchActive() = floatingUiRepository.floatingSearchActive()
+    fun setFloatingSearchActive(active: Boolean) = floatingUiRepository.setFloatingSearchActive(active)
 
     private val _autoCleanupPeriod = MutableStateFlow(CLEANUP_PERIOD_NEVER)
     val autoCleanupPeriod: StateFlow<String> = _autoCleanupPeriod.asStateFlow()
@@ -68,87 +72,44 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         _uiEventChannel.trySend(event)
     }
 
-    init {
-        val database = AppDatabase.getDatabase(app)
-        repository = FinanceRepository(database, app)
-        val trashPrefs = app.getSharedPreferences(FinanceConstants.PREFS_TRASH, Context.MODE_PRIVATE)
-        _autoCleanupPeriod.value = trashPrefs.getString(FinanceConstants.KEY_TRASH_AUTO_CLEANUP_PERIOD, CLEANUP_PERIOD_NEVER) ?: CLEANUP_PERIOD_NEVER
-    }
 
-    private val navigationPrefs = NavigationPreferences(app)
-
-    val tabOrderState: StateFlow<String> = navigationPrefs.tabOrderFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigationPreferences.DEFAULT_ORDER)
-
-    val defaultStartDestinationState: StateFlow<String> = navigationPrefs.defaultStartFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigationPreferences.DEFAULT_START)
-
-    fun saveTabOrder(order: String) {
-        viewModelScope.launch {
-            navigationPrefs.saveTabOrder(order)
-        }
-    }
-
-    fun saveDefaultStart(start: String) {
-        viewModelScope.launch {
-            navigationPrefs.saveDefaultStart(start)
-        }
-    }
-
-    private val fastThemePrefs = app.getSharedPreferences(FinanceConstants.PREFS_FAST_THEME, Context.MODE_PRIVATE)
-    private val _themeModeState = MutableStateFlow(fastThemePrefs.getInt(FinanceConstants.KEY_FAST_THEME_MODE, 0))
+    private val _themeModeState = MutableStateFlow(0)
     val themeModeState: StateFlow<Int> = _themeModeState.asStateFlow()
-
-    fun updateThemeMode(newMode: Int) {
-        _themeModeState.value = newMode
-        fastThemePrefs.edit().putInt(FinanceConstants.KEY_FAST_THEME_MODE, newMode).apply()
-        val current = settingsState.value
-        if (current.themeMode != newMode) {
-            saveSettings(current.copy(themeMode = newMode))
-        }
-    }
 
     val isSettingsLoaded = MutableStateFlow(false)
 
-    val settingsState: StateFlow<AppSettings> = repository.settingsFlow
+    val settingsState: StateFlow<AppSettings> = settingsRepository.settingsFlow
         .onEach {
             isSettingsLoaded.value = true
             if (it != null && _themeModeState.value != it.themeMode) {
                 _themeModeState.value = it.themeMode
-                fastThemePrefs.edit().putInt(FinanceConstants.KEY_FAST_THEME_MODE, it.themeMode).apply()
             }
         }
         .map { it ?: AppSettings() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
-    val commitmentsState: StateFlow<List<FixedCommitment>> = repository.commitmentsFlow
+    val commitmentsState: StateFlow<List<FixedCommitment>> = commitmentsRepository.commitmentsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val transactionsState: StateFlow<List<TransactionDb>> = repository.transactionsFlow
+    val transactionsState: StateFlow<List<TransactionDb>> = transactionsRepository.transactionsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val customCategoriesState: StateFlow<List<CustomCategory>> = repository.customCategoriesFlow
+    val customCategoriesState: StateFlow<List<CustomCategory>> = categoriesRepository.customCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val deletedItemsFlow: Flow<List<DeletedItemEntity>> = repository.deletedItemsFlow
+    val deletedItemsFlow: Flow<List<DeletedItemEntity>> = trashRepository.deletedItemsFlow
 
     val totalTransactionsCount: StateFlow<Int> = combine(
-        repository.getTransactionsCountFlow(),
-        repository.getHabayebTransactionsCountFlow()
+        transactionsRepository.getTransactionsCountFlow(),
+        habayebRepository.getHabayebTransactionsCountFlow()
     ) { mainCount, habayebCount ->
         mainCount + habayebCount
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    private val sharedPrefs = application.getSharedPreferences(FinanceConstants.PREFS_NAME, Context.MODE_PRIVATE)
-
-    fun hasShownOnboarding(): Boolean {
-        return sharedPrefs.getBoolean(FinanceConstants.KEY_ONBOARDING_SHOWN, false)
-    }
+    fun hasShownOnboarding(): Boolean = settingsState.value.onboardingShown
 
     fun markOnboardingShown() {
-        viewModelScope.launch(Dispatchers.IO) {
-            sharedPrefs.edit().putBoolean(FinanceConstants.KEY_ONBOARDING_SHOWN, true).apply()
-        }
+        viewModelScope.launch { settingsRepository.saveSettings(settingsState.value.copy(onboardingShown = true)) }
     }
 
     private val _searchQuery = MutableStateFlow("")
@@ -168,19 +129,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun calculateSumByType(transactions: List<TransactionDb>, type: String): BigDecimal {
-        val targetType = TransactionType.fromValue(type)
-        var sum = BigDecimal.ZERO
-        for (tx in transactions) {
-            val txType = TransactionType.fromValue(tx.type)
-            if (txType == targetType || tx.type.equals(type, ignoreCase = true)) {
-                sum = sum.add(tx.amount)
-            }
-        }
-        return sum.setScale(2, RoundingMode.HALF_EVEN)
-    }
-
-    val totalCashState: StateFlow<BigDecimal> = repository.getTotalCashFlow()
+    val totalCashState: StateFlow<BigDecimal> = transactionsRepository.getTotalCashFlow()
         .map { it.setScale(2, RoundingMode.HALF_EVEN) }
         .flowOn(Dispatchers.IO)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BigDecimal.ZERO)
@@ -236,10 +185,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun saveSettings(settings: AppSettings) {
         if (_themeModeState.value != settings.themeMode) {
             _themeModeState.value = settings.themeMode
-            fastThemePrefs.edit().putInt(FinanceConstants.KEY_FAST_THEME_MODE, settings.themeMode).apply()
         }
         viewModelScope.launch(Dispatchers.IO) {
-            repository.saveSettings(settings)
+            settingsRepository.saveSettings(settings)
         }
     }
 
@@ -254,16 +202,18 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 amount = amount,
                 description = description
             )
-            repository.saveTransaction(tx)
+            transactionsRepository.saveTransaction(tx)
         }
     }
 
     fun permanentlyDeleteDeletedItem(item: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.removeDeletedItem(item)
+                trashRepository.removeDeletedItem(item)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
             }
         }
     }
@@ -271,9 +221,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun permanentlyDeleteMultipleItems(items: List<DeletedItemEntity>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                items.forEach { repository.removeDeletedItem(it) }
+                items.forEach { trashRepository.removeDeletedItem(it) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
             }
         }
     }
@@ -282,11 +234,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val context = app
-                items.forEach { repository.restoreDeletedItem(it) }
-                items.forEach { TrashRestoreHandler.restorePrefsForDeletedItem(context, it) }
+                items.forEach { trashRepository.restoreDeletedItem(it) }
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -296,11 +249,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val context = app
-                repository.restoreDeletedItem(item)
-                TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
+                trashRepository.restoreDeletedItem(item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -310,11 +264,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val context = app
-                repository.restoreSingleTransactionFromBundle(itemId, txId)
-                TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
+                trashRepository.restoreSingleTransactionFromBundle(itemId, txId)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -324,26 +279,25 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         _autoCleanupPeriod.value = period
         viewModelScope.launch(Dispatchers.IO) {
             val context = app
-            val trashPrefs = context.getSharedPreferences(FinanceConstants.PREFS_TRASH, Context.MODE_PRIVATE)
-            trashPrefs.edit().putString(FinanceConstants.KEY_TRASH_AUTO_CLEANUP_PERIOD, period).apply()
+            settingsRepository.saveSettings(settingsState.value.copy(trashAutoCleanupPeriod = period))
 
-            // Schedule background worker
             com.smartledger.aldaftar.TrashCleanupWorker.schedulePeriodicCleanup(context, period)
 
-            // Immediate execution of cleanup if not "never"
             if (period != CLEANUP_PERIOD_NEVER) {
                 try {
                     val ageInMillis = com.smartledger.aldaftar.TrashCleanupWorker.getPeriodDurationMillis(period)
                     if (ageInMillis > 0L) {
                         val thresholdTime = System.currentTimeMillis() - ageInMillis
-                        val items = repository.getAllDeletedItemsDirect()
+                        val items = trashRepository.getAllDeletedItemsDirect()
                         val expiredItems = items.filter { it.deletedAt < thresholdTime }
                         expiredItems.forEach { item ->
-                            repository.removeDeletedItem(item)
+                            trashRepository.removeDeletedItem(item)
                         }
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                    android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 }
             }
         }
@@ -353,15 +307,17 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val systemHabayeb = app.getString(R.string.source_system_habayeb)
-                val allItems = repository.getAllDeletedItemsDirect()
+                val allItems = trashRepository.getAllDeletedItemsDirect()
                 val nonHabayebItems = allItems.filter {
                     it.sourceSystem != systemHabayeb && !it.originalTableName.startsWith(PREFIX_HABAYEB)
                 }
                 nonHabayebItems.forEach {
-                    repository.removeDeletedItem(it)
+                    trashRepository.removeDeletedItem(it)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
             }
         }
     }
@@ -370,15 +326,17 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val systemHabayeb = app.getString(R.string.source_system_habayeb)
-                val allItems = repository.getAllDeletedItemsDirect()
+                val allItems = trashRepository.getAllDeletedItemsDirect()
                 val habayebItems = allItems.filter {
                     it.sourceSystem == systemHabayeb || it.originalTableName.startsWith(PREFIX_HABAYEB)
                 }
                 habayebItems.forEach {
-                    repository.removeDeletedItem(it)
+                    trashRepository.removeDeletedItem(it)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
             }
         }
     }
@@ -386,10 +344,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun deleteTransaction(tx: TransactionDb) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.softDeleteTransactionToTrash(tx)
-                repository.deleteTransaction(tx)
+                trashRepository.softDeleteTransactionToTrash(tx)
+                transactionsRepository.deleteTransaction(tx)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -400,11 +360,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val tx = transactionsState.value.find { it.id == id }
                 if (tx != null) {
-                    repository.softDeleteTransactionToTrash(tx)
+                    trashRepository.softDeleteTransactionToTrash(tx)
                 }
-                repository.deleteTransactionById(id)
+                transactionsRepository.deleteTransactionById(id)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -417,11 +379,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 val idSet = ids.toSet()
                 val toDelete = allTxs.filter { idSet.contains(it.id) }
                 if (toDelete.isNotEmpty()) {
-                    repository.softDeleteTransactionBundleToTrash(toDelete, bundleTitle)
-                    toDelete.forEach { repository.deleteTransactionById(it.id) }
+                    trashRepository.softDeleteTransactionBundleToTrash(toDelete, bundleTitle)
+                    toDelete.forEach { transactionsRepository.deleteTransactionById(it.id) }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -430,9 +394,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun updateTransaction(tx: TransactionDb) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.saveTransaction(tx)
+                transactionsRepository.saveTransaction(tx)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
@@ -443,21 +409,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val count = commitmentsState.value.size
                 val fc = FixedCommitment(name, targetAmount, currentProgress, count)
-                repository.saveCommitment(fc)
+                commitmentsRepository.saveCommitment(fc)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_save_failed))
-            }
-        }
-    }
-
-    fun updateCommitmentDirectly(commitment: FixedCommitment) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                repository.saveCommitment(commitment)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
             }
         }
     }
@@ -479,10 +436,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                         fc.copy(orderIndex = index)
                     }
 
-                    repository.updateCommitments(updatedList)
+                    commitmentsRepository.updateCommitments(updatedList)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
             }
         }
     }
@@ -492,11 +451,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val oldFc = commitmentsState.value.find { it.name == name }
                 if (oldFc != null) {
-                    repository.softDeleteCommitmentToTrash(oldFc)
+                    trashRepository.softDeleteCommitmentToTrash(oldFc)
                 }
-                repository.deleteCommitment(name)
+                commitmentsRepository.deleteCommitment(name)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -505,9 +466,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun saveCustomCategory(name: String, tabType: String, emoji: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.saveCustomCategory(CustomCategory(name = name, tabType = tabType, iconEmoji = emoji))
+                categoriesRepository.saveCustomCategory(CustomCategory(name = name, tabType = tabType, iconEmoji = emoji))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_save_failed))
             }
         }
@@ -516,9 +479,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun deleteCustomCategory(customCategory: CustomCategory) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.deleteCustomCategory(customCategory)
+                categoriesRepository.deleteCustomCategory(customCategory)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
             }
         }
@@ -527,9 +492,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun deleteAllData() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.deleteAllData()
+                maintenanceRepository.deleteAllData()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
             }
         }
     }

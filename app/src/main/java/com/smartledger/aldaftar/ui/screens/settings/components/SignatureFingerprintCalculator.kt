@@ -3,7 +3,6 @@ package com.smartledger.aldaftar.ui.screens.settings.components
 import android.content.Context
 import com.smartledger.aldaftar.R
 
-// تم فصل الحسابات التقنية عن واجهة العرض للحفاظ على مسؤولية كل طبقة.
 object SignatureFingerprintCalculator {
 
     fun getSha1Fingerprint(context: Context): String {

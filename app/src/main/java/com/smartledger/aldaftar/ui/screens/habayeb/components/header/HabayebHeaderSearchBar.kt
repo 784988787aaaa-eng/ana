@@ -111,12 +111,8 @@ fun HabayebHeaderSearchBar(
 
     val keyboardController = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
-        try {
-            awaitFrame()
+awaitFrame()
             focusRequester.requestFocus()
             keyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 }

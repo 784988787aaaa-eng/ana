@@ -45,9 +45,6 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import java.math.BigDecimal
 
-/**
- * قيمة افتراضية فارغة مخصصة لحالات حقول الإدخال والوصف ومعدلات التحويل داخل هذا المكون فقط.
- */
 private const val INITIAL_EMPTY_TEXT = ""
 
 @Composable
@@ -132,13 +129,9 @@ fun AddTransactionPopup(
     }
 
     LaunchedEffect(Unit) {
-        try {
-            kotlinx.coroutines.android.awaitFrame()
+kotlinx.coroutines.android.awaitFrame()
             amountFocusRequester.requestFocus()
             softwareKeyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     var dateMillis by rememberSaveable { mutableStateOf(editingTransaction?.timestamp?.let { it * 1000 } ?: System.currentTimeMillis()) }
@@ -196,12 +189,10 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
-                // Instant UI Dismissal & Instant Toast Feedback
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
                 onTransactionSaved()
                 onDismiss()
 
-                // Execute save asynchronously in the background
                 viewModel.addHabayebTransaction(
                     customerId = customer.id,
                     type = finalActionType,

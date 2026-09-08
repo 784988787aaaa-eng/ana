@@ -61,7 +61,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.MonthLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -199,7 +199,6 @@ fun ReorderCommitmentDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Clean Title
                         Text(
                             text = stringResource(id = R.string.ledger_reorder_dialog_title),
                             fontWeight = FontWeight.Bold,
@@ -208,7 +207,6 @@ fun ReorderCommitmentDialog(
                             textAlign = TextAlign.Center
                         )
 
-                        // Instruction label
                         Text(
                             text = stringResource(id = R.string.ledger_reorder_dialog_prompt, reorderCommitmentTarget.name),
                             fontSize = 12.sp,
@@ -216,7 +214,6 @@ fun ReorderCommitmentDialog(
                             textAlign = TextAlign.Center
                         )
 
-                        // Compact centered input field (70dp width x 44dp height)
                         OutlinedTextField(
                             value = targetPositionStr,
                             onValueChange = {
@@ -250,7 +247,6 @@ fun ReorderCommitmentDialog(
                             isError = errorMsg.isNotEmpty()
                         )
 
-                        // Range reminder or error text
                         if (errorMsg.isNotEmpty()) {
                             Text(
                                 text = errorMsg,
@@ -269,7 +265,6 @@ fun ReorderCommitmentDialog(
 
                         Spacer(modifier = Modifier.height(2.dp))
 
-                        // Compact action buttons
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),

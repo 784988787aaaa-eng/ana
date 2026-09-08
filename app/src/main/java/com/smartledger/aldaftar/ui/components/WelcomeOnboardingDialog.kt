@@ -37,9 +37,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 
-/**
- * ثوابت وسوم الحركات الانتقالية لشاشة الترحيب لتنظيم كود الحركة والواجهة.
- */
 private const val LABEL_ONBOARDING_SCALE = "onboarding_scale"
 private const val LABEL_ONBOARDING_ALPHA = "onboarding_alpha"
 private const val LABEL_PULSE = "pulse"
@@ -49,7 +46,6 @@ private const val LABEL_BUTTON_SCALE = "button_scale"
 fun WelcomeOnboardingDialog(
     onDismiss: () -> Unit
 ) {
-    // Smooth entry scaling and fade animation
     var animationPlayed by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         animationPlayed = true
@@ -70,7 +66,6 @@ fun WelcomeOnboardingDialog(
         label = LABEL_ONBOARDING_ALPHA
     )
 
-    // Breathing pulse for button
     val infiniteTransition = rememberInfiniteTransition(label = LABEL_PULSE)
     val buttonScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -88,7 +83,7 @@ fun WelcomeOnboardingDialog(
     val primaryColor = MaterialTheme.colorScheme.primary
 
     Dialog(
-        onDismissRequest = { /* Force explicit user action */ },
+        onDismissRequest = { },
         properties = DialogProperties(
             dismissOnBackPress = false,
             dismissOnClickOutside = false,
@@ -119,7 +114,6 @@ fun WelcomeOnboardingDialog(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Logo & Glow Badge
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -162,7 +156,6 @@ fun WelcomeOnboardingDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // App Title & Tagline
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
@@ -195,7 +188,6 @@ fun WelcomeOnboardingDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Scrollable Feature Cards Container
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -242,7 +234,6 @@ fun WelcomeOnboardingDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Gradient Call-To-Action Button
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
@@ -323,7 +314,6 @@ private fun OnboardingFeatureCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Pill
             Box(
                 modifier = Modifier
                     .size(42.dp)
@@ -341,7 +331,6 @@ private fun OnboardingFeatureCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Text details
             Column(
                 modifier = Modifier.weight(1f)
             ) {

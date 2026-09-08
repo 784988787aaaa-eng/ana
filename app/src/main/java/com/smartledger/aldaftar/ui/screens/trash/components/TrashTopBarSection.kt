@@ -157,7 +157,6 @@ fun TrashTopBarSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Title/Back Navigation Block
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -206,7 +205,6 @@ fun TrashTopBarSection(
                         }
                     }
 
-                    // Actions Block
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)

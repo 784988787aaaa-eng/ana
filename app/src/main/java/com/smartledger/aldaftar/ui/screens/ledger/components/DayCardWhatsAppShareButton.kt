@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.theme.WhatsAppLightGreen
-import com.smartledger.aldaftar.ui.viewmodel.DayLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {

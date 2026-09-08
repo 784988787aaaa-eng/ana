@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.domain.FormatUtils
+import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.theme.mizanColors
@@ -99,13 +99,11 @@ fun TransactionOptionsDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Raised Header: Left is Smart Share dropdown, Right is transaction details tag
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Left: Smart Share icon with popup dropdown
                         Box {
                              IconButton(
                                 onClick = { showShareMenu = true },
@@ -156,7 +154,6 @@ fun TransactionOptionsDialog(
                             }
                         }
 
-                        // Right: Raised details tag
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
@@ -212,7 +209,6 @@ fun TransactionOptionsDialog(
                         }
                     }
 
-                    // Warning / Status Banner for Recurring Relationships
                     if (isRecurringOriginal) {
                         val warningBg = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
                         val warningBorder = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
@@ -275,13 +271,11 @@ fun TransactionOptionsDialog(
                         }
                     }
 
-                    // Compact Actions Row (All in 1 Row!)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 1. Edit (تعديل)
                         ActionCircleItem(
                             title = stringResource(id = R.string.habayeb_action_edit),
                             icon = Icons.Default.Edit,
@@ -290,7 +284,6 @@ fun TransactionOptionsDialog(
                             onClick = onEdit
                         )
 
-                        // 2. Delete (حذف)
                         ActionCircleItem(
                             title = stringResource(id = R.string.habayeb_action_delete),
                             icon = Icons.Default.Delete,
@@ -300,7 +293,6 @@ fun TransactionOptionsDialog(
                         )
 
                         if (isRecurringOriginal) {
-                            // 3. Edit Auto-Repeat (تعديل تكرار)
                             ActionCircleItem(
                                 title = stringResource(id = R.string.habayeb_action_edit_recurring),
                                 icon = Icons.Default.Sync,
@@ -309,7 +301,6 @@ fun TransactionOptionsDialog(
                                 onClick = onAutoRepeat
                             )
 
-                            // 4. Stop Auto-Repeat (إلغاء تكرار)
                             ActionCircleItem(
                                 title = stringResource(id = R.string.habayeb_action_cancel_recurring),
                                 icon = Icons.Default.Schedule,
@@ -318,7 +309,6 @@ fun TransactionOptionsDialog(
                                 onClick = { onDeleteAutoRepeat?.invoke() }
                             )
                         } else {
-                            // 3. Setup Auto-Repeat (جدولة تكرار)
                             ActionCircleItem(
                                 title = stringResource(id = R.string.habayeb_action_schedule_recurring),
                                 icon = Icons.Default.Sync,

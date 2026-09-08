@@ -63,15 +63,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.ui.helper.BusinessProfileImageHelper
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfileInfoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfileLogoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfilePhonesSection
 import com.smartledger.aldaftar.ui.screens.settings.components.LogoCropDialog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import java.io.File
 
 sealed interface BusinessProfileDialogState {
@@ -82,6 +83,7 @@ sealed interface BusinessProfileDialogState {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BusinessProfileScreen(
+    viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues()
 ) {
@@ -126,6 +128,7 @@ fun BusinessProfileScreen(
                 .padding(padding)
         ) {
             BusinessProfileForm(
+                viewModel = viewModel,
                 isDialog = false,
                 onClose = onBack
             )
@@ -135,6 +138,7 @@ fun BusinessProfileScreen(
 
 @Composable
 fun BusinessProfileDialog(
+    viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -188,6 +192,7 @@ fun BusinessProfileDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 BusinessProfileForm(
+                    viewModel = viewModel,
                     isDialog = true,
                     onClose = onDismiss
                 )
@@ -198,6 +203,7 @@ fun BusinessProfileDialog(
 
 @Composable
 private fun BusinessProfileForm(
+    viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     isDialog: Boolean,
     onClose: () -> Unit
 ) {
@@ -205,73 +211,38 @@ private fun BusinessProfileForm(
     val coroutineScope = rememberCoroutineScope()
     val activeThemeColor = MaterialTheme.colorScheme.primary
 
-    val prefs = remember { context.getSharedPreferences(ProfileKeys.PREFS_MAIN, Context.MODE_PRIVATE) }
-    val altPrefs = remember { context.getSharedPreferences(ProfileKeys.PREFS_ALT, Context.MODE_PRIVATE) }
-
-    var bizName by remember {
-        mutableStateOf(
-            prefs.getString(ProfileKeys.KEY_BIZ_NAME, "").orEmpty()
-                .ifBlank { altPrefs.getString(ProfileKeys.KEY_ALT_NAME, "").orEmpty() }
-        )
-    }
-
-    var bizDesc by remember {
-        mutableStateOf(
-            prefs.getString(ProfileKeys.KEY_BIZ_DESC, "").orEmpty()
-                .ifBlank { altPrefs.getString(ProfileKeys.KEY_ALT_SLOGAN, "").orEmpty() }
-        )
-    }
-
-    var logoPath by remember {
-        mutableStateOf(
-            prefs.getString(ProfileKeys.KEY_BIZ_LOGO_PATH, "").orEmpty()
-                .ifBlank { altPrefs.getString(ProfileKeys.KEY_ALT_LOGO_PATH, "").orEmpty() }
-        )
+    var bizName by remember { mutableStateOf("") }
+    var bizDesc by remember { mutableStateOf("") }
+    var logoPath by remember { mutableStateOf("") }
+    val phoneList = remember { mutableStateListOf<String>() }
+    LaunchedEffect(Unit) {
+        val profile = viewModel.profile.value
+        bizName = profile.name
+        bizDesc = profile.description
+        logoPath = profile.logoPath
+        phoneList.clear(); phoneList.addAll(profile.phones)
     }
 
     var logoBitmapState by remember { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(logoPath) {
-        if (logoPath.isNotEmpty()) {
-            withContext(Dispatchers.IO) {
-                try {
+        logoBitmapState = if (logoPath.isBlank()) {
+            null
+        } else {
+            try {
+                withContext(Dispatchers.IO) {
                     val file = File(logoPath)
-                    if (file.exists()) {
-                        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                        withContext(Dispatchers.Main) {
-                            logoBitmapState = bitmap
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
             }
         }
     }
 
-    val phoneList = remember { mutableStateListOf<String>() }
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            val phonesJson = prefs.getString(ProfileKeys.KEY_BIZ_PHONES, "[]") ?: "[]"
-            val loadedPhones = mutableListOf<String>()
-            try {
-                val jsonArray = JSONArray(phonesJson)
-                for (i in 0 until jsonArray.length()) {
-                    loadedPhones.add(jsonArray.getString(i))
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            if (loadedPhones.isEmpty()) {
-                val fallbackPhone = altPrefs.getString(ProfileKeys.KEY_ALT_PHONE, "").orEmpty()
-                loadedPhones.add(fallbackPhone)
-            }
-            withContext(Dispatchers.Main) {
-                phoneList.clear()
-                phoneList.addAll(loadedPhones)
-            }
-        }
-    }
+
 
     var pendingImageUri by remember { mutableStateOf<Uri?>(null) }
     var dialogState by remember { mutableStateOf<BusinessProfileDialogState>(BusinessProfileDialogState.None) }
@@ -281,22 +252,21 @@ private fun BusinessProfileForm(
     ) { uri: Uri? ->
         if (uri != null) {
             pendingImageUri = uri
-            coroutineScope.launch(Dispatchers.IO) {
+            coroutineScope.launch {
                 try {
-                    val original = BusinessProfileImageHelper.uriToBitmap(context, uri)
-                    val scaled = if (original != null) BusinessProfileImageHelper.scaleBitmap(original, 800) else null
-                    withContext(Dispatchers.Main) {
-                        if (scaled != null && !scaled.isRecycled) {
-                            dialogState = BusinessProfileDialogState.CropLogo(scaled, false)
-                        } else {
-                            Toast.makeText(context, context.getString(R.string.biz_toast_logo_failed), Toast.LENGTH_SHORT).show()
-                        }
+                    val scaled = withContext(Dispatchers.IO) {
+                        val original = BusinessProfileImageHelper.uriToBitmap(context, uri)
+                        if (original != null) BusinessProfileImageHelper.scaleBitmap(original, 800) else null
                     }
-                } catch (t: Throwable) {
-                    t.printStackTrace()
-                    withContext(Dispatchers.Main) {
+                    if (scaled != null && !scaled.isRecycled) {
+                        dialogState = BusinessProfileDialogState.CropLogo(scaled, false)
+                    } else {
                         Toast.makeText(context, context.getString(R.string.biz_toast_logo_failed), Toast.LENGTH_SHORT).show()
                     }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    Toast.makeText(context, context.getString(R.string.biz_toast_logo_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -358,31 +328,10 @@ private fun BusinessProfileForm(
                     return@Button
                 }
 
-                coroutineScope.launch(Dispatchers.IO) {
-                    val editor = prefs.edit()
-                    editor.putString(ProfileKeys.KEY_BIZ_NAME, bizName.trim())
-                    editor.putString(ProfileKeys.KEY_BIZ_DESC, bizDesc.trim())
-
-                    val jsonArray = JSONArray()
-                    phoneList.filter { it.isNotBlank() }.forEach {
-                        jsonArray.put(it.trim())
-                    }
-                    editor.putString(ProfileKeys.KEY_BIZ_PHONES, jsonArray.toString())
-                    editor.putString(ProfileKeys.KEY_BIZ_LOGO_PATH, logoPath)
-                    editor.apply()
-
-                    val altEditor = altPrefs.edit()
-                    altEditor.putString(ProfileKeys.KEY_ALT_NAME, bizName.trim())
-                    altEditor.putString(ProfileKeys.KEY_ALT_SLOGAN, bizDesc.trim())
-                    altEditor.putString(ProfileKeys.KEY_ALT_LOGO_PATH, logoPath)
-                    val primaryPhone = phoneList.firstOrNull { it.isNotBlank() } ?: ""
-                    altEditor.putString(ProfileKeys.KEY_ALT_PHONE, primaryPhone)
-                    altEditor.apply()
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
-                        onClose()
-                    }
+                coroutineScope.launch {
+                    viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
+                    Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
+                    onClose()
                 }
             },
             modifier = Modifier
@@ -418,16 +367,18 @@ private fun BusinessProfileForm(
             },
             activeThemeColor = activeThemeColor,
             onRotate = {
-                coroutineScope.launch(Dispatchers.IO) {
+                coroutineScope.launch {
                     try {
-                        val rotated = BusinessProfileImageHelper.rotateBitmap(bitmapToCrop, 90f)
-                        withContext(Dispatchers.Main) {
-                            if (!rotated.isRecycled) {
-                                dialogState = cropState.copy(bitmap = rotated)
-                            }
+                        val rotated = withContext(Dispatchers.Default) {
+                            BusinessProfileImageHelper.rotateBitmap(bitmapToCrop, 90f)
                         }
-                    } catch (t: Throwable) {
-                        t.printStackTrace()
+                        if (!rotated.isRecycled) {
+                            dialogState = cropState.copy(bitmap = rotated)
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        dialogState = BusinessProfileDialogState.None
                     }
                 }
             },
@@ -436,37 +387,31 @@ private fun BusinessProfileForm(
                 pendingImageUri = null
             },
             onApply = { scale, offsetX, offsetY ->
-                coroutineScope.launch(Dispatchers.IO) {
+                coroutineScope.launch {
                     try {
-                        val croppedResult = BusinessProfileImageHelper.cropWithTransform(
-                            bitmapToCrop,
-                            scale,
-                            offsetX,
-                            offsetY,
-                            density,
-                            cropShapeIsCircle
-                        )
-                        val scaledResult = BusinessProfileImageHelper.scaleBitmap(croppedResult, 400)
-                        val localPath = BusinessProfileImageHelper.saveBitmapToInternalStorage(context, scaledResult)
-
-                        withContext(Dispatchers.Main) {
-                            if (localPath != null) {
-                                logoPath = localPath
-                                logoBitmapState = scaledResult
-                                Toast.makeText(context, context.getString(R.string.biz_toast_logo_success), Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.biz_toast_logo_save_err), Toast.LENGTH_SHORT).show()
-                            }
-                            dialogState = BusinessProfileDialogState.None
-                            pendingImageUri = null
+                        val result = withContext(Dispatchers.IO) {
+                            val croppedResult = BusinessProfileImageHelper.cropWithTransform(
+                                bitmapToCrop, scale, offsetX, offsetY, density, cropShapeIsCircle
+                            )
+                            val scaledResult = BusinessProfileImageHelper.scaleBitmap(croppedResult, 400)
+                            val localPath = BusinessProfileImageHelper.saveBitmapToInternalStorage(context, scaledResult)
+                            localPath to scaledResult
                         }
-                    } catch (t: Throwable) {
-                        t.printStackTrace()
-                        withContext(Dispatchers.Main) {
+                        val localPath = result.first
+                        if (localPath != null) {
+                            logoPath = localPath
+                            logoBitmapState = result.second
+                            Toast.makeText(context, context.getString(R.string.biz_toast_logo_success), Toast.LENGTH_SHORT).show()
+                        } else {
                             Toast.makeText(context, context.getString(R.string.biz_toast_logo_save_err), Toast.LENGTH_SHORT).show()
-                            dialogState = BusinessProfileDialogState.None
-                            pendingImageUri = null
                         }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        Toast.makeText(context, context.getString(R.string.biz_toast_logo_save_err), Toast.LENGTH_SHORT).show()
+                    } finally {
+                        dialogState = BusinessProfileDialogState.None
+                        pendingImageUri = null
                     }
                 }
             }

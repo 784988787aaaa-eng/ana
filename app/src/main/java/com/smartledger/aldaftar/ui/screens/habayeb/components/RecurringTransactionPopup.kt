@@ -50,9 +50,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.domain.FormatUtils
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebRecurringManager
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.RecurringConfig
+import com.smartledger.aldaftar.platform.contacts.FormatUtils
+import com.smartledger.aldaftar.domain.model.RecurringConfig
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.util.Calendar
 import java.util.UUID
@@ -60,15 +62,16 @@ import java.util.UUID
 @Composable
 fun RecurringTransactionPopup(
     transaction: HabayebTransaction,
+    viewModel: com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel,
     customerName: String,
     onDismiss: () -> Unit,
     activeThemeColor: Color,
     activeSubColor: Color
 ) {
     val context = LocalContext.current
-
-    val existingConfigs = remember(transaction.id) { HabayebRecurringManager.getAllConfigs(context) }
-    val existingConfig = remember(transaction.id) { existingConfigs.find { it.originalTxId == transaction.id } }
+    val scope = rememberCoroutineScope()
+    var existingConfig by remember(transaction.id) { mutableStateOf<RecurringConfig?>(null) }
+    LaunchedEffect(transaction.id) { existingConfig = viewModel.recurringByOriginalTransaction(transaction.id) }
 
     var frequency by remember { mutableStateOf(existingConfig?.frequency ?: FinanceConstants.FREQ_DAILY) }
     var selectedDaysOfWeek by remember {
@@ -106,7 +109,6 @@ fun RecurringTransactionPopup(
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Header Banner (Refined and modern)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -173,7 +175,6 @@ fun RecurringTransactionPopup(
                             .padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // 1. Frequency selector
                         RecurringFrequencySelector(
                             frequency = frequency,
                             onFrequencyChange = { frequency = it },
@@ -185,7 +186,6 @@ fun RecurringTransactionPopup(
                             isDark = MaterialTheme.isDark
                         )
 
-                        // 2. Date and Time section (Intelligent Range & Time Picker)
                         RecurringDateTimeSection(
                             hour = hour,
                             minute = minute,
@@ -199,10 +199,11 @@ fun RecurringTransactionPopup(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // 3. Action Buttons
                         RecurringActionsRow(
                             existingConfig = existingConfig,
                             transaction = transaction,
+                            viewModel = viewModel,
+                            scope = scope,
                             customerName = customerName,
                             frequency = frequency,
                             selectedDaysOfWeek = selectedDaysOfWeek,
@@ -225,6 +226,8 @@ fun RecurringTransactionPopup(
 private fun RecurringActionsRow(
     existingConfig: RecurringConfig?,
     transaction: HabayebTransaction,
+    viewModel: com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel,
+    scope: kotlinx.coroutines.CoroutineScope,
     customerName: String,
     frequency: String,
     selectedDaysOfWeek: Set<Int>,
@@ -261,7 +264,7 @@ private fun RecurringActionsRow(
         if (existingConfig != null) {
             OutlinedButton(
                 onClick = {
-                    HabayebRecurringManager.deleteConfig(context, existingConfig.id)
+                    scope.launch { viewModel.deleteRecurring(existingConfig.id) }
                     Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_stop_success), Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
@@ -322,7 +325,7 @@ private fun RecurringActionsRow(
                     equivalentAmount = transaction.equivalentAmount
                 )
 
-                HabayebRecurringManager.saveConfig(context, newConfig)
+                scope.launch { viewModel.saveRecurring(newConfig) }
                 Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_schedule_success), Toast.LENGTH_LONG).show()
                 onDismiss()
             },

@@ -64,13 +64,11 @@ fun DeveloperSealFooter(modifier: Modifier = Modifier) {
             
             Button(
                 onClick = {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("https://wa.me/$whatsappNumber")
-                        }
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse("https://wa.me/$whatsappNumber")
+                    }
+                    if (intent.resolveActivity(context.packageManager) != null) {
                         context.startActivity(intent)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(

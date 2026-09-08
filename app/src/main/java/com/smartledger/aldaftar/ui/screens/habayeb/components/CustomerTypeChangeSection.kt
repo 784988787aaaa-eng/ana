@@ -75,7 +75,6 @@ fun CustomerTypeChangeSection(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // زر "له" (OWED_TO_THEM)
                 val isToThemSelected = currentType == FinanceConstants.TYPE_OWED_TO_THEM
                 Box(
                     modifier = Modifier
@@ -99,7 +98,6 @@ fun CustomerTypeChangeSection(
                     )
                 }
 
-                // زر "عليه" (OWED_BY_THEM)
                 val isByThemSelected = currentType == FinanceConstants.TYPE_OWED_BY_THEM
                 Box(
                     modifier = Modifier

@@ -1,30 +1,17 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
 import java.math.BigDecimal
 import java.util.Calendar
 import java.util.UUID
 
-/**
- * مساعد حفظ بيانات العميل والرصيد الافتتاحي (Add Customer Save & Calculation Helper)
- *
- * المسؤوليات المعمارية:
- * 1. معالجة وإنشاء الكيانات: يتم إنشاء معرف فريد للعميل (UUID) مستقل تماماً عن اسمه القابل للتعديل، للحفاظ على استقرار العلاقات مع المعاملات والنسخ الاحتياطية.
- * 2. التحقق من المدخلات: إزالة المسافات الزائدة، التحقق من عدم تكرار الاسم، والتأكد من إيجابية الرصيد الافتتاحي ونوع تصنيف العميل.
- * 3. معالجة العملات الأجنبية وأسعار الصرف وتحويل الرصيد بدقة مالية (BigDecimal).
- * 4. إسناد الحفظ إلى ViewModel وإدارة حالات التقدم والإشعارات دون تضخم كود الواجهة الرسومية (Composable).
- */
 data class AddCustomerFormData(
     val nameStr: String,
     val phoneStr: String,
@@ -40,7 +27,7 @@ data class AddCustomerFormData(
 )
 
 object AddCustomerSaveHelper {
-    fun handleSave(
+    suspend fun handleSave(
         context: Context,
         viewModel: HabayebFinanceViewModel,
         formData: AddCustomerFormData,
@@ -99,9 +86,7 @@ object AddCustomerSaveHelper {
         val transactionTimestamp = selectedCalendar.timeInMillis / 1000
         val newCustomerId = "cust_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
 
-        viewModel.viewModelScope.launch(Dispatchers.IO) {
-            try {
-                run {
+        try {
                     val newCustomer = HabayebCustomer(
                         id = newCustomerId,
                         name = nameStr.trim(),
@@ -137,18 +122,13 @@ object AddCustomerSaveHelper {
                         equivalentAmount = finalEquivalentAmountBd
                     )
 
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, context.getString(R.string.habayeb_toast_save_success), Toast.LENGTH_SHORT).show()
-                        onSuccess(newCustomerId)
-                        onDismiss()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("AddCustomerSaveHelper", "Failed to save customer safely", e)
-                withContext(Dispatchers.Main) {
-                    onIsSavingChange(false)
-                }
-            }
+                    Toast.makeText(context, context.getString(R.string.habayeb_toast_save_success), Toast.LENGTH_SHORT).show()
+                    onSuccess(newCustomerId)
+                    onDismiss()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            onIsSavingChange(false)
         }
     }
 }

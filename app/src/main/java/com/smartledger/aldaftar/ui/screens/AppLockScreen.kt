@@ -28,8 +28,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.domain.BiometricAuthHelper
-import com.smartledger.aldaftar.domain.DatabaseSecurityGuard
+import com.smartledger.aldaftar.platform.security.BiometricAuthHelper
 import com.smartledger.aldaftar.domain.HashUtils
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType
@@ -42,10 +41,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * App Lock Screen Facade coordinating authentication (PIN Passcode, Biometrics, Recovery Phrase).
- * Maintains a clean decoupled architecture and strict zero-leakage security lifecycle.
- */
 @Composable
 fun AppLockScreen(
     viewModel: SecurityViewModel,
@@ -108,7 +103,6 @@ fun AppLockScreen(
         }
     }
 
-    // Auto-launch Biometric prompt on screen appearance if enabled and supported
     LaunchedEffect(isBiometricSupported, isBiometricEnabled) {
         if (isBiometricSupported && isBiometricEnabled && !showRecoveryView) {
             delay(200)
@@ -128,8 +122,7 @@ fun AppLockScreen(
                         val passChars = nextPasscode.toCharArray()
                         val isMatch = withContext(Dispatchers.Default) {
                             try {
-                                val hashed = HashUtils.hashString(String(passChars))
-                                DatabaseSecurityGuard.secureEqual(hashed, currentPasscodeHash)
+                                HashUtils.verifyPin(String(passChars), currentPasscodeHash)
                             } finally {
                                 HashUtils.wipeCharArray(passChars)
                             }
@@ -169,8 +162,7 @@ fun AppLockScreen(
             val recoveryChars = recoveryPhraseInput.trim().toCharArray()
             val isCorrect = withContext(Dispatchers.Default) {
                 try {
-                    val hashed = HashUtils.hashString(String(recoveryChars))
-                    DatabaseSecurityGuard.secureEqual(hashed, settings.recoveryPhraseHash)
+                    HashUtils.verifyPin(String(recoveryChars), settings.recoveryPhraseHash)
                 } finally {
                     HashUtils.wipeCharArray(recoveryChars)
                 }

@@ -8,14 +8,6 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 
-/**
- * مساعد مشاركة كشوفات ومطالبات العملاء (Customer Statement Sharing Helper)
- *
- * المسؤوليات المعمارية:
- * 1. صياغة وتنسيق رسائل المطالبات وكشوف الحسابات بطريقة مهنية واضحة مع إبراز العملات وأرقام الحسابات.
- * 2. دعم التوافقية العالية لمشاركة الرسائل عبر مختلف أجهزة ومصنعي Android (SMS Intents & System Choosers).
- * 3. عزل منطق المشاركة النصية خارج Composable لتحقيق فصل تام للمسؤوليات.
- */
 object CustomerShareHelper {
 
     private fun sendSmsReliably(context: Context, rawPhone: String, body: String, fallbackChooserTitleId: Int) {
@@ -26,9 +18,7 @@ object CustomerShareHelper {
             .replace("[", "")
             .replace("]", "")
         
-        // Try multiple methods sequentially to support 100% of Android OEMs (Samsung, Xiaomi, Huawei, Pixel, etc.)
         try {
-            // Method 1: ACTION_SENDTO with smsto: scheme (standard Android)
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse(if (cleanPhone.isBlank()) "smsto:" else "smsto:$cleanPhone")
                 putExtra("sms_body", body)
@@ -38,7 +28,6 @@ object CustomerShareHelper {
             context.startActivity(intent)
         } catch (e1: Exception) {
             try {
-                // Method 2: ACTION_VIEW with sms: scheme (fallback for some devices)
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(if (cleanPhone.isBlank()) "sms:" else "sms:$cleanPhone")
                     putExtra("sms_body", body)
@@ -47,7 +36,6 @@ object CustomerShareHelper {
                 }
                 context.startActivity(intent)
             } catch (e2: Exception) {
-                // Method 3: System Intent Chooser
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, body)
@@ -57,11 +45,6 @@ object CustomerShareHelper {
         }
     }
 
-    /**
-     * Resolves smart, precise transaction title based on account direction.
-     * For "حساب له" (OWED_TO_THEM) -> payment is "تسديد"
-     * For "حساب عليه" (OWED_BY_THEM) -> payment is "استلام"
-     */
     fun resolveTxTypeTitle(context: Context, txType: String, isAccountOwedToThem: Boolean): String {
         return when (txType) {
             "OWED_BY_THEM" -> context.getString(R.string.habayeb_pdf_tx_owed_by)
@@ -80,7 +63,6 @@ object CustomerShareHelper {
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ): String {
-        // 1. Header Line
         val header = when (tx.type) {
             "OWED_BY_THEM" -> context.getString(R.string.msg_header_debt_against)
             "PAYMENT_BY_THEM" -> context.getString(R.string.msg_header_payment_against)
@@ -91,7 +73,6 @@ object CustomerShareHelper {
 
         val bullet = context.getString(R.string.msg_bullet)
 
-        // 2. Main Transaction Amount Line
         val isExchangeTx = tx.isForeign && tx.isRateCalculated
         val amountLine = if (isExchangeTx) {
             val foreignSymbol = if (tx.currencyCode != "DEFAULT" && tx.currencyCode.isNotBlank()) tx.currencyCode else ""
@@ -116,14 +97,12 @@ object CustomerShareHelper {
         lines.add(header)
         lines.add(amountLine)
 
-        // 3. Note / Statement Line (only if present)
         val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
         if (cleanDetails.isNotBlank()) {
             val statementPrefix = context.getString(R.string.msg_statement_prefix)
             lines.add("$statementPrefix $cleanDetails")
         }
 
-        // 4. Cumulative Foreign Balances (only for unconverted foreign transactions)
         if (allCustomerTxs.isNotEmpty()) {
             val foreignMap = mutableMapOf<String, java.math.BigDecimal>()
             for (t in allCustomerTxs) {
@@ -156,7 +135,6 @@ object CustomerShareHelper {
             }
         }
 
-        // 5. Total Local Balance Line
         val totalPrefix = if (netDebt.compareTo(java.math.BigDecimal.ZERO) > 0) {
             context.getString(R.string.msg_total_against)
         } else if (netDebt.compareTo(java.math.BigDecimal.ZERO) < 0) {

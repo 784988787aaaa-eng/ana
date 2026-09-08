@@ -99,7 +99,6 @@ fun BusinessProfileLogoSection(
                     )
                 }
 
-                // Edit Overlay Icon
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.BottomEnd
@@ -121,7 +120,6 @@ fun BusinessProfileLogoSection(
                     }
                 }
 
-                // Delete Overlay Icon
                 if (logoBitmapState != null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),

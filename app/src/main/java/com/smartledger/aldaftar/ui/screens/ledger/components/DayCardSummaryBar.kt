@@ -64,7 +64,6 @@ fun DayCardSummaryBar(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cell 1: Right in RTL -> الوارد (Income)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -87,7 +86,6 @@ fun DayCardSummaryBar(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             )
 
-            // Cell 2: Center -> المنصرف (Expense)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -110,7 +108,6 @@ fun DayCardSummaryBar(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             )
 
-            // Cell 3: Left in RTL -> الصافي (Net)
             Column(
                 modifier = Modifier
                     .weight(1f)

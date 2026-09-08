@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 
-import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
+import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 
 private const val TAG = "SecuritySetupForm"
 private const val CD_TOGGLE_VISIBILITY = "Toggle Visibility"
@@ -72,7 +72,6 @@ fun SecuritySetupForm(
 
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
-    // تأثير برامجي فوري لاستدعاء لوحة المفاتيح والتركيز التلقائي على الحقل الأول فور الفتح
     LaunchedEffect(Unit) {
         try {
             kotlinx.coroutines.android.awaitFrame()
@@ -109,7 +108,6 @@ fun SecuritySetupForm(
                     .padding(bottom = 4.dp)
             )
 
-            // PASSCODE INPUT
             OutlinedTextField(
                 value = passcode,
                 onValueChange = { input ->
@@ -155,7 +153,6 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_PIN_CODE_INPUT)
             )
 
-            // CONFIRM PASSCODE INPUT
             OutlinedTextField(
                 value = confirmPasscode,
                 onValueChange = { input ->
@@ -215,7 +212,6 @@ fun SecuritySetupForm(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            // RECOVERY PHRASE
             OutlinedTextField(
                 value = recoveryPhrase,
                 onValueChange = onRecoveryPhraseChange,
@@ -249,7 +245,6 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_RECOVERY_PHRASE_INPUT)
             )
 
-            // RECOVERY HINT
             OutlinedTextField(
                 value = recoveryHint,
                 onValueChange = onRecoveryHintChange,
@@ -283,7 +278,6 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_RECOVERY_HINT_INPUT)
             )
 
-            // ACK CHECKBOX
             val ackBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
             val ackText = MaterialTheme.colorScheme.onSurface
             val checkboxBorderColor = MaterialTheme.colorScheme.outline
@@ -325,7 +319,6 @@ fun SecuritySetupForm(
                     checkAcknowledged &&
                     !isSaving
 
-            // SAVE & ACTIVATE BUTTON
             Button(
                 onClick = onSave,
                 colors = ButtonDefaults.buttonColors(

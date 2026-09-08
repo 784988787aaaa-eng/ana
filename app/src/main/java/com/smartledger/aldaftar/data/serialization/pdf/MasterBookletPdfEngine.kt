@@ -1,30 +1,5 @@
-/**
- * =====================================================================
- * ملف: محرك دفاتر وكشوفات الأستاذ العامة المجمعة (MasterBookletPdfEngine.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الكائن المحرك المتقدم المسؤول عن تجميع وتوليد كتيب الحسابات الماستر
- * (Comprehensive Master Ledger Booklet) بصيغة PDF لعدة عملاء أو لجميع الحسابات
- * دفعة واحدة، مع تدفق سلس ومستمر للصفحات، وإدارة ذكية للذاكرة، وحساب دقيق لإجمالي
- * الصفحات عبر جولتين: تجريبية لحساب المقاسات وفعلية للرسم.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. المعالجة المجمعة المتدفقة (Chunked Processing & Streaming):
- *    - تقسيم معالجة العملاء إلى دفعات (Chunks of 50) مع إمكانية إلغاء الكوروتين [ensureActive].
- * 2. التخزين المؤقت المحلي للعمليات (Local In-Memory Caching):
- *    - استخدام [txCacheMap] لتفادي الاستعلام المتكرر من قاعدة البيانات بين الجولة التجريبية والفعلية.
- * 3. إدارة لوحات الرسم والصفحات وسياق الدفتر [BookletDrawingContext]:
- *    - إنشاء صفحات مقاس A4 ورسم الترويسة والفاصل السفلي لكل صفحة تلقائياً.
- * 4. إدارة الموارد وتدوير البيتماب (Bitmap Lifecycle Management):
- *    - ضمان تدوير وتحرير صور الشعارات النقطية لمنع نفاد الذاكرة (OOM) في التقارير الضخمة.
- */
 package com.smartledger.aldaftar.data.serialization.pdf
 
-// ---------------------------------------------------------------------
-// استيراد حزم أندرويد والرسومات وتوليد PDF وقواعد البيانات والكوروتين
-// ---------------------------------------------------------------------
-import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -35,9 +10,6 @@ import android.graphics.pdf.PdfDocument
 import android.text.Layout
 import android.util.Log
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.data.local.AppDatabase
-import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.data.serialization.BusinessProfileLoader
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -48,10 +20,6 @@ import java.io.FileOutputStream
 import java.util.Date
 import kotlin.coroutines.coroutineContext
 
-/**
- * [وعاء بيانات هوية المنشأة للكتيب - BusinessProfileData]:
- * يضم معلومات المنشأة وشعارها وأبعادها.
- */
 data class BusinessProfileData(
     val name: String,
     val desc: String,
@@ -62,10 +30,6 @@ data class BusinessProfileData(
     val logoH: Float
 )
 
-/**
- * [البيانات الوصفية للتقرير المالي - PdfReportMetaData]:
- * يجمع التواريخ المنسقة والعملة ولون السمة الأساسي.
- */
 data class PdfReportMetaData(
     val docDateText: String,
     val docTimeText: String,
@@ -75,33 +39,9 @@ data class PdfReportMetaData(
 
 private const val TAG = "MasterBookletPdfEngine"
 
-/**
- * [الكائن الأحادي لمحرك دفتر الحسابات الماستر - MasterBookletPdfEngine]:
- * يبني كتيبات وكشوفات الحسابات المجمعة لكافة العملاء أو المحدد منهم.
- */
 object MasterBookletPdfEngine {
 
-    private const val PREFS_BUSINESS_PROFILE = "business_profile"
-    private const val PREF_BIZ_NAME = "biz_name"
-    private const val PREF_BIZ_DESC = "biz_desc"
-    private const val PREF_BIZ_LOGO_PATH = "biz_logo_path"
-    private const val PREF_BIZ_PHONES = "biz_phones"
-    private const val DEFAULT_PHONES_JSON = "[]"
-    private const val PHONE_DELIMITER = " - "
 
-    /**
-     * [توليد كتيب الحسابات الماستر بصيغة PDF لاتزامياً - generateBookletPdfAsync]:
-     * ينفذ الجولة التجريبية ثم الجولة الحقيقية لرسم كشوفات الحسابات المتتابعة وتحديث شريط التقدم.
-     *
-     * @param context سياق التطبيق.
-     * @param allCustomers قائمة كافة العملاء المسجلين.
-     * @param selectedIds المعرفات المختارة للطباعة إن وجدت.
-     * @param onlySelected ما إذا كان المطلوب طباعة المحدد فقط.
-     * @param currencySymbol رمز العملة الرئيسية.
-     * @param primaryColorHex كود لون السمة الرئيسي.
-     * @param onProgress دالة رد نداء لتحديث مؤشر التقدم (تمت معالجة X من إجمالي Y).
-     * @param onFinished دالة رد نداء عند اكتمال التوليد مع ملف الـ PDF الناتج.
-     */
     suspend fun generateBookletPdfAsync(
         context: Context,
         allCustomers: List<CustomerUiState>,
@@ -109,6 +49,8 @@ object MasterBookletPdfEngine {
         onlySelected: Boolean,
         currencySymbol: String,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
+        businessProfile: com.smartledger.aldaftar.data.local.entities.BusinessProfile,
+        transactionsByCustomer: Map<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>,
         onProgress: (processed: Int, total: Int) -> Unit,
         onFinished: (File?) -> Unit,
         onCancelled: () -> Unit = {}
@@ -131,8 +73,7 @@ object MasterBookletPdfEngine {
                 return@withContext
             }
 
-            // Load business profile from shared BusinessProfileLoader
-            val header = BusinessProfileLoader.load(context)
+            val header = BusinessProfileLoader.load(context, businessProfile)
             scaledLogoToRecycle = header.scaledLogo
             rawBitmapToRecycle = header.rawBitmap
 
@@ -157,17 +98,10 @@ object MasterBookletPdfEngine {
                 primaryColorHex = primaryColorHex
             )
 
-            // Initialize DB & Repository inside for streaming
-            val database = AppDatabase.getDatabase(context)
-            val repository = FinanceRepository(database, context.applicationContext as Application)
-
-            // Memory Cache Map to avoid querying database twice during dry run and real pass
             val txCacheMap = mutableMapOf<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>()
 
-            // Let's compute Overall System Balances
             val summary = PdfReportCalculator.calculateComprehensiveReport(targetCustomers)
 
-            // First Pass: DRY RUN to compute total pages accurately
             var totalPagesInDryRun = 1
             run {
                 val dryDoc = PdfDocument()
@@ -182,10 +116,8 @@ object MasterBookletPdfEngine {
                         reportMetaData = reportMetaData
                     )
 
-                    // Start detailed ledger sheets directly below the business header on Page 1
                     dryCtx.currentY = 78f
 
-                    // Render detail sections for each customer in chunks
                     val customerChunks = targetCustomers.chunked(50)
                     var processedCount = 0
                     for (chunk in customerChunks) {
@@ -193,7 +125,7 @@ object MasterBookletPdfEngine {
                         for (customer in chunk) {
                             coroutineContext.ensureActive()
                             val transactions = txCacheMap.getOrPut(customer.id) {
-                                repository.getTransactionsForCustomerDirect(customer.id)
+                                transactionsByCustomer[customer.id].orEmpty()
                             }
                             val singleSummary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol)
                             drawCustomerLedgerSheet(dryCtx, customer, singleSummary)
@@ -211,7 +143,6 @@ object MasterBookletPdfEngine {
 
             coroutineContext.ensureActive()
 
-            // Second Pass: REAL PASS
             val pdfDocument = PdfDocument()
             var realCtx: BookletDrawingContext? = null
             val outputFile = try {
@@ -224,7 +155,6 @@ object MasterBookletPdfEngine {
                     reportMetaData = reportMetaData
                 )
 
-                // Draw Business Header on Page 1
                 val canvas = realCtx.currentPageCanvas
                 if (canvas != null) {
                     PdfPageRenderer.drawBusinessHeader(
@@ -234,7 +164,6 @@ object MasterBookletPdfEngine {
                 }
                 realCtx.currentY = 78f
 
-                // 2. Customers detailed ledger sheets in chunks
                 val customerChunks = targetCustomers.chunked(50)
                 var processedCount = 0
                 for (chunk in customerChunks) {
@@ -242,7 +171,7 @@ object MasterBookletPdfEngine {
                     for (customer in chunk) {
                         coroutineContext.ensureActive()
                         val transactions = txCacheMap[customer.id]
-                            ?: repository.getTransactionsForCustomerDirect(customer.id)
+                            ?: transactionsByCustomer[customer.id].orEmpty()
                         val singleSummary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol)
                         drawCustomerLedgerSheet(realCtx, customer, singleSummary)
                         processedCount++
@@ -254,7 +183,6 @@ object MasterBookletPdfEngine {
 
                 realCtx.finishLastPage()
 
-                // Save PDF to cache file
                 val outputDir = File(context.cacheDir, "pdf_reports")
                 if (!outputDir.exists()) outputDir.mkdirs()
                 val file = File(outputDir, "MasterBookletReport_${System.currentTimeMillis()}.pdf")
@@ -300,24 +228,17 @@ object MasterBookletPdfEngine {
     }
 
     private fun drawCoverAndIndexDryRun(ctx: BookletDrawingContext, customers: List<CustomerUiState>) {
-        // Business header space
         ctx.currentY = 78f
-        // Title space
         ctx.currentY += 22f
-        // Subtitle space
         ctx.currentY += 18f
 
-        // Index Title
         ctx.currentY += 18f
-        // Index Header
         ctx.currentY += 24f
 
-        // Index Rows
         customers.forEachIndexed { _, customer ->
             val rowHeight = PdfRowRenderer.calculateBookletIndexRowHeight(customer)
             if (ctx.currentY + rowHeight > 780f) {
                 ctx.startNewPage()
-                // Subsequent page header + index header space on new page
                 ctx.currentY = 69f
             }
             ctx.currentY += rowHeight
@@ -332,14 +253,12 @@ object MasterBookletPdfEngine {
         val context = ctx.context
         val canvas = ctx.currentPageCanvas ?: return
 
-        // 1. Draw Business Header
         PdfPageRenderer.drawBusinessHeader(
             canvas, ctx.displayedName, ctx.displayedDesc, ctx.phonesStr,
             ctx.hasLogo, ctx.scaledLogo, ctx.logoW, ctx.logoH, ctx.docDateText, ctx.docTimeText
         )
         ctx.currentY = 78f
 
-        // 2. Draw Title
         val paintTitle = Paint().apply {
             color = Color.parseColor(ctx.primaryColorHex)
             textSize = 14f
@@ -352,7 +271,6 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 22f
 
-        // 3. Draw Subtitle
         val paintSub = Paint().apply {
             color = Color.parseColor(PdfColors.TEXT_MEDIUM)
             textSize = 9.5f
@@ -365,7 +283,6 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 18f
 
-        // 4. Draw Index Title
         val paintIndexTitle = Paint().apply {
             color = Color.parseColor(ctx.primaryColorHex)
             textSize = 10.5f
@@ -378,17 +295,14 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 18f
 
-        // 5. Draw Index Table Header
         PdfRowRenderer.drawBookletIndexHeader(canvas, ctx.currentY, context)
         ctx.currentY += 24f
 
-        // 6. Draw Index Rows
         customers.forEachIndexed { index, customer ->
             val rowHeight = PdfRowRenderer.calculateBookletIndexRowHeight(customer)
             if (ctx.currentY + rowHeight > 780f) {
                 ctx.startNewPage()
                 val nextCanvas = ctx.currentPageCanvas ?: return@forEachIndexed
-                // Redraw table header on next page
                 PdfRowRenderer.drawBookletIndexHeader(nextCanvas, 45f, context)
                 ctx.currentY = 69f
             }
@@ -437,17 +351,6 @@ object MasterBookletPdfEngine {
     }
 }
 
-/**
- * [سياق وحالة رسم كتيب الحسابات - BookletDrawingContext]:
- * يدير حالة الصفحات الحالية ومؤشر الإحداثي الرأسي Y، وأرقام الصفحات، ورسم التذييلات تلقائياً.
- *
- * @property context سياق التطبيق.
- * @property pdfDocument كائن مستند الـ PDF قيد البناء.
- * @property isDryRun هل الجولة الحالية جولة تجريبية افتراضية لحساب عدد الصفحات فقط.
- * @property totalPagesInDryRun إجمالي الصفحات المحسوبة من الجولة السابقة.
- * @property businessProfile بيانات ومعلومات وهوية المنشأة.
- * @property reportMetaData البيانات الوصفية للتقرير.
- */
 class BookletDrawingContext(
     val context: Context,
     val pdfDocument: PdfDocument,

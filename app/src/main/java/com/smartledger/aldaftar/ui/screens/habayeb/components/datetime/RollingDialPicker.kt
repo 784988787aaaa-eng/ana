@@ -49,10 +49,6 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import java.util.Locale
 
-/**
- * Universal rolling dial picker widget supporting click increments,
- * vertical gestures with accumulator threshold, and direct inline keyboard input.
- */
 @Composable
 fun RollingDialPicker(
     label: String,

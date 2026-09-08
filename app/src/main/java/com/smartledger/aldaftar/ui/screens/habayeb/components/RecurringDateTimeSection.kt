@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -90,7 +91,6 @@ fun RecurringDateTimeSection(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Time Picker Pill
         DateTimePill(
             icon = Icons.Default.Schedule,
             text = timeFormatter.format(timeCalendar.time),
@@ -102,7 +102,6 @@ fun RecurringDateTimeSection(
             modifier = Modifier.weight(1f)
         )
 
-        // Start Date Pill (من)
         DateTimePill(
             icon = Icons.Default.CalendarToday,
             text = stringResource(R.string.recurring_from_prefix, formattedStartDate),
@@ -114,7 +113,6 @@ fun RecurringDateTimeSection(
             modifier = Modifier.weight(1.15f)
         )
 
-        // End Date Pill (إلى)
         DateTimePill(
             icon = Icons.Default.CalendarMonth,
             text = stringResource(R.string.recurring_to_prefix, formattedEndDate),

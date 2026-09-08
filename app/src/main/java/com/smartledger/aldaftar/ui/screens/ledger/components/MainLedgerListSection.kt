@@ -29,7 +29,7 @@ import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.MonthLedger
+import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import java.math.BigDecimal
 
 @Composable
@@ -57,7 +57,6 @@ fun MainLedgerListSection(
     onTransactionSelectToggle: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // تم اعتماد التوزيع المباشر واستخدام مفاتيح معينة للشهور والأيام للحد من إعادة رسم البطاقات غير المتغيرة أثناء التمرير السريع.
     LazyColumn(
         state = lazyListState,
         modifier = modifier.fillMaxSize(),
@@ -68,7 +67,6 @@ fun MainLedgerListSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // Empty state placeholder
         if (monthlyLedger.isEmpty()) {
             item(key = "empty_state") {
                 Column(
@@ -90,7 +88,6 @@ fun MainLedgerListSection(
             }
         }
 
-        // Deferred loading skeleton
         if (!isScreenReady && monthlyLedger.isNotEmpty()) {
             item(key = "loading_skeleton") {
                 Box(
@@ -107,11 +104,9 @@ fun MainLedgerListSection(
                 }
             }
         } else {
-            // Ledger Month-by-month list
             monthlyLedger.forEachIndexed { monthIdx, monthLedger ->
                 val isCollapsed = collapsedMonths.contains(monthLedger.monthKey)
 
-                // Month Header
                 item(key = "header_${monthLedger.monthKey}") {
                     Row(
                         modifier = Modifier

@@ -130,7 +130,6 @@ private fun HabayebSearchHeaderBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Close Search Icon Button
         IconButton(
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -146,7 +145,6 @@ private fun HabayebSearchHeaderBar(
             )
         }
 
-        // Search Input field in center
         BasicTextField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
@@ -181,7 +179,6 @@ private fun HabayebSearchHeaderBar(
             }
         )
 
-        // Passive Search Icon
         Icon(
             imageVector = Icons.Default.Search,
             contentDescription = null,
@@ -192,13 +189,9 @@ private fun HabayebSearchHeaderBar(
 
     val keyboardController = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
-        try {
-            awaitFrame()
+awaitFrame()
             focusRequester.requestFocus()
             keyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 }
 
@@ -224,7 +217,6 @@ private fun HabayebNormalHeaderBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right/Start Element: Menu icon button
         IconButton(
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -242,7 +234,6 @@ private fun HabayebNormalHeaderBar(
             )
         }
 
-        // Centered head title
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -334,7 +325,6 @@ private fun HabayebNormalHeaderBar(
             }
         }
 
-        // Left/End Element: Search and Floating Bubble Toggle row
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)

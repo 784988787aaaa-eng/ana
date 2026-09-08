@@ -42,7 +42,6 @@ fun DayCardHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right in RTL (Start): Day Title & Date ([اليوم] [dd/MM]) + Selection Checkbox
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -75,7 +74,6 @@ fun DayCardHeader(
             )
         }
 
-        // Left in RTL (End): Net Balance + Chevron Arrow
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)

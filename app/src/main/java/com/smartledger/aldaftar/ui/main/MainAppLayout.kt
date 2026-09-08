@@ -24,14 +24,11 @@ import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * التخطيط المعماري الرئيسي للتطبيق (Main Application Layout).
- * - يعتمد على الثوابت المركزية في FinanceConstants لمفاتيح التفضيلات المشتركة والتنقل الداخلي.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppLayout(
@@ -39,6 +36,7 @@ fun MainAppLayout(
     habayebViewModel: HabayebFinanceViewModel,
     securityViewModel: SecurityViewModel,
     backupSyncViewModel: BackupSyncViewModel,
+    businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     settings: AppSettings,
     onExit: () -> Unit
 ) {
@@ -51,18 +49,13 @@ fun MainAppLayout(
         }
     }
     val sdfName = remember { java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm", java.util.Locale.US) }
-    val defaultStartDest by viewModel.defaultStartDestinationState.collectAsStateWithLifecycle()
     var showComprehensiveReportDialog by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
 
-    LaunchedEffect(defaultStartDest) {
+    LaunchedEffect(Unit) {
         if (!hasInitializedStartScreen) {
-            currentScreen = try {
-                Screen.valueOf(defaultStartDest)
-            } catch (e: Exception) {
-                Screen.HABAYEB
-            }
+            currentScreen = Screen.HABAYEB
             hasInitializedStartScreen = true
         }
     }
@@ -71,12 +64,7 @@ fun MainAppLayout(
     var showBackupRestoreSheet by remember { mutableStateOf(false) }
     var showCurrencyBallSelector by remember { mutableStateOf(false) }
 
-    val floatingSearchPrefs = remember(context) { 
-        context.getSharedPreferences(FinanceConstants.PREFS_FLOATING_SEARCH, android.content.Context.MODE_PRIVATE) 
-    }
-    var isFloatingSearchActive by remember {
-        mutableStateOf(floatingSearchPrefs.getBoolean(FinanceConstants.KEY_FLOATING_SEARCH_ACTIVE, false))
-    }
+    var isFloatingSearchActive by remember { mutableStateOf(viewModel.isFloatingSearchActive()) }
     var isSearchActive by remember { mutableStateOf(false) }
     var isHistoryOverlayActive by remember { mutableStateOf(false) }
     var isHistorySearchActive by remember { mutableStateOf(false) }
@@ -107,7 +95,9 @@ fun MainAppLayout(
                             }
                         }
                         Toast.makeText(context, context.getString(R.string.toast_backup_export_success), Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
                         Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -133,19 +123,17 @@ fun MainAppLayout(
                             }
                         }
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
 
     BackHandler {
-        val defaultStart = try {
-            Screen.valueOf(defaultStartDest)
-        } catch (e: Exception) {
-            Screen.HABAYEB
-        }
+        val defaultStart = Screen.HABAYEB
         if (drawerState.isOpen) {
             scope.launch { drawerState.close() }
         } else if (currentScreen != defaultStart) {
@@ -178,6 +166,7 @@ fun MainAppLayout(
                 },
                 settings = settings,
                 securityViewModel = securityViewModel,
+                businessProfileViewModel = businessProfileViewModel,
                 onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
                     viewModel.saveSettings(updated)
                     if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
@@ -215,6 +204,7 @@ fun MainAppLayout(
                         habayebViewModel = habayebViewModel,
                         securityViewModel = securityViewModel,
                         backupSyncViewModel = backupSyncViewModel,
+                        businessProfileViewModel = businessProfileViewModel,
                         settings = settings,
                         contentPadding = innerPadding,
                         onNavigate = { currentScreen = it },
@@ -231,7 +221,7 @@ fun MainAppLayout(
                         isFloatingSearchActive = isFloatingSearchActive,
                         onFloatingSearchActiveChanged = {
                             isFloatingSearchActive = it
-                            floatingSearchPrefs.edit().putBoolean(FinanceConstants.KEY_FLOATING_SEARCH_ACTIVE, it).apply()
+                            viewModel.setFloatingSearchActive(it)
                         },
                         isSearchActive = isSearchActive,
                         onSearchActiveChanged = { isSearchActive = it },
@@ -257,6 +247,8 @@ fun MainAppLayout(
             if (isFloatingSearchActive && !hideBubble && (currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER)) {
                 com.smartledger.aldaftar.ui.screens.habayeb.components.FloatingSearchBubble(
                     activeThemeColor = if (currentScreen == Screen.LEDGER) com.smartledger.aldaftar.ui.theme.BrandPrimary else MaterialTheme.colorScheme.primary,
+                    persisted = viewModel.floatingSearchState(),
+                    onPersist = viewModel::saveFloatingSearchState,
                     onSearchClick = {
                         if (currentScreen == Screen.HABAYEB) {
                             if (isHistoryOverlayActive) {
@@ -303,12 +295,15 @@ fun MainAppLayout(
     if (showComprehensiveReportDialog) {
         val habayebCustomersState by habayebViewModel.customersUiState.collectAsStateWithLifecycle()
         val selectedCustomerIds by habayebViewModel.selectedCustomerIdsState.collectAsStateWithLifecycle()
+        val businessProfile by businessProfileViewModel.profile.collectAsStateWithLifecycle()
         com.smartledger.aldaftar.ui.screens.habayeb.components.ComprehensiveReportDialog(
             customers = habayebCustomersState.customers,
             currencySymbol = settings.currencySymbol,
             activeThemeColor = MaterialTheme.colorScheme.primary,
             onDismiss = { showComprehensiveReportDialog = false },
-            selectedCustomerIds = selectedCustomerIds
+            selectedCustomerIds = selectedCustomerIds,
+            businessProfile = businessProfile,
+            loadTransactionsForReport = habayebViewModel::transactionsForReport
         )
     }
 }

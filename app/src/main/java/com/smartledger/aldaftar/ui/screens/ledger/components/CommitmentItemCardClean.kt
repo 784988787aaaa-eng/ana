@@ -98,13 +98,11 @@ fun CommitmentItemCardClean(
                 .padding(horizontal = 11.dp, vertical = 9.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Layer 1: Title & Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Checkbox + Goal Name
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -145,7 +143,6 @@ fun CommitmentItemCardClean(
                     )
                 }
 
-                // Remaining Badge + Progress %
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -187,7 +184,6 @@ fun CommitmentItemCardClean(
                 }
             }
 
-            // Layer 2: Sleek Goal Gradient Progress Bar (5dp)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -210,13 +206,11 @@ fun CommitmentItemCardClean(
                 }
             }
 
-            // Layer 3: Target Amount + Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Target Amount
                 Text(
                     text = "المستهدف: ${formatCurrency(fc.targetAmount, currencySymbol)}".toWesternDigits(),
                     fontSize = 11.5.sp,
@@ -224,12 +218,10 @@ fun CommitmentItemCardClean(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
 
-                // Micro Action Controls
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    // Edit Button ✏️
                     IconButton(
                         onClick = { onEditCommitmentClick(fc) },
                         modifier = Modifier.size(26.dp)
@@ -242,7 +234,6 @@ fun CommitmentItemCardClean(
                         )
                     }
 
-                    // Delete Button 🗑️
                     IconButton(
                         onClick = {
                             onDeleteClick(fc)
@@ -258,7 +249,6 @@ fun CommitmentItemCardClean(
                         )
                     }
 
-                    // Reorder Handle ☰
                     var dragOffset by remember { mutableFloatStateOf(0f) }
                     Box(
                         modifier = Modifier

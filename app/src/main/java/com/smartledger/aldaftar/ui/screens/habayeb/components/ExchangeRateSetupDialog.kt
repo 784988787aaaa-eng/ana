@@ -105,13 +105,9 @@ fun ExchangeRateSetupContent(
     }
 
     LaunchedEffect(Unit) {
-        try {
-            kotlinx.coroutines.delay(150)
+kotlinx.coroutines.delay(150)
             focusRequester.requestFocus()
             keyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     val mizanColors = MaterialTheme.mizanColors

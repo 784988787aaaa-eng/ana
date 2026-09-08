@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -109,7 +110,6 @@ fun CustomerHistoryFilterSheet(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            // Date Filter Segment
             Text(
                 text = stringResource(id = R.string.habayeb_filter_date),
                 fontSize = 14.sp,
@@ -191,7 +191,6 @@ fun CustomerHistoryFilterSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // Type Filter Segment
             Text(
                 text = stringResource(id = R.string.habayeb_filter_by_type),
                 fontSize = 14.sp,

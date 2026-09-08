@@ -25,9 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
-/**
- * Standard PIN Keypad Digit / Action Button with custom styling and haptics support.
- */
 @Composable
 fun KeypadButton(
     text: String,
@@ -69,9 +66,6 @@ fun KeypadButton(
     }
 }
 
-/**
- * Biometric / Action Icon Button on Keypad.
- */
 @Composable
 fun KeypadIconButton(
     icon: ImageVector,
@@ -108,9 +102,6 @@ fun KeypadIconButton(
     }
 }
 
-/**
- * Single Row of 3 Keypad Digit Buttons.
- */
 @Composable
 fun KeypadRow(
     row: List<String>,

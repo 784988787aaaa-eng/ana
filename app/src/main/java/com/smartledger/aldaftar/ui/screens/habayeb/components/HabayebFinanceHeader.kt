@@ -98,7 +98,6 @@ fun HabayebFinanceHeader(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // 1. Curved Header Banner
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -125,7 +124,6 @@ fun HabayebFinanceHeader(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Right Action: Hamburger Menu Button
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -143,7 +141,6 @@ fun HabayebFinanceHeader(
                         )
                     }
 
-                    // Center Section: Dynamic Title + Net Amount with Eye Button
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
@@ -215,7 +212,6 @@ fun HabayebFinanceHeader(
                         }
                     }
 
-                    // Left Actions: Floating Search Toggle & Search Icon Button
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -248,7 +244,6 @@ fun HabayebFinanceHeader(
             }
         }
 
-        // 2. Independent Solid High-Contrast Dual Metric Cards ("لنا" & "علينا")
         HabayebDualMetricCards(
             selectedFilterTab = selectedFilterTab,
             onFilterTabSelected = onFilterTabSelected,

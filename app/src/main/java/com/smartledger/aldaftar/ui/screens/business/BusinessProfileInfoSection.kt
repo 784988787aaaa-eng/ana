@@ -28,10 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 
-/**
- * ثوابت معمارية تحدد حدود إدخال النصوص لقسم الملف التعريفي للنشاط التجاري.
- * تضمن اتساق سياسة التحقق من صحة الإدخال ومطابقتها لواجهة العرض.
- */
 private const val MAX_BIZ_NAME_LENGTH = 40
 private const val MAX_BIZ_DESC_LENGTH = 45
 

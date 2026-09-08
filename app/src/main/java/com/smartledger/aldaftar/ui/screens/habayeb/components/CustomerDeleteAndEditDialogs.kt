@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
-import com.smartledger.aldaftar.domain.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
@@ -158,13 +158,9 @@ fun CustomerEditDialog(
     }
 
     LaunchedEffect(Unit) {
-        try {
-            kotlinx.coroutines.delay(150)
+kotlinx.coroutines.delay(150)
             editNameFocusRequester.requestFocus()
             keyboardController?.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     Dialog(
@@ -192,7 +188,6 @@ fun CustomerEditDialog(
                         .padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // Header Row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -219,14 +214,12 @@ fun CustomerEditDialog(
                         )
                     }
 
-                    // Input Fields
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        // Account Name Field
                         Column {
                             OutlinedTextField(
                                 value = editedNameTfv,
@@ -268,7 +261,6 @@ fun CustomerEditDialog(
                             }
                         }
 
-                        // Phone Number Field with Contacts Pick Button
                         OutlinedTextField(
                             value = editedPhoneTfv,
                             onValueChange = { editedPhoneTfv = it },
@@ -317,7 +309,6 @@ fun CustomerEditDialog(
                         )
                     }
 
-                    // Action Buttons Row
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

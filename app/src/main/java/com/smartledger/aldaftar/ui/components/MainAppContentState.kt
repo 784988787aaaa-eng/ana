@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
-// تم فصل إدارة الحالة عن تركيب الواجهة للحفاظ على وضوح مسؤوليات المكونات.
 class MainAppContentState(
     initialIsDrawerOpen: Boolean = false,
     private val onMenuClickAction: (() -> Unit)? = null
