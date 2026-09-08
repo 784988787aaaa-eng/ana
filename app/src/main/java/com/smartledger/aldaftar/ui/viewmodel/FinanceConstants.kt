@@ -12,7 +12,6 @@ object FinanceConstants {
     const val PREFS_NAME = "mizan_sec_prefs"
     const val KEY_ONBOARDING_SHOWN = "onboarding_shown"
     const val KEY_CATEGORIES_POPULATED = "categories_populated"
-    const val KEY_ACTIVATION_CODE = "m_act_code"
     const val KEY_LINK_HABAYEB_DEBTS = "KEY_LINK_HABAYEB_DEBTS"
 
     // مفاتيح التفضيلات المشتركة والبحث العائم

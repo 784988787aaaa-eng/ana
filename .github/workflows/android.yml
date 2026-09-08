@@ -181,12 +181,10 @@ jobs:
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          LICENSE_BACKEND_URL: "https://al-daftar-license-api.mansour-ghawy.workers.dev"
         run: |
           set -euo pipefail
           echo "Building الدفتر الذكي release APK..."
           ./gradlew assembleRelease \
-            -PLICENSE_BACKEND_URL="$LICENSE_BACKEND_URL" \
             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \

@@ -20,7 +20,6 @@
  *    - تفويض تجميع وتغليف السجلات المحذوفة بصيغة JSON إلى [TrashJsonSerializer] وحفظها في [DeletedItemEntity].
  * 5. تفويض الخدمات المتخصصة (Separation of Concerns):
  *    - تفويض عمليات الاستعادة ومسح البيانات إلى [FinanceRestoreService].
- *    - تفويض التراخيص والفترة التجريبية إلى [TrialManager].
  *    - تفويض التفضيلات المشفرة إلى [PreferenceManager].
  */
 package com.smartledger.aldaftar.data.repository
@@ -60,14 +59,12 @@ typealias RestoreResult = FinanceRestoreResult
  * @param database كائن قاعدة البيانات المركزية [AppDatabase].
  * @param context سياق التطبيق للوصول للموارد والترجمات.
  * @param preferenceManager مدير التفضيلات المشفرة والتخزين المزدوج.
- * @param trialManager مدير التراخيص والفترة التجريبية.
  * @param restoreService خدمة إعادة بناء واستعادة قواعد البيانات.
  */
 class FinanceRepository(
     internal val database: AppDatabase,
     private val context: Context,
     private val preferenceManager: PreferenceManager = PreferenceManager(context),
-    private val trialManager: TrialManager = TrialManager(context),
     private val restoreService: FinanceRestoreService = FinanceRestoreService(database, context, preferenceManager)
 ) {
 
@@ -508,17 +505,8 @@ class FinanceRepository(
     }
 
     // -----------------------------------------------------------------
-    // تفويض التراخيص وإدارة مجلدات النسخ الاحتياطي (Licensing & Files)
+    // إدارة مجلدات النسخ الاحتياطي
     // -----------------------------------------------------------------
-
-    /** التحقق من حالة تفعيل التطبيق الدائم */
-    fun isAppActivated(): Boolean = trialManager.isAppActivated()
-
-    /** التحقق من انتهاء الفترة التجريبية استناداً لعدد المعاملات الكلي */
-    suspend fun isTrialExpiredDirect(): Boolean = withContext(Dispatchers.IO) {
-        val totalCount = getRealTotalTransactionsCount()
-        trialManager.isTrialExpiredDirect(totalCount)
-    }
 
     /** جلب المسار الأساسي لمجلدات النسخ الاحتياطي */
     fun getBaseBackupDirectory(): File = backupDirectoryManager.getBaseBackupDirectory()

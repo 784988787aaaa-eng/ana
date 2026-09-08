@@ -35,7 +35,7 @@ interface SupportIdentityRepository {
     fun getCachedSupportId(): String?
 
     /**
-     * Clears cached Support ID on account change or license unlink.
+     * Clears cached Support ID on account change or account change.
      */
     fun clearSupportIdentity()
 }
@@ -44,11 +44,11 @@ interface SupportIdentityRepository {
  * Default production implementation of [SupportIdentityRepository].
  */
 class SupportIdentityRepositoryImpl(
-    private val context: Context,
-    private val licenseManager: FirebaseLicenseManager = FirebaseLicenseManager
+    private val context: Context
 ) : SupportIdentityRepository {
 
     private val securityManager = AppSecurityManager.getInstance(context.applicationContext)
+    private val client = SupportIdentityClient(context.applicationContext)
 
     override suspend fun getSupportIdentity(): SupportIdentityState = withContext(Dispatchers.IO) {
         val cached = getCachedSupportId()
@@ -56,16 +56,10 @@ class SupportIdentityRepositoryImpl(
             return@withContext SupportIdentityState.Available(cached)
         }
 
-        val result = licenseManager.fetchSupportIdentity()
-        result.fold(
+        client.fetch().fold(
             onSuccess = { supportId ->
-                val clean = supportId.trim()
-                if (clean.isNotBlank()) {
-                    securityManager.saveSupportId(clean)
-                    SupportIdentityState.Available(clean)
-                } else {
-                    SupportIdentityState.Unavailable("Empty support identity")
-                }
+                securityManager.saveSupportId(supportId)
+                SupportIdentityState.Available(supportId)
             },
             onFailure = { error ->
                 SupportIdentityState.Unavailable(error.message)

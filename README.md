@@ -57,4 +57,4 @@
 
 ## Cloudflare deployment identity
 
-The production Worker created in Cloudflare is `al-daftar-license-api` and the production D1 database is `al-daftar-license-db`. The Wrangler configuration has been aligned to those names. The D1 `database_id` is intentionally left as `76b6b20b-6780-4706-bc3c-e1a2c68a35bd` until the real ID is copied from the Cloudflare D1 dashboard; do not replace it with a guessed value.
+The production Cloudflare Worker currently retains its existing deployment name for infrastructure compatibility; it now exposes the Support ID service only. The Wrangler configuration has been aligned to those names. The D1 `database_id` is intentionally left as `76b6b20b-6780-4706-bc3c-e1a2c68a35bd` until the real ID is copied from the Cloudflare D1 dashboard; do not replace it with a guessed value.

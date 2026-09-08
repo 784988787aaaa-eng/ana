@@ -44,5 +44,4 @@
 
 
 
-# License lease verification is intentionally self-contained and referenced directly.
--keep class com.smartledger.aldaftar.domain.LicenseLeaseVerifier { *; }
+# Security components are referenced directly; no special keep rule is required.

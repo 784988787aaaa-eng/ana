@@ -193,9 +193,6 @@ object HabayebRecurringManager {
     }
 
     suspend fun checkAndExecuteRecurring(context: Context, viewModel: HabayebFinanceViewModel, onExecuted: (Int) -> Unit = {}) {
-        if (viewModel.isTrialExpiredDirect()) {
-            return
-        }
         val configs = getAllConfigs(context)
         if (configs.isEmpty()) return
 

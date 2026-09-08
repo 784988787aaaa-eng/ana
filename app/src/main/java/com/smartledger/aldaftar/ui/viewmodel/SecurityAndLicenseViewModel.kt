@@ -10,11 +10,10 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.data.repository.LicenseAndTrialManager
+import com.smartledger.aldaftar.domain.DeviceIdentityManager
 import com.smartledger.aldaftar.domain.AppSecurityManager
 import com.smartledger.aldaftar.domain.BiometricAuthHelper
 import com.smartledger.aldaftar.domain.DatabaseSecurityGuard
-import com.smartledger.aldaftar.domain.FirebaseLicenseManager
 import com.smartledger.aldaftar.domain.GoogleAuthSessionManager
 import com.smartledger.aldaftar.domain.HashUtils
 import com.smartledger.aldaftar.domain.LicenseCheckResult
@@ -31,7 +30,6 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
 
     private val repository: FinanceRepository
     private val securityManager: AppSecurityManager = AppSecurityManager.getInstance(application)
-    private val licenseAndTrialManager: LicenseAndTrialManager = LicenseAndTrialManager(application)
     private val supportIdentityRepo: com.smartledger.aldaftar.domain.SupportIdentityRepository =
         com.smartledger.aldaftar.domain.SupportIdentityRepositoryImpl(application)
 
@@ -55,11 +53,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
 
     private val _activationTrigger = MutableStateFlow(0)
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == AppSecurityManager.PREF_M_ACTIVATED_EMAIL ||
-            key == AppSecurityManager.PREF_LICENSE_SESSION_ID ||
-            key == AppSecurityManager.PREF_LICENSE_LEASE_JSON ||
-            key == AppSecurityManager.PREF_LICENSE_SIGNATURE ||
-            key == AppSecurityManager.PREF_SUPPORT_ID ||
+        if (key == AppSecurityManager.PREF_SUPPORT_ID ||
             key == AppSecurityManager.PREF_BIOMETRIC_ENABLED ||
             key == AppSecurityManager.PREF_FAST_PASSCODE_ENABLED
         ) {
@@ -80,29 +74,10 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         _isBiometricEnabled.value = enabled
     }
 
-    fun startRealtimeMonitoring(context: Context) {
-        val activatedEmail = securityManager.getActivatedEmail()
-        if (activatedEmail.isBlank() || !licenseAndTrialManager.isAppActivated()) {
-            // لا يتم تشغيل المراقبة اللحظية لطرد الأجهزة إلا إذا كان التفعيل محلياً ومسجلاً مسبقاً
-            return
-        }
-        val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(context)
+    /** Licensing monitoring is intentionally disabled in this build. */
+    fun startRealtimeMonitoring(context: Context) = Unit
 
-        FirebaseLicenseManager.startRealtimeLicenseMonitoring(
-            context = context,
-            email = activatedEmail,
-            currentDeviceId = deviceId
-        ) { reason ->
-            viewModelScope.launch {
-                clearLocalActivationData()
-                _kickoutEvent.emit(reason)
-            }
-        }
-    }
-
-    fun stopRealtimeMonitoring() {
-        FirebaseLicenseManager.stopRealtimeLicenseMonitoring()
-    }
+    fun stopRealtimeMonitoring() = Unit
 
     init {
         val database = AppDatabase.getDatabase(application)
@@ -110,35 +85,10 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
 
         securityManager.registerListener(preferenceListener)
 
-        // Observe unified Google email to trigger license verification dynamically
         viewModelScope.launch {
-            GoogleAuthSessionManager.currentEmail.collect { email ->
-                if (email != null) {
-                    checkFirebaseLicenseStatus()
-                }
+            GoogleAuthSessionManager.currentEmail.collect {
                 _activationTrigger.value += 1
             }
-        }
-    }
-
-    fun checkFirebaseLicenseStatus() {
-        val activatedEmail = securityManager.getActivatedEmail()
-
-        if (activatedEmail.isNotBlank() && licenseAndTrialManager.isAppActivated()) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    val stillValid = FirebaseLicenseManager.syncAndVerifyLocalEmailLicense(getApplication())
-                    if (stillValid) {
-                        startRealtimeMonitoring(getApplication())
-                    }
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Offline or error syncing license safely: ${t.message}")
-                } finally {
-                    _activationTrigger.value += 1
-                }
-            }
-        } else {
-            _activationTrigger.value += 1
         }
     }
 
@@ -157,91 +107,56 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun getOrGenerateUnifiedDeviceId(context: Context): String =
-        LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(context)
+        DeviceIdentityManager.getOrGenerate(context)
 
     private val _isLicenseLoading = MutableStateFlow(false)
     val isLicenseLoading: StateFlow<Boolean> = _isLicenseLoading.asStateFlow()
 
     val deviceIdState: StateFlow<String> = flow {
-        emit(LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication()))
+        emit(DeviceIdentityManager.getOrGenerate(getApplication()))
     }
     .flowOn(Dispatchers.IO)
     .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
-    val activatedEmailState: StateFlow<String> = combine(deviceIdState, _activationTrigger) { _, _ ->
-        securityManager.getActivatedEmail()
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    val activatedEmailState: StateFlow<String> =
+        GoogleAuthSessionManager.currentEmail
+            .map { it.orEmpty() }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
-    val isActivatedState: StateFlow<Boolean> = combine(deviceIdState, _activationTrigger) { _, _ ->
-        licenseAndTrialManager.isAppActivated()
-    }
-    .flowOn(Dispatchers.IO)
-    .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /** Compatibility state: entitlement enforcement is disabled. */
+    val isActivatedState: StateFlow<Boolean> =
+        flowOf(true)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    val licenseState: StateFlow<LicenseState> =
+        combine(isActivatedState, activatedEmailState, deviceIdState) { _, email, deviceId ->
+            LicenseState.Valid(email = email, deviceId = deviceId)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, LicenseState.Unknown)
 
     /**
-     * حالة الترخيص الصريحة والمهيكلة المعتمدة على [LicenseState].
+     * The activation window remains available for a future licensing release,
+     * but this build performs no local or cloud activation.
      */
-    val licenseState: StateFlow<LicenseState> = combine(isActivatedState, activatedEmailState, deviceIdState) { isActivated, email, deviceId ->
-        when {
-            isActivated && email.isNotBlank() -> LicenseState.Valid(email = email, deviceId = deviceId)
-            isActivated -> LicenseState.Valid(email = "", deviceId = deviceId)
-            else -> LicenseState.Invalid(message = "App is not activated")
-        }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, LicenseState.Unknown)
-
     fun activateWithFirebaseEmail(email: String, onResult: (LicenseCheckResult) -> Unit) {
-        val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
-        viewModelScope.launch {
-            _isLicenseLoading.value = true
-            try {
-                val result = FirebaseLicenseManager.verifyAndActivateEmail(getApplication(), email, deviceId)
-                if (result is LicenseCheckResult.Success) {
-                    startRealtimeMonitoring(getApplication())
-                }
-                onResult(result)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Error activating with Firebase email", t)
-                onResult(
-                    LicenseCheckResult.Error(
-                        getApplication<Application>().getString(R.string.licensing_error_connection)
-                    )
-                )
-            } finally {
-                _isLicenseLoading.value = false
-                _activationTrigger.value += 1
-            }
-        }
+        onResult(
+            LicenseCheckResult.Error(
+                getApplication<Application>().getString(R.string.licensing_error_connection)
+            )
+        )
     }
 
     fun unlinkCurrentDevice(onResult: (Boolean) -> Unit) {
-        val email = securityManager.getActivatedEmail()
-        val deviceId = LicenseAndTrialManager.getOrGenerateUnifiedDeviceId(getApplication())
-        viewModelScope.launch {
-            _isLicenseLoading.value = true
-            try {
-                val success = email.isBlank() ||
-                    FirebaseLicenseManager.unlinkDevice(getApplication(), email, deviceId)
-                if (success) {
-                    clearLocalActivationData()
-                }
-                onResult(success)
-            } catch (t: Throwable) {
-                Log.w(TAG, "Current-device license unlink failed: ${t.javaClass.simpleName}")
-                onResult(false)
-            } finally {
-                _isLicenseLoading.value = false
-            }
-        }
+        clearLocalActivationData()
+        onResult(true)
     }
 
     fun clearLocalActivationData() {
         try {
-            licenseAndTrialManager.clearLocalActivation()
             supportIdentityRepo.clearSupportIdentity()
             _supportIdentityState.value = com.smartledger.aldaftar.domain.SupportIdentityState.Idle
             _activationTrigger.value += 1
         } catch (t: Throwable) {
-            Log.e(TAG, "Error clearing local activation data", t)
+            Log.e(TAG, "Error clearing support identity", t)
         }
     }
 
@@ -252,10 +167,7 @@ class SecurityAndLicenseViewModel(application: Application) : AndroidViewModel(a
         mainCount + habayebCount
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    fun isTrialExpired(): Boolean {
-        val count = totalTransactionsCount.value
-        return licenseAndTrialManager.isTrialExpiredDirect(count)
-    }
+    fun isTrialExpired(): Boolean = false
 
     fun saveSettings(settings: AppSettings) {
         securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)

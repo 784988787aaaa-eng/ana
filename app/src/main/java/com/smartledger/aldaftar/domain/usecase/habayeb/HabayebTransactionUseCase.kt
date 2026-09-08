@@ -70,7 +70,7 @@ class HabayebTransactionUseCase(
      * @param customer بيانات العميل الجديد.
      * @param transaction المعاملة الافتتاحية إن وجدت.
      * @param selectedCategoryFilter التصنيف المختار للعميل.
-     * @param onActivationRequired رد نداء عند انتهاء النسخة التجريبية والحاجة للتفعيل.
+     * @param onActivationRequired رد نداء احتياطي محفوظ لتوافق الواجهة الحالية.
      * @param onCategoryUpdated رد نداء عند تحديث التصنيف.
      */
     suspend fun saveHabayebCustomer(
@@ -80,10 +80,6 @@ class HabayebTransactionUseCase(
         onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
     ) = withContext(Dispatchers.IO) {
-        if (transaction != null && transaction.amount > BigDecimal.ZERO && repository.isTrialExpiredDirect()) {
-            onActivationRequired()
-            return@withContext
-        }
         try {
             repository.insertCustomerWithOpeningTransaction(customer, transaction)
 
@@ -154,10 +150,6 @@ class HabayebTransactionUseCase(
         transaction: HabayebTransaction,
         onActivationRequired: () -> Unit
     ) = withContext(Dispatchers.IO) {
-        if (repository.isTrialExpiredDirect()) {
-            onActivationRequired()
-            return@withContext
-        }
         try {
             repository.insertHabayebTransaction(transaction)
             VibrationHelper.triggerSuccessVibration(application)

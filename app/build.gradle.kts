@@ -90,11 +90,11 @@ android {
     buildConfig = true
   }
 
-  val licenseBackendUrl = providers.gradleProperty("LICENSE_BACKEND_URL").orNull
-    ?: System.getenv("LICENSE_BACKEND_URL")
+  val supportBackendUrl = providers.gradleProperty("SUPPORT_ID_BACKEND_URL").orNull
+    ?: System.getenv("SUPPORT_ID_BACKEND_URL")
     ?: "https://al-daftar-license-api.mansour-ghawy.workers.dev"
   defaultConfig {
-    buildConfigField("String", "LICENSE_BACKEND_URL", "\"$licenseBackendUrl\"")
+    buildConfigField("String", "SUPPORT_ID_BACKEND_URL", "\"$supportBackendUrl\"")
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }

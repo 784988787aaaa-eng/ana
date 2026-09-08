@@ -200,7 +200,7 @@ object GoogleAuthSessionManager {
                 } else {
                     authenticateFirebase(account!!.idToken!!, email) { firebaseSuccess ->
                         if (!firebaseSuccess) {
-                            val msg = context.getString(R.string.licensing_error_connection)
+                            val msg = context.getString(R.string.backup_toast_connect_failed)
                             setAuthFailed(msg)
                             onOutcome(GoogleSignInOutcome.Failed(msg))
                             return@authenticateFirebase
@@ -243,7 +243,7 @@ object GoogleAuthSessionManager {
                     if (email.isNotEmpty() && !account?.idToken.isNullOrBlank()) {
                         authenticateFirebase(account!!.idToken!!, email) { firebaseSuccess ->
                             if (!firebaseSuccess) {
-                                val msg = context.getString(R.string.licensing_error_connection)
+                                val msg = context.getString(R.string.backup_toast_connect_failed)
                                 setAuthFailed(msg)
                                 onOutcome(GoogleSignInOutcome.Failed(msg))
                                 return@authenticateFirebase

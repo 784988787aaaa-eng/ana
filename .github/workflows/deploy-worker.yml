@@ -1,4 +1,4 @@
-name: Deploy License Worker to Cloudflare
+name: Deploy Support Worker to Cloudflare
 
 on:
   push:

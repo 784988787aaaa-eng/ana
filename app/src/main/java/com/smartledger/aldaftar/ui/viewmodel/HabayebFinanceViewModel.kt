@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.*
 import com.smartledger.aldaftar.data.repository.FinanceRepository
-import com.smartledger.aldaftar.domain.LicenseManager
 import com.smartledger.aldaftar.domain.usecase.habayeb.*
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.state.CustomersUiState
@@ -108,12 +107,6 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    fun isTrialExpired(): Boolean {
-        if (repository.isAppActivated()) return false
-        return totalTransactionsCount.value >= LicenseManager.SECURE_LIMIT_VAL
-    }
-
-    suspend fun isTrialExpiredDirect(): Boolean = repository.isTrialExpiredDirect()
 
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>> =
         repository.getTransactionsForCustomerFlow(customerId)
@@ -306,16 +299,12 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
         exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
     ) = withContext(Dispatchers.IO) {
-        if (isTrialExpiredDirect()) {
-            _showActivationRequired.value = true
-            return@withContext
-        }
         resetFiltersToDefault(resetCategory = true)
 
         transactionUseCase.saveHabayebCustomer(
             customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
             foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value,
-            onActivationRequired = { _showActivationRequired.value = true }, onCategoryUpdated = { categoryManager.triggerUpdate() }
+            onActivationRequired = {}, onCategoryUpdated = { categoryManager.triggerUpdate() }
         )
         emitScrollToAccount(customer.id)
     }
@@ -327,16 +316,12 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
         exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
     ) {
         viewModelScope.launch {
-            if (isTrialExpiredDirect()) {
-                _showActivationRequired.value = true
-                return@launch
-            }
             resetFiltersToDefault(resetCategory = true)
 
             transactionUseCase.addHabayebTransaction(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
                 foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol,
-                onActivationRequired = { _showActivationRequired.value = true }
+                onActivationRequired = {}
             )
             emitScrollToAccount(customerId)
         }

@@ -152,7 +152,7 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                if (repository.isTrialExpiredDirect()) {
+                if (false) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             getApplication(),
