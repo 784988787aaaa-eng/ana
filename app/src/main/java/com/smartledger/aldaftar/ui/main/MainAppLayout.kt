@@ -256,7 +256,7 @@ fun MainAppLayout(
             }
             if (isFloatingSearchActive && !hideBubble && (currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER)) {
                 com.smartledger.aldaftar.ui.screens.habayeb.components.FloatingSearchBubble(
-                    activeThemeColor = if (currentScreen == Screen.LEDGER) com.smartledger.aldaftar.ui.theme.EmeraldPrimary else MaterialTheme.colorScheme.primary,
+                    activeThemeColor = if (currentScreen == Screen.LEDGER) com.smartledger.aldaftar.ui.theme.BrandPrimary else MaterialTheme.colorScheme.primary,
                     onSearchClick = {
                         if (currentScreen == Screen.HABAYEB) {
                             if (isHistoryOverlayActive) {

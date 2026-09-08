@@ -4,31 +4,30 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // ============================================================================
-// 1. Primitive Palette (Raw Color Definitions Only)
+// A. Primitive colors
 // ============================================================================
 
-// --- Brand Primitives ---
-val BrandPrimary = Color(0xFF4B36A2)          // Brand Glowing Violet/Purple (#4B36A2)
-val BrandPrimaryLight = Color(0xFF8C7CFF)     // Lighter Purple/Lavender (#8C7CFF)
-val BrandPrimaryDark = Color(0xFF4B36A2)      // Glowing Violet for dark mode
+// Brand primitives
+val BrandPrimary = Color(0xFF4B36A2)
+val BrandPrimaryLight = Color(0xFF8C7CFF)
+val BrandPrimaryDark = Color(0xFF4B36A2)
 val BrandPrimaryContainerLight = Color(0xFFEADBFF)
 val BrandPrimaryContainerDark = Color(0xFF352478)
 val BrandOnPrimaryContainerLight = Color(0xFF24005A)
 val BrandOnPrimaryContainerDark = Color(0xFFEADBFF)
 
-val BrandSecondary = Color(0xFF00B2FE)        // Neon Cyan / Electric Blue (#00B2FE)
+val BrandSecondary = Color(0xFF00B2FE)
 val BrandSecondaryDark = Color(0xFF00B2FE)
 val BrandSecondaryContainerLight = Color(0xFFD3E4FF)
 val BrandSecondaryContainerDark = Color(0xFF004881)
 val BrandOnSecondaryContainerLight = Color(0xFF001C38)
 val BrandOnSecondaryContainerDark = Color(0xFFD3E4FF)
 
-// --- Neutral Primitives ---
+// Neutral primitives
 val NeutralBackgroundLight = Color(0xFFF8F9FA)
 val NeutralBackgroundDark = Color(0xFF121212)
 val NeutralSurfaceLight = Color(0xFFFFFFFF)
@@ -51,48 +50,9 @@ val NeutralBorderLight = Color(0xFFE0E0E0)
 val NeutralBorderVariantLight = Color(0xFFEAEAEA)
 val NeutralBorderDark = Color(0xFF333333)
 val NeutralBorderVariantDark = Color(0xFF2A2A2A)
+val NeutralBlack = Color(0xFF000000)
 
-// --- Financial Primitives ---
-val CreditGreen = Color(0xFF2E7D32)            // Deep Emerald Green Light (#2E7D32)
-val CreditGreenDark = Color(0xFF51CF66)        // Soft Neon Green Dark (#51CF66)
-val CreditContainerLight = Color(0xFFF0FDF4)   // Light mode "علينا" card background (#F0FDF4)
-val CreditContainerDark = Color(0xFF16281E)    // Dark mode "علينا" card background (#16281E)
-val CreditBorderLight = Color(0xFFA7F3D0)
-val CreditBorderDark = Color(0xFF1B4D2E)
-
-val DebtRed = Color(0xFFD32F2F)                // Vivid Solid Red Light (#D32F2F)
-val DebtRedDark = Color(0xFFFF6B6B)            // Soft High-Contrast Red Dark (#FF6B6B)
-val DebtContainerLight = Color(0xFFFDF2F2)     // Light mode "لنا" card background (#FDF2F2)
-val DebtContainerDark = Color(0xFF2C1A1D)      // Dark mode "لنا" card background (#2C1A1D)
-val DebtBorderLight = Color(0xFFFECDD3)
-val DebtBorderDark = Color(0xFF531A21)
-
-val FinancialSelectionGreen = Color(0xFF10B981)
-val FinancialSelectionContainerLight = Color(0xFFE6F4EA)
-val FinancialSelectionContainerDark = Color(0xFF152D1F)
-
-// --- Status & Functional Primitives ---
-val StatusWarningAmber = Color(0xFFF59E0B)
-val StatusWarningAmberBg = Color(0xFFFFF8E1)
-val StatusWarningAmberBorder = Color(0xFFFFB300)
-val StatusWarningDarkRedText = Color(0xFFB71C1C)
-val StatusWarningOrangeButton = Color(0xFFE65100)
-
-val StatusErrorRed = Color(0xFFD32F2F)
-val StatusErrorRedDark = Color(0xFFFF6B6B)
-val StatusErrorContainerLight = Color(0xFFFDF2F2)
-val StatusErrorContainerDark = Color(0xFF2C1A1D)
-
-val StatusInfoBlue = Color(0xFF3B82F6)
-val StatusInfoBlueBgLight = Color(0xFFEFF6FF)
-val StatusInfoBlueBgDark = Color(0xFF1E293B)
-val StatusInfoBlueTextLight = Color(0xFF1D4ED8)
-val StatusInfoBlueTextDark = Color(0xFF60A5FA)
-
-val WhatsAppGreen = Color(0xFF128C7E)
-val WhatsAppLightGreen = Color(0xFF25D366)
-
-// --- Slate Palette Primitives ---
+// Slate primitives
 val Slate50 = Color(0xFFF8FAFC)
 val Slate100 = Color(0xFFF1F5F9)
 val Slate200 = Color(0xFFE2E8F0)
@@ -104,7 +64,11 @@ val Slate700 = Color(0xFF334155)
 val Slate800 = Color(0xFF1E293B)
 val Slate900 = Color(0xFF0F172A)
 
-// --- Category Palette Primitives (Strictly for Domain Category Badges) ---
+// External/domain primitives
+val WhatsAppGreen = Color(0xFF128C7E)
+val WhatsAppLightGreen = Color(0xFF25D366)
+
+// Category palette: domain-specific category badges; keep ordering stable.
 object CategoryPalette {
     val AMBER_DARK = Color(0xFF451A03)
     val AMBER_LIGHT = Color(0xFFFEF3C7)
@@ -130,44 +94,56 @@ object CategoryPalette {
     val SLATE_DEFAULT_LIGHT = Slate100
 }
 
-// --- Avatar Pastel Palette Primitives ---
+// Avatar pastel palette: ordering is part of the user experience.
 val AvatarPastelPalette = listOf(
     Color(0xFFFCA5A5), Color(0xFFFDBA74), Color(0xFFFDE047),
     Color(0xFF86EFAC), Color(0xFF93C5FD), Color(0xFFC4B5FD),
     Color(0xFFF472B6), Color(0xFF2DD4BF)
 )
 
-// Shared color aliases
-val EmeraldPrimary = BrandPrimary
-val EmeraldLight = BrandPrimaryLight
-val CoralAccent = BrandSecondary
-val EmeraldDark = BrandPrimaryDark
-val CoralDark = BrandSecondaryDark
-val IvoryBackground = NeutralBackgroundLight
-val SoftRed = DebtRed
-val SoftGreen = CreditGreen
-val SelectionGreen = FinancialSelectionGreen
-val SelectionGreenContainerLight = FinancialSelectionContainerLight
-val SelectionGreenContainerDark = FinancialSelectionContainerDark
-val DarkBackground = NeutralBackgroundDark
-val DarkSurface = NeutralSurfaceDark
-val LightSurface = NeutralSurfaceLight
-val TextPrimaryDark = NeutralTextPrimaryDark
-val TextSecondaryDark = NeutralTextSecondaryDark
-val TextPrimaryLight = NeutralTextPrimaryLight
-val TextSecondaryLight = NeutralTextSecondaryLight
-val BorderDark = NeutralBorderDark
-val BorderLight = NeutralBorderLight
-val WarningAmber = StatusWarningAmber
-val WarningAmberBg = StatusWarningAmberBg
-val WarningAmberBorder = StatusWarningAmberBorder
-val WarningDarkRedText = StatusWarningDarkRedText
-val WarningOrangeButton = StatusWarningOrangeButton
-val InfoBlue = StatusInfoBlue
-val InfoBlueBgLight = StatusInfoBlueBgLight
-val InfoBlueBgDark = StatusInfoBlueBgDark
-val InfoBlueTextLight = StatusInfoBlueTextLight
-val InfoBlueTextDark = StatusInfoBlueTextDark
+
+// ============================================================================
+// B. Semantic colors
+// ============================================================================
+
+// Financial semantics
+val CreditGreen = Color(0xFF2E7D32)
+val CreditGreenDark = Color(0xFF51CF66)
+val CreditContainerLight = Color(0xFFF0FDF4)
+val CreditContainerDark = Color(0xFF16281E)
+val CreditBorderLight = Color(0xFFA7F3D0)
+val CreditBorderDark = Color(0xFF1B4D2E)
+
+val DebtRed = Color(0xFFD32F2F)
+val DebtRedDark = Color(0xFFFF6B6B)
+val DebtContainerLight = Color(0xFFFDF2F2)
+val DebtContainerDark = Color(0xFF2C1A1D)
+val DebtBorderLight = Color(0xFFFECDD3)
+val DebtBorderDark = Color(0xFF531A21)
+
+val FinancialSelectionGreen = Color(0xFF10B981)
+val FinancialSelectionContainerLight = Color(0xFFE6F4EA)
+val FinancialSelectionContainerDark = Color(0xFF152D1F)
+
+// Status semantics
+val StatusWarningAmber = Color(0xFFF59E0B)
+val StatusWarningAmberBg = Color(0xFFFFF8E1)
+val StatusWarningAmberBorder = Color(0xFFFFB300)
+val StatusWarningDarkRedText = Color(0xFFB71C1C)
+val StatusWarningOrangeButton = Color(0xFFE65100)
+
+val StatusErrorRed = DebtRed
+val StatusErrorRedDark = DebtRedDark
+val StatusErrorContainerLight = DebtContainerLight
+val StatusErrorContainerDark = DebtContainerDark
+
+val StatusInfoBlue = Color(0xFF3B82F6)
+val StatusInfoBlueBgLight = Color(0xFFEFF6FF)
+val StatusInfoBlueBgDark = Color(0xFF1E293B)
+val StatusInfoBlueTextLight = Color(0xFF1D4ED8)
+val StatusInfoBlueTextDark = Color(0xFF60A5FA)
+
+// Supporting semantic tokens
 val NeonGreen = Color(0xFF00E676)
 val NeonCyan = Color(0xFF00B0FF)
 val IndigoAccent = Color(0xFF6366F1)
@@ -177,86 +153,49 @@ val WarningRed = Color(0xFFE53935)
 val WarningRedBorder = Color(0xFFB91C1C)
 val WarningRedBorderLight = Color(0xFFD93025)
 val LightRedTint = Color(0xFFFF8A80)
+
 val AlertGoldBgDark = Color(0xFF451A03)
 val AlertGoldBorderDark = Color(0xFF92400E)
 val AlertGoldTextDark = Color(0xFFFBBF24)
 val AlertGoldTextLight = Color(0xFFB45309)
+
 val SuccessGreenBgDark = Color(0xFF064E3B)
-val SuccessGreenBgLight = Color(0xFFE6F4EA)
-val SuccessGreenBorderDark = Color(0xFF10B981)
+val SuccessGreenBgLight = FinancialSelectionContainerLight
+val SuccessGreenBorderDark = FinancialSelectionGreen
 val SuccessGreenBorderLight = Color(0xFF137333)
-val MutedTextDark = NeutralTextSecondaryDark
-val MutedTextLight = NeutralTextSecondaryLight
+
 val DarkNeutralTrack = Color(0xFF2D2D2D)
 val LightNeutralTrack = Color(0xFFEEEEEE)
 
-// Chip Filter Tokens
+// Chip filter semantic tokens
 val ChipRedBgDarkSelected = Color(0xFF3B2025)
-val ChipRedBgDarkUnselected = Color(0xFF2C1A1D)
+val ChipRedBgDarkUnselected = DebtContainerDark
 val ChipRedBgLightSelected = Color(0xFFFCE8E8)
-val ChipRedBgLightUnselected = Color(0xFFFDF2F2)
-val ChipRedBorderDarkSelected = Color(0xFFFF6B6B)
-val ChipRedBorderDarkUnselected = Color(0xFF531A21)
-val ChipRedBorderLightSelected = Color(0xFFD32F2F)
-val ChipRedBorderLightUnselected = Color(0xFFFECDD3)
-val ChipRedTextDark = Color(0xFFFF6B6B)
-val ChipRedTextLight = Color(0xFFD32F2F)
+val ChipRedBgLightUnselected = DebtContainerLight
+val ChipRedBorderDarkSelected = DebtRedDark
+val ChipRedBorderDarkUnselected = DebtBorderDark
+val ChipRedBorderLightSelected = DebtRed
+val ChipRedBorderLightUnselected = DebtBorderLight
+val ChipRedTextDark = DebtRedDark
+val ChipRedTextLight = DebtRed
 val ChipRedHeaderDark = Color(0xFFFFA3A3)
-val ChipRedHeaderLight = Color(0xFFB71C1C)
+val ChipRedHeaderLight = StatusWarningDarkRedText
 
 val ChipGreenBgDarkSelected = Color(0xFF1D3528)
-val ChipGreenBgDarkUnselected = Color(0xFF16281E)
+val ChipGreenBgDarkUnselected = CreditContainerDark
 val ChipGreenBgLightSelected = Color(0xFFE6F9ED)
-val ChipGreenBgLightUnselected = Color(0xFFF0FDF4)
-val ChipGreenBorderDarkSelected = Color(0xFF51CF66)
-val ChipGreenBorderDarkUnselected = Color(0xFF1B4D2E)
-val ChipGreenBorderLightSelected = Color(0xFF2E7D32)
-val ChipGreenBorderLightUnselected = Color(0xFFA7F3D0)
-val ChipGreenTextDark = Color(0xFF51CF66)
-val ChipGreenTextLight = Color(0xFF2E7D32)
+val ChipGreenBgLightUnselected = CreditContainerLight
+val ChipGreenBorderDarkSelected = CreditGreenDark
+val ChipGreenBorderDarkUnselected = CreditBorderDark
+val ChipGreenBorderLightSelected = CreditGreen
+val ChipGreenBorderLightUnselected = CreditBorderLight
+val ChipGreenTextDark = CreditGreenDark
+val ChipGreenTextLight = CreditGreen
 val ChipGreenHeaderDark = Color(0xFF86EFAC)
 val ChipGreenHeaderLight = Color(0xFF1B5E20)
 
-// Shared gradients
-val PrimaryGradient = Brush.linearGradient(listOf(BrandPrimary, BrandPrimaryLight))
-val CoralGradient = Brush.linearGradient(listOf(BrandSecondary, Color(0xFF0284C7)))
-val IncomeGradientLight = Brush.linearGradient(listOf(CreditContainerLight, NeutralSurfaceLight))
-val IncomeGradientDark = Brush.linearGradient(listOf(CreditContainerDark, NeutralSurfaceDark))
-val ExpenseGradientLight = Brush.linearGradient(listOf(DebtContainerLight, NeutralSurfaceLight))
-val ExpenseGradientDark = Brush.linearGradient(listOf(DebtContainerDark, NeutralSurfaceDark))
-val SelectedItemGradientLight = Brush.linearGradient(listOf(FinancialSelectionContainerLight, Color(0xFFD1FAE5)))
-val SelectedItemGradientDark = Brush.linearGradient(listOf(FinancialSelectionContainerDark, Color(0xFF121F17)))
-val NeonGreenCyanGradient = Brush.horizontalGradient(listOf(Color(0xFF00E676), Color(0xFF00B0FF)))
-val VioletHeroGradient = Brush.linearGradient(listOf(BrandPrimary, Color(0xFF7C3AED), BrandPrimaryLight))
-val HeaderCardGradientDark = Brush.linearGradient(listOf(Color(0xFF1E1E1E), Color(0xFF262626)))
-val HeaderCardGradientLight = Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF8F9FA)))
-val WarningGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFEF4444)))
-val SplashSweepGradient = Brush.sweepGradient(
-    colorStops = arrayOf(
-        0.0f to Color(0xFF2563EB),
-        0.5f to Color(0xFF10B981),
-        1.0f to Color(0xFF2563EB)
-    )
-)
-val SplashRadialGlow = Brush.radialGradient(
-    colors = listOf(
-        Color(0xFF2563EB).copy(alpha = 0.22f),
-        Color(0xFF10B981).copy(alpha = 0.15f),
-        Color.Transparent
-    )
-)
-
-// Financial Semantic Color Resolvers
-fun financialCreditColor(isDark: Boolean): Color = if (isDark) CreditGreenDark else CreditGreen
-fun financialDebtColor(isDark: Boolean): Color = if (isDark) DebtRedDark else DebtRed
-fun financialCreditBg(isDark: Boolean): Color = if (isDark) CreditContainerDark else CreditContainerLight
-fun financialDebtBg(isDark: Boolean): Color = if (isDark) DebtContainerDark else DebtContainerLight
-fun financialCreditBorder(isDark: Boolean): Color = if (isDark) CreditBorderDark else CreditBorderLight
-fun financialDebtBorder(isDark: Boolean): Color = if (isDark) DebtBorderDark else DebtBorderLight
-
-
 // ============================================================================
-// 2. MizanColors Central Semantic Design Tokens
+// C. Theme color model
 // ============================================================================
 
 data class MizanColors(
@@ -408,17 +347,19 @@ data class MizanColors(
     val splashGlow: Brush
 )
 
+
 // ============================================================================
-// 3. Light and Dark Theme Instances
+// D. Light theme tokens
 // ============================================================================
 
-val LightMizanColors = MizanColors(
+val LightMizanColors by lazy {
+    MizanColors(
     brandPrimary = BrandPrimary,
-    onBrandPrimary = Color(0xFFFFFFFF),
+    onBrandPrimary = NeutralSurfaceLight,
     brandPrimaryContainer = BrandPrimaryContainerLight,
     onBrandPrimaryContainer = BrandOnPrimaryContainerLight,
     brandSecondary = BrandSecondary,
-    onBrandSecondary = Color(0xFFFFFFFF),
+    onBrandSecondary = NeutralSurfaceLight,
     brandSecondaryContainer = BrandSecondaryContainerLight,
     onBrandSecondaryContainer = BrandOnSecondaryContainerLight,
 
@@ -426,21 +367,21 @@ val LightMizanColors = MizanColors(
     appSurface = NeutralSurfaceLight,
     appSurfaceContainer = NeutralSurfaceLight,
     appSurfaceContainerLow = NeutralBackgroundLight,
-    appSurfaceContainerHigh = Color(0xFFF8F9FA),
+    appSurfaceContainerHigh = NeutralBackgroundLight,
     appSurfaceVariant = NeutralSurfaceVariantLight,
 
     contentPrimary = NeutralTextPrimaryLight,
     contentSecondary = NeutralTextSecondaryLight,
     contentTertiary = NeutralTextTertiaryLight,
     contentDisabled = NeutralTextDisabledLight,
-    contentOnBrand = Color(0xFFFFFFFF),
+    contentOnBrand = NeutralSurfaceLight,
 
     border = NeutralBorderLight,
     borderVariant = NeutralBorderVariantLight,
     borderStrong = Slate300,
 
     credit = CreditGreen,
-    onCredit = Color(0xFFFFFFFF),
+    onCredit = NeutralSurfaceLight,
     creditContainer = CreditContainerLight,
     onCreditContainer = Color(0xFF14532D),
     creditBorder = CreditBorderLight,
@@ -448,7 +389,7 @@ val LightMizanColors = MizanColors(
     creditGradientEnd = NeutralSurfaceLight,
 
     debt = DebtRed,
-    onDebt = Color(0xFFFFFFFF),
+    onDebt = NeutralSurfaceLight,
     debtContainer = DebtContainerLight,
     onDebtContainer = Color(0xFF7F1D1D),
     debtBorder = DebtBorderLight,
@@ -456,39 +397,39 @@ val LightMizanColors = MizanColors(
     debtGradientEnd = NeutralSurfaceLight,
 
     selection = FinancialSelectionGreen,
-    onSelection = Color(0xFFFFFFFF),
+    onSelection = NeutralSurfaceLight,
     selectionContainer = FinancialSelectionContainerLight,
-    selectionBorder = Color(0xFFA7F3D0),
+    selectionBorder = CreditBorderLight,
 
     success = CreditGreen,
-    onSuccess = Color(0xFFFFFFFF),
+    onSuccess = NeutralSurfaceLight,
     successContainer = FinancialSelectionContainerLight,
     warning = StatusWarningAmber,
-    onWarning = Color(0xFFFFFFFF),
+    onWarning = NeutralSurfaceLight,
     warningContainer = StatusWarningAmberBg,
     warningBorder = StatusWarningAmberBorder,
     error = StatusErrorRed,
-    onError = Color(0xFFFFFFFF),
+    onError = NeutralSurfaceLight,
     errorContainer = StatusErrorContainerLight,
     info = StatusInfoBlue,
-    onInfo = Color(0xFFFFFFFF),
+    onInfo = NeutralSurfaceLight,
     infoContainer = StatusInfoBlueBgLight,
 
-    headerForeground = Color(0xFFFFFFFF),
+    headerForeground = NeutralSurfaceLight,
     headerForegroundMuted = Color(0xCCFFFFFF),
     headerControlContainer = Color(0x2BFFFFFF),
     headerControlBorder = Color(0x40FFFFFF),
-    headerControlContent = Color(0xFFFFFFFF),
+    headerControlContent = NeutralSurfaceLight,
     headerControlContentMuted = Color(0xB3FFFFFF),
 
     floatingControlBackground = Color(0x33FFFFFF),
     floatingControlBorder = Color(0x59FFFFFF),
-    floatingControlContent = Color(0xFFFFFFFF),
+    floatingControlContent = NeutralSurfaceLight,
     floatingControlContentMuted = Color(0xCCFFFFFF),
 
     dialogScrim = Color(0x80000000),
-    dialogActionContent = Color(0xFFFFFFFF),
-    dialogDestructiveContent = Color(0xFFFFFFFF),
+    dialogActionContent = NeutralSurfaceLight,
+    dialogDestructiveContent = NeutralSurfaceLight,
 
     inputBorder = NeutralBorderLight,
     inputBorderFocused = BrandPrimary,
@@ -497,10 +438,10 @@ val LightMizanColors = MizanColors(
     inputPlaceholder = NeutralTextTertiaryLight,
 
     securityBackground = Color(0xFF1B133E),
-    securityForeground = Color(0xFFFFFFFF),
+    securityForeground = NeutralSurfaceLight,
     securityForegroundMuted = Color(0xB3FFFFFF),
     securityKeyBackground = Color(0x1AFFFFFF),
-    securityKeyContent = Color(0xFFFFFFFF),
+    securityKeyContent = NeutralSurfaceLight,
     securityKeyBorder = Color(0x26FFFFFF),
     securityIndicatorEmpty = Color(0x33FFFFFF),
     securityIndicatorFilled = BrandSecondary,
@@ -522,47 +463,37 @@ val LightMizanColors = MizanColors(
     chipCreditUnselectedBorder = CreditBorderLight,
     chipCreditText = CreditGreen,
 
-    alertGoldBackground = WarningAmberBg,
-    alertGoldBorder = WarningAmberBorder,
+    alertGoldBackground = StatusWarningAmberBg,
+    alertGoldBorder = StatusWarningAmberBorder,
     alertGoldText = AlertGoldTextLight,
-    infoBlueBackground = InfoBlueBgLight,
-    infoBlueBorder = InfoBlue,
-    infoBlueText = InfoBlueTextLight,
+    infoBlueBackground = StatusInfoBlueBgLight,
+    infoBlueBorder = StatusInfoBlue,
+    infoBlueText = StatusInfoBlueTextLight,
     successGreenBackground = SuccessGreenBgLight,
     successGreenBorder = SuccessGreenBorderLight,
     successGreenText = CreditGreen,
 
-    brandGradient = Brush.linearGradient(listOf(BrandPrimary, BrandPrimaryLight)),
-    brandSecondaryGradient = Brush.linearGradient(listOf(BrandSecondary, Color(0xFF0284C7))),
-    heroGradient = Brush.linearGradient(listOf(BrandPrimary, Color(0xFF7C3AED), BrandPrimaryLight)),
-    headerGradient = Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF8F9FA))),
-    creditGradient = Brush.linearGradient(listOf(CreditContainerLight, NeutralSurfaceLight)),
-    debtGradient = Brush.linearGradient(listOf(DebtContainerLight, NeutralSurfaceLight)),
-    selectionGradient = Brush.linearGradient(listOf(FinancialSelectionContainerLight, Color(0xFFD1FAE5))),
-    warningGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
-    splashGradient = Brush.sweepGradient(
-        colorStops = arrayOf(
-            0.0f to Color(0xFF2563EB),
-            0.5f to Color(0xFF10B981),
-            1.0f to Color(0xFF2563EB)
-        )
-    ),
-    splashGlow = Brush.radialGradient(
-        colors = listOf(
-            Color(0xFF2563EB).copy(alpha = 0.22f),
-            Color(0xFF10B981).copy(alpha = 0.15f),
-            Color.Transparent
-        )
+    brandGradient = PrimaryGradient,
+    brandSecondaryGradient = CoralGradient,
+    heroGradient = VioletHeroGradient,
+    headerGradient = HeaderCardGradientLight,
+    creditGradient = IncomeGradientLight,
+    debtGradient = ExpenseGradientLight,
+    selectionGradient = SelectedItemGradientLight,
+    warningGradient = WarningGradient,
+    splashGradient = SplashSweepGradient,
+    splashGlow = SplashRadialGlow
     )
-)
+}
 
-val DarkMizanColors = MizanColors(
+val DarkMizanColors by lazy {
+    MizanColors(
     brandPrimary = BrandPrimaryDark,
-    onBrandPrimary = Color(0xFFFFFFFF),
+    onBrandPrimary = NeutralSurfaceLight,
     brandPrimaryContainer = BrandPrimaryContainerDark,
     onBrandPrimaryContainer = BrandOnPrimaryContainerDark,
     brandSecondary = BrandSecondaryDark,
-    onBrandSecondary = Color(0xFFFFFFFF),
+    onBrandSecondary = NeutralSurfaceLight,
     brandSecondaryContainer = BrandSecondaryContainerDark,
     onBrandSecondaryContainer = BrandOnSecondaryContainerDark,
 
@@ -570,69 +501,69 @@ val DarkMizanColors = MizanColors(
     appSurface = NeutralSurfaceDark,
     appSurfaceContainer = NeutralSurfaceDark,
     appSurfaceContainerLow = NeutralSurfaceContainerLowDark,
-    appSurfaceContainerHigh = Color(0xFF262626),
+    appSurfaceContainerHigh = NeutralSurfaceVariantDark,
     appSurfaceVariant = NeutralSurfaceVariantDark,
 
     contentPrimary = NeutralTextPrimaryDark,
     contentSecondary = NeutralTextSecondaryDark,
     contentTertiary = NeutralTextTertiaryDark,
     contentDisabled = NeutralTextDisabledDark,
-    contentOnBrand = Color(0xFFFFFFFF),
+    contentOnBrand = NeutralSurfaceLight,
 
     border = NeutralBorderDark,
     borderVariant = NeutralBorderVariantDark,
     borderStrong = Slate700,
 
     credit = CreditGreenDark,
-    onCredit = Color(0xFF000000),
+    onCredit = NeutralBlack,
     creditContainer = CreditContainerDark,
-    onCreditContainer = Color(0xFFA7F3D0),
+    onCreditContainer = CreditBorderLight,
     creditBorder = CreditBorderDark,
     creditGradientStart = CreditContainerDark,
     creditGradientEnd = NeutralSurfaceDark,
 
     debt = DebtRedDark,
-    onDebt = Color(0xFF000000),
+    onDebt = NeutralBlack,
     debtContainer = DebtContainerDark,
-    onDebtContainer = Color(0xFFFECDD3),
+    onDebtContainer = DebtBorderLight,
     debtBorder = DebtBorderDark,
     debtGradientStart = DebtContainerDark,
     debtGradientEnd = NeutralSurfaceDark,
 
     selection = FinancialSelectionGreen,
-    onSelection = Color(0xFFFFFFFF),
+    onSelection = NeutralSurfaceLight,
     selectionContainer = FinancialSelectionContainerDark,
-    selectionBorder = Color(0xFF1B4D2E),
+    selectionBorder = CreditBorderDark,
 
     success = CreditGreenDark,
-    onSuccess = Color(0xFF000000),
+    onSuccess = NeutralBlack,
     successContainer = FinancialSelectionContainerDark,
     warning = StatusWarningAmber,
-    onWarning = Color(0xFF000000),
-    warningContainer = Color(0xFF451A03),
-    warningBorder = Color(0xFF92400E),
+    onWarning = NeutralBlack,
+    warningContainer = AlertGoldBgDark,
+    warningBorder = AlertGoldBorderDark,
     error = StatusErrorRedDark,
-    onError = Color(0xFF000000),
+    onError = NeutralBlack,
     errorContainer = StatusErrorContainerDark,
     info = StatusInfoBlue,
-    onInfo = Color(0xFFFFFFFF),
+    onInfo = NeutralSurfaceLight,
     infoContainer = StatusInfoBlueBgDark,
 
-    headerForeground = Color(0xFFFFFFFF),
+    headerForeground = NeutralSurfaceLight,
     headerForegroundMuted = Color(0xCCFFFFFF),
     headerControlContainer = Color(0x2BFFFFFF),
     headerControlBorder = Color(0x40FFFFFF),
-    headerControlContent = Color(0xFFFFFFFF),
+    headerControlContent = NeutralSurfaceLight,
     headerControlContentMuted = Color(0xB3FFFFFF),
 
     floatingControlBackground = Color(0x33FFFFFF),
     floatingControlBorder = Color(0x59FFFFFF),
-    floatingControlContent = Color(0xFFFFFFFF),
+    floatingControlContent = NeutralSurfaceLight,
     floatingControlContentMuted = Color(0xCCFFFFFF),
 
     dialogScrim = Color(0x99000000),
-    dialogActionContent = Color(0xFFFFFFFF),
-    dialogDestructiveContent = Color(0xFFFFFFFF),
+    dialogActionContent = NeutralSurfaceLight,
+    dialogDestructiveContent = NeutralSurfaceLight,
 
     inputBorder = NeutralBorderDark,
     inputBorderFocused = BrandPrimaryLight,
@@ -641,10 +572,10 @@ val DarkMizanColors = MizanColors(
     inputPlaceholder = NeutralTextTertiaryDark,
 
     securityBackground = Color(0xFF0E0B1F),
-    securityForeground = Color(0xFFFFFFFF),
+    securityForeground = NeutralSurfaceLight,
     securityForegroundMuted = Color(0xB3FFFFFF),
     securityKeyBackground = Color(0x1AFFFFFF),
-    securityKeyContent = Color(0xFFFFFFFF),
+    securityKeyContent = NeutralSurfaceLight,
     securityKeyBorder = Color(0x26FFFFFF),
     securityIndicatorEmpty = Color(0x33FFFFFF),
     securityIndicatorFilled = BrandSecondary,
@@ -652,7 +583,7 @@ val DarkMizanColors = MizanColors(
 
     separator = NeutralBorderVariantDark,
     shadowTint = Color(0x33000000),
-    ripple = Color(0xFFFFFFFF),
+    ripple = NeutralSurfaceLight,
     disabledTrack = DarkNeutralTrack,
 
     chipDebtSelectedBackground = ChipRedBgDarkSelected,
@@ -669,40 +600,105 @@ val DarkMizanColors = MizanColors(
     alertGoldBackground = AlertGoldBgDark,
     alertGoldBorder = AlertGoldBorderDark,
     alertGoldText = AlertGoldTextDark,
-    infoBlueBackground = InfoBlueBgDark,
-    infoBlueBorder = InfoBlue,
-    infoBlueText = InfoBlueTextDark,
+    infoBlueBackground = StatusInfoBlueBgDark,
+    infoBlueBorder = StatusInfoBlue,
+    infoBlueText = StatusInfoBlueTextDark,
     successGreenBackground = SuccessGreenBgDark,
     successGreenBorder = SuccessGreenBorderDark,
     successGreenText = CreditGreenDark,
 
-    brandGradient = Brush.linearGradient(listOf(BrandPrimary, BrandPrimaryLight)),
-    brandSecondaryGradient = Brush.linearGradient(listOf(BrandSecondary, Color(0xFF0284C7))),
-    heroGradient = Brush.linearGradient(listOf(BrandPrimary, Color(0xFF7C3AED), BrandPrimaryLight)),
-    headerGradient = Brush.linearGradient(listOf(Color(0xFF1E1E1E), Color(0xFF262626))),
-    creditGradient = Brush.linearGradient(listOf(CreditContainerDark, NeutralSurfaceDark)),
-    debtGradient = Brush.linearGradient(listOf(DebtContainerDark, NeutralSurfaceDark)),
-    selectionGradient = Brush.linearGradient(listOf(FinancialSelectionContainerDark, Color(0xFF121F17))),
-    warningGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
-    splashGradient = Brush.sweepGradient(
-        colorStops = arrayOf(
-            0.0f to Color(0xFF2563EB),
-            0.5f to Color(0xFF10B981),
-            1.0f to Color(0xFF2563EB)
-        )
-    ),
-    splashGlow = Brush.radialGradient(
-        colors = listOf(
-            Color(0xFF2563EB).copy(alpha = 0.22f),
-            Color(0xFF10B981).copy(alpha = 0.15f),
-            Color.Transparent
-        )
+    brandGradient = PrimaryGradient,
+    brandSecondaryGradient = CoralGradient,
+    heroGradient = VioletHeroGradient,
+    headerGradient = HeaderCardGradientDark,
+    creditGradient = IncomeGradientDark,
+    debtGradient = ExpenseGradientDark,
+    selectionGradient = SelectedItemGradientDark,
+    warningGradient = WarningGradient,
+    splashGradient = SplashSweepGradient,
+    splashGlow = SplashRadialGlow
+    )
+}
+
+// ============================================================================
+// F. Semantic gradients
+// ============================================================================
+
+// Shared semantic gradients. MizanColors references these directly so each
+// gradient has one source of truth.
+val PrimaryGradient = Brush.linearGradient(listOf(BrandPrimary, BrandPrimaryLight))
+val CoralGradient = Brush.linearGradient(listOf(BrandSecondary, Color(0xFF0284C7)))
+
+val IncomeGradientLight = Brush.linearGradient(
+    listOf(CreditContainerLight, NeutralSurfaceLight)
+)
+val IncomeGradientDark = Brush.linearGradient(
+    listOf(CreditContainerDark, NeutralSurfaceDark)
+)
+val ExpenseGradientLight = Brush.linearGradient(
+    listOf(DebtContainerLight, NeutralSurfaceLight)
+)
+val ExpenseGradientDark = Brush.linearGradient(
+    listOf(DebtContainerDark, NeutralSurfaceDark)
+)
+val SelectedItemGradientLight = Brush.linearGradient(
+    listOf(FinancialSelectionContainerLight, Color(0xFFD1FAE5))
+)
+val SelectedItemGradientDark = Brush.linearGradient(
+    listOf(FinancialSelectionContainerDark, Color(0xFF121F17))
+)
+val NeonGreenCyanGradient = Brush.horizontalGradient(
+    listOf(NeonGreen, NeonCyan)
+)
+val VioletHeroGradient = Brush.linearGradient(
+    listOf(BrandPrimary, Color(0xFF7C3AED), BrandPrimaryLight)
+)
+val HeaderCardGradientDark = Brush.linearGradient(
+    listOf(NeutralSurfaceDark, NeutralSurfaceVariantDark)
+)
+val HeaderCardGradientLight = Brush.linearGradient(
+    listOf(NeutralSurfaceLight, NeutralBackgroundLight)
+)
+val WarningGradient = Brush.linearGradient(
+    listOf(StatusWarningAmber, Color(0xFFEF4444))
+)
+val SplashSweepGradient = Brush.sweepGradient(
+    colorStops = arrayOf(
+        0.0f to Color(0xFF2563EB),
+        0.5f to FinancialSelectionGreen,
+        1.0f to Color(0xFF2563EB)
+    )
+)
+val SplashRadialGlow = Brush.radialGradient(
+    colors = listOf(
+        Color(0xFF2563EB).copy(alpha = 0.22f),
+        FinancialSelectionGreen.copy(alpha = 0.15f),
+        Color.Transparent
     )
 )
 
 // ============================================================================
-// 4. CompositionLocal & MaterialTheme Accessor
+// G. Theme accessors / resolvers
 // ============================================================================
+
+// Financial semantic color resolvers
+fun financialCreditColor(isDark: Boolean): Color =
+    if (isDark) CreditGreenDark else CreditGreen
+
+fun financialDebtColor(isDark: Boolean): Color =
+    if (isDark) DebtRedDark else DebtRed
+
+fun financialCreditBg(isDark: Boolean): Color =
+    if (isDark) CreditContainerDark else CreditContainerLight
+
+fun financialDebtBg(isDark: Boolean): Color =
+    if (isDark) DebtContainerDark else DebtContainerLight
+
+fun financialCreditBorder(isDark: Boolean): Color =
+    if (isDark) CreditBorderDark else CreditBorderLight
+
+fun financialDebtBorder(isDark: Boolean): Color =
+    if (isDark) DebtBorderDark else DebtBorderLight
 
 val LocalMizanColors = compositionLocalOf { LightMizanColors }
 val LocalIsDarkTheme = compositionLocalOf { false }

@@ -162,9 +162,9 @@ fun ComprehensiveReportDialog(
                     }
 
                     val netPrimaryColor = if (netPrimary.compareTo(BigDecimal.ZERO) > 0) {
-                        if (isDark) com.smartledger.aldaftar.ui.theme.SoftGreen else MaterialTheme.colorScheme.primary
+                        if (isDark) com.smartledger.aldaftar.ui.theme.CreditGreen else MaterialTheme.colorScheme.primary
                     } else if (netPrimary.compareTo(BigDecimal.ZERO) < 0) {
-                        if (isDark) com.smartledger.aldaftar.ui.theme.SoftRed else MaterialTheme.colorScheme.error
+                        if (isDark) com.smartledger.aldaftar.ui.theme.DebtRed else MaterialTheme.colorScheme.error
                     } else {
                         textSecondary
                     }

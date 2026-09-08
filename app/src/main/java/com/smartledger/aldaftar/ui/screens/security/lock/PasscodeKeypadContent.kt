@@ -39,9 +39,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.CoralAccent
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
-import com.smartledger.aldaftar.ui.theme.TextPrimaryDark
+import com.smartledger.aldaftar.ui.theme.BrandSecondary
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.NeutralTextPrimaryDark
 
 private val KEYPAD_ROW_1 = listOf("1", "2", "3")
 private val KEYPAD_ROW_2 = listOf("4", "5", "6")
@@ -49,8 +49,8 @@ private val KEYPAD_ROW_3 = listOf("7", "8", "9")
 
 private const val LOCK_HEADER_SCALE_LABEL = "lockHeaderScale"
 
-private val LOCK_TEXT_COLOR = TextPrimaryDark
-private val LOCK_TEXT_SECONDARY_COLOR = TextPrimaryDark.copy(alpha = 0.62f)
+private val LOCK_TEXT_COLOR = NeutralTextPrimaryDark
+private val LOCK_TEXT_SECONDARY_COLOR = NeutralTextPrimaryDark.copy(alpha = 0.62f)
 
 /**
  * Visual content for the PIN Passcode Keypad, including animated lock icon header,
@@ -91,13 +91,13 @@ fun PasscodeKeypadContent(
                     .size(64.dp)
                     .scale(lockHeaderScale)
                     .clip(CircleShape)
-                    .background(EmeraldPrimary.copy(alpha = 0.25f)),
+                    .background(BrandPrimary.copy(alpha = 0.25f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = stringResource(id = R.string.lock_app_locked_desc),
-                    tint = EmeraldPrimary,
+                    tint = BrandPrimary,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -169,7 +169,7 @@ fun PasscodeKeypadContent(
                     text = stringResource(id = R.string.lock_forgot_pin),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = CoralAccent,
+                    color = BrandSecondary,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { onForgotClick() }

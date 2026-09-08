@@ -50,13 +50,12 @@ typealias DayLedger = com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 class FinanceViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
-        private const val PREFS_TRASH = "trash_prefs"
-        private const val KEY_TRASH_AUTO_CLEANUP_PERIOD = "trash_auto_cleanup_period"
         private const val CLEANUP_PERIOD_NEVER = "never"
         private const val TRANSACTION_TYPE_EXPENSE = "EXPENSE"
         private const val PREFIX_HABAYEB = "habayeb_"
     }
 
+    private val app = application
     private val repository: FinanceRepository
 
     private val _autoCleanupPeriod = MutableStateFlow(CLEANUP_PERIOD_NEVER)
@@ -70,13 +69,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     init {
-        val database = AppDatabase.getDatabase(application)
-        repository = FinanceRepository(database, application)
-        val trashPrefs = application.getSharedPreferences(PREFS_TRASH, Context.MODE_PRIVATE)
-        _autoCleanupPeriod.value = trashPrefs.getString(KEY_TRASH_AUTO_CLEANUP_PERIOD, CLEANUP_PERIOD_NEVER) ?: CLEANUP_PERIOD_NEVER
+        val database = AppDatabase.getDatabase(app)
+        repository = FinanceRepository(database, app)
+        val trashPrefs = app.getSharedPreferences(FinanceConstants.PREFS_TRASH, Context.MODE_PRIVATE)
+        _autoCleanupPeriod.value = trashPrefs.getString(FinanceConstants.KEY_TRASH_AUTO_CLEANUP_PERIOD, CLEANUP_PERIOD_NEVER) ?: CLEANUP_PERIOD_NEVER
     }
 
-    private val navigationPrefs = NavigationPreferences(application)
+    private val navigationPrefs = NavigationPreferences(app)
 
     val tabOrderState: StateFlow<String> = navigationPrefs.tabOrderFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavigationPreferences.DEFAULT_ORDER)
@@ -96,13 +95,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private val fastThemePrefs = application.getSharedPreferences("fast_theme_prefs", Context.MODE_PRIVATE)
-    private val _themeModeState = MutableStateFlow(fastThemePrefs.getInt("key_fast_theme_mode", 0))
+    private val fastThemePrefs = app.getSharedPreferences(FinanceConstants.PREFS_FAST_THEME, Context.MODE_PRIVATE)
+    private val _themeModeState = MutableStateFlow(fastThemePrefs.getInt(FinanceConstants.KEY_FAST_THEME_MODE, 0))
     val themeModeState: StateFlow<Int> = _themeModeState.asStateFlow()
 
     fun updateThemeMode(newMode: Int) {
         _themeModeState.value = newMode
-        fastThemePrefs.edit().putInt("key_fast_theme_mode", newMode).apply()
+        fastThemePrefs.edit().putInt(FinanceConstants.KEY_FAST_THEME_MODE, newMode).apply()
         val current = settingsState.value
         if (current.themeMode != newMode) {
             saveSettings(current.copy(themeMode = newMode))
@@ -116,7 +115,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             isSettingsLoaded.value = true
             if (it != null && _themeModeState.value != it.themeMode) {
                 _themeModeState.value = it.themeMode
-                fastThemePrefs.edit().putInt("key_fast_theme_mode", it.themeMode).apply()
+                fastThemePrefs.edit().putInt(FinanceConstants.KEY_FAST_THEME_MODE, it.themeMode).apply()
             }
         }
         .map { it ?: AppSettings() }
@@ -162,9 +161,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     val searchResultsState: StateFlow<List<TransactionDb>> = combine(transactionsState, _searchQuery) { transactions, query ->
         if (query.isBlank()) emptyList()
         else {
-            val normalizedQuery = StringUtils.normalizeArabic(query, getApplication<Application>())
+            val normalizedQuery = StringUtils.normalizeArabic(query, app)
             transactions.filter { tx ->
-                StringUtils.normalizeArabic(tx.description, getApplication<Application>()).contains(normalizedQuery, ignoreCase = true)
+                StringUtils.normalizeArabic(tx.description, app).contains(normalizedQuery, ignoreCase = true)
             }.sortedByDescending { it.timestamp }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -237,7 +236,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun saveSettings(settings: AppSettings) {
         if (_themeModeState.value != settings.themeMode) {
             _themeModeState.value = settings.themeMode
-            fastThemePrefs.edit().putInt("key_fast_theme_mode", settings.themeMode).apply()
+            fastThemePrefs.edit().putInt(FinanceConstants.KEY_FAST_THEME_MODE, settings.themeMode).apply()
         }
         viewModelScope.launch(Dispatchers.IO) {
             repository.saveSettings(settings)
@@ -282,7 +281,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun restoreMultipleItems(items: List<DeletedItemEntity>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val context = getApplication<Application>()
+                val context = app
                 items.forEach { repository.restoreDeletedItem(it) }
                 items.forEach { TrashRestoreHandler.restorePrefsForDeletedItem(context, it) }
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
@@ -296,7 +295,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun restoreDeletedItem(item: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val context = getApplication<Application>()
+                val context = app
                 repository.restoreDeletedItem(item)
                 TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
@@ -310,7 +309,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun restoreSingleTransactionFromBundle(itemId: String, txId: String, item: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val context = getApplication<Application>()
+                val context = app
                 repository.restoreSingleTransactionFromBundle(itemId, txId)
                 TrashRestoreHandler.restorePrefsForDeletedItem(context, item)
                 sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
@@ -324,9 +323,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun updateAutoCleanupPeriod(period: String) {
         _autoCleanupPeriod.value = period
         viewModelScope.launch(Dispatchers.IO) {
-            val context = getApplication<Application>()
-            val trashPrefs = context.getSharedPreferences(PREFS_TRASH, Context.MODE_PRIVATE)
-            trashPrefs.edit().putString(KEY_TRASH_AUTO_CLEANUP_PERIOD, period).apply()
+            val context = app
+            val trashPrefs = context.getSharedPreferences(FinanceConstants.PREFS_TRASH, Context.MODE_PRIVATE)
+            trashPrefs.edit().putString(FinanceConstants.KEY_TRASH_AUTO_CLEANUP_PERIOD, period).apply()
 
             // Schedule background worker
             com.smartledger.aldaftar.TrashCleanupWorker.schedulePeriodicCleanup(context, period)
@@ -353,7 +352,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun cleanLedgerTrashItems() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val systemHabayeb = getApplication<Application>().getString(R.string.source_system_habayeb)
+                val systemHabayeb = app.getString(R.string.source_system_habayeb)
                 val allItems = repository.getAllDeletedItemsDirect()
                 val nonHabayebItems = allItems.filter {
                     it.sourceSystem != systemHabayeb && !it.originalTableName.startsWith(PREFIX_HABAYEB)
@@ -370,7 +369,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun emptyTrash() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val systemHabayeb = getApplication<Application>().getString(R.string.source_system_habayeb)
+                val systemHabayeb = app.getString(R.string.source_system_habayeb)
                 val allItems = repository.getAllDeletedItemsDirect()
                 val habayebItems = allItems.filter {
                     it.sourceSystem == systemHabayeb || it.originalTableName.startsWith(PREFIX_HABAYEB)

@@ -18,9 +18,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
-import com.smartledger.aldaftar.ui.theme.InfoBlue
-import com.smartledger.aldaftar.ui.theme.WarningAmber
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.StatusInfoBlue
+import com.smartledger.aldaftar.ui.theme.StatusWarningAmber
 
 @Composable
 fun BackupPermissionExplanationDialog(
@@ -61,7 +61,7 @@ fun BackupPermissionExplanationDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.settings_permissions_storage_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                    Icon(Icons.Default.Folder, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Folder, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
                 }
                 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -71,7 +71,7 @@ fun BackupPermissionExplanationDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.settings_permissions_manage_files_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                        Icon(Icons.Default.SettingsSuggest, contentDescription = null, tint = InfoBlue, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.SettingsSuggest, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(16.dp))
                     }
                 }
                 
@@ -82,7 +82,7 @@ fun BackupPermissionExplanationDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.settings_permissions_notifications_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = StatusWarningAmber, modifier = Modifier.size(16.dp))
                     }
                 }
                 
@@ -100,7 +100,7 @@ fun BackupPermissionExplanationDialog(
         confirmButton = {
             Button(
                 onClick = onGrantPermissions,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
             ) {
                 Text(stringResource(R.string.settings_permissions_grant_btn), fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
             }

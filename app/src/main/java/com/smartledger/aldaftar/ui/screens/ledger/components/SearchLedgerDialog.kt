@@ -55,9 +55,9 @@ import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.domain.DateUtils
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
-import com.smartledger.aldaftar.ui.theme.SoftGreen
-import com.smartledger.aldaftar.ui.theme.SoftRed
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.CreditGreen
+import com.smartledger.aldaftar.ui.theme.DebtRed
 import java.math.BigDecimal
 
 private const val TAG = "SearchLedgerDialog"
@@ -121,7 +121,7 @@ fun SearchLedgerDialog(
                     Text(
                         stringResource(id = R.string.ledger_search_title),
                         fontWeight = FontWeight.ExtraBold,
-                        color = EmeraldPrimary,
+                        color = BrandPrimary,
                         fontSize = 18.sp
                     )
                 }
@@ -141,7 +141,7 @@ fun SearchLedgerDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = BrandPrimary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedPlaceholderColor = subColor,
                         unfocusedPlaceholderColor = subColor
@@ -217,7 +217,7 @@ fun SearchResultItem(
                     Text(
                         text = formattedAmount,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (tx.type == "INCOME") SoftGreen else SoftRed,
+                        color = if (tx.type == "INCOME") CreditGreen else DebtRed,
                         fontSize = 13.sp
                     )
                     Text(
@@ -232,7 +232,7 @@ fun SearchResultItem(
                         text = tx.description.ifBlank { if (tx.type == "INCOME") stringResource(id = R.string.ledger_category_overall_income) else stringResource(id = R.string.ledger_category_expense) },
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
-                        color = EmeraldPrimary,
+                        color = BrandPrimary,
                         textAlign = TextAlign.Right
                     )
                     Text(
@@ -255,7 +255,7 @@ fun SearchResultItem(
                 Text(
                     text = interval,
                     fontSize = 9.sp,
-                    color = EmeraldPrimary.copy(alpha = 0.6f),
+                    color = BrandPrimary.copy(alpha = 0.6f),
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -263,7 +263,7 @@ fun SearchResultItem(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = null,
                     modifier = Modifier.size(10.dp),
-                    tint = EmeraldPrimary.copy(alpha = 0.4f)
+                    tint = BrandPrimary.copy(alpha = 0.4f)
                 )
             }
         }

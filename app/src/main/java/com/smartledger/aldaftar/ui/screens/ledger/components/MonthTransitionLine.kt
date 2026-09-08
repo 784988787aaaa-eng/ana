@@ -18,7 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
 
 @Composable
 fun MonthTransitionLine() {
@@ -33,7 +33,7 @@ fun MonthTransitionLine() {
             modifier = Modifier.fillMaxWidth(0.8f).matchParentSize()
         ) {
             drawLine(
-                color = EmeraldPrimary.copy(alpha = 0.4f),
+                color = BrandPrimary.copy(alpha = 0.4f),
                 start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
                 end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
                 pathEffect = pathEffect,
@@ -42,7 +42,7 @@ fun MonthTransitionLine() {
         }
         Text(
             text = stringResource(id = R.string.ledger_beginning_new_month),
-            color = EmeraldPrimary,
+            color = BrandPrimary,
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp,
             textAlign = TextAlign.Center,

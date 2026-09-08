@@ -145,7 +145,6 @@ fun SettingsView(
             val updated = settings.copy(
                 currencySymbol = currencySymbol,
                 schoolExpensesEnabled = schoolExpenses,
-                isAutoBackupEnabled = isAutoBackupEnabled,
                 exchangeRatesJson = finalJson
             )
             viewModel.saveSettings(updated)

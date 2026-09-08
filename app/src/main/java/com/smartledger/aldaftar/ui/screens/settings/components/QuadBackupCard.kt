@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
-import com.smartledger.aldaftar.ui.theme.SoftRed
+import com.smartledger.aldaftar.ui.theme.DebtRed
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import kotlinx.coroutines.launch
 
@@ -191,10 +191,10 @@ fun QuadBackupCard(
                 Button(
                     onClick = { showResetConfirmationFlow = true },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = SoftRed.copy(alpha = 0.08f),
-                        contentColor = SoftRed
+                        containerColor = DebtRed.copy(alpha = 0.08f),
+                        contentColor = DebtRed
                     ),
-                    border = BorderStroke(1.dp, SoftRed.copy(alpha = 0.35f)),
+                    border = BorderStroke(1.dp, DebtRed.copy(alpha = 0.35f)),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -207,12 +207,12 @@ fun QuadBackupCard(
                         Icon(
                             imageVector = Icons.Default.DeleteForever,
                             contentDescription = null,
-                            tint = SoftRed,
+                            tint = DebtRed,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = stringResource(R.string.backup_btn_delete_all),
-                            color = SoftRed,
+                            color = DebtRed,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )

@@ -35,7 +35,7 @@ import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType
 import com.smartledger.aldaftar.ui.screens.security.lock.PasscodeKeypadContent
 import com.smartledger.aldaftar.ui.screens.security.lock.RecoveryPhraseContent
-import com.smartledger.aldaftar.ui.theme.DarkBackground
+import com.smartledger.aldaftar.ui.theme.NeutralBackgroundDark
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -204,7 +204,7 @@ fun AppLockScreen(
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding(),
-        color = DarkBackground
+        color = NeutralBackgroundDark
     ) {
         AnimatedContent(
             targetState = showRecoveryView,

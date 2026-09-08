@@ -23,16 +23,47 @@ android {
     localeFilters += listOf("ar", "en")
   }
 
+  signingConfigs {
+    create("release") {
+      val configuredKeystorePath =
+        providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
+      // This file is resolved from the app module directory. Accept both
+      // "aldaftar.keystore" and the CI-friendly "app/aldaftar.keystore"
+      // without ever producing the invalid app/app/... path.
+      val keystorePath = configuredKeystorePath
+        .removePrefix("app/")
+        .removePrefix("./")
+        .ifBlank { "aldaftar.keystore" }
+      val storePwd = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
+      val keyAli = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull ?: "aldaftar"
+      val keyPwd = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
+
+      if (storePwd != null && keyAli != null && keyPwd != null) {
+        storeFile = file(keystorePath)
+        storePassword = storePwd
+        keyAlias = keyAli
+        keyPassword = keyPwd
+        enableV1Signing = true
+        enableV2Signing = true
+        enableV3Signing = true
+      }
+    }
+  }
+
   buildTypes {
     release {
       isCrunchPngs = true
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      val relConfig = signingConfigs.getByName("release")
+      if (relConfig.storePassword != null) {
+        signingConfig = relConfig
+      }
     }
     debug {
-      isMinifyEnabled = true
-      isShrinkResources = true
+      isMinifyEnabled = false
+      isShrinkResources = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }

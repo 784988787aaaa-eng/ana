@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.MonthLedger
 import java.math.BigDecimal
@@ -101,7 +101,7 @@ fun MainLedgerListSection(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(32.dp),
-                        color = EmeraldPrimary,
+                        color = BrandPrimary,
                         strokeWidth = 3.dp
                     )
                 }
@@ -135,14 +135,14 @@ fun MainLedgerListSection(
                             Icon(
                                 imageVector = if (isCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                                 contentDescription = null,
-                                tint = EmeraldPrimary,
+                                tint = BrandPrimary,
                                 modifier = Modifier
                                     .size(20.dp)
                                     .padding(end = 4.dp)
                             )
                             Text(
                                 text = if (monthIdx == 0) stringResource(id = R.string.ledger_daily_record) else stringResource(id = R.string.ledger_monthly_record),
-                                color = EmeraldPrimary,
+                                color = BrandPrimary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )

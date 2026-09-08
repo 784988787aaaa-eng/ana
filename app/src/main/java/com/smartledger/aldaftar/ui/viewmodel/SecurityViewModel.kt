@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -25,6 +26,7 @@ class SecurityViewModel(application: Application) : AndroidViewModel(application
     private val securityManager = AppSecurityManager.getInstance(application)
 
     val settingsState: StateFlow<AppSettings> = repository.settingsFlow
+        .map { it ?: AppSettings() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     val isBiometricSupported: Boolean = BiometricAuthHelper.isBiometricAvailable(application)

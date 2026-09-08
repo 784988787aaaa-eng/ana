@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
 
 @Composable
 fun SettingsHeaderCard(
@@ -30,7 +30,7 @@ fun SettingsHeaderCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(EmeraldPrimary)
+            .background(BrandPrimary)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

@@ -3,43 +3,42 @@ package com.smartledger.aldaftar.ui.viewmodel.ledger
 import android.content.Context
 import android.util.Log
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
+import com.smartledger.aldaftar.data.repository.PreferenceManager
 import org.json.JSONObject
 
-/**
- * معالج استعادة تفضيلات وسجلات سلة المهملات (Trash Restore Preferences Handler)
- *
- * المسؤولية المعمارية:
- * 1. استخراج واستعادة البيانات الوصفية (Metadata) المرتبطة بالعميل المستعاد من سلة المهملات مثل (روابط التصنيف CAT_LINK_ وتثبيتات الفئات).
- * 2. عزل مسؤولية تحديث التفضيلات المشتركة خارج ViewModel لمنع تضخم الكود وفصل إدارة الحالة عن تخزين الإعدادات.
- * 3. حماية المعاملات من الانهيار مع تسجيل أي استثناءات تالفة دون إخفاء الأخطاء.
- */
 object TrashRestoreHandler {
     private const val TAG = "TrashRestoreHandler"
-    private const val PREFS_MIZAN_SEC = "mizan_sec_prefs"
     private const val TABLE_HABAYEB_BUNDLE = "habayeb_bundle"
 
     fun restorePrefsForDeletedItem(context: Context, item: DeletedItemEntity) {
         try {
-            if (item.originalTableName == TABLE_HABAYEB_BUNDLE) {
-                val root = JSONObject(item.jsonData)
-                val custData = root.getJSONObject("customer")
-                val cId = custData.getString("id")
-                val sharedPrefs = context.getSharedPreferences(PREFS_MIZAN_SEC, Context.MODE_PRIVATE)
+            if (item.originalTableName != TABLE_HABAYEB_BUNDLE) return
 
-                if (custData.has("categoryLink")) {
-                    val catLink = custData.getString("categoryLink")
-                    sharedPrefs.edit().putString("CAT_LINK_$cId", catLink).apply()
-                }
+            val root = JSONObject(item.jsonData)
+            val customer = root.getJSONObject("customer")
+            val customerId = customer.getString("id")
+            val sharedPrefs = context.getSharedPreferences(
+                PreferenceManager.PREFS_MIZAN_SEC,
+                Context.MODE_PRIVATE
+            )
 
-                if (custData.has("pinnedCategories")) {
-                    val pinnedCats = custData.getJSONArray("pinnedCategories")
-                    for (i in 0 until pinnedCats.length()) {
-                        val catKey = pinnedCats.getString(i)
-                        val key = "KEY_PINNED_IN_$catKey"
-                        val existingSet = sharedPrefs.getStringSet(key, emptySet()) ?: emptySet()
-                        val newSet = existingSet.toMutableSet().apply { add(cId) }
-                        sharedPrefs.edit().putStringSet(key, newSet).apply()
-                    }
+            if (customer.has("categoryLink")) {
+                sharedPrefs.edit()
+                    .putString(
+                        "${PreferenceManager.PREF_CAT_LINK_PREFIX}$customerId",
+                        customer.getString("categoryLink")
+                    )
+                    .apply()
+            }
+
+            if (customer.has("pinnedCategories")) {
+                val pinnedCategories = customer.getJSONArray("pinnedCategories")
+                for (index in 0 until pinnedCategories.length()) {
+                    val categoryKey = pinnedCategories.getString(index)
+                    val key = "${PreferenceManager.PREF_KEY_PINNED_PREFIX}$categoryKey"
+                    val existingSet = sharedPrefs.getStringSet(key, emptySet()) ?: emptySet()
+                    val updatedSet = existingSet.toMutableSet().apply { add(customerId) }
+                    sharedPrefs.edit().putStringSet(key, updatedSet).apply()
                 }
             }
         } catch (e: Exception) {

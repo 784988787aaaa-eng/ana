@@ -18,6 +18,16 @@ object FinanceConstants {
     const val PREFS_FLOATING_SEARCH = "floating_search_prefs"
     const val KEY_FLOATING_SEARCH_ACTIVE = "KEY_FLOATING_SEARCH_ACTIVE"
 
+    // MIME Types
+    const val MIME_TYPE_JSON = "application/json"
+    const val MIME_TYPE_ALL_APP = "*/*"
+
+    // Theme and trash persistence keys (values are existing storage contracts)
+    const val PREFS_FAST_THEME = "fast_theme_prefs"
+    const val KEY_FAST_THEME_MODE = "key_fast_theme_mode"
+    const val PREFS_TRASH = "trash_prefs"
+    const val KEY_TRASH_AUTO_CLEANUP_PERIOD = "trash_auto_cleanup_period"
+
     // مفاتيح التنقل وIntent
     const val EXTRA_NAVIGATE_TO = "navigate_to"
     const val DEST_BACKUP_SETTINGS = "backup_settings"

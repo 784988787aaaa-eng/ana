@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
-import com.smartledger.aldaftar.ui.theme.SoftRed
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.DebtRed
 
 @Composable
 fun ResetTrapDialog(
@@ -42,7 +42,7 @@ fun ResetTrapDialog(
             ) {
                 Text(
                     text = stringResource(R.string.settings_trap_dialog_title),
-                    color = SoftRed,
+                    color = DebtRed,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
@@ -64,7 +64,7 @@ fun ResetTrapDialog(
                 // Soft Primary Safety Button
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()

@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.SoftRed
+import com.smartledger.aldaftar.ui.theme.DebtRed
 
 @Composable
 fun SettingsDangerZoneCard(
@@ -27,7 +27,7 @@ fun SettingsDangerZoneCard(
     ElevatedCard(
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = SoftRed.copy(alpha = 0.03f)),
+        colors = CardDefaults.elevatedCardColors(containerColor = DebtRed.copy(alpha = 0.03f)),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
@@ -41,7 +41,7 @@ fun SettingsDangerZoneCard(
             Text(
                 text = stringResource(R.string.settings_danger_desc),
                 fontSize = 11.sp,
-                color = SoftRed.copy(alpha = 0.7f),
+                color = DebtRed.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 lineHeight = 15.sp
             )

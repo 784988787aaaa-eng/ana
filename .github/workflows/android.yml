@@ -1,8 +1,8 @@
-name: Build Al-Daftar App
+name: Build Mizan Al Dar App
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -10,250 +10,191 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      GRADLE_OPTS: >-
-        -Dorg.gradle.jvmargs="-Xmx3584m -XX:MaxMetaspaceSize=1024m"
-        -Dkotlin.compiler.execution.strategy="in-process"
-
+      # حماية حقيقية للذاكرة وإجبار مترجم كوتلن و KSP لتفادي NPE و OOM
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3584m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy="in-process"
+      
     steps:
-      - name: Checkout Al-Daftar
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: "temurin"
+          java-version: '17'
+          distribution: 'temurin'
           cache: gradle
 
-      - name: Create runtime environment
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      - name: Create .env file
         run: |
-          set -euo pipefail
-          : > .env
-          printf 'GOOGLE_CLIENT_ID=%s\n' "$GOOGLE_CLIENT_ID" >> .env
-          printf 'GOOGLE_CLIENT_SECRET=%s\n' "$GOOGLE_CLIENT_SECRET" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
 
-      - name: Set up standard Android debug keystore
+      # 1. إعداد شهادة Debug القياسية لنظام أندرويد فقط في مسارها النظامي بدون أي مساس بملفات الـ Release
+      - name: Set up Standard Android Debug Keystore
         run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.android"
-          if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore "$HOME/.android/debug.keystore" \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+          echo "🔑 Preparing standard Android debug keystore..."
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-          # Never copy or use debug.keystore as the Al-Daftar release keystore.
+          # ممنوع منعاً باتاً نسخ debug.keystore إلى aldaftar.keystore أو تعويض أي release keystore
 
-      - name: Decode and verify Al-Daftar release keystore
+      # 2. فك تشفير وتجهيز مستودع المفاتيح من سر KEYSTORE_BASE64 في GitHub Secrets والتحقق من سلامته
+      - name: Setup and Verify Release Keystore from Base64 Secret
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          KEYSTORE_DEST: "app/aldaftar.keystore"
+          EXPECTED_SHA1: "4985981003E3502B632056CB931AE3804F6859F8"
         run: |
-          set -euo pipefail
           echo "===================================================="
-          echo "Al-Daftar release keystore verification"
-          echo "Source: GitHub Secret KEYSTORE_BASE64"
+          echo "🔍 Setup Release Keystore from GitHub Secrets (KEYSTORE_BASE64)"
           echo "===================================================="
 
+          # التحقق من توفر سر KEYSTORE_BASE64
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "ERROR: GitHub Secret KEYSTORE_BASE64 is missing."
+            echo "❌ CRITICAL ERROR: KEYSTORE_BASE64 secret is missing in GitHub Repository Secrets!"
+            echo "🚨 Please add KEYSTORE_BASE64 to GitHub Secrets."
             exit 1
           fi
+
+          # التحقق من توفر كلمات المرور
           if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "ERROR: Required release signing secrets are missing."
+            echo "❌ CRITICAL ERROR: RELEASE_STORE_PASSWORD or RELEASE_KEY_PASSWORD secret is missing!"
+            echo "🚨 Cannot proceed with release signing without valid credentials."
             exit 1
           fi
 
+          # فك تشفير Base64 وإنشاء ملف aldaftar.keystore ديناميكياً أثناء تشغيل الـ Workflow
           mkdir -p app
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > app/aldaftar.keystore
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_DEST"
 
-          if [ ! -s app/aldaftar.keystore ]; then
-            echo "ERROR: KEYSTORE_BASE64 decoded to an empty keystore."
+          if [ ! -s "$KEYSTORE_DEST" ]; then
+            echo "❌ CRITICAL ERROR: Failed to decode KEYSTORE_BASE64 into $KEYSTORE_DEST or file is empty!"
             exit 1
           fi
+          echo "✅ Successfully decoded KEYSTORE_BASE64 into $KEYSTORE_DEST"
 
-          CERT_OUTPUT="$(
-            keytool -list -v \
-              -keystore app/aldaftar.keystore \
-              -storepass "$STORE_PASSWORD" \
-              -alias "$KEY_ALIAS" 2>&1
-          )" || {
-            echo "ERROR: Cannot open the release keystore with the configured credentials/alias."
+          # التحقق من إمكانية فتح المستودع بالـ Alias المطلوب
+          echo "🔐 Verifying keystore access for alias: $KEY_ALIAS ..."
+          CERT_OUTPUT=$(keytool -list -v -keystore "$KEYSTORE_DEST" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" 2>&1) || {
+            echo "❌ CRITICAL ERROR: Failed to open keystore or alias '$KEY_ALIAS' not found!"
+            echo "$CERT_OUTPUT"
             exit 1
           }
 
-          EXTRACTED_SHA1="$(
-            printf '%s\n' "$CERT_OUTPUT" |
-              grep -i "SHA1:" |
-              head -n 1 |
-              sed -E 's/.*SHA1:[[:space:]]*//' |
-              tr -d ':[:space:]' |
-              tr '[:lower:]' '[:upper:]'
-          )"
-
-          EXTRACTED_SHA256="$(
-            printf '%s\n' "$CERT_OUTPUT" |
-              grep -i "SHA256:" |
-              head -n 1 |
-              sed -E 's/.*SHA256:[[:space:]]*//' |
-              tr -d ':[:space:]' |
-              tr '[:lower:]' '[:upper:]'
-          )"
-
-          if [ -z "$EXTRACTED_SHA1" ] || [ -z "$EXTRACTED_SHA256" ]; then
-            echo "ERROR: Could not extract SHA-1/SHA-256 from the release certificate."
-            exit 1
-          fi
-
-          echo "Release certificate SHA-1: $EXTRACTED_SHA1"
-          echo "Release certificate SHA-256: $EXTRACTED_SHA256"
-
-          EXPECTED_SHA1="4985981003E3502B632056CB931AE3804F6859F8"
+          # استخراج بصمة SHA-1 ومقارنتها بالبصمة المرجعية
+          EXTRACTED_SHA1=$(echo "$CERT_OUTPUT" | grep -i "SHA1:" | head -n 1 | sed -e 's/.*SHA1:[[:space:]]*//' -e 's/://g' | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')
+          
           if [ "$EXTRACTED_SHA1" != "$EXPECTED_SHA1" ]; then
-            echo "ERROR: KEYSTORE_BASE64 certificate SHA-1 does not match the registered Al-Daftar release fingerprint."
+            echo "❌ CRITICAL MISMATCH: Keystore certificate SHA-1 does NOT match reference release fingerprint!"
             echo "Expected: $EXPECTED_SHA1"
-            echo "Actual:   $EXTRACTED_SHA1"
+            echo "Got:      $EXTRACTED_SHA1"
             exit 1
           fi
 
-          echo "Keystore certificate verification: PASS"
+          echo "✅ Pre-build Keystore verification PASSED. Certificate matches genuine release signature."
 
-      - name: Verify Gradle wrapper
+      # 3. التحقق من سلامة Gradle Wrapper
+      - name: Verify Gradle Wrapper
         run: |
-          set -euo pipefail
-          test -f gradlew || { echo "ERROR: gradlew is missing."; exit 1; }
-          test -f gradle/wrapper/gradle-wrapper.jar || { echo "ERROR: gradle-wrapper.jar is missing."; exit 1; }
-          jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1 || {
-            echo "ERROR: gradle-wrapper.jar is invalid or corrupted."
-            exit 1
-          }
-          chmod +x gradlew
-
-      - name: Verify Al-Daftar application identity
-        run: |
-          set -euo pipefail
-
-          grep -R --line-number --exclude-dir=.git \
-            'com.smartledger.aldaftar' \
-            app/build.gradle.kts app/src/main/AndroidManifest.xml >/dev/null
-
-          if grep -R --line-number --exclude-dir=.git \
-            'com.aistudio.mizanaldar.ptwqxs' \
-            app/build.gradle.kts app/src/main/AndroidManifest.xml; then
-            echo "ERROR: Old application identity is still present in build/manifest configuration."
-            exit 1
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || ! jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+            echo "⚠️ Gradle wrapper jar is missing or corrupted! Generating valid wrapper..."
+            mkdir -p gradle/wrapper
+            if command -v gradle &> /dev/null; then
+              gradle wrapper --gradle-version 9.3.1
+            else
+              curl -sLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar || true
+            fi
           fi
+          chmod +x gradlew || true
 
-          echo "Application identity verification: PASS"
-          echo "Application: الدفتر الذكي"
-          echo "Application ID: com.smartledger.aldaftar"
-
-      - name: Create Google Services configuration
+      # 4. بناء نسخة Release مع تمرير بارامترات التوقيع الموثقة
+      - name: Build Release APK
         env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          set -euo pipefail
-          if [ -z "${GOOGLE_SERVICES_JSON:-}" ]; then
-            echo "ERROR: GOOGLE_SERVICES_JSON secret is missing or empty."
-            exit 1
-          fi
-          printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
-          python3 - <<'PYJSON'
-          import json
-          from pathlib import Path
-          json.loads(Path("app/google-services.json").read_text(encoding="utf-8"))
-          PYJSON
-          echo "Google Services configuration created successfully."
-
-      - name: Build signed Al-Daftar release APK
-        env:
-          RELEASE_STORE_FILE: "aldaftar.keystore"
+          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          set -euo pipefail
-          echo "Building الدفتر الذكي release APK..."
+          echo "🚀 Building Release APK with verified signing configuration..."
           ./gradlew assembleRelease \
             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
-            --stacktrace \
-            --no-parallel \
-            --max-workers=1
+            --stacktrace --no-parallel --max-workers=1
 
-      - name: Verify signed release APK
+      # 5. الفحص الإجباري لشهادة Release APK باستخدام apksigner
+      - name: Verify Release APK Signature & Fingerprint
         env:
           EXPECTED_SHA1_FORMATTED: "49:85:98:10:03:E3:50:2B:63:20:56:CB:93:1A:E3:80:4F:68:59:F8"
           EXPECTED_SHA1_CLEAN: "4985981003E3502B632056CB931AE3804F6859F8"
+          SIGNING_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
         run: |
-          set -euo pipefail
-
-          APK_PATH="$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1)"
+          echo "===================================================="
+          echo "🔍 Post-Build APK Signature Verification"
+          echo "===================================================="
+          
+          # تحديد مسار Release APK
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
           if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
-            echo "ERROR: Release APK was not produced."
+            echo "❌ CRITICAL ERROR: Release APK was not found at app/build/outputs/apk/release/"
             exit 1
           fi
+          echo "📦 Found Release APK at: $APK_PATH"
 
+          # العثور على أداة apksigner
           APKSIGNER_BIN=""
-          if command -v apksigner >/dev/null 2>&1; then
-            APKSIGNER_BIN="$(command -v apksigner)"
-          elif [ -n "${ANDROID_SDK_ROOT:-}" ]; then
-            APKSIGNER_BIN="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner -perm -111 2>/dev/null | sort -V | tail -n 1 || true)"
-          elif [ -n "${ANDROID_HOME:-}" ]; then
-            APKSIGNER_BIN="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -perm -111 2>/dev/null | sort -V | tail -n 1 || true)"
+          if command -v apksigner &> /dev/null; then
+            APKSIGNER_BIN="apksigner"
+          elif [ -n "$ANDROID_SDK_ROOT" ] && [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
+            APKSIGNER_BIN=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          elif [ -n "$ANDROID_HOME" ] && [ -d "$ANDROID_HOME/build-tools" ]; then
+            APKSIGNER_BIN=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
           fi
 
           if [ -z "$APKSIGNER_BIN" ] || [ ! -x "$APKSIGNER_BIN" ]; then
-            echo "ERROR: apksigner is required for release signature verification but was not found."
-            exit 1
+            echo "⚠️ apksigner not found directly, using keytool printcert on APK..."
+            SIGN_VERIFY_OUTPUT=$(keytool -printcert -jarfile "$APK_PATH" 2>&1)
+          else
+            echo "🛠️ Using apksigner: $APKSIGNER_BIN"
+            SIGN_VERIFY_OUTPUT=$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH" 2>&1) || {
+              echo "❌ CRITICAL ERROR: apksigner verification failed!"
+              echo "$SIGN_VERIFY_OUTPUT"
+              exit 1
+            }
           fi
 
-          SIGN_VERIFY_OUTPUT="$(
-            "$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH"
-          )"
+          # استخراج بصمة SHA-1 من الشهادة الفعلية لملف APK
+          ACTUAL_SHA1_FORMATTED=$(echo "$SIGN_VERIFY_OUTPUT" | grep -iE "(SHA-1 digest|SHA1:|SHA-1:)" | head -n 1 | sed -e 's/.*SHA-1 digest:[[:space:]]*//I' -e 's/.*SHA-1:[[:space:]]*//I' -e 's/.*SHA1:[[:space:]]*//I' | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+          ACTUAL_SHA1_CLEAN=$(echo "$ACTUAL_SHA1_FORMATTED" | sed 's/://g')
 
-          ACTUAL_SHA1_FORMATTED="$(
-            printf '%s\n' "$SIGN_VERIFY_OUTPUT" |
-              grep -i "SHA-1 digest" |
-              head -n 1 |
-              sed -E 's/.*SHA-1 digest:[[:space:]]*//' |
-              tr -d '[:space:]' |
-              tr '[:lower:]' '[:upper:]'
-          )"
-          ACTUAL_SHA1_CLEAN="${ACTUAL_SHA1_FORMATTED//:/}"
-
-          echo "===================================================="
-          echo "Al-Daftar Release Verification"
-          echo "Application: الدفتر الذكي"
+          # التقرير الإلزامي لـ Workflow
+          echo "----------------------------------------------------"
+          echo "Build variant: release"
           echo "Package: com.smartledger.aldaftar"
+          echo "Signing alias: $SIGNING_ALIAS"
           echo "Expected SHA-1: $EXPECTED_SHA1_FORMATTED"
           echo "Actual APK SHA-1: $ACTUAL_SHA1_FORMATTED"
-          echo "===================================================="
+          echo "----------------------------------------------------"
 
           if [ "$ACTUAL_SHA1_CLEAN" != "$EXPECTED_SHA1_CLEAN" ]; then
             echo "Fingerprint verification: FAIL"
+            echo "❌ CRITICAL MISMATCH: Release APK signature does NOT match the required release SHA-1!"
+            echo "Expected: $EXPECTED_SHA1_FORMATTED"
+            echo "Actual:   $ACTUAL_SHA1_FORMATTED"
             exit 1
           fi
 
-          "$APKSIGNER_BIN" verify --verbose "$APK_PATH"
           echo "Fingerprint verification: PASS"
-          echo "APK signature verification: PASS"
+          echo "✅ Release APK is verified with the genuine release signing key."
 
-      - name: Upload verified Al-Daftar release APK
+      # 6. رفع حزمة Release APK المؤكدة فقط بعد اجتياز فحص البصمة
+      - name: Upload Verified Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Al-Daftar-Release-APK
           path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error

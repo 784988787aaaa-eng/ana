@@ -124,7 +124,7 @@ fun CalculatorDialog(
 
     val mizanColors = MaterialTheme.mizanColors
     val isIncomeTheme = remember(activeThemeColor, mizanColors) {
-        activeThemeColor == mizanColors.credit || activeThemeColor == com.smartledger.aldaftar.ui.theme.CreditGreen || activeThemeColor == com.smartledger.aldaftar.ui.theme.SelectionGreen
+        activeThemeColor == mizanColors.credit || activeThemeColor == com.smartledger.aldaftar.ui.theme.CreditGreen || activeThemeColor == com.smartledger.aldaftar.ui.theme.FinancialSelectionGreen
     }
     val isExpenseTheme = remember(activeThemeColor, mizanColors) {
         activeThemeColor == mizanColors.debt || activeThemeColor == com.smartledger.aldaftar.ui.theme.DebtRed

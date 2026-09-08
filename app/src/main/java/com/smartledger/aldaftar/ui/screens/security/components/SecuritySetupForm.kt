@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.EmeraldPrimary
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
 
 import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
 
@@ -312,7 +312,7 @@ fun SecuritySetupForm(
                     checked = checkAcknowledged,
                     onCheckedChange = onCheckAcknowledgedChange,
                     colors = CheckboxDefaults.colors(
-                        checkedColor = EmeraldPrimary,
+                        checkedColor = BrandPrimary,
                         uncheckedColor = checkboxBorderColor
                     ),
                     modifier = Modifier.size(24.dp)
@@ -329,7 +329,7 @@ fun SecuritySetupForm(
             Button(
                 onClick = onSave,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = EmeraldPrimary,
+                    containerColor = BrandPrimary,
                     disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 ),
                 enabled = isValid,

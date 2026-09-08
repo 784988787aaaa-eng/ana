@@ -35,6 +35,12 @@
 }
 
 -dontwarn androidx.room.**
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
+-dontwarn javax.annotation.concurrent.**
+-dontwarn com.google.crypto.tink.**
+-dontwarn org.apache.poi.**
+-dontwarn org.apache.commons.**
 
 
 
