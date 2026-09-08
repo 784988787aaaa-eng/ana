@@ -101,7 +101,13 @@ object AddCustomerSaveHelper {
 
         viewModel.viewModelScope.launch(Dispatchers.IO) {
             try {
-                val newCustomer = HabayebCustomer(
+                if (viewModel.isTrialExpiredDirect()) {
+                    withContext(Dispatchers.Main) {
+                        onIsSavingChange(false)
+                        viewModel.triggerActivationRequired()
+                    }
+                } else {
+                    val newCustomer = HabayebCustomer(
                         id = newCustomerId,
                         name = nameStr.trim(),
                         phone = phoneStr.trim(),
