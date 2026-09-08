@@ -6,7 +6,6 @@ import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.MonthLedger
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
 import kotlinx.coroutines.CoroutineScope
 import java.math.BigDecimal
 
@@ -43,10 +42,6 @@ fun MainLedgerDialogsManager(
     reorderCommitmentTarget: FixedCommitment?,
     onDismissReorderTarget: () -> Unit,
     onApplyReorderTarget: (FixedCommitment, Int) -> Unit,
-    showActivationDialog: Boolean,
-    deviceId: String,
-    securityViewModel: SecurityAndLicenseViewModel,
-    onDismissActivationDialog: () -> Unit,
     showDeleteDaysDialog: Boolean,
     onDismissDeleteDaysDialog: () -> Unit,
     monthlyLedger: List<MonthLedger>,
@@ -118,14 +113,6 @@ fun MainLedgerDialogsManager(
         context = context
     )
 
-    if (showActivationDialog) {
-        DeviceActivationDialog(
-            deviceId = deviceId,
-            viewModel = securityViewModel,
-            onDismiss = onDismissActivationDialog,
-            isAutoTriggered = true
-        )
-    }
 
     DeleteDaysConfirmDialog(
         showDeleteDaysDialog = showDeleteDaysDialog,

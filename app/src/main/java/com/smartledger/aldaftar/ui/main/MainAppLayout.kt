@@ -18,11 +18,10 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.components.*
 import com.smartledger.aldaftar.ui.navigation.Screen
-import com.smartledger.aldaftar.ui.screens.ledger.components.DeviceActivationDialog
 import com.smartledger.aldaftar.ui.screens.BackupRestoreBottomSheet
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +37,7 @@ import kotlinx.coroutines.withContext
 fun MainAppLayout(
     viewModel: FinanceViewModel,
     habayebViewModel: HabayebFinanceViewModel,
-    securityViewModel: SecurityAndLicenseViewModel,
+    securityViewModel: SecurityViewModel,
     backupSyncViewModel: BackupSyncViewModel,
     settings: AppSettings,
     onExit: () -> Unit
@@ -51,41 +50,8 @@ fun MainAppLayout(
             FinanceConstants.DEFAULT_FALLBACK_VERSION
         }
     }
-    val sdfName = remember { java.text.SimpleDateFormat(FinanceConstants.BACKUP_DATE_FORMAT, java.util.Locale.US) }
+    val sdfName = remember { java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm", java.util.Locale.US) }
     val defaultStartDest by viewModel.defaultStartDestinationState.collectAsStateWithLifecycle()
-    val isActivated by securityViewModel.isActivatedState.collectAsStateWithLifecycle()
-    val deviceId by securityViewModel.deviceIdState.collectAsStateWithLifecycle()
-    
-    var showActivationDialog by remember { mutableStateOf(false) }
-    var isActivationAutoTriggered by remember { mutableStateOf(false) }
-
-    val showSecurityActivationRequired by securityViewModel.showActivationRequired.collectAsStateWithLifecycle()
-    val showHabayebActivationRequired by habayebViewModel.showActivationRequired.collectAsStateWithLifecycle()
-    val showBackupActivationRequired by backupSyncViewModel.showActivationRequired.collectAsStateWithLifecycle()
-
-    LaunchedEffect(showSecurityActivationRequired) {
-        if (showSecurityActivationRequired) {
-            isActivationAutoTriggered = true
-            showActivationDialog = true
-            securityViewModel.showActivationRequired.value = false
-        }
-    }
-
-    LaunchedEffect(showHabayebActivationRequired) {
-        if (showHabayebActivationRequired) {
-            isActivationAutoTriggered = true
-            showActivationDialog = true
-            habayebViewModel.resetActivationRequired()
-        }
-    }
-
-    LaunchedEffect(showBackupActivationRequired) {
-        if (showBackupActivationRequired) {
-            isActivationAutoTriggered = true
-            showActivationDialog = true
-            backupSyncViewModel.showActivationRequired.value = false
-        }
-    }
     var showComprehensiveReportDialog by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
@@ -210,12 +176,6 @@ fun MainAppLayout(
                     scope.launch { drawerState.close() }
                     showBackupRestoreSheet = true
                 },
-                isActivated = isActivated,
-                onActivateProClick = {
-                    scope.launch { drawerState.close() }
-                    isActivationAutoTriggered = false
-                    showActivationDialog = true
-                },
                 settings = settings,
                 securityViewModel = securityViewModel,
                 onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
@@ -329,24 +289,14 @@ fun MainAppLayout(
         BackupRestoreBottomSheet(
             settings = settings,
             backupSyncViewModel = backupSyncViewModel,
-            onExportMzd = {
+            onExportBackup = {
                 val dateStr = sdfName.format(java.util.Date())
-                safExportLauncher.launch("${FinanceConstants.BACKUP_FILE_PREFIX}$dateStr${FinanceConstants.BACKUP_FILE_EXTENSION}")
+                safExportLauncher.launch("backup_$dateStr.json")
             },
-            onImportMzd = {
+            onImportBackup = {
                 safRestoreLauncher.launch(arrayOf(FinanceConstants.MIME_TYPE_ALL_APP))
             },
             onDismiss = { showBackupRestoreSheet = false }
-        )
-    }
-
-    if (showActivationDialog) {
-        DeviceActivationDialog(
-            deviceId = deviceId,
-            viewModel = securityViewModel,
-            backupSyncViewModel = backupSyncViewModel,
-            onDismiss = { showActivationDialog = false },
-            isAutoTriggered = isActivationAutoTriggered
         )
     }
 

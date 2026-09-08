@@ -67,12 +67,6 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
     }
 
     val pinnedCustomerIds: StateFlow<Set<String>> = categoryManager.pinnedCustomerIds
-    private val _showActivationRequired = MutableStateFlow(false)
-    val showActivationRequired = _showActivationRequired.asStateFlow()
-
-    fun resetActivationRequired() { _showActivationRequired.value = false }
-    fun triggerActivationRequired() { _showActivationRequired.value = true }
-
     init {
         viewModelScope.launch(Dispatchers.IO) {
             categoryManager.loadPinnedForCategory("GLOBAL_ALL")
@@ -106,6 +100,7 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
     ) { m, h -> m + h }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
 
 
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>> =
@@ -303,8 +298,7 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
 
         transactionUseCase.saveHabayebCustomer(
             customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
-            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value,
-            onActivationRequired = {}, onCategoryUpdated = { categoryManager.triggerUpdate() }
+            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value, onCategoryUpdated = { categoryManager.triggerUpdate() }
         )
         emitScrollToAccount(customer.id)
     }
@@ -320,8 +314,7 @@ class HabayebFinanceViewModel(application: Application) : AndroidViewModel(appli
 
             transactionUseCase.addHabayebTransaction(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol,
-                onActivationRequired = {}
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
             )
             emitScrollToAccount(customerId)
         }

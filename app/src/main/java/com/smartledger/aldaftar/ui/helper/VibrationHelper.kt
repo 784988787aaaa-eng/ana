@@ -70,7 +70,7 @@ object VibrationHelper {
         }
     }
     
-    // Custom beautiful patterns for a world-class premium experience
+    // Custom beautiful patterns for a world-class experience
     fun triggerSuccessVibration(context: Context) {
         // Double tap pattern: wait 0, vibrate 40, wait 80, vibrate 80
         vibratePattern(context, SUCCESS_PATTERN)

@@ -70,12 +70,11 @@ fun SettingsView(
     var currenciesToSetup by remember { mutableStateOf<List<String>>(emptyList()) }
     var currentSetupIndex by remember { mutableStateOf(0) }
     var schoolExpenses by remember { mutableStateOf(settings.schoolExpensesEnabled) }
-    var isAutoBackupEnabled by remember { mutableStateOf(settings.isAutoBackupEnabled) }
+    var isAutoBackupEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(settings) {
         currencySymbol = settings.currencySymbol
         schoolExpenses = settings.schoolExpensesEnabled
-        isAutoBackupEnabled = settings.isAutoBackupEnabled
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -133,7 +132,7 @@ fun SettingsView(
         }
     }
 
-    val saveAllSettings = remember(settings, currencySymbol, schoolExpenses, isAutoBackupEnabled) {
+    val saveAllSettings = remember(settings, currencySymbol, schoolExpenses) {
         {
             var finalJson = settings.exchangeRatesJson
             if (settings.currencySymbol != currencySymbol) {
@@ -186,8 +185,7 @@ fun SettingsView(
                     val updated = settings.copy(
                         currencySymbol = newSymbol,
                         schoolExpensesEnabled = schoolExpenses,
-                        isAutoBackupEnabled = isAutoBackupEnabled,
-                        exchangeRatesJson = migratedJson
+                               exchangeRatesJson = migratedJson
                     )
                     viewModel.saveSettings(updated)
 
@@ -235,7 +233,7 @@ fun SettingsView(
                         val enableAutoBackup = {
                             isAutoBackupEnabled = true
                             saveAllSettings()
-                            com.smartledger.aldaftar.AutoBackupWorker.scheduleDailyBackupWorker(context)
+                            // Automatic backup execution is intentionally absent in Phase 1.
                             Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_enabled), Toast.LENGTH_SHORT).show()
                         }
                         if (checkBackupPermissionsGranted()) {
@@ -247,7 +245,7 @@ fun SettingsView(
                     } else {
                         isAutoBackupEnabled = false
                         saveAllSettings()
-                        com.smartledger.aldaftar.AutoBackupWorker.cancelDailyBackupWorker(context)
+                        // Automatic backup execution is intentionally absent in Phase 1.
                         Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_disabled), Toast.LENGTH_SHORT).show()
                     }
                 }

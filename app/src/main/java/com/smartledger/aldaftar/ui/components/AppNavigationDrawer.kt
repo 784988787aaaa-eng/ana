@@ -7,7 +7,7 @@
  * يمثل هذا المكون واجهة درج التنقل الجانبي الرئيسية (Navigation Drawer) في التطبيق،
  * مبنياً باستخدام Jetpack Compose و Material 3. يتيح للمستخدم الوصول السريع إلى
  * ملف النشاط التجاري، التقارير الشاملة، إعدادات العملة، إعدادات الأمان والقفل،
- * سلة المحذوفات، تفعيل النسخة الاحترافية (Pro)، النسخ الاحتياطي، والتبديل الفوري بين الوضع الليلي والنهاري.
+ * سلة المحذوفات، النسخ الاحتياطي، والتبديل الفوري بين الوضع الليلي والنهاري.
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
  * 1. واجهة التنقل الموحدة (Unified Navigation Sheet):
@@ -56,7 +56,7 @@ import com.smartledger.aldaftar.ui.theme.isDark
 import com.smartledger.aldaftar.ui.screens.BusinessProfileDialog
 import com.smartledger.aldaftar.ui.screens.SecurityDialog
 import com.smartledger.aldaftar.ui.theme.mizanColors
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 
 /**
  * [مكون درج التنقل الجانبي الرئيسي - AppNavigationDrawer]:
@@ -64,8 +64,6 @@ import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
  * @param currentScreen الشاشة النشطة الحالية لتحديد العنصر المختار.
  * @param onScreenSelected حدث الانتقال لشاشة محددة.
  * @param onBackupClick حدث فتح شاشة النسخ الاحتياطي.
- * @param isActivated حالة تفعيل النسخة الاحترافية.
- * @param onActivateProClick حدث النقر على ترقية النسخة الاحترافية.
  * @param settings إعدادات التطبيق الحالية (المظهر، العملات، وغيرها).
  * @param securityViewModel نموذج العرض الخاص بإدارة الأمان وكلمات المرور.
  * @param onSaveSettings دالة حفظ الإعدادات المحدثة.
@@ -79,10 +77,8 @@ fun AppNavigationDrawer(
     currentScreen: Screen,
     onScreenSelected: (Screen) -> Unit,
     onBackupClick: () -> Unit,
-    isActivated: Boolean,
-    onActivateProClick: () -> Unit,
     settings: AppSettings,
-    securityViewModel: SecurityAndLicenseViewModel,
+    securityViewModel: SecurityViewModel,
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
     versionName: String,
     onComprehensiveReportClick: () -> Unit,
@@ -234,12 +230,6 @@ fun AppNavigationDrawer(
                 onClick = { onScreenSelected(Screen.TRASH) }
             )
 
-            DrawerItem(
-                selected = false,
-                icon = if (isActivated) Icons.Default.Verified else Icons.Default.Star,
-                label = if (isActivated) stringResource(id = R.string.drawer_activate_pro_success) else stringResource(id = R.string.drawer_activate_pro),
-                onClick = onActivateProClick
-            )
 
             DrawerItem(
                 selected = false,

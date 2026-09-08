@@ -19,7 +19,6 @@
  * 4. إدارة سلة المهملات والحذف الناعم الآمن (Soft Delete Subsystem):
  *    - تفويض تجميع وتغليف السجلات المحذوفة بصيغة JSON إلى [TrashJsonSerializer] وحفظها في [DeletedItemEntity].
  * 5. تفويض الخدمات المتخصصة (Separation of Concerns):
- *    - تفويض عمليات الاستعادة ومسح البيانات إلى [FinanceRestoreService].
  *    - تفويض التفضيلات المشفرة إلى [PreferenceManager].
  */
 package com.smartledger.aldaftar.data.repository
@@ -44,13 +43,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.UUID
-
-/** اسم مستعار لنتيجة الاستعادة لسهولة الاستخدام */
-typealias RestoreResult = FinanceRestoreResult
 
 /**
  * [فئة المستودع المالي المركزي - FinanceRepository]:
@@ -64,8 +59,7 @@ typealias RestoreResult = FinanceRestoreResult
 class FinanceRepository(
     internal val database: AppDatabase,
     private val context: Context,
-    private val preferenceManager: PreferenceManager = PreferenceManager(context),
-    private val restoreService: FinanceRestoreService = FinanceRestoreService(database, context, preferenceManager)
+    private val preferenceManager: PreferenceManager = PreferenceManager(context)
 ) {
 
     /**
@@ -96,8 +90,6 @@ class FinanceRepository(
     private val trashDao = database.trashDao()
     private val habayebDao = database.habayebDao()
 
-    /** مدير مسارات النسخ الاحتياطي */
-    private val backupDirectoryManager = BackupDirectoryManager(context)
 
     /** أسماء الأنظمة الفرعية للتمييز في سلة المهملات */
     private val sourceDar: String by lazy { context.getString(com.smartledger.aldaftar.R.string.source_system_dar) }
@@ -396,11 +388,6 @@ class FinanceRepository(
         habayebDao.getHabayebTransactionsCountDirect()
     }
 
-    /** حساب العدد الحقيقي الكلي لجميع معاملات التطبيق (يومية + حبايب) لفحص التراخيص */
-    suspend fun getRealTotalTransactionsCount(): Int = withContext(Dispatchers.IO) {
-        getTransactionsCountDirect() + getHabayebTransactionsCountDirect()
-    }
-
     // -----------------------------------------------------------------
     // عمليات الحذف المؤقت وسلة المهملات (Trash & Soft Delete)
     // -----------------------------------------------------------------
@@ -505,33 +492,20 @@ class FinanceRepository(
     }
 
     // -----------------------------------------------------------------
-    // إدارة مجلدات النسخ الاحتياطي
+    // مسح بيانات التطبيق — وظيفة إدارية محلية مستقلة عن النسخ الاحتياطي
     // -----------------------------------------------------------------
-
-    /** جلب المسار الأساسي لمجلدات النسخ الاحتياطي */
-    fun getBaseBackupDirectory(): File = backupDirectoryManager.getBaseBackupDirectory()
-
-    /** جلب مجلد النسخ الاحتياطي الشهري النشط */
-    fun getBackupDirectory(): File = backupDirectoryManager.getBackupDirectory()
-
-    /** البحث العودي عن كافة ملفات النسخ `.mzd` داخل المجلد */
-    fun getAllMzdFilesRecursively(rootDir: File): List<File> = backupDirectoryManager.getAllMzdFilesRecursively(rootDir)
-
-    // -----------------------------------------------------------------
-    // الاستعادة الشاملة واسترجاع المحذوفات (Master Restore & Undo)
-    // -----------------------------------------------------------------
-
-    /** مسح وتفريغ كافة بيانات التطبيق المالية */
     suspend fun deleteAllData(): Unit = withContext(Dispatchers.IO) {
-        restoreService.deleteAllData()
+        database.withTransaction {
+            transactionDao.clearAllTransactions()
+            commitmentDao.clearAllCommitments()
+            customCategoryDao.clearAllCustomCategories()
+            trashDao.clearAllDeletedItems()
+            habayebDao.clearAllCustomers()
+            habayebDao.clearAllTransactions()
+            settingsDao.insertOrUpdateSettings(AppSettings(isFirstLaunch = false))
+        }
     }
 
-    /** تنفيذ الاستعادة الذرية الشاملة لقاعدة البيانات من نص JSON */
-    suspend fun executeMasterRestore(rawJsonString: String): FinanceRestoreResult = withContext(Dispatchers.IO) {
-        restoreService.executeMasterRestore(rawJsonString)
-    }
-
-    /** استرجاع عنصر محذوف من سلة المهملات إلى جدوله الأصلي */
     suspend fun restoreDeletedItem(item: DeletedItemEntity) = withContext(Dispatchers.IO) {
         trashDao.restoreDeletedItem(item)
     }

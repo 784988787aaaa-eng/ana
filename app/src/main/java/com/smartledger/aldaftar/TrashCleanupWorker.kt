@@ -11,7 +11,6 @@
  * 2. تنظيف ملفات التصدير والمشاركة المؤقتة القديمة (.pdf, .xlsx, .csv) من مجلد الـ Cache.
  * 
  * [قواعد الأمان المعماري والحماية المطلقة]:
- * - الحماية الصارمة لملفات النسخ الاحتياطي: يُحظر نهائياً حذف أي ملف يحمل امتداد .mzd أو بادئة النسخ.
  * - عزل الأخطاء: فشل حذف سجل أو ملف لا يوقف العملية عن متابعة تنظيف باقي العناصر.
  * - احترام الموارد: يتم تشغيل الجدولة فقط عند عدم انخفاض شحن البطارية.
  */
@@ -28,7 +27,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.smartledger.aldaftar.data.backup.BackupConstants
 import com.smartledger.aldaftar.data.local.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -170,16 +168,9 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
 
             cacheDir.walkTopDown().forEach { file ->
                 try {
-                    // حظر مطلق: منع حذف ملفات النسخ الاحتياطي أو المجلدات الأساسية
-                    if (isProtectedFile(file)) {
-                        return@forEach
-                    }
-
                     // تنظيف الملفات المؤقتة فقط التي مضى عليها أكثر من 24 ساعة
                     if (file.isFile && file.lastModified() < thresholdTime) {
-                        val isTempOrExport = file.name.startsWith(BackupConstants.BACKUP_TEMP_PREFIX) ||
-                                file.name.endsWith(BackupConstants.BACKUP_TEMP_SUFFIX) ||
-                                file.name.endsWith(".pdf") ||
+                        val isTempOrExport = file.name.endsWith(".pdf") ||
                                 file.name.endsWith(".xlsx") ||
                                 file.name.endsWith(".csv")
 
@@ -194,18 +185,5 @@ class TrashCleanupWorker(context: Context, params: WorkerParameters) : Coroutine
         } catch (e: Exception) {
             Log.e(TAG, "فشل أثناء تنظيف ملفات الكاش المؤقتة", e)
         }
-    }
-
-    /**
-     * [دالة فحص الملفات المحمية]:
-     * تتأكد من أن الملف ليس نسخة احتياطية (.mzd) أو مجلداً رئيسياً لمنع حذفه بالخطأ.
-     */
-    private fun isProtectedFile(file: File): Boolean {
-        val name = file.name
-        if (name.endsWith(BackupConstants.BACKUP_FILE_EXTENSION, ignoreCase = true)) return true
-        if (name.startsWith(BackupConstants.BACKUP_FILE_PREFIX, ignoreCase = true)) return true
-        if (name.startsWith(BackupConstants.BACKUP_CLOUD_FILE_PREFIX, ignoreCase = true)) return true
-        if (file.isDirectory) return true
-        return false
     }
 }

@@ -43,7 +43,7 @@ import com.smartledger.aldaftar.ui.screens.ledger.components.MainLedgerSelection
 import com.smartledger.aldaftar.ui.screens.ledger.components.PinnedMainLedgerHeader
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -51,7 +51,7 @@ import java.math.BigDecimal
 fun MainLedgerView(
     viewModel: FinanceViewModel,
     habayebViewModel: HabayebFinanceViewModel,
-    securityViewModel: SecurityAndLicenseViewModel,
+    securityViewModel: SecurityViewModel,
     settings: AppSettings,
     onBackIntercept: (Boolean) -> Unit,
     onMenuClick: () -> Unit = {},
@@ -98,16 +98,6 @@ fun MainLedgerView(
         }
     }
 
-    val deviceId by securityViewModel.deviceIdState.collectAsStateWithLifecycle()
-    val showActivationRequired by securityViewModel.showActivationRequired.collectAsStateWithLifecycle()
-
-    LaunchedEffect(showActivationRequired) {
-        if (showActivationRequired) {
-            uiController.activeDialogState = MainLedgerDialogState.DeviceActivation
-            // إعادة ضبط حالة مطالبة التفعيل عبر ViewModel لمنع تكرار فتح الحوار
-            securityViewModel.resetActivationRequired()
-        }
-    }
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val searchResults by viewModel.searchResultsState.collectAsStateWithLifecycle()
@@ -290,10 +280,6 @@ fun MainLedgerView(
             viewModel.reorderCommitment(target, pos)
             uiController.activeDialogState = MainLedgerDialogState.CommitmentsList
         },
-        showActivationDialog = uiController.activeDialogState is MainLedgerDialogState.DeviceActivation,
-        deviceId = deviceId,
-        securityViewModel = securityViewModel,
-        onDismissActivationDialog = { uiController.dismissDialog() },
         showDeleteDaysDialog = uiController.activeDialogState is MainLedgerDialogState.DeleteDaysConfirm,
         onDismissDeleteDaysDialog = { uiController.dismissDialog() },
         monthlyLedger = monthlyLedger,

@@ -152,16 +152,6 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                if (false) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            getApplication(),
-                            getApplication<Application>().getString(R.string.licensing_dialog_desc),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                    return@launch
-                }
                 val id = presetId ?: "tx_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
                 val tx = TransactionDb(
                     id = id,

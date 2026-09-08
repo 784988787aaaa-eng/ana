@@ -1,4 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
+import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebDateFormatter
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.AppDateTimeFormatter
 import java.util.Date
 
 @Composable
@@ -122,7 +123,7 @@ fun AddTransactionFormFields(
         Spacer(modifier = Modifier.height(4.dp))
 
         val formattedSelectedDate = remember(dateMillis) {
-            HabayebDateFormatter.formatDateArabic(Date(dateMillis))
+            AppDateTimeFormatter.formatDateArabic(Date(dateMillis))
         }
 
         OutlinedTextField(

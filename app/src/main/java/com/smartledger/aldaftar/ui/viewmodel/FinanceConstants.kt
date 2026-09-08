@@ -24,19 +24,6 @@ object FinanceConstants {
 
     // الإصدار الافتراضي الآمن
     const val DEFAULT_FALLBACK_VERSION = "1.2"
-
-    // مفاتيح التفضيلات للنسخ الاحتياطي
-    const val PREFS_BACKUP = "mizan_backup_prefs"
-    const val KEY_LAST_SUCCESSFUL_BACKUP = "last_successful_backup_timestamp"
-
-    // عقود النسخ الاحتياطي وصيغ الملفات
-    const val MIME_TYPE_JSON = "application/json"
-    const val MIME_TYPE_ALL_APP = "application/*"
-    const val BACKUP_FILE_PREFIX = "Mizan_"
-    const val BACKUP_CLOUD_FILE_PREFIX = "Mzd_"
-    const val BACKUP_SILENT_FILE_NAME = "Mizan_Silent_Backup.mzd"
-    const val BACKUP_FILE_EXTENSION = ".mzd"
-    const val BACKUP_DATE_FORMAT = "yyyy-MM-dd_HH-mm"
     
     // قيم افتراضية آمنة
     const val DEFAULT_CURRENCY_CODE = "DEFAULT"

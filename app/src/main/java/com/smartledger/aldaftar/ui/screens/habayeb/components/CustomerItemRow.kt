@@ -1,4 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
+import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -48,7 +49,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.AutoScaleText
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebDateFormatter
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.AppDateTimeFormatter
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
@@ -83,7 +84,7 @@ fun CustomerItemRow(
     val lastTxTime = customer.lastTransactionTimestamp
     val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
     val formattedDate = remember(lastTxTime) {
-        HabayebDateFormatter.formatFullDateTime(lastTxTime)
+        AppDateTimeFormatter.formatFullDateTime(lastTxTime)
     }
     val nonZeroForeign = remember(customer.foreignDebts) {
         customer.foreignDebts.filter { entry ->

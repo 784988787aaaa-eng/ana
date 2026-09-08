@@ -23,7 +23,7 @@ import com.smartledger.aldaftar.ui.navigation.Screen
 import com.smartledger.aldaftar.ui.screens.*
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 
 @Composable
@@ -31,7 +31,7 @@ fun MainAppContent(
     currentScreen: Screen,
     viewModel: FinanceViewModel,
     habayebViewModel: HabayebFinanceViewModel,
-    securityViewModel: SecurityAndLicenseViewModel,
+    securityViewModel: SecurityViewModel,
     backupSyncViewModel: BackupSyncViewModel,
     settings: AppSettings,
     contentPadding: PaddingValues = PaddingValues(),

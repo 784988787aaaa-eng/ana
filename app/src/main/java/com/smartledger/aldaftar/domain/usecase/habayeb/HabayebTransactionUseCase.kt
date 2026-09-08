@@ -10,7 +10,7 @@
  * 
  * [المسؤوليات المعمارية والتقنية للملف]:
  * 1. حفظ وإنشاء العملاء والمعاملات الافتتاحية (Customer & Opening Transaction Creation):
- *    - ربط العميل بالرصيد الافتتاحي وتصنيفه، والتحقق من صلاحية الفترة التجريبية وتفعيل التطبيق.
+ *    - ربط العميل بالرصيد الافتتاحي وتصنيفه مع الحفاظ على سلامة العلاقات.
  * 2. المعاملات متعددة العملات وأسعار الصرف (Multi-Currency Transactions & Conversions):
  *    - تسجيل حركات بالعملات الأجنبية، وحساب المبالغ المعادلة بدقة، وتحديث سعر الصرف للحركات الفردية.
  * 3. إعادة التقييم الشامل للعملات التاريخية (Historical Transaction Revaluation):
@@ -70,14 +70,12 @@ class HabayebTransactionUseCase(
      * @param customer بيانات العميل الجديد.
      * @param transaction المعاملة الافتتاحية إن وجدت.
      * @param selectedCategoryFilter التصنيف المختار للعميل.
-     * @param onActivationRequired رد نداء احتياطي محفوظ لتوافق الواجهة الحالية.
-     * @param onCategoryUpdated رد نداء عند تحديث التصنيف.
+         * @param onCategoryUpdated رد نداء عند تحديث التصنيف.
      */
     suspend fun saveHabayebCustomer(
         customer: HabayebCustomer,
         transaction: HabayebTransaction?,
         selectedCategoryFilter: String?,
-        onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
@@ -112,7 +110,6 @@ class HabayebTransactionUseCase(
         equivalentAmount: BigDecimal = BigDecimal.ZERO,
         selectedCategoryFilter: String?,
         settings: AppSettings,
-        onActivationRequired: () -> Unit,
         onCategoryUpdated: () -> Unit
     ) {
         val transaction = if (initialAmount > BigDecimal.ZERO) {
@@ -137,7 +134,6 @@ class HabayebTransactionUseCase(
             customer = customer,
             transaction = transaction,
             selectedCategoryFilter = selectedCategoryFilter,
-            onActivationRequired = onActivationRequired,
             onCategoryUpdated = onCategoryUpdated
         )
     }
@@ -147,8 +143,7 @@ class HabayebTransactionUseCase(
      * يفحص الترخيص ويسجل المعاملة ويفعل الاهتزاز اللمسي للنجاح.
      */
     suspend fun addHabayebTransaction(
-        transaction: HabayebTransaction,
-        onActivationRequired: () -> Unit
+        transaction: HabayebTransaction
     ) = withContext(Dispatchers.IO) {
         try {
             repository.insertHabayebTransaction(transaction)
@@ -176,8 +171,7 @@ class HabayebTransactionUseCase(
         exchangeRate: BigDecimal = BigDecimal.ONE,
         isRateCalculated: Boolean = false,
         equivalentAmount: BigDecimal = BigDecimal.ZERO,
-        baseCurrencySymbol: String,
-        onActivationRequired: () -> Unit
+        baseCurrencySymbol: String
     ) {
         val txId = editingTxId ?: generateTxId()
         val candidateLinkedId = if (linkedMainTxId != null) {
@@ -207,7 +201,7 @@ class HabayebTransactionUseCase(
             equivalentAmount = equivalentAmount,
             baseCurrencyCode = baseCurrencySymbol
         )
-        addHabayebTransaction(transaction, onActivationRequired)
+        addHabayebTransaction(transaction)
     }
 
     /**

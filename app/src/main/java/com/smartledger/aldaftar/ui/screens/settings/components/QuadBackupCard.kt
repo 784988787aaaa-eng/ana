@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.data.CloudSyncState
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.theme.SoftRed
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
@@ -61,8 +60,6 @@ fun QuadBackupCard(
 
     val isDark = MaterialTheme.isDark
 
-    val googleCloudSyncState by backupSyncViewModel.googleDriveSyncState.collectAsStateWithLifecycle()
-    
     var showBackupPermissionExplanationDialog by remember { mutableStateOf(false) }
     var onPermissionGrantedCallback by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showRestoreWarningDialog by remember { mutableStateOf(false) }
@@ -163,54 +160,6 @@ fun QuadBackupCard(
         }
     }
 
-    // Official Google Sign-In SDK configuration
-    val googleSignInClient = remember {
-        backupSyncViewModel.googleDriveSyncHelper.getGoogleSignInClient()
-    }
-
-    val googleSignInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        com.smartledger.aldaftar.domain.GoogleAuthSessionManager.handleSignInActivityResult(
-            resultCode = result.resultCode,
-            data = result.data,
-            context = context,
-            backupSyncViewModel = backupSyncViewModel
-        ) { outcome ->
-            when (outcome) {
-                is com.smartledger.aldaftar.domain.GoogleSignInOutcome.Success -> {
-                    if (outcome.isDriveAuthorized) {
-                        Toast.makeText(context, context.getString(R.string.settings_gdrive_link_success_pattern, outcome.email), Toast.LENGTH_LONG).show()
-                    } else if (outcome.serverAuthCode == null) {
-                        Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_invalid_code), Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, context.getString(R.string.settings_gdrive_link_failed_network), Toast.LENGTH_LONG).show()
-                    }
-                }
-                is com.smartledger.aldaftar.domain.GoogleSignInOutcome.Cancelled -> {
-                    Toast.makeText(context, context.getString(R.string.settings_gdrive_link_cancelled), Toast.LENGTH_SHORT).show()
-                }
-                is com.smartledger.aldaftar.domain.GoogleSignInOutcome.Failed -> {
-                    Toast.makeText(context, outcome.message, Toast.LENGTH_LONG).show()
-                    backupSyncViewModel.updateCloudSyncState(
-                        com.smartledger.aldaftar.data.CloudSyncState.Error(outcome.message)
-                    )
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(googleCloudSyncState) {
-        if (googleCloudSyncState is CloudSyncState.SessionExpired) {
-            Toast.makeText(context, context.getString(R.string.toast_reconnect_cloud), Toast.LENGTH_LONG).show()
-            googleSignInClient.signOut().addOnCompleteListener {
-                googleSignInClient.revokeAccess()
-            }
-        } else if (googleCloudSyncState is CloudSyncState.Success) {
-            Toast.makeText(context, context.getString(R.string.settings_gdrive_sync_success), Toast.LENGTH_SHORT).show()
-        }
-    }
-
     var showResetConfirmationFlow by remember { mutableStateOf(false) }
 
     ElevatedCard(
@@ -226,18 +175,7 @@ fun QuadBackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. المزامنة السحابية في أعلى الجميع (Cloud Sync & Backup Section)
-                CloudBackupSection(
-                    backupSyncViewModel = backupSyncViewModel,
-                    isDark = isDark,
-                    context = context,
-                    googleCloudSyncState = googleCloudSyncState,
-                    googleSignInClient = googleSignInClient,
-                    googleSignInLauncher = googleSignInLauncher,
-                    safExportLauncher = safExportLauncher
-                )
-
-                // 2. تصدير واستيراد النسخ الاحتياطية المحلية
+                // تصدير واستيراد النسخ الاحتياطية المحلية
                 FileTransferManager(
                     backupSyncViewModel = backupSyncViewModel,
                     context = context,
@@ -249,7 +187,7 @@ fun QuadBackupCard(
                     }
                 )
 
-                // 3. زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
+                // زر مسح كافة البيانات وإعادة الضبط (Danger Zone)
                 Button(
                     onClick = { showResetConfirmationFlow = true },
                     colors = ButtonDefaults.buttonColors(

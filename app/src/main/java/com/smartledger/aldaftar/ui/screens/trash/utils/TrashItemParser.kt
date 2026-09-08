@@ -1,4 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.trash.utils
+import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
 
 import android.util.Log
 import androidx.compose.ui.graphics.Color
@@ -9,7 +10,7 @@ import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebDateFormatter
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.AppDateTimeFormatter
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.math.BigDecimal
 import java.util.Locale
@@ -176,7 +177,7 @@ object TrashItemParser {
         errorColor: Color,
         outlineColor: Color
     ): ParsedTrashData {
-        val parsedDate = HabayebDateFormatter.formatFullDateTime(item.deletedAt)
+        val parsedDate = AppDateTimeFormatter.formatFullDateTime(item.deletedAt)
 
         val systemColor = if (item.sourceSystem == strings.systemHabayeb) secondaryColor else primaryColor
 
@@ -219,7 +220,7 @@ object TrashItemParser {
                     val origTimestamp = jsonObj.optLong("timestamp", 0L)
                     if (origTimestamp > 0) {
                         val millis = if (origTimestamp < 10000000000L) origTimestamp * 1000 else origTimestamp
-                        txOriginalDateVal = HabayebDateFormatter.formatFullDateTime(millis)
+                        txOriginalDateVal = AppDateTimeFormatter.formatFullDateTime(millis)
                     }
 
                     val desc = jsonObj.optString("description", "").trim()
@@ -361,7 +362,7 @@ object TrashItemParser {
                             val txIsNegative = txType == "OWED_BY_THEM" || txType == "PAYMENT_TO_THEM"
 
                             val rawTimestamp = txObj.optLong("timestamp", 0L)
-                            val txDateStr = HabayebDateFormatter.formatFullDateTime(rawTimestamp)
+                            val txDateStr = AppDateTimeFormatter.formatFullDateTime(rawTimestamp)
 
                             val txIsForeign = txObj.optBoolean("is_foreign", false)
                             val txIsRateCalculated = txObj.optBoolean("is_rate_calculated", false)

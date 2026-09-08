@@ -19,7 +19,6 @@ sealed interface MainLedgerDialogState {
     data class AddCommitment(val editingCommitment: FixedCommitment? = null) : MainLedgerDialogState
     data class ReorderCommitment(val target: FixedCommitment) : MainLedgerDialogState
     object DeleteDaysConfirm : MainLedgerDialogState
-    object DeviceActivation : MainLedgerDialogState
 }
 
 class MainLedgerUiController internal constructor(

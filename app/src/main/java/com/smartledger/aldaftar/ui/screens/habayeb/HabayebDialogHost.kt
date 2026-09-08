@@ -14,9 +14,8 @@ import com.smartledger.aldaftar.ui.screens.habayeb.components.DeleteConfirmDialo
 import com.smartledger.aldaftar.ui.screens.habayeb.components.EditCustomerDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.components.HabayebBulkAssignDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.components.MicroAddCategoryDialog
-import com.smartledger.aldaftar.ui.screens.ledger.components.DeviceActivationDialog
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -28,7 +27,7 @@ import kotlinx.coroutines.launch
 fun HabayebDialogHost(
     activeDialogState: HabayebDialogState,
     viewModel: HabayebFinanceViewModel,
-    securityViewModel: SecurityAndLicenseViewModel,
+    securityViewModel: SecurityViewModel,
     activeThemeColor: Color,
     activeSubColor: Color,
     selectedCategory: String?,
@@ -158,15 +157,6 @@ fun HabayebDialogHost(
                     viewModel.updateHabayebCustomer(dialogState.customer.originalCustomer.copy(initialType = newType))
                 },
                 currentActiveCategory = selectedCategory
-            )
-        }
-        is HabayebDialogState.DeviceActivation -> {
-            val deviceId by securityViewModel.deviceIdState.collectAsStateWithLifecycle()
-            DeviceActivationDialog(
-                deviceId = deviceId,
-                viewModel = securityViewModel,
-                onDismiss = onDismissDialog,
-                isAutoTriggered = true
             )
         }
     }

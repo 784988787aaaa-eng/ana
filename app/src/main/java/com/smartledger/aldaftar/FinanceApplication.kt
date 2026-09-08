@@ -37,15 +37,11 @@ class FinanceApplication : Application(), Configuration.Provider {
      */
     override fun onCreate() {
         super.onCreate()
-        FirebaseSecurityInitializer.initialize(this)
 
         // تنفيذ التهيئة الخلفية بشكل غير متزامن لتفادي حظر المسار الرئيسي (Main Thread)
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // 1. تهيئة مدير جلسة تسجيل الدخول الموحد لحسابات Google
-                com.smartledger.aldaftar.domain.GoogleAuthSessionManager.initialize(this@FinanceApplication)
-                
-                // 2. التحمية الاستباقية لقاعدة البيانات (Pre-warming) لتسريع أول استعلام على الشاشة
+                // التحمية الاستباقية لقاعدة البيانات (Pre-warming) لتسريع أول استعلام على الشاشة
                 val db = AppDatabase.getDatabase(applicationContext)
                 db.settingsDao().getSettingsDirect()
             } catch (e: Exception) {

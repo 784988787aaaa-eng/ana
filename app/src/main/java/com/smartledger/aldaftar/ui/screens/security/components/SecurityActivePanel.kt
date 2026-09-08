@@ -36,7 +36,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.mizanColors
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 
 enum class SecurityActiveAction {
     CHANGE_PIN,
@@ -46,7 +46,7 @@ enum class SecurityActiveAction {
 @Composable
 fun SecurityActivePanel(
     currentSettings: AppSettings,
-    viewModel: SecurityAndLicenseViewModel,
+    viewModel: SecurityViewModel,
     onCopyRecoveryPhrase: (() -> Unit)? = null,
     onChangePasscode: () -> Unit,
     onDeactivateSecurity: () -> Unit,

@@ -3,8 +3,6 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
-  alias(libs.plugins.secrets)
-  alias(libs.plugins.google.services)
 }
 
 android {
@@ -25,43 +23,12 @@ android {
     localeFilters += listOf("ar", "en")
   }
 
-  signingConfigs {
-    create("release") {
-      val configuredKeystorePath =
-        providers.gradleProperty("RELEASE_STORE_FILE").orNull ?: "aldaftar.keystore"
-      // This file is resolved from the app module directory. Accept both
-      // "aldaftar.keystore" and the CI-friendly "app/aldaftar.keystore"
-      // without ever producing the invalid app/app/... path.
-      val keystorePath = configuredKeystorePath
-        .removePrefix("app/")
-        .removePrefix("./")
-        .ifBlank { "aldaftar.keystore" }
-      val storePwd = providers.gradleProperty("RELEASE_STORE_PASSWORD").orNull
-      val keyAli = providers.gradleProperty("RELEASE_KEY_ALIAS").orNull ?: "aldaftar"
-      val keyPwd = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
-
-      if (storePwd != null && keyAli != null && keyPwd != null) {
-        storeFile = file(keystorePath)
-        storePassword = storePwd
-        keyAlias = keyAli
-        keyPassword = keyPwd
-        enableV1Signing = true
-        enableV2Signing = true
-        enableV3Signing = true
-      }
-    }
-  }
-
   buildTypes {
     release {
       isCrunchPngs = true
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      val relConfig = signingConfigs.getByName("release")
-      if (relConfig.storePassword != null) {
-        signingConfig = relConfig
-      }
     }
     debug {
       isMinifyEnabled = true
@@ -87,60 +54,9 @@ android {
   }
   buildFeatures {
     compose = true
-    buildConfig = true
-  }
-
-  val supportBackendUrl = providers.gradleProperty("SUPPORT_ID_BACKEND_URL").orNull
-    ?: System.getenv("SUPPORT_ID_BACKEND_URL")
-    ?: "https://al-daftar-license-api.mansour-ghawy.workers.dev"
-  defaultConfig {
-    buildConfigField("String", "SUPPORT_ID_BACKEND_URL", "\"$supportBackendUrl\"")
-  }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
-}
-
-// Configure the Secrets Gradle Plugin to use .env and .env.example files
-// to match the convention used in Web projects.
-val envFile = rootProject.file(".env")
-if (!envFile.exists()) {
-  val googleClientId = System.getenv("GOOGLE_CLIENT_ID") ?: ""
-  val googleClientSecret = System.getenv("GOOGLE_CLIENT_SECRET") ?: ""
-  val geminiApiKey = System.getenv("GEMINI_API_KEY") ?: ""
-  if (googleClientId.isNotEmpty() || googleClientSecret.isNotEmpty() || geminiApiKey.isNotEmpty()) {
-    envFile.writeText("""
-      GOOGLE_CLIENT_ID=$googleClientId
-      GOOGLE_CLIENT_SECRET=$googleClientSecret
-      GEMINI_API_KEY=$geminiApiKey
-    """.trimIndent())
-  }
-}
-
-// Sanitize the .env file to ensure no empty keys are present (which would cause compiler errors inBuildConfig.java)
-if (envFile.exists()) {
-  try {
-    val lines = envFile.readLines().map { line ->
-      if (line.contains("=")) {
-        val parts = line.split("=", limit = 2)
-        val key = parts[0].trim()
-        val value = parts[1].trim()
-        if (value.isEmpty()) {
-          "$key=none"
-        } else {
-          line
-        }
-      } else {
-        line
-      }
     }
-    envFile.writeText(lines.joinToString("\n"))
-  } catch (e: Exception) {
-    // Fail-safe
-  }
-}
 
-secrets {
-  propertiesFileName = ".env"
-  defaultPropertiesFileName = ".env.example"
+  testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
 dependencies {
@@ -165,19 +81,12 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.okhttp)
-  implementation(libs.play.services.auth)
   implementation(libs.androidx.security.crypto)
   implementation(libs.androidx.biometric)
   implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.androidx.paging.runtime)
   implementation(libs.androidx.paging.compose)
   implementation(libs.androidx.room.paging)
-  implementation(platform(libs.firebase.bom))
-  implementation(libs.firebase.auth)
-  implementation(libs.firebase.appcheck)
-  implementation(libs.firebase.appcheck.playintegrity)
-  implementation(libs.firebase.appcheck.debug)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

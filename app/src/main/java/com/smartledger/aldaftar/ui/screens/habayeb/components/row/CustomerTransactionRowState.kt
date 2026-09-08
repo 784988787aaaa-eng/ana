@@ -1,4 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components.row
+import com.smartledger.aldaftar.domain.formatters.AppDateTimeFormatter
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -14,7 +15,7 @@ import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.HabayebDateFormatter
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.AppDateTimeFormatter
 import com.smartledger.aldaftar.ui.theme.financialCreditColor
 import com.smartledger.aldaftar.ui.theme.financialDebtColor
 import com.smartledger.aldaftar.ui.theme.mizanColors
@@ -189,9 +190,9 @@ object CustomerTransactionRowStateCalculator {
         } else null
 
         val d = Date(tx.timestamp * 1000L)
-        val dateStr = HabayebDateFormatter.formatShortDate(d)
-        val timeStr = HabayebDateFormatter.formatTime12h(d)
-        val dayNameResId = HabayebDateFormatter.getDayOfWeekResId(tx.timestamp)
+        val dateStr = AppDateTimeFormatter.formatShortDate(d)
+        val timeStr = AppDateTimeFormatter.formatTime12h(d)
+        val dayNameResId = AppDateTimeFormatter.getDayOfWeekResId(tx.timestamp)
 
         val typeResId = when (txType) {
             TransactionType.OWED_BY_THEM -> R.string.habayeb_pdf_tx_owed_by

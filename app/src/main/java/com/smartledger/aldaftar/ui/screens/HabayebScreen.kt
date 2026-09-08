@@ -64,7 +64,7 @@ import com.smartledger.aldaftar.ui.screens.habayeb.components.HabayebListSection
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebUiEvent
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -80,7 +80,7 @@ typealias HabayebDialogState = HabayebDialogState
 @Composable
 fun HabayebScreen(
     viewModel: HabayebFinanceViewModel,
-    securityViewModel: SecurityAndLicenseViewModel,
+    securityViewModel: SecurityViewModel,
     onMenuClick: () -> Unit,
     onClose: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
@@ -133,13 +133,6 @@ fun HabayebScreen(
         onHistoryOverlayActiveChanged(activeCustomerForHistory != null)
     }
 
-    val showActivationRequired by viewModel.showActivationRequired.collectAsStateWithLifecycle()
-    LaunchedEffect(showActivationRequired) {
-        if (showActivationRequired) {
-            activeDialogState = HabayebDialogState.DeviceActivation
-            viewModel.resetActivationRequired()
-        }
-    }
 
     val listState = remember(uiState.selectedCategory, uiState.selectedFilterTab, uiState.financialSortMode, uiState.historicalSortMode) {
         LazyListState(0, 0)

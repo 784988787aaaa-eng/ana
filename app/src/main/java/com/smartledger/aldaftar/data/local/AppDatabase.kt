@@ -1,32 +1,11 @@
-/**
- * =====================================================================
- * ملف: قاعدة البيانات الرئيسية للتطبيق (AppDatabase.kt)
- * =====================================================================
- * 
- * [الغرض العام والتعليمي من الملف]:
- * يمثل هذا الملف الفئة التجريدية المركزية (Central Abstract Database Class)
- * المبنية على مكتبة Room Persistence Library التابعة لنظام أندرويد Jetpack.
- * إنه القلب النابض لإدارة التخزين المحلي الدائم لكافة بيانات التطبيق المالية والإعدادات.
- * 
- * [المسؤوليات المعمارية والتقنية]:
- * 1. تسجيل كافة الكيانات والجداول (Entities Schema) المكونة لقاعدة البيانات.
- * 2. ربط محولات الأنواع المخصصة [BigDecimalConverter] لدعم الدقة المالية دون أخطاء الفاصلة العائمة.
- * 3. توفير نقاط الوصول التجريدية لجميع كائنات الوصول للبيانات (DAOs).
- * 4. تطبيق نمط النسخة الأحادية الآمنة خيطياً (Thread-Safe Singleton) لمنع فتح اتصالات متعددة تستهلك موارد الجهاز.
- * 5. تفعيل نمط التدوين المسبق (WAL - Write-Ahead Logging) لتسريع القراءة والكتابة المتزامنة.
- * 6. ربط سجل الهجرات الكامل (Migrations 1 to 31) لضمان ترقية قاعدة بيانات المستخدمين بأمان دون فقدان أي بيانات تاريخية.
- * 7. تنفيذ إجراءات الصيانة التلقائية والتحقق من سلامة واتساق المعاملات المرتبطة عند فتح القاعدة (onOpen Callback).
- */
 package com.smartledger.aldaftar.data.local
 
-// ---------------------------------------------------------------------
-// استيراد حزم مكتبة Room ومكونات SQLite والكيانات ومحولات الأنواع
-// ---------------------------------------------------------------------
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
@@ -34,18 +13,9 @@ import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import androidx.sqlite.db.SupportSQLiteDatabase
+import com.smartledger.aldaftar.data.local.BigDecimalConverter
 
-/**
- * [فئة قاعدة البيانات التجريدية - AppDatabase]:
- * 
- * [شرح التعليقات التوضيحية (Annotations)]:
- * - `@Database`: تعرف الفئة كقاعدة بيانات Room مع تحديد:
- *   1. `entities`: قائمة الكيانات (الجداول) المسجلة.
- *   2. `version = 31`: رقم الإصدار الهيكلي الحالي لقاعدة البيانات بعد الهجرات المتتالية.
- *   3. `exportSchema = false`: لتعطيل تصدير مخطط JSON أثناء البناء لتقليل الحجم.
- * - `@TypeConverters`: تسجيل محول الأنواع للتعامل مع العمليات الحسابية للأرقام العشرية الكبيرة بدقة.
- */
+/** قاعدة بيانات الجيل الجديد للتطبيق. */
 @Database(
     entities = [
         AppSettings::class,
@@ -56,8 +26,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         HabayebCustomer::class,
         HabayebTransaction::class
     ],
-    version = 31,
-    exportSchema = false
+    version = 1,
+    exportSchema = true
 )
 @TypeConverters(BigDecimalConverter::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -85,7 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
      */
     companion object {
         /** الاسم الفعلي لملف قاعدة البيانات المخزن على ذاكرة الجهاز */
-        const val DATABASE_NAME = "mizan_al_dar_db"
+        const val DATABASE_NAME = "aldaftar_v1.db"
 
         /**
          * المتغير المرجعي للنسخة الأحادية:
@@ -103,7 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
          * 2. عند عدم وجودها، يتم استخدام كتلة المزامنة `synchronized(this)` لضمان عدم إنشاء نسختين متزامنتين.
          * 3. بناء القاعدة عبر `Room.databaseBuilder` مع تمرير سياق التطبيق العام لمنع تسريب الذاكرة (Memory Leaks).
          * 4. تفعيل نمط `WRITE_AHEAD_LOGGING` للسماح بالقراءة المتزامنة أثناء عمليات الكتابة.
-         * 5. تسجيل مصفوفة الهجرات الكاملة `ALL_MIGRATIONS` لترقية الجداول القديمة بأمان.
+         * 5. بناء قاعدة الجيل الجديد مباشرة من الـ Entities الحالية دون مسار ترقية تاريخي.
          * 6. تسجيل استدعاء `onOpen Callback` لتنظيف وتصحيح أي روابط معاملات تالفة عند كل فتح للقاعدة.
          */
         fun getDatabase(context: Context): AppDatabase {
@@ -114,7 +84,6 @@ abstract class AppDatabase : RoomDatabase() {
                     DATABASE_NAME
                 )
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)
                 .addCallback(object : RoomDatabase.Callback() {
                     /**
                      * [استدعاء عند فتح القاعدة - onOpen]:

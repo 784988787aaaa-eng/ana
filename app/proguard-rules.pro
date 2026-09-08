@@ -16,7 +16,7 @@
     @androidx.room.Database *;
 }
 
-# Keep local database entities intact for Room reflection & JSON Backup Serialization
+# Keep local database entities intact for Room
 -keep class com.smartledger.aldaftar.data.local.entities.** { *; }
 -keep interface com.smartledger.aldaftar.data.local.dao.** { *; }
 
@@ -34,14 +34,8 @@
     <init>(***);
 }
 
-# OkHttp Platform rules
--dontwarn okhttp3.internal.platform.**
--dontwarn org.conscrypt.**
--dontwarn org.bouncycastle.**
--dontwarn org.openjsse.**
 -dontwarn androidx.room.**
 
 
 
 
-# Security components are referenced directly; no special keep rule is required.

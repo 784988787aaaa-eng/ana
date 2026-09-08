@@ -67,7 +67,7 @@ class MainActivity : FragmentActivity() {
 
         // تهيئة نماذج العرض المركزية (ViewModels) المرتبطة بدورة حياة النشاط
         val viewModel = androidx.lifecycle.ViewModelProvider(this)[FinanceViewModel::class.java]
-        val securityViewModel = androidx.lifecycle.ViewModelProvider(this)[com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel::class.java]
+        val securityViewModel = androidx.lifecycle.ViewModelProvider(this)[com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel::class.java]
         backupSyncViewModel = androidx.lifecycle.ViewModelProvider(this)[BackupSyncViewModel::class.java]
 
         // إبقاء شاشة البداية ظاهرة حتى تنتهي قاعدة البيانات من تحميل الإعدادات بالكامل
@@ -78,9 +78,6 @@ class MainActivity : FragmentActivity() {
         // إطلاق مهام التهيئة الخلفية المستقلة عن مسار الواجهة
         lifecycleScope.launch(Dispatchers.IO) {
             logAppSignatureSHA1(this@MainActivity)
-            AutoBackupWorker.scheduleDailyBackupWorker(this@MainActivity)
-            AutoBackupWorker.checkAndTriggerBackupIfMissed(this@MainActivity)
-            BackupReminderWorker.scheduleReminder(this@MainActivity)
         }
 
         // قراءة تفضيلات القفل والسمة السريعة لمنع وميض الشاشة عند الإقلاع
@@ -95,18 +92,6 @@ class MainActivity : FragmentActivity() {
             val habayebViewModel: HabayebFinanceViewModel = viewModel()
 
             val context = LocalContext.current
-
-            // مراقبة أحداث الأمان وطرد الجلسة غير المصرح بها
-            LaunchedEffect(securityViewModel) {
-                securityViewModel.startRealtimeMonitoring(this@MainActivity)
-                securityViewModel.kickoutEvent.collect { reason ->
-                    android.widget.Toast.makeText(
-                        this@MainActivity,
-                        reason,
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
 
             // فحص وتنفيذ المعاملات المتكررة (الرواتب والأقساط المستحقة) في الخلفية عند الإقلاع
             LaunchedEffect(habayebViewModel) {
@@ -132,9 +117,6 @@ class MainActivity : FragmentActivity() {
                                 context.getString(event.messageRes),
                                 if (event.isLong) android.widget.Toast.LENGTH_LONG else android.widget.Toast.LENGTH_SHORT
                             ).show()
-                        }
-                        is com.smartledger.aldaftar.ui.viewmodel.UiEvent.ShowActivationDialog -> {
-                            securityViewModel.showActivationRequired.value = true
                         }
                     }
                 }
@@ -259,7 +241,6 @@ class MainActivity : FragmentActivity() {
         super.onStop()
         try {
             if (::backupSyncViewModel.isInitialized) {
-                backupSyncViewModel.triggerSilentLocalBackup()
             }
         } catch (e: Exception) {
             e.printStackTrace()

@@ -5,7 +5,7 @@
  * 
  * [الغرض من الملف]:
  * توفير واجهة مستخدم مبسطة ومباشرة لعمليات تصدير واستيراد النسخ الاحتياطية
- * المحلية بصيغة (.mzd) دون عرض قوائم شجرية مزدحمة.
+ * المحلية بصيغة (.aldabackup) دون عرض قوائم شجرية مزدحمة.
  * 
  * [المسار المعتمد]:
  * الحفظ المركزي المباشر في: /storage/emulated/0/Documents/الدفتر الذكي/[yyyy-MM]/
@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
-import com.smartledger.aldaftar.ui.helper.shareBackupFile
+import com.smartledger.aldaftar.ui.helper.shareExportedFile
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 
 @Composable
@@ -52,7 +52,7 @@ fun FileTransferManager(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // تصدير واستيراد ملفات (.mzd)
+        // تصدير واستيراد ملفات (.aldabackup)
         QuadBackupItem(
             title = stringResource(R.string.settings_backup_portable_title),
             description = stringResource(R.string.settings_backup_portable_desc),
@@ -77,7 +77,7 @@ fun FileTransferManager(
                             backupSyncViewModel.exportLocalBackup(context) { result ->
                                 val file = result.getOrNull()
                                 if (file != null) {
-                                    shareBackupFile(context, file)
+                                    shareExportedFile(context, file)
                                 }
                             }
                         }
@@ -94,7 +94,7 @@ fun FileTransferManager(
                         .height(36.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.settings_export_mzd),
+                        text = stringResource(R.string.settings_export_backup),
                         fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
@@ -113,7 +113,7 @@ fun FileTransferManager(
                         .height(36.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.settings_import_mzd),
+                        text = stringResource(R.string.settings_import_backup),
                         fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.Bold

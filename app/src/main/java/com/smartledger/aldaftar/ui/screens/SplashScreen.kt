@@ -30,7 +30,7 @@ fun TheMasterSplashScreen(
     }
 
     // Modern Deep Night Matte Dark Background
-    val deepMatteDark = Slate900 // Premium slate-900 security look
+    val deepMatteDark = Slate900 // slate-900 security look
 
     // Core Animation loop for high refresh rates (120Hz optimal)
     val infiniteTransition = rememberInfiniteTransition(label = "PortalAnimation")

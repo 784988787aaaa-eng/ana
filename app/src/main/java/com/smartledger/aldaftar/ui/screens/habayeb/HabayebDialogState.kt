@@ -21,5 +21,4 @@ sealed interface HabayebDialogState {
     object AddCategory : HabayebDialogState
     object BulkAssignCategory : HabayebDialogState
     data class ContextMenu(val customer: CustomerUiState) : HabayebDialogState
-    object DeviceActivation : HabayebDialogState
 }

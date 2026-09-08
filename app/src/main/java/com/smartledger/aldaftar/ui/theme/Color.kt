@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 // ============================================================================
 
 // --- Brand Primitives ---
-val BrandPrimary = Color(0xFF4B36A2)          // Premium Glowing Violet/Purple (#4B36A2)
+val BrandPrimary = Color(0xFF4B36A2)          // Brand Glowing Violet/Purple (#4B36A2)
 val BrandPrimaryLight = Color(0xFF8C7CFF)     // Lighter Purple/Lavender (#8C7CFF)
 val BrandPrimaryDark = Color(0xFF4B36A2)      // Glowing Violet for dark mode
 val BrandPrimaryContainerLight = Color(0xFFEADBFF)
@@ -137,7 +137,7 @@ val AvatarPastelPalette = listOf(
     Color(0xFFF472B6), Color(0xFF2DD4BF)
 )
 
-// Legacy Aliases during migration phase
+// Shared color aliases
 val EmeraldPrimary = BrandPrimary
 val EmeraldLight = BrandPrimaryLight
 val CoralAccent = BrandSecondary
@@ -163,9 +163,6 @@ val WarningAmberBg = StatusWarningAmberBg
 val WarningAmberBorder = StatusWarningAmberBorder
 val WarningDarkRedText = StatusWarningDarkRedText
 val WarningOrangeButton = StatusWarningOrangeButton
-val LicenseGreenBg = Color(0xFFE8F5E9)
-val LicenseGreenText = Color(0xFF2E7D32)
-val LicenseBadgeGreenText = Color(0xFF1B5E20)
 val InfoBlue = StatusInfoBlue
 val InfoBlueBgLight = StatusInfoBlueBgLight
 val InfoBlueBgDark = StatusInfoBlueBgDark
@@ -193,7 +190,7 @@ val MutedTextLight = NeutralTextSecondaryLight
 val DarkNeutralTrack = Color(0xFF2D2D2D)
 val LightNeutralTrack = Color(0xFFEEEEEE)
 
-// Chip Filter Legacy Tokens
+// Chip Filter Tokens
 val ChipRedBgDarkSelected = Color(0xFF3B2025)
 val ChipRedBgDarkUnselected = Color(0xFF2C1A1D)
 val ChipRedBgLightSelected = Color(0xFFFCE8E8)
@@ -220,7 +217,7 @@ val ChipGreenTextLight = Color(0xFF2E7D32)
 val ChipGreenHeaderDark = Color(0xFF86EFAC)
 val ChipGreenHeaderLight = Color(0xFF1B5E20)
 
-// Legacy gradients
+// Shared gradients
 val PrimaryGradient = Brush.linearGradient(listOf(BrandPrimary, BrandPrimaryLight))
 val CoralGradient = Brush.linearGradient(listOf(BrandSecondary, Color(0xFF0284C7)))
 val IncomeGradientLight = Brush.linearGradient(listOf(CreditContainerLight, NeutralSurfaceLight))
@@ -233,7 +230,6 @@ val NeonGreenCyanGradient = Brush.horizontalGradient(listOf(Color(0xFF00E676), C
 val VioletHeroGradient = Brush.linearGradient(listOf(BrandPrimary, Color(0xFF7C3AED), BrandPrimaryLight))
 val HeaderCardGradientDark = Brush.linearGradient(listOf(Color(0xFF1E1E1E), Color(0xFF262626)))
 val HeaderCardGradientLight = Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF8F9FA)))
-val GoldLicenseGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706), Color(0xFFB45309)))
 val WarningGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFEF4444)))
 val SplashSweepGradient = Brush.sweepGradient(
     colorStops = arrayOf(
@@ -250,7 +246,7 @@ val SplashRadialGlow = Brush.radialGradient(
     )
 )
 
-// Legacy Financial Semantic Color Resolvers
+// Financial Semantic Color Resolvers
 fun financialCreditColor(isDark: Boolean): Color = if (isDark) CreditGreenDark else CreditGreen
 fun financialDebtColor(isDark: Boolean): Color = if (isDark) DebtRedDark else DebtRed
 fun financialCreditBg(isDark: Boolean): Color = if (isDark) CreditContainerDark else CreditContainerLight
@@ -408,7 +404,6 @@ data class MizanColors(
     val debtGradient: Brush,
     val selectionGradient: Brush,
     val warningGradient: Brush,
-    val licenseGradient: Brush,
     val splashGradient: Brush,
     val splashGlow: Brush
 )
@@ -545,7 +540,6 @@ val LightMizanColors = MizanColors(
     debtGradient = Brush.linearGradient(listOf(DebtContainerLight, NeutralSurfaceLight)),
     selectionGradient = Brush.linearGradient(listOf(FinancialSelectionContainerLight, Color(0xFFD1FAE5))),
     warningGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
-    licenseGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706), Color(0xFFB45309))),
     splashGradient = Brush.sweepGradient(
         colorStops = arrayOf(
             0.0f to Color(0xFF2563EB),
@@ -690,7 +684,6 @@ val DarkMizanColors = MizanColors(
     debtGradient = Brush.linearGradient(listOf(DebtContainerDark, NeutralSurfaceDark)),
     selectionGradient = Brush.linearGradient(listOf(FinancialSelectionContainerDark, Color(0xFF121F17))),
     warningGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
-    licenseGradient = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706), Color(0xFFB45309))),
     splashGradient = Brush.sweepGradient(
         colorStops = arrayOf(
             0.0f to Color(0xFF2563EB),

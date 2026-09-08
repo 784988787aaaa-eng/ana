@@ -15,15 +15,12 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.smartledger.aldaftar.data.CloudSyncState
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.screens.settings.components.BackupSheetHeader
 import com.smartledger.aldaftar.ui.screens.settings.components.QuadBackupCard
@@ -34,17 +31,13 @@ import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 fun BackupRestoreBottomSheet(
     settings: AppSettings,
     backupSyncViewModel: BackupSyncViewModel,
-    onExportMzd: () -> Unit = {},
-    onImportMzd: () -> Unit = {},
+    onExportBackup: () -> Unit = {},
+    onImportBackup: () -> Unit = {},
     onDismiss: () -> Unit,
     onOpenCloudBackupsList: () -> Unit = {},
     onRestoreSuccess: (AppSettings) -> Unit = {}
 ) {
-    val syncState by backupSyncViewModel.googleDriveSyncState.collectAsStateWithLifecycle()
-    val storedEmail = remember(syncState) { backupSyncViewModel.googleDriveSyncHelper.getStoredEmail() }
-    val isConnected = remember(storedEmail, syncState) {
-        !storedEmail.isNullOrEmpty() || syncState is CloudSyncState.Authenticated || syncState is CloudSyncState.Success
-    }
+    val isConnected = false
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalBottomSheet(

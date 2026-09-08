@@ -246,11 +246,6 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     fun addTransaction(type: String, category: String, amount: BigDecimal, description: String, timestamp: Long = System.currentTimeMillis() / 1000, presetId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (false) {
-                sendUiEvent(UiEvent.ShowToast(R.string.licensing_dialog_desc, true))
-                sendUiEvent(UiEvent.ShowActivationDialog)
-                return@launch
-            }
             val id = presetId ?: "tx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}"
             val tx = TransactionDb(
                 id = id,

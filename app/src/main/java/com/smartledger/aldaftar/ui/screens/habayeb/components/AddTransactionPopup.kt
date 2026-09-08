@@ -201,7 +201,7 @@ fun AddTransactionPopup(
                 onTransactionSaved()
                 onDismiss()
 
-                // Execute save and licensing check asynchronously in the background
+                // Execute save asynchronously in the background
                 viewModel.addHabayebTransaction(
                     customerId = customer.id,
                     type = finalActionType,

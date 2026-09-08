@@ -47,7 +47,7 @@ import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.HashUtils
 import com.smartledger.aldaftar.ui.screens.security.components.SecurityActivePanel
 import com.smartledger.aldaftar.ui.screens.security.components.SecuritySetupForm
-import com.smartledger.aldaftar.ui.viewmodel.SecurityAndLicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,7 +57,7 @@ private suspend fun saveSecurityPasscode(
     recoveryPhrase: String,
     recoveryHint: String,
     currentSettings: AppSettings,
-    viewModel: SecurityAndLicenseViewModel,
+    viewModel: SecurityViewModel,
     onSuccess: () -> Unit
 ) {
     val pHash = HashUtils.hashString(passcode)
@@ -78,7 +78,7 @@ private suspend fun saveSecurityPasscode(
 @Composable
 fun SecurityScreen(
     settings: AppSettings,
-    viewModel: SecurityAndLicenseViewModel,
+    viewModel: SecurityViewModel,
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues()
 ) {
@@ -220,7 +220,7 @@ fun SecurityScreen(
 @Composable
 fun SecurityDialog(
     settings: AppSettings,
-    viewModel: SecurityAndLicenseViewModel,
+    viewModel: SecurityViewModel,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
