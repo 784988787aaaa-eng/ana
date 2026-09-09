@@ -152,6 +152,18 @@ class BackupSyncViewModel(
         }
     }
 
+    fun exportBackupBytes(onComplete: (ByteArray?) -> Unit = {}) = launchBusy(onComplete) {
+        val file = engine.createManual()
+        file.readBytes()
+    }
+
+    fun restoreFromBytes(bytes: ByteArray, recoveryCode: String? = null, onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }) = viewModelScope.launch(Dispatchers.IO) {
+        _busy.value = true; _error.value = null
+        val result = runCatching { engine.restoreBytes(bytes, recoveryCode) }
+        _busy.value = false
+        withContext(Dispatchers.Main) { onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message) }
+    }
+
     fun restoreFromLocalFile(file: File, recoveryCode: String? = null, onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }) = viewModelScope.launch(Dispatchers.IO) {
         _busy.value = true; _error.value = null
         val result = runCatching { engine.restoreBytes(file.readBytes(), recoveryCode) }
@@ -166,15 +178,15 @@ class BackupSyncViewModel(
         withContext(Dispatchers.Main) { onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message) }
     }
 
-    fun deleteLocalBackup(file: File, onComplete: (Boolean) -> Unit = {}) = launchBusy(onComplete) {
+    fun deleteLocalBackup(file: File, onComplete: (Boolean) -> Unit = {}) = launchBusy<Boolean>({ onComplete(it == true) }) {
         val root = File(paths.documentsRoot(), BackupPathManager.ROOT_FOLDER).canonicalPath
         require(file.canonicalPath.startsWith("$root${File.separator}")) { "مسار غير مسموح" }
         val ok = file.delete(); refreshLocalBackups(); ok
     }
-    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy(onComplete) {
+    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy<Int>({ onComplete(it ?: 0) }) {
         ids.toList().chunked(100).sumOf { cloud.delete(it.toSet()) }.also { refreshCloud() }
     }
-    fun clearLocalCopyAndWipeMemory(context: android.content.Context, onComplete: (Boolean) -> Unit = {}) = launchBusy(onComplete) { maintenanceRepository.deleteAllData(); true }
+    fun clearLocalCopyAndWipeMemory(context: android.content.Context, onComplete: (Boolean) -> Unit = {}) = launchBusy<Boolean>({ onComplete(it == true) }) { maintenanceRepository.deleteAllData(); true }
     fun clearError() { _error.value = null }
 
     private fun <T> launchBusy(onComplete: (T?) -> Unit, block: suspend () -> T) {

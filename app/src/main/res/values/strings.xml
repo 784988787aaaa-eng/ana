@@ -881,4 +881,5 @@
     <string name="excel_foreign_icon">💱 %1$s</string>
     <string name="excel_account_phone_format">%1$s (📱 %2$s)</string>
     <string name="license_trial_ended">انتهت التجربة المجانية. فعّل ترخيصًا للمتابعة.</string>
+    <string name="settings_signature_unavailable">غير متوفر</string>
 </resources>

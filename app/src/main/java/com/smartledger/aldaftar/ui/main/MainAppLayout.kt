@@ -152,8 +152,6 @@ fun MainAppLayout(
                         viewModel = viewModel,
                         habayebViewModel = habayebViewModel,
                         securityViewModel = securityViewModel,
-                licenseViewModel = licenseViewModel,
-                onLicenseClick = { scope.launch { drawerState.close() }; showLicenseDialog = true },
                         backupSyncViewModel = backupSyncViewModel,
                         businessProfileViewModel = businessProfileViewModel,
                         settings = settings,

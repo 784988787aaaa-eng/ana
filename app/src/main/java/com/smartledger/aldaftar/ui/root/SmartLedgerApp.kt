@@ -117,7 +117,8 @@ fun SmartLedgerApp(
                     habayebViewModel = habayebViewModel,
                     securityViewModel = securityViewModel,
                     backupSyncViewModel = backupSyncViewModel,
-                businessProfileViewModel = businessProfileViewModel,
+                    businessProfileViewModel = businessProfileViewModel,
+                    licenseViewModel = licenseViewModel,
                     settings = settings,
                     onExit = onExit
                 )

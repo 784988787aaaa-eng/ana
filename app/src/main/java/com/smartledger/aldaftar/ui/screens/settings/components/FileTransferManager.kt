@@ -60,8 +60,7 @@ fun FileTransferManager(
                 Button(
                     onClick = {
                         val runBackup = {
-                            backupSyncViewModel.exportLocalBackup(context) { result ->
-                                val file = result.getOrNull()
+                            backupSyncViewModel.createLocalBackup { file ->
                                 if (file != null) {
                                     shareExportedFile(context, file)
                                 }

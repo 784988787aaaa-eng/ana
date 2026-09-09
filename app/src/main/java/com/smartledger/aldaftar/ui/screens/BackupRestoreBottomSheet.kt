@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import java.io.File
