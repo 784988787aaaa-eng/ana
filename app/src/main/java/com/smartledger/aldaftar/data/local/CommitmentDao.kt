@@ -14,6 +14,9 @@ interface CommitmentDao {
     @Query("SELECT * FROM fixed_commitments ORDER BY orderIndex ASC")
     fun getAllCommitmentsFlow(): Flow<List<FixedCommitment>>
 
+    @Query("SELECT * FROM fixed_commitments ORDER BY orderIndex ASC")
+    suspend fun allDirect(): List<FixedCommitment>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCommitment(commitment: FixedCommitment)
 

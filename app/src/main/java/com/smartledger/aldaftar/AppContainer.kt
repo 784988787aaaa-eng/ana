@@ -4,6 +4,10 @@ import android.content.Context
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.repository.*
 import com.smartledger.aldaftar.domain.usecase.habayeb.HabayebCategoryUseCase
+import com.smartledger.aldaftar.data.backup.BackupEngine
+import com.smartledger.aldaftar.data.backup.BackupScheduler
+import com.smartledger.aldaftar.data.backup.BackupSettingsRepository
+import com.smartledger.aldaftar.data.license.LicenseRepository
 
 /** تركيب الاعتماديات طويلة العمر داخل جذر التطبيق فقط. */
 class AppContainer(context: Context) {
@@ -20,4 +24,8 @@ class AppContainer(context: Context) {
     val recurring = RecurringRepository(database, database.recurringConfigDao())
     val floatingUi = FloatingUiPreferencesRepository(context.applicationContext)
     val mutation = HabayebMutationRepository(database)
+    val backupEngine = BackupEngine(context.applicationContext, database)
+    val backupScheduler = BackupScheduler(context.applicationContext)
+    val backupSettings = BackupSettingsRepository(context.applicationContext)
+    val license = LicenseRepository(context.applicationContext)
 }

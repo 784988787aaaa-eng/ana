@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
+import com.smartledger.aldaftar.data.license.LicenseRepository
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,6 +37,7 @@ import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 
 class FinanceViewModel(
     application: Application,
+    private val licenseRepository: LicenseRepository,
     private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
     private val commitmentsRepository: com.smartledger.aldaftar.data.repository.CommitmentRepository,
     private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
@@ -193,16 +195,23 @@ class FinanceViewModel(
 
     fun addTransaction(type: String, category: String, amount: BigDecimal, description: String, timestamp: Long = System.currentTimeMillis() / 1000, presetId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            val id = presetId ?: "tx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}"
-            val tx = TransactionDb(
-                id = id,
-                timestamp = timestamp,
-                type = type,
-                category = category,
-                amount = amount,
-                description = description
-            )
-            transactionsRepository.saveTransaction(tx)
+            val created = licenseRepository.runAuthorizedCreation {
+                val id = presetId ?: "tx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}"
+                val tx = TransactionDb(
+                    id = id,
+                    timestamp = timestamp,
+                    type = type,
+                    category = category,
+                    amount = amount,
+                    description = description
+                )
+                transactionsRepository.saveTransaction(tx)
+                true
+            }
+            if (created != true) {
+                sendUiEvent(UiEvent.ShowToast(R.string.license_trial_ended))
+                return@launch
+            }
         }
     }
 

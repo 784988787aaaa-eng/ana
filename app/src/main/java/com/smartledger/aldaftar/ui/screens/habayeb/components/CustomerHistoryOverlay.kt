@@ -22,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,10 +36,14 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.map
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
+import com.smartledger.aldaftar.data.serialization.CsvReportGenerator
+import com.smartledger.aldaftar.data.serialization.PdfReportGenerator
+import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator
 import kotlinx.coroutines.flow.first
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.rememberFilteredCustomerTransactions
@@ -76,7 +79,6 @@ fun CustomerHistoryOverlay(
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
     var isPdfExporting by remember { mutableStateOf(false) }
@@ -97,6 +99,37 @@ fun CustomerHistoryOverlay(
 
     val allCustomerTxs = remember(transactions) {
         transactions.sortedBy { it.timestamp }
+    }
+
+    fun launchCustomerPdfExport(action: PdfAction) {
+        showShareSheet = false
+        isPdfExporting = true
+        PdfReportGenerator.generateAndHandleCustomerPdfReportAsync(
+            context = context,
+            scope = viewModel.viewModelScope,
+            customer = activeCustomer,
+            transactions = allCustomerTxs,
+            businessProfile = businessProfile,
+            currencySymbol = currencySymbol,
+            action = action,
+            onFinished = { isPdfExporting = false }
+        )
+    }
+
+    fun launchCustomerCsvExport(action: CsvReportGenerator.CsvAction) {
+        showShareSheet = false
+        isPdfExporting = true
+        CsvReportGenerator.generateAndHandleCsvReportAsync(
+            context = context,
+            scope = viewModel.viewModelScope,
+            customer = activeCustomer,
+            transactions = allCustomerTxs,
+            businessProfile = businessProfile,
+            currencySymbol = currencySymbol,
+            exchangeRatesJson = settings.exchangeRatesJson,
+            action = action,
+            onFinished = { isPdfExporting = false }
+        )
     }
 
     val displayedTxs by rememberFilteredCustomerTransactions(
@@ -297,8 +330,8 @@ fun CustomerHistoryOverlay(
         netDebt = calcResult.netDebt,
         activeThemeColor = activeThemeColor,
         onDismissRequest = { showShareSheet = false },
-        onPdfExportStart = { isPdfExporting = true },
-        onPdfExportFinish = { isPdfExporting = false }
+        onPdfAction = ::launchCustomerPdfExport,
+        onCsvAction = ::launchCustomerCsvExport
     )
 
     CustomerHistoryDialogsManager(

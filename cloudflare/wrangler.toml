@@ -1,0 +1,13 @@
+name = "smartledger-cloud"
+main = "src/index.js"
+compatibility_date = "2026-09-09"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[kv_namespaces]]
+binding = "SMARTLEDGER_KV"
+id = "REPLACE_AFTER_CREATION"
+
+[limits]
+cpu_ms = 10

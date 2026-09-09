@@ -23,7 +23,6 @@ import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.serialization.CsvReportGenerator
-import com.smartledger.aldaftar.data.serialization.PdfReportGenerator
 import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
@@ -45,13 +44,12 @@ fun CustomerHistoryShareBottomSheet(
     netDebt: java.math.BigDecimal,
     activeThemeColor: Color,
     onDismissRequest: () -> Unit,
-    onPdfExportStart: () -> Unit,
-    onPdfExportFinish: () -> Unit
+    onPdfAction: (PdfAction) -> Unit,
+    onCsvAction: (CsvReportGenerator.CsvAction) -> Unit
 ) {
     if (!showShareSheet) return
 
     val context = LocalContext.current
-    val appScope = rememberCoroutineScope()
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
 
     ModalBottomSheet(
@@ -167,46 +165,13 @@ fun CustomerHistoryShareBottomSheet(
                 description = stringResource(id = R.string.share_pdf_desc),
                 isPhoneAvailable = isPhoneAvailable,
                 onWhatsAppDirectClick = {
-                    onDismissRequest()
-                    onPdfExportStart()
-                    PdfReportGenerator.generateAndHandleCustomerPdfReportAsync(
-                        context = context,
-                        scope = appScope,
-                        customer = activeCustomer,
-                        transactions = allCustomerTxs,
-                        businessProfile = businessProfile,
-                        currencySymbol = currencySymbol,
-                        action = PdfAction.WHATSAPP_DIRECT,
-                        onFinished = onPdfExportFinish
-                    )
+                    onPdfAction(PdfAction.WHATSAPP_DIRECT)
                 },
                 onShareClick = {
-                    onDismissRequest()
-                    onPdfExportStart()
-                    PdfReportGenerator.generateAndHandleCustomerPdfReportAsync(
-                        context = context,
-                        scope = appScope,
-                        customer = activeCustomer,
-                        transactions = allCustomerTxs,
-                        businessProfile = businessProfile,
-                        currencySymbol = currencySymbol,
-                        action = PdfAction.SHARE,
-                        onFinished = onPdfExportFinish
-                    )
+                    onPdfAction(PdfAction.SHARE)
                 },
                 onSaveClick = {
-                    onDismissRequest()
-                    onPdfExportStart()
-                    PdfReportGenerator.generateAndHandleCustomerPdfReportAsync(
-                        context = context,
-                        scope = appScope,
-                        customer = activeCustomer,
-                        transactions = allCustomerTxs,
-                        businessProfile = businessProfile,
-                        currencySymbol = currencySymbol,
-                        action = PdfAction.SAVE_LOCAL,
-                        onFinished = onPdfExportFinish
-                    )
+                    onPdfAction(PdfAction.SAVE_LOCAL)
                 }
             )
 
@@ -218,52 +183,15 @@ fun CustomerHistoryShareBottomSheet(
                 description = stringResource(id = R.string.share_csv_desc),
                 isPhoneAvailable = isPhoneAvailable,
                 onWhatsAppDirectClick = {
-                    onDismissRequest()
-                    onPdfExportStart()
-                    CsvReportGenerator.generateAndHandleCsvReportAsync(
-                        context = context,
-                        scope = appScope,
-                        customer = activeCustomer,
-                        transactions = allCustomerTxs,
-                        businessProfile = businessProfile,
-                        currencySymbol = currencySymbol,
-                        exchangeRatesJson = exchangeRatesJson,
-                        action = CsvReportGenerator.CsvAction.WHATSAPP_DIRECT,
-                        onFinished = onPdfExportFinish
-                    )
+                    onCsvAction(CsvReportGenerator.CsvAction.WHATSAPP_DIRECT)
                 },
                 onShareClick = {
-                    onDismissRequest()
-                    onPdfExportStart()
-                    CsvReportGenerator.generateAndHandleCsvReportAsync(
-                        context = context,
-                        scope = appScope,
-                        customer = activeCustomer,
-                        transactions = allCustomerTxs,
-                        businessProfile = businessProfile,
-                        currencySymbol = currencySymbol,
-                        exchangeRatesJson = exchangeRatesJson,
-                        action = CsvReportGenerator.CsvAction.SHARE,
-                        onFinished = onPdfExportFinish
-                    )
+                    onCsvAction(CsvReportGenerator.CsvAction.SHARE)
                 },
                 onSaveClick = {
-                    onDismissRequest()
-                    onPdfExportStart()
-                    CsvReportGenerator.generateAndHandleCsvReportAsync(
-                        context = context,
-                        scope = appScope,
-                        customer = activeCustomer,
-                        transactions = allCustomerTxs,
-                        businessProfile = businessProfile,
-                        currencySymbol = currencySymbol,
-                        exchangeRatesJson = exchangeRatesJson,
-                        action = CsvReportGenerator.CsvAction.SAVE_LOCAL,
-                        onFinished = onPdfExportFinish
-                    )
+                    onCsvAction(CsvReportGenerator.CsvAction.SAVE_LOCAL)
                 }
             )
-
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 modifier = Modifier.padding(vertical = 4.dp)

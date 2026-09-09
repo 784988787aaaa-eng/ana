@@ -1,6 +1,7 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
 import android.app.Application
+import com.smartledger.aldaftar.data.license.LicenseRepository
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -43,6 +44,7 @@ data class HabayebUiState(
 @OptIn(FlowPreview::class)
 class HabayebFinanceViewModel(
     application: Application,
+    private val licenseRepository: LicenseRepository,
     private val categoryUseCase: HabayebCategoryUseCase,
     private val habayebRepository: com.smartledger.aldaftar.data.repository.HabayebRepository,
     private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
@@ -322,10 +324,22 @@ class HabayebFinanceViewModel(
     ) = withContext(Dispatchers.IO) {
         resetFiltersToDefault(resetCategory = true)
 
-        transactionUseCase.saveHabayebCustomer(
-            customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
-            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
-        )
+        val consumesTrial = initialAmount.compareTo(BigDecimal.ZERO) > 0
+        if (!consumesTrial) {
+            transactionUseCase.saveHabayebCustomer(
+                customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
+            )
+            return@withContext
+        }
+        val created = licenseRepository.runAuthorizedCreation {
+            transactionUseCase.saveHabayebCustomer(
+                customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
+            )
+            true
+        }
+        if (created != true) return@withContext
         emitScrollToAccount(customer.id)
     }
 
@@ -338,10 +352,23 @@ class HabayebFinanceViewModel(
         viewModelScope.launch {
             resetFiltersToDefault(resetCategory = true)
 
-            transactionUseCase.addHabayebTransaction(
-                customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
-            )
+            val consumesTrial = editingTxId == null
+            if (!consumesTrial) {
+                transactionUseCase.addHabayebTransaction(
+                    customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
+                    foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
+                )
+                emitScrollToAccount(customerId)
+                return@launch
+            }
+            val created = licenseRepository.runAuthorizedCreation {
+                transactionUseCase.addHabayebTransaction(
+                    customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
+                    foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
+                )
+                true
+            }
+            if (created != true) return@launch
             emitScrollToAccount(customerId)
         }
     }

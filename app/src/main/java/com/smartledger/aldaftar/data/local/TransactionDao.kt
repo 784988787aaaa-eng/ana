@@ -35,6 +35,9 @@ interface TransactionDao {
     @Query("SELECT COUNT(*) FROM transactions")
     suspend fun getTransactionsCountDirect(): Int
 
+    @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
+    suspend fun allDirect(): List<TransactionDb>
+
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     suspend fun getTransactionById(id: String): TransactionDb?
 

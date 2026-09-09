@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
+import com.smartledger.aldaftar.data.license.LicenseRepository
 import android.app.Application
 import android.util.Log
 import android.widget.Toast
@@ -26,6 +27,7 @@ sealed interface LedgerUiEvent {
 
 class LedgerViewModel(
     application: Application,
+    private val licenseRepository: LicenseRepository,
     private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
     private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
     private val categoriesRepository: com.smartledger.aldaftar.data.repository.CategoryRepository,
@@ -132,16 +134,23 @@ class LedgerViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val id = presetId ?: "tx_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
-                val tx = TransactionDb(
-                    id = id,
-                    timestamp = timestamp,
-                    type = type,
-                    category = category,
-                    amount = amount,
-                    description = description
-                )
-                transactionsRepository.saveTransaction(tx)
+                val created = licenseRepository.runAuthorizedCreation {
+                    val id = presetId ?: "tx_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
+                    val tx = TransactionDb(
+                        id = id,
+                        timestamp = timestamp,
+                        type = type,
+                        category = category,
+                        amount = amount,
+                        description = description
+                    )
+                    transactionsRepository.saveTransaction(tx)
+                    true
+                }
+                if (created != true) {
+                    withContext(Dispatchers.Main) { Toast.makeText(getApplication(), "انتهت التجربة المجانية", Toast.LENGTH_SHORT).show() }
+                    return@launch
+                }
                 _uiEventChannel.send(LedgerUiEvent.ScrollToTop)
                 com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
             } catch (e: CancellationException) {

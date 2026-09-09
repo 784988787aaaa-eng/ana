@@ -59,6 +59,9 @@ interface HabayebDao {
     @Query("UPDATE habayeb_customers SET categoryId = NULL WHERE categoryId = :categoryId")
     suspend fun clearCategoryFromCustomers(categoryId: Int)
 
+    @Query("SELECT * FROM pinned_habayeb_customers")
+    suspend fun getAllPinsDirect(): List<PinnedCustomer>
+
     @Query("SELECT customerId FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope")
     fun getPinnedCustomerIdsFlow(scope: Int): Flow<List<String>>
 

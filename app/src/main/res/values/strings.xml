@@ -524,20 +524,16 @@
     <string name="settings_subtitle">تهيئة العملات، المزامنة السحابية وقفل الأمان</string>
     <string name="settings_currency_title">العملة الإفتراضية</string>
     <string name="settings_currency_hint">رمز العملة (مثال: ر.ي، $)</string>
-    <string name="settings_signature_title">بصمة وتوقيع التطبيق 🔐</string>
-    <string name="settings_signature_desc">التطبيق مؤمّن ويعمل بالبصمة الرسمية المعتمدة للمزامنة السحابية وتوافق الحزم.</string>
-    <string name="settings_sha1_label">بصمة SHA-1:</string>
-    <string name="settings_sha256_label">بصمة SHA-256:</string>
-    <string name="settings_sha1_copied">تم نسخ بصمة SHA-1 📋</string>
-    <string name="settings_sha256_copied">تم نسخ بصمة SHA-256 📋</string>
+    <string name="settings_signature_title">حماية توقيع التطبيق 🔐</string>
+    <string name="settings_signature_desc">توقيع الإصدار محفوظ خارج التطبيق وتُدار مفاتيحه الحساسة في بيئة البناء الآمنة.</string>
+    <string name="settings_signature_status_label">حالة التوقيع</string>
+    <string name="settings_signature_status_value">محمي</string>
     <string name="settings_quad_backup_title">النسخ الاحتياطي والمزامنة</string>
     <string name="settings_quad_backup_subtitle">إدارة النسخ السحابي والمحلي واستعادة السجلات</string>
-    <string name="settings_backup_portable_title">النسخ الاحتياطي المحلي (.aldabackup)</string>
+    <string name="settings_backup_portable_title">النسخ الاحتياطي المحلي (.slb)</string>
     <string name="settings_backup_portable_desc">تصدير أو استيراد ملف النسخة الاحتياطية</string>
     <string name="settings_export_backup">تصدير نسخة احتياطية</string>
     <string name="settings_import_backup">استيراد نسخة احتياطية</string>
-    <string name="settings_backup_base64_title">الرمز المشفر</string>
-    <string name="settings_backup_base64_desc">رمز نصي مشفر يحتوي على كافة السجلات</string>
     <string name="settings_copy_encrypted">نسخ الرمز المشفر</string>
     <string name="settings_restore_paste">استيراد من رمز</string>
     <string name="settings_no_local_backups">لا توجد نسخ محلية سابقة</string>
@@ -545,7 +541,7 @@
     <string name="settings_delete_all_data">مسح كافة البيانات وإعادة الضبط</string>
     <string name="settings_delete_all_data_progress">جاري مسح البيانات...</string>
     <string name="settings_permissions_dialog_title">صلاحيات التخزين والنسخ</string>
-    <string name="settings_permissions_dialog_desc">لحفظ واسترجاع ملفات النسخ الاحتياطي (.aldabackup)، يحتاج التطبيق إلى الصلاحيات التالية:</string>
+    <string name="settings_permissions_dialog_desc">لحفظ واسترجاع ملفات النسخ الاحتياطي (.slb)، يحتاج التطبيق إلى الصلاحيات التالية:</string>
     <string name="settings_permissions_storage_label">صلاحية التخزين لحفظ الأرشيف</string>
     <string name="settings_permissions_manage_files_label">صلاحية الوصول لملفات النسخ الاحتياطي</string>
     <string name="settings_permissions_notifications_label">صلاحية إشعارات النسخ والمزامنة</string>
@@ -559,7 +555,6 @@
     <string name="settings_toast_synced_desc">تم حفظ النسخة الاحتياطية بنجاح</string>
     <string name="settings_toast_permission_manage_files">يرجى تفعيل صلاحية إدارة الملفات لحفظ النسخ في مجلد المستندات.</string>
     <string name="settings_toast_permission_denied_err">تعذر إكمال العملية لعدم توفر صلاحيات التخزين.</string>
-    <string name="settings_toast_base64_copied">تم نسخ كود السجل للحافظة</string>
     <string name="settings_toast_no_network">لا يوجد اتصال بالإنترنت</string>
     <string name="settings_dialog_restore_paste_title">استيراد من رمز مشفر</string>
     <string name="settings_dialog_restore_paste_desc">الصق الرمز النصي للنسخة الاحتياطية هنا لاستعادة البيانات:</string>
@@ -586,13 +581,21 @@
     <string name="backup_toast_cancelled">تم إلغاء عملية الربط.</string>
     <string name="backup_toast_sync_success">تمت المزامنة وحفظ النسخة السحابية بنجاح</string>
     <string name="backup_sheet_title">النسخ الاحتياطي والمزامنة</string>
+    <string name="backup_archive_subtitle">نسخ آمنة بامتداد SLB مع أرشيف محلي قابل للتنزيل والاستعادة.</string>
+    <string name="backup_btn_create_local">إنشاء وحفظ نسخة</string>
+    <string name="backup_btn_download_cloud">تنزيل من السحابة</string>
+    <string name="backup_local_archive_title">الأرشيف المحلي</string>
+    <string name="backup_toast_cloud_downloaded">تم تنزيل النسخة إلى ذاكرة الجهاز.</string>
+    <string name="backup_toast_cloud_download_failed">تعذر تنزيل النسخة من السحابة.</string>
+    <string name="backup_toast_delete_failed">تعذر حذف النسخة.</string>
+
     <string name="backup_status_connected">متصل بالسحابة</string>
     <string name="backup_status_local">غير متصل</string>
     <string name="backup_toast_browser_failed">تعذر فتح المتصفح على هذا الجهاز.</string>
     <string name="backup_btn_upload_backup">إنشاء نسخة سحابية</string>
     <string name="backup_btn_browse_archives">سجل النسخ السحابية</string>
     <string name="backup_btn_main_backup">تصدير نسخة احتياطية</string>
-    <string name="backup_btn_local_backup">حفظ كملف محلي (.aldabackup)</string>
+    <string name="backup_btn_local_backup">حفظ كملف محلي (.slb)</string>
     <string name="backup_toast_copied_success">تم نسخ بيانات السجل إلى الحافظة</string>
     <string name="backup_btn_fast_encoded">نسخ كرمز نصي مشفر</string>
     <string name="backup_btn_main_import">استعادة واستيراد البيانات</string>
@@ -658,9 +661,6 @@
     <string name="autobackup_notification_text_failure">تعذر الاتصال لحفظ البيانات، ستتم إعادة المحاولة تلقائياً.</string>
     <string name="autobackup_path_prefix">المسار: %1$s</string>
     <string name="backup_reminder_title">تأمين وحفظ البيانات 🔒</string>
-    <string name="settings_signature_unavailable">غير متوفر</string>
-    <string name="settings_signature_desc_sha1">نسخ بصمة SHA-1</string>
-    <string name="settings_signature_desc_sha256">نسخ بصمة SHA-256</string>
     <string name="biz_zoom_and_pan">تقريب وتحريك الصورة:</string>
     <string name="backup_folder_name">الدفتر الذكي</string>
     <string name="export_backup_title">تصدير ومشاركة الاحتياطي (WhatsApp / Drive)</string>
@@ -830,7 +830,7 @@
     <string name="toast_backup_export_success">تم تصدير النسخة الاحتياطية بنجاح</string>
     <string name="toast_backup_export_failed">فشل حفظ النسخة الاحتياطية</string>
     <string name="toast_restore_success">تمت الاستعادة بنجاح</string>
-    <string name="toast_restore_invalid_file">الملف غير صالح، يرجى اختيار ملف (.aldabackup) صحيح</string>
+    <string name="toast_restore_invalid_file">الملف غير صالح، يرجى اختيار ملف (.slb) صحيح</string>
     <string name="toast_sync_restore_success">تمت الاستعادة بنجاح</string>
     <string name="toast_sync_decrypt_failed">فشل فك تشفير البيانات أو الاستيراد</string>
     <string name="dialog_exit_title">إغلاق التطبيق</string>
@@ -880,4 +880,5 @@
     <string name="excel_totals_icon">📊 %1$s</string>
     <string name="excel_foreign_icon">💱 %1$s</string>
     <string name="excel_account_phone_format">%1$s (📱 %2$s)</string>
+    <string name="license_trial_ended">انتهت التجربة المجانية. فعّل ترخيصًا للمتابعة.</string>
 </resources>

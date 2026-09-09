@@ -25,6 +25,7 @@ import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.UiEvent
+import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
 
 @androidx.compose.runtime.Composable
 fun SmartLedgerApp(
@@ -37,6 +38,7 @@ fun SmartLedgerApp(
     val habayebViewModel: HabayebFinanceViewModel = viewModel(factory = viewModelFactory)
     val backupSyncViewModel: BackupSyncViewModel = viewModel(factory = viewModelFactory)
     val businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel = viewModel(factory = viewModelFactory)
+    val licenseViewModel: LicenseViewModel = viewModel(factory = viewModelFactory)
 
     val settings by financeViewModel.settingsState.collectAsStateWithLifecycle()
     val settingsLoaded by financeViewModel.isSettingsLoaded.collectAsStateWithLifecycle()

@@ -2,10 +2,7 @@ package com.smartledger.aldaftar.ui.main
 
 import androidx.compose.material3.MaterialTheme
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.*
@@ -24,10 +21,9 @@ import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
+import com.smartledger.aldaftar.ui.screens.license.LicenseDialog
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +33,7 @@ fun MainAppLayout(
     securityViewModel: SecurityViewModel,
     backupSyncViewModel: BackupSyncViewModel,
     businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
+    licenseViewModel: LicenseViewModel,
     settings: AppSettings,
     onExit: () -> Unit
 ) {
@@ -48,7 +45,6 @@ fun MainAppLayout(
             FinanceConstants.DEFAULT_FALLBACK_VERSION
         }
     }
-    val sdfName = remember { java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm", java.util.Locale.US) }
     var showComprehensiveReportDialog by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
@@ -63,6 +59,7 @@ fun MainAppLayout(
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var showBackupRestoreSheet by remember { mutableStateOf(false) }
     var showCurrencyBallSelector by remember { mutableStateOf(false) }
+    var showLicenseDialog by remember { mutableStateOf(false) }
 
     var isFloatingSearchActive by remember { mutableStateOf(viewModel.isFloatingSearchActive()) }
     var isSearchActive by remember { mutableStateOf(false) }
@@ -81,56 +78,6 @@ fun MainAppLayout(
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
-    val safExportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(FinanceConstants.MIME_TYPE_JSON)
-    ) { uri ->
-        if (uri != null) {
-            backupSyncViewModel.getBackupJsonForClipboard { jsonStr ->
-                scope.launch {
-                    try {
-                        withContext(Dispatchers.IO) {
-                            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                                outputStream.write(jsonStr.toByteArray())
-                            }
-                        }
-                        Toast.makeText(context, context.getString(R.string.toast_backup_export_success), Toast.LENGTH_SHORT).show()
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (_: Exception) {
-                        Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-    }
-
-    val safRestoreLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                try {
-                    val jsonText = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: ""
-                    }
-                    if (jsonText.isNotBlank()) {
-                        backupSyncViewModel.executeMasterRestore(jsonText, context) { success, _ ->
-                            if (success) {
-                                Toast.makeText(context, context.getString(R.string.toast_restore_success), Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (_: Exception) {
-                    Toast.makeText(context, context.getString(R.string.toast_restore_invalid_file), Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
 
     BackHandler {
         val defaultStart = Screen.HABAYEB
@@ -166,6 +113,8 @@ fun MainAppLayout(
                 },
                 settings = settings,
                 securityViewModel = securityViewModel,
+                licenseViewModel = licenseViewModel,
+                onLicenseClick = { scope.launch { drawerState.close() }; showLicenseDialog = true },
                 businessProfileViewModel = businessProfileViewModel,
                 onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
                     viewModel.saveSettings(updated)
@@ -203,6 +152,8 @@ fun MainAppLayout(
                         viewModel = viewModel,
                         habayebViewModel = habayebViewModel,
                         securityViewModel = securityViewModel,
+                licenseViewModel = licenseViewModel,
+                onLicenseClick = { scope.launch { drawerState.close() }; showLicenseDialog = true },
                         backupSyncViewModel = backupSyncViewModel,
                         businessProfileViewModel = businessProfileViewModel,
                         settings = settings,
@@ -277,18 +228,15 @@ fun MainAppLayout(
         }
     )
 
+    if (showLicenseDialog) {
+        LicenseDialog(viewModel = licenseViewModel, onDismiss = { showLicenseDialog = false })
+    }
+
     if (showBackupRestoreSheet) {
         BackupRestoreBottomSheet(
-            settings = settings,
             backupSyncViewModel = backupSyncViewModel,
-            onExportBackup = {
-                val dateStr = sdfName.format(java.util.Date())
-                safExportLauncher.launch("backup_$dateStr.json")
-            },
-            onImportBackup = {
-                safRestoreLauncher.launch(arrayOf(FinanceConstants.MIME_TYPE_ALL_APP))
-            },
-            onDismiss = { showBackupRestoreSheet = false }
+            onDismiss = { showBackupRestoreSheet = false },
+            onRestoreSuccess = viewModel::saveSettings
         )
     }
 
@@ -303,7 +251,8 @@ fun MainAppLayout(
             onDismiss = { showComprehensiveReportDialog = false },
             selectedCustomerIds = selectedCustomerIds,
             businessProfile = businessProfile,
-            loadTransactionsForReport = habayebViewModel::transactionsForReport
+            loadTransactionsForReport = habayebViewModel::transactionsForReport,
+            reportCoroutineScope = scope
         )
     }
 }

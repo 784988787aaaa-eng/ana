@@ -12,7 +12,9 @@ import com.smartledger.aldaftar.data.serialization.excel.ExcelShareHelper
 import com.smartledger.aldaftar.data.serialization.excel.SingleCustomerExcelEngine
 import com.smartledger.aldaftar.data.serialization.excel.XlsxOpenXmlBuilder
 import com.smartledger.aldaftar.ui.state.CustomerUiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -103,10 +105,12 @@ object CsvReportGenerator {
                         ).show()
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error generating Excel statement", e)
             } finally {
-                withContext(Dispatchers.Main) {
+                withContext(NonCancellable + Dispatchers.Main.immediate) {
                     onFinished()
                 }
             }
@@ -146,10 +150,12 @@ object CsvReportGenerator {
                         ).show()
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error generating All Customers Excel", e)
             } finally {
-                withContext(Dispatchers.Main) {
+                withContext(NonCancellable + Dispatchers.Main.immediate) {
                     onFinished()
                 }
             }

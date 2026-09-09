@@ -14,4 +14,10 @@ class FinancialPolicyTest {
     @Test fun `المقارنة العددية تتجاهل اختلاف المقياس`() {
         assertTrue(FinancialPolicy.numericallyEquals(BigDecimal("1.0"), BigDecimal("1.0000")))
     }
+
+    @Test fun `التقريب المالي يستخدم HALF_EVEN عند حد القرار`() {
+        assertEquals(BigDecimal("12.3456"), FinancialPolicy.normalize(BigDecimal("12.34565")))
+        assertEquals(BigDecimal("12.3458"), FinancialPolicy.normalize(BigDecimal("12.34575")))
+        assertEquals(BigDecimal("-12.3456"), FinancialPolicy.normalize(BigDecimal("-12.34565")))
+    }
 }

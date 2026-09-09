@@ -1,23 +1,24 @@
 package com.smartledger.aldaftar.ui.screens
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
-import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +31,6 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.screens.settings.components.GeneralSettingsCard
-import com.smartledger.aldaftar.ui.screens.settings.components.QuadBackupCard
 import com.smartledger.aldaftar.ui.screens.settings.components.SettingsAutoBackupCard
 import com.smartledger.aldaftar.ui.screens.settings.components.SettingsDangerZoneCard
 import com.smartledger.aldaftar.ui.screens.settings.components.SettingsDeveloperFooter
@@ -64,73 +64,26 @@ fun SettingsView(
     val haptic = LocalHapticFeedback.current
 
     var activeDialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
-    var onPermissionGrantedCallback by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     var currencySymbol by remember { mutableStateOf(settings.currencySymbol) }
     var currenciesToSetup by remember { mutableStateOf<List<String>>(emptyList()) }
     var currentSetupIndex by remember { mutableStateOf(0) }
     var schoolExpenses by remember { mutableStateOf(settings.schoolExpensesEnabled) }
-    var isAutoBackupEnabled by remember { mutableStateOf(true) }
+    val isAutoBackupEnabled by backupSyncViewModel.automaticBackupEnabled.collectAsStateWithLifecycle()
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    fun ensureStorageAccess(action: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) action()
+            else runCatching { context.startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply { data = android.net.Uri.parse("package:${context.packageName}") }) }
+        } else if (androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED) action()
+        else permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    }
 
     LaunchedEffect(settings) {
         currencySymbol = settings.currencySymbol
         schoolExpenses = settings.schoolExpensesEnabled
     }
 
-    val coroutineScope = rememberCoroutineScope()
-
-    val checkBackupPermissionsGranted = remember(context) {
-        {
-            val hasWrite = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else true
-
-            val hasRead = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
-            val hasNotification = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else true
-
-            val hasManage = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                android.os.Environment.isExternalStorageManager()
-            } else true
-
-            hasWrite && hasRead && hasNotification && hasManage
-        }
-    }
-
-    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        val writeGranted = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-            results[android.Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: false
-        } else true
-
-        val readGranted = results[android.Manifest.permission.READ_EXTERNAL_STORAGE] ?: false
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            if (!android.os.Environment.isExternalStorageManager()) {
-                Toast.makeText(context, context.getString(R.string.settings_toast_permission_manage_files), Toast.LENGTH_LONG).show()
-                try {
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    }
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                    context.startActivity(intent)
-                }
-            } else {
-                onPermissionGrantedCallback?.invoke()
-            }
-        } else {
-            if (writeGranted && readGranted) {
-                onPermissionGrantedCallback?.invoke()
-            } else {
-                Toast.makeText(context, context.getString(R.string.settings_toast_permission_denied_err), Toast.LENGTH_LONG).show()
-            }
-        }
-    }
 
     val saveAllSettings = remember(settings, currencySymbol, schoolExpenses) {
         {
@@ -213,36 +166,15 @@ fun SettingsView(
             SettingsSecurityCard(onNavigateToSecurity = onNavigateToSecurity)
         }
 
-        item(key = "quad_backup_central_card") {
-            QuadBackupCard(
-                backupSyncViewModel = backupSyncViewModel,
-                settings = settings,
-                onRestoreSuccess = { restoredSettings ->
-                    currencySymbol = restoredSettings.currencySymbol
-                    schoolExpenses = restoredSettings.schoolExpensesEnabled
-                }
-            )
-        }
-
         item(key = "auto_backup_schedule_card") {
             SettingsAutoBackupCard(
                 isAutoBackupEnabled = isAutoBackupEnabled,
                 onCheckedChange = { checked ->
-                    if (checked) {
-                        val enableAutoBackup = {
-                            isAutoBackupEnabled = true
-                            saveAllSettings()
-                            Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_enabled), Toast.LENGTH_SHORT).show()
-                        }
-                        if (checkBackupPermissionsGranted()) {
-                            enableAutoBackup()
-                        } else {
-                            onPermissionGrantedCallback = enableAutoBackup
-                            activeDialogState = SettingsDialogState.PermissionExplanation
-                        }
+                    if (checked) ensureStorageAccess {
+                        backupSyncViewModel.setAutomaticBackupEnabled(true)
+                        Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_enabled), Toast.LENGTH_SHORT).show()
                     } else {
-                        isAutoBackupEnabled = false
-                        saveAllSettings()
+                        backupSyncViewModel.setAutomaticBackupEnabled(false)
                         Toast.makeText(context, context.getString(R.string.settings_toast_auto_backup_disabled), Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -274,17 +206,7 @@ fun SettingsView(
         onCurrenciesToSetupChange = { currenciesToSetup = it },
         viewModel = viewModel,
         habayebViewModel = habayebViewModel,
-        onLaunchPermissions = {
-            val permissions = mutableListOf<String>()
-            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-                permissions.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-            permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
-            }
-            multiplePermissionsLauncher.launch(permissions.toTypedArray())
-        },
-        onPermissionGrantedCallback = onPermissionGrantedCallback
+        onLaunchPermissions = {},
+        onPermissionGrantedCallback = null
     )
 }

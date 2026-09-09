@@ -32,6 +32,9 @@ import com.smartledger.aldaftar.ui.screens.BusinessProfileDialog
 import com.smartledger.aldaftar.ui.screens.SecurityDialog
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
+import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.smartledger.aldaftar.ui.screens.license.LicenseDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +44,8 @@ fun AppNavigationDrawer(
     onBackupClick: () -> Unit,
     settings: AppSettings,
     securityViewModel: SecurityViewModel,
+    licenseViewModel: LicenseViewModel,
+    onLicenseClick: () -> Unit,
     businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
     versionName: String,
@@ -50,6 +55,7 @@ fun AppNavigationDrawer(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val supportPhoneNumber = stringResource(id = R.string.support_phone_number)
+    val licenseSnapshot by licenseViewModel.snapshot.collectAsStateWithLifecycle()
     
     var isShowingCurrencySettings by remember { mutableStateOf(false) }
     var isShowingBusinessProfile by remember { mutableStateOf(false) }
@@ -178,6 +184,13 @@ fun AppNavigationDrawer(
                 }
             )
             
+            DrawerItem(
+                selected = false,
+                icon = Icons.Default.Verified,
+                label = if (licenseSnapshot.isPaid) "✓ الترخيص مفعل" else "الترخيص والتفعيل",
+                onClick = onLicenseClick
+            )
+
             DrawerItem(
                 selected = currentScreen == Screen.TRASH,
                 icon = Icons.Default.Delete,

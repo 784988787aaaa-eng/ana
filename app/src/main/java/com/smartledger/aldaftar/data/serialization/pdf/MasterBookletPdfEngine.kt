@@ -13,6 +13,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -203,9 +204,10 @@ object MasterBookletPdfEngine {
 
         } catch (e: CancellationException) {
             Log.i(TAG, "Master booklet PDF generation cancelled by user")
-            withContext(Dispatchers.Main) {
+            withContext(NonCancellable + Dispatchers.Main.immediate) {
                 onCancelled()
             }
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating booklet PDF", e)
             withContext(Dispatchers.Main) {

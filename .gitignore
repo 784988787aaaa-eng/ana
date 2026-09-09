@@ -20,3 +20,8 @@ debug.keystore
 /functions/keys/*.pem
 /functions/lib
 /functions/node_modules
+app/src/main/assets/license_account_public.pem
+app/src/main/assets/license_local_public.pem
+/cloudflare/.wrangler
+/cloudflare/.dev.vars
+/cloudflare/.env

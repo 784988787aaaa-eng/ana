@@ -12,12 +12,13 @@ class AppViewModelFactory(
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
-        FinanceViewModel::class.java -> FinanceViewModel(application, container.settings, container.commitments, container.transactions, container.categories, container.habayeb, container.trash, container.maintenance, container.floatingUi) as T
-        HabayebFinanceViewModel::class.java -> HabayebFinanceViewModel(application, container.categoryUseCase, container.habayeb, container.transactions, container.categories, container.settings, container.recurring, container.mutation, container.floatingUi) as T
-        LedgerViewModel::class.java -> LedgerViewModel(application, container.settings, container.transactions, container.categories, container.trash) as T
+        FinanceViewModel::class.java -> FinanceViewModel(application, container.license, container.settings, container.commitments, container.transactions, container.categories, container.habayeb, container.trash, container.maintenance, container.floatingUi) as T
+        HabayebFinanceViewModel::class.java -> HabayebFinanceViewModel(application, container.license, container.categoryUseCase, container.habayeb, container.transactions, container.categories, container.settings, container.recurring, container.mutation, container.floatingUi) as T
+        LedgerViewModel::class.java -> LedgerViewModel(application, container.license, container.settings, container.transactions, container.categories, container.trash) as T
         SecurityViewModel::class.java -> SecurityViewModel(application, container.settings) as T
-        BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance) as T
+        BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance, container.backupEngine) as T
         BusinessProfileViewModel::class.java -> BusinessProfileViewModel(container.businessProfile) as T
+        LicenseViewModel::class.java -> LicenseViewModel(application, container.license) as T
         else -> throw IllegalArgumentException("Unsupported ViewModel: ${modelClass.name}")
     }
 }

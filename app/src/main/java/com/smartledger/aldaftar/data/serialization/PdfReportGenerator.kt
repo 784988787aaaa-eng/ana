@@ -25,8 +25,10 @@ import com.smartledger.aldaftar.data.serialization.pdf.PdfPageRenderer
 import com.smartledger.aldaftar.data.serialization.pdf.PdfReportCalculator
 import com.smartledger.aldaftar.data.serialization.pdf.PdfRowRenderer
 import com.smartledger.aldaftar.ui.state.CustomerUiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -144,6 +146,8 @@ object PdfReportGenerator {
                 outputStream.flush()
             }
             file
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating customer PDF", e)
             null
@@ -277,6 +281,8 @@ object PdfReportGenerator {
             }
 
             file
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating all customers PDF", e)
             null
@@ -331,10 +337,12 @@ object PdfReportGenerator {
                         triggerShareOrViewIntent(context, file, action)
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error generating customer PDF async", e)
             } finally {
-                withContext(Dispatchers.Main) {
+                withContext(NonCancellable + Dispatchers.Main.immediate) {
                     onFinished()
                 }
             }
@@ -357,10 +365,12 @@ object PdfReportGenerator {
                 withContext(Dispatchers.Main) {
                     triggerShareOrViewIntent(context, file, action)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error generating all customers PDF async", e)
             } finally {
-                withContext(Dispatchers.Main) {
+                withContext(NonCancellable + Dispatchers.Main.immediate) {
                     onFinished()
                 }
             }

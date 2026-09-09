@@ -36,7 +36,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +58,7 @@ import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.data.serialization.pdf.MasterBookletPdfEngine
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.ui.state.CustomerUiState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -72,10 +72,10 @@ fun ComprehensiveReportDialog(
     modifier: Modifier = Modifier,
     selectedCustomerIds: List<String> = emptyList(),
     businessProfile: BusinessProfile,
-    loadTransactionsForReport: suspend (Collection<String>) -> Map<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>
+    loadTransactionsForReport: suspend (Collection<String>) -> Map<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>,
+    reportCoroutineScope: CoroutineScope
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var isGeneratingPdf by remember { mutableStateOf(false) }
 
     var isGeneratingBooklet by remember { mutableStateOf(false) }
@@ -305,7 +305,7 @@ fun ComprehensiveReportDialog(
                                     }
                                     PdfReportGenerator.generateAndHandleAllCustomersPdfReportAsync(
                                         context = context,
-                                        scope = coroutineScope,
+                                        scope = reportCoroutineScope,
                                         customers = targetCustomers,
                                         businessProfile = businessProfile,
                                         currencySymbol = currencySymbol,
@@ -347,7 +347,7 @@ fun ComprehensiveReportDialog(
 
                         Button(
                             onClick = {
-                                val job = coroutineScope.launch {
+                                val job = reportCoroutineScope.launch {
                                     isGeneratingBooklet = true
                                     bookletProgress = 0
                                     bookletTotal = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds.size else customers.size

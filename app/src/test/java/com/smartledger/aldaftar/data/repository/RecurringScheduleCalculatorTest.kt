@@ -51,6 +51,12 @@ class RecurringScheduleCalculatorTest {
         assertEquals(due.sorted(), due)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun maxOccurrencesMustBePositive() {
+        val start = day(2026, Calendar.JANUARY, 1)
+        RecurringScheduleCalculator.dueOccurrences(config(start, start), start, maxOccurrences = 0)
+    }
+
     @Test fun sequentialBatchesAdvanceWithoutDuplicatesOrLoss() {
         val start = day(2026, Calendar.JANUARY, 1)
         val end = day(2026, Calendar.APRIL, 30, 23, 59)
