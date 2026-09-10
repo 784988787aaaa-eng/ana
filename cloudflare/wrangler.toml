@@ -9,6 +9,3 @@ ENVIRONMENT = "production"
 binding = "SMARTLEDGER_KV"
 id = "c8f62e026ed645a8b7721b98d11e8809"
 
-[limits]
-cpu_ms = 10
-
