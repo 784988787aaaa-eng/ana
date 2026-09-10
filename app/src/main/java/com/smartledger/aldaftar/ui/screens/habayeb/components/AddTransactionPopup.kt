@@ -189,7 +189,6 @@ kotlinx.coroutines.android.awaitFrame()
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
-                Toast.makeText(context, context.getString(R.string.habayeb_toast_tx_save_success), Toast.LENGTH_SHORT).show()
                 onTransactionSaved()
                 onDismiss()
 

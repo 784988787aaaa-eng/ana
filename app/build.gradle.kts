@@ -10,6 +10,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
+    buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${System.getenv("GOOGLE_CLIENT_ID") ?: ""}\"")
     applicationId = "com.smartledger.aldaftar"
     minSdk = 24
     targetSdk = 36
@@ -70,6 +71,7 @@ android {
   }
   buildFeatures {
     compose = true
+    buildConfig = true
     }
 
   testOptions { unitTests { isIncludeAndroidResources = true } }
@@ -99,6 +101,7 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.androidx.security.crypto)
   implementation(libs.androidx.biometric)
+  implementation(libs.play.services.auth)
   implementation(libs.androidx.fragment.ktx)
   implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.androidx.paging.runtime)

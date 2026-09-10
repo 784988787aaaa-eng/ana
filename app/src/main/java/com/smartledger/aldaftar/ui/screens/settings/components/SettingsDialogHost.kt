@@ -22,19 +22,7 @@ fun SettingsDialogHost(
     onCurrenciesToSetupChange: (List<String>) -> Unit,
     viewModel: FinanceViewModel,
     habayebViewModel: HabayebFinanceViewModel,
-    onLaunchPermissions: () -> Unit,
-    onPermissionGrantedCallback: (() -> Unit)?
 ) {
-    if (activeDialogState is SettingsDialogState.PermissionExplanation) {
-        BackupPermissionExplanationDialog(
-            onDismiss = onDismissDialog,
-            onGrantPermissions = onLaunchPermissions,
-            onUseInternalStorage = {
-                onPermissionGrantedCallback?.invoke()
-            }
-        )
-    }
-
     if (activeDialogState is SettingsDialogState.ResetDataTrap) {
         ResetTrapDialog(
             onDismiss = onDismissDialog,

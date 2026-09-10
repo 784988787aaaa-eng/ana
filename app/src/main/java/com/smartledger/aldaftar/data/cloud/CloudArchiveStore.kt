@@ -27,6 +27,24 @@ class CloudArchiveStore(context: Context) {
     }
 
     fun connected(): Boolean = connection.token() != null
+    fun email(): String? = connection.email()
+    fun saveEmail(email: String?) = connection.saveEmail(email)
+
+    suspend fun googleClientId(): String = withContext(Dispatchers.IO) {
+        val response = post("$endpoint/config", JSONObject())
+        response.optString("googleClientId").trim()
+            .ifBlank { throw CloudOperationException(0, "not_configured", "خدمة Google Drive غير مهيأة") }
+    }
+
+    suspend fun connectWithServerAuthCode(serverAuthCode: String): Boolean = withContext(Dispatchers.IO) {
+        val response = post("$endpoint/connect/google-signin", JSONObject().put("serverAuthCode", serverAuthCode))
+        val token = response.optString("cloudToken")
+        if (response.optString("status") != "connected" || token.isBlank()) {
+            throw CloudOperationException(400, "oauth_failed", "تعذر إكمال ربط Google Drive")
+        }
+        connection.save(token)
+        true
+    }
 
     suspend fun connect(): Boolean = withContext(Dispatchers.IO) {
         if (endpoint.isBlank() || endpoint.startsWith("__")) {

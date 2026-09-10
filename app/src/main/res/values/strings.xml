@@ -530,6 +530,9 @@
     <string name="settings_signature_status_value">محمي</string>
     <string name="settings_quad_backup_title">النسخ الاحتياطي والمزامنة</string>
     <string name="settings_quad_backup_subtitle">إدارة النسخ السحابي والمحلي واستعادة السجلات</string>
+    <string name="settings_auto_backup_title">النسخ الاحتياطي التلقائي</string>
+    <string name="settings_auto_backup_desc">حفظ نسخة احتياطية يومياً بشكل تلقائي في الخلفية لحماية بياناتك.</string>
+    <string name="settings_desc_auto_backup">النسخ التلقائي</string>
     <string name="settings_backup_portable_title">النسخ الاحتياطي المحلي (.slb)</string>
     <string name="settings_backup_portable_desc">تصدير أو استيراد ملف النسخة الاحتياطية</string>
     <string name="settings_export_backup">تصدير نسخة احتياطية</string>
@@ -537,7 +540,6 @@
     <string name="settings_copy_encrypted">نسخ الرمز المشفر</string>
     <string name="settings_restore_paste">استيراد من رمز</string>
     <string name="settings_no_local_backups">لا توجد نسخ محلية سابقة</string>
-    <string name="settings_auto_backup_desc">نسخ احتياطي تلقائي يومي في الخلفية.</string>
     <string name="settings_delete_all_data">مسح كافة البيانات وإعادة الضبط</string>
     <string name="settings_delete_all_data_progress">جاري مسح البيانات...</string>
     <string name="settings_permissions_dialog_title">صلاحيات التخزين والنسخ</string>
@@ -564,10 +566,6 @@
     <string name="settings_btn_cancel">إلغاء</string>
     <string name="settings_discovered_backups_title">النسخ الاحتياطية المحلية:</string>
     <string name="settings_desc_restore">استعادة</string>
-    <string name="settings_toast_auto_backup_enabled">تم تفعيل النسخ التلقائي اليومي</string>
-    <string name="settings_toast_auto_backup_disabled">تم إيقاف النسخ التلقائي</string>
-    <string name="settings_auto_backup_title">النسخ الاحتياطي التلقائي</string>
-    <string name="settings_desc_auto_backup">النسخ التلقائي</string>
     <string name="settings_danger_desc">سيتم مسح كافة المعاملات والحسابات نهائياً من هذا الجهاز.</string>
     <string name="settings_app_version">الإصدار v1.3</string>
     <string name="settings_developer_info">تصميم وتطوير م/ منصور قطينه للبرمجيات</string>
@@ -648,18 +646,6 @@
     <string name="biz_toast_logo_save_err">فشل حفظ الملف محلياً</string>
     <string name="biz_btn_apply">حفظ وتطبيق</string>
     <string name="biz_toast_logo_failed">فشل تحميل الصورة</string>
-    <string name="autobackup_channel_name">النسخ الاحتياطي التلقائي</string>
-    <string name="autobackup_channel_desc">إشعار النسخ الاحتياطي ومزامنة السحاب</string>
-    <string name="autobackup_notification_title_inprogress">النسخ الاحتياطي</string>
-    <string name="autobackup_notification_text_inprogress">جاري حفظ بياناتك بأمان...</string>
-    <string name="autobackup_notification_title_success">اكتمل النسخ الاحتياطي</string>
-    <string name="autobackup_notification_text_success">تم حفظ نسخة آمنة من سجلاتك بنجاح.</string>
-    <string name="autobackup_notification_title_local">اكتمل النسخ الاحتياطي</string>
-    <string name="autobackup_notification_text_local">تم حفظ نسخة آمنة من سجلاتك بنجاح.</string>
-    <string name="autobackup_notification_title_failure">النسخ الاحتياطي التلقائي</string>
-    <string name="autobackup_notification_text_permission">تعذر الاتصال لحفظ البيانات، ستتم إعادة المحاولة تلقائياً.</string>
-    <string name="autobackup_notification_text_failure">تعذر الاتصال لحفظ البيانات، ستتم إعادة المحاولة تلقائياً.</string>
-    <string name="autobackup_path_prefix">المسار: %1$s</string>
     <string name="backup_reminder_title">تأمين وحفظ البيانات 🔒</string>
     <string name="biz_zoom_and_pan">تقريب وتحريك الصورة:</string>
     <string name="backup_folder_name">الدفتر الذكي</string>
@@ -846,6 +832,7 @@
     <string name="btn_pay">سداد</string>
     <string name="toast_delete_failed">فشل الحذف</string>
     <string name="toast_save_failed">فشل حفظ البيانات</string>
+    <string name="backup_file_saved">اكتملت عملية النسخ</string>
     <string name="toast_operation_failed">فشلت العملية</string>
     <string name="filter_sort_largest">الأكبر مبلغاً ▼</string>
     <string name="filter_sort_smallest">الأصغر مبلغاً ▲</string>

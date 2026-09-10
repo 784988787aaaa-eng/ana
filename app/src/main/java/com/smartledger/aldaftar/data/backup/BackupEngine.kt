@@ -18,7 +18,7 @@ class BackupEngine(
     private val context: Context,
     private val database: AppDatabase,
     private val crypto: BackupCrypto = BackupCrypto(context),
-    private val paths: BackupPathManager = BackupPathManager()
+    private val paths: BackupPathManager = BackupPathManager(context)
 ) {
     companion object {
         private const val FORMAT_VERSION = 1

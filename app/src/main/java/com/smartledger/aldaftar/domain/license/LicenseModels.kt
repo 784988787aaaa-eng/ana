@@ -16,6 +16,8 @@ data class LicenseSnapshot(
     val trialLimit: Int = 100
 ) {
     val isPaid: Boolean get() = status == LicenseStatus.ACTIVE && type != null
+    val isTrialExpired: Boolean get() = status == LicenseStatus.TRIAL && trialUsed >= trialLimit
+    val requiresActivation: Boolean get() = !isPaid && (isTrialExpired || status == LicenseStatus.VERIFICATION_REQUIRED || status == LicenseStatus.REVOKED || status == LicenseStatus.NOT_ACTIVATED)
     val canCreate: Boolean get() = isPaid || (status == LicenseStatus.TRIAL && trialUsed < trialLimit)
 }
 

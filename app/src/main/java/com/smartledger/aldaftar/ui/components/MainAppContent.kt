@@ -154,7 +154,6 @@ fun MainAppContent(
                     SettingsView(
                         viewModel = viewModel,
                         habayebViewModel = habayebViewModel,
-                        backupSyncViewModel = backupSyncViewModel,
                         settings = settings,
                         onNavigateToSecurity = { onNavigate(Screen.SECURITY) },
                         contentPadding = contentPadding

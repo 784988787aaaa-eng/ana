@@ -1,21 +1,24 @@
 package com.smartledger.aldaftar.data.backup
 
-import android.os.Environment
+import android.content.Context
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class BackupPathManager {
+/** مسارات النسخ الاحتياطية الداخلية غير الظاهرة للمستخدم. */
+class BackupPathManager(context: Context) {
     companion object {
         const val EXTENSION = ".slb"
         const val PREFIX = "SMN_"
-        const val ROOT_FOLDER = "الدفتر الذكي"
+        const val ROOT_FOLDER = "backups"
     }
+
+    private val root = File(context.applicationContext.filesDir, ROOT_FOLDER)
 
     fun monthFolder(date: Date = Date()): File {
         val month = SimpleDateFormat("yyyy-MM", Locale.US).format(date)
-        return File(documentsRoot(), "$ROOT_FOLDER/$month")
+        return File(root, month)
     }
 
     fun automaticFile(date: Date = Date()): File {
@@ -27,11 +30,6 @@ class BackupPathManager {
         val stamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US).format(date)
         return File(monthFolder(date), "$PREFIX$stamp$EXTENSION")
     }
-
-    fun documentsRoot(): File =
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-
-    fun ensureMonthFolder(date: Date = Date()): File = monthFolder(date).apply { mkdirs() }
 
     fun isSupported(file: File): Boolean =
         file.isFile && isSafeBackupName(file.name)

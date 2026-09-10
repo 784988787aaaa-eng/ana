@@ -93,9 +93,10 @@ fun BackupResetConfirmationFlow(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.clearLocalCopyAndWipeMemory(context)
-                        Toast.makeText(context, context.getString(R.string.backup_toast_reset_success), Toast.LENGTH_LONG).show()
-                        onSuccessReset()
+                        viewModel.clearLocalCopyAndWipeMemory {
+                            Toast.makeText(context, context.getString(R.string.backup_toast_reset_success), Toast.LENGTH_LONG).show()
+                            onSuccessReset()
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     shape = RoundedCornerShape(10.dp)

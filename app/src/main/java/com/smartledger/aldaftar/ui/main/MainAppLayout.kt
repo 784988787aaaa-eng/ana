@@ -60,6 +60,8 @@ fun MainAppLayout(
     var showBackupRestoreSheet by remember { mutableStateOf(false) }
     var showCurrencyBallSelector by remember { mutableStateOf(false) }
     var showLicenseDialog by remember { mutableStateOf(false) }
+    var forceLicenseDialog by remember { mutableStateOf(false) }
+    val licenseSnapshot by licenseViewModel.snapshot.collectAsStateWithLifecycle()
 
     var isFloatingSearchActive by remember { mutableStateOf(viewModel.isFloatingSearchActive()) }
     var isSearchActive by remember { mutableStateOf(false) }
@@ -73,6 +75,15 @@ fun MainAppLayout(
         if (navigateTo == FinanceConstants.DEST_BACKUP_SETTINGS) {
             showBackupRestoreSheet = true
             activity?.intent?.removeExtra(FinanceConstants.EXTRA_NAVIGATE_TO)
+        }
+    }
+
+    LaunchedEffect(licenseSnapshot.status, licenseSnapshot.trialUsed, licenseSnapshot.trialLimit) {
+        if (licenseSnapshot.isPaid) {
+            forceLicenseDialog = false
+        } else if (licenseSnapshot.requiresActivation) {
+            forceLicenseDialog = true
+            showLicenseDialog = true
         }
     }
 
@@ -114,7 +125,7 @@ fun MainAppLayout(
                 settings = settings,
                 securityViewModel = securityViewModel,
                 licenseViewModel = licenseViewModel,
-                onLicenseClick = { scope.launch { drawerState.close() }; showLicenseDialog = true },
+                onLicenseClick = { scope.launch { drawerState.close() }; forceLicenseDialog = false; showLicenseDialog = true },
                 businessProfileViewModel = businessProfileViewModel,
                 onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
                     viewModel.saveSettings(updated)
@@ -227,7 +238,7 @@ fun MainAppLayout(
     )
 
     if (showLicenseDialog) {
-        LicenseDialog(viewModel = licenseViewModel, onDismiss = { showLicenseDialog = false })
+        LicenseDialog(viewModel = licenseViewModel, forced = forceLicenseDialog, onDismiss = { if (!forceLicenseDialog) showLicenseDialog = false })
     }
 
     if (showBackupRestoreSheet) {

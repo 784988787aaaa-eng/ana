@@ -79,7 +79,7 @@ object LocalFileSaver {
         if (success) {
             Toast.makeText(
                 context,
-                context.getString(R.string.autobackup_notification_title_local) + "\n" + displayName,
+                context.getString(R.string.backup_file_saved) + "\n" + displayName,
                 Toast.LENGTH_LONG
             ).show()
         } else {

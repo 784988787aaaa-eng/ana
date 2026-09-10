@@ -332,6 +332,41 @@ async function monthFolder(token, month, env) {
   return ensureFolder(token, root.id, month, env);
 }
 
+
+async function driveConnectWithServerAuthCode(request, env) {
+  const body = await readJson(request);
+  const code = String(body.serverAuthCode || '').trim();
+  if (!code) return json(400, { error: 'invalid_auth_code' });
+  const exchangeBody = new URLSearchParams({
+    code,
+    client_id: env.GOOGLE_CLIENT_ID,
+    client_secret: env.GOOGLE_CLIENT_SECRET,
+    grant_type: 'authorization_code'
+  });
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: exchangeBody
+  });
+  let data = {};
+  try { data = await response.json(); } catch (_) {}
+  if (!response.ok || !data.refresh_token) {
+    const failureCode = data.error === 'invalid_grant' ? 'oauth_invalid_grant'
+      : data.error === 'invalid_client' ? 'oauth_invalid_client'
+      : data.error === 'access_denied' ? 'oauth_access_denied'
+      : !data.refresh_token && response.ok ? 'oauth_no_refresh_token'
+      : 'oauth_token_exchange_failed';
+    return json(400, { error: failureCode });
+  }
+  const cloudToken = randomToken();
+  await env.SMARTLEDGER_KV.put(
+    `session:${await hexHash(cloudToken)}`,
+    JSON.stringify({ refreshToken: await encryptText(data.refresh_token, env.SMARTLEDGER_RATE_LIMIT_SALT), createdAt: Date.now(), lastSeenAt: Date.now() }),
+    { expirationTtl: 60 * 60 * 24 * 180 }
+  );
+  return json(200, { status: 'connected', cloudToken });
+}
+
 async function driveStart(request, env) {
   const body = await readJson(request);
   const connectionId = String(body.connectionId || '').trim();
@@ -527,6 +562,8 @@ export default {
       if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
       if (url.pathname === '/license/activate') return await activate(request, env);
       if (url.pathname === '/license/verify') return await verify(request, env);
+      if (url.pathname === '/driveApi/config') return json(200, { googleClientId: String(env.GOOGLE_CLIENT_ID || '') });
+      if (url.pathname === '/driveApi/connect/google-signin') return await driveConnectWithServerAuthCode(request, env);
       if (url.pathname === '/driveApi/connect/start') return await driveStart(request, env);
       if (url.pathname === '/driveApi/connect/status') return await driveStatus(request, env);
       if (url.pathname === '/driveApi/list') return await driveList(request, env);
