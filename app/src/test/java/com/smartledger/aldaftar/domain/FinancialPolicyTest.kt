@@ -1,10 +1,10 @@
 package com.smartledger.aldaftar.domain
 
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
 import java.math.BigDecimal
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class FinancialPolicyTest {
     @Test fun `تطبيع القيمة يوحد المقياس`() {

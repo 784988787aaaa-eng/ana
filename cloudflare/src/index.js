@@ -199,8 +199,29 @@ async function exchangeCode(code, request, env) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body
   });
-  const data = await response.json();
-  if (!response.ok || !data.refresh_token) throw new Error('authorization_failed');
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (err) {
+    console.error('Google token exchange failed to parse JSON response', { status: response.status });
+  }
+  if (!response.ok || !data.refresh_token) {
+    console.error('Google OAuth token exchange failed', {
+      status: response.status,
+      error: data.error || null,
+      description: data.error_description || null,
+      hasRefreshToken: Boolean(data.refresh_token)
+    });
+    const failureCode = data.error === 'invalid_grant' ? 'oauth_invalid_grant'
+      : data.error === 'redirect_uri_mismatch' ? 'oauth_redirect_uri_mismatch'
+      : data.error === 'invalid_client' ? 'oauth_invalid_client'
+      : data.error === 'access_denied' ? 'oauth_access_denied'
+      : !data.refresh_token && response.ok ? 'oauth_no_refresh_token'
+      : 'oauth_token_exchange_failed';
+    const err = new Error('authorization_failed');
+    err.failureCode = failureCode;
+    throw err;
+  }
   return data.refresh_token;
 }
 
@@ -250,8 +271,17 @@ async function driveJson(token, method, path, env, options = {}) {
   let data = {};
   try { data = JSON.parse(text); } catch (_) {}
   if (!response.ok) {
+    console.error('Google Drive API error', {
+      status: response.status,
+      reason: data.error?.errors?.[0]?.reason || null,
+      message: data.error?.message || null
+    });
     if (response.status === 401) throw new Error('invalid_session');
-    throw new Error(data.error?.errors?.[0]?.reason || 'drive_error');
+    if (response.status === 403) throw new Error('drive_forbidden');
+    if (response.status === 404) throw new Error('drive_not_found');
+    if (response.status === 429) throw new Error('drive_rate_limited');
+    if (response.status >= 500) throw new Error('drive_unavailable');
+    throw new Error('drive_error');
   }
   return data;
 }
@@ -327,16 +357,26 @@ async function driveCallback(request, env) {
   const url = new URL(request.url);
   const state = String(url.searchParams.get('state') || '');
   const code = String(url.searchParams.get('code') || '');
-  if (!state || !code) return html(400, '<html dir="rtl"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:32px"><h2>تعذر إكمال ربط Google Drive.</h2></body></html>');
+  const googleError = String(url.searchParams.get('error') || '');
+  if (googleError) {
+    console.error('Google OAuth returned error query parameter', { error: googleError });
+  }
+  if (!state || (!code && !googleError)) return html(400, '<html dir="rtl"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:32px"><h2>تعذر إكمال ربط Google Drive.</h2></body></html>');
   const key = `oauth:${await hexHash(state)}`;
   const pending = await env.SMARTLEDGER_KV.get(key, 'json');
   if (!pending || Date.now() - Number(pending.createdAt || 0) > OAUTH_STATE_TTL_MS) return html(400, '<html dir="rtl"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:32px"><h2>انتهت جلسة الربط. أعد المحاولة من التطبيق.</h2></body></html>');
+  if (googleError) {
+    const safeFailureCode = googleError === 'access_denied' ? 'oauth_access_denied' : 'oauth_google_error';
+    await env.SMARTLEDGER_KV.put(key, JSON.stringify({ ...pending, status: 'failed', failureCode: safeFailureCode, updatedAt: Date.now() }), { expirationTtl: 15 * 60 });
+    return html(400, '<html dir="rtl"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:32px"><h2>تم إلغاء أو رفض تفويض Google Drive.</h2><p>يمكنك العودة للتطبيق والمحاولة مرة أخرى.</p></body></html>');
+  }
   try {
     const refreshToken = await exchangeCode(code, request, env);
     await env.SMARTLEDGER_KV.put(key, JSON.stringify({ ...pending, status: 'connected', refreshToken: await encryptText(refreshToken, env.SMARTLEDGER_RATE_LIMIT_SALT), updatedAt: Date.now() }), { expirationTtl: 15 * 60 });
     return html(200, '<html dir="rtl"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:32px"><h2>تم ربط Google Drive بنجاح.</h2><p>يمكنك الآن العودة إلى تطبيق الدفتر الذكي.</p></body></html>');
-  } catch (_) {
-    await env.SMARTLEDGER_KV.put(key, JSON.stringify({ ...pending, status: 'failed', updatedAt: Date.now() }), { expirationTtl: 15 * 60 });
+  } catch (err) {
+    const safeFailureCode = err?.failureCode || 'oauth_token_exchange_failed';
+    await env.SMARTLEDGER_KV.put(key, JSON.stringify({ ...pending, status: 'failed', failureCode: safeFailureCode, updatedAt: Date.now() }), { expirationTtl: 15 * 60 });
     return html(500, '<html dir="rtl"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:32px"><h2>تعذر إكمال ربط Google Drive.</h2><p>ارجع إلى التطبيق وحاول مرة أخرى.</p></body></html>');
   }
 }
@@ -361,6 +401,9 @@ async function driveStatus(request, env) {
     await env.SMARTLEDGER_KV.delete(key);
     await env.SMARTLEDGER_KV.delete(`oauth-connection:${await hexHash(connectionId)}`);
     return json(200, { status: 'connected', cloudToken });
+  }
+  if (pending.status === 'failed') {
+    return json(200, { status: 'failed', failureCode: pending.failureCode || 'oauth_failed' });
   }
   return json(200, { status: pending.status || 'pending' });
 }
@@ -467,7 +510,11 @@ function errorResponse(error) {
   const message = error?.message || 'server_error';
   if (message === 'invalid_session') return json(401, { error: 'invalid_session' });
   if (message === 'authorization_failed') return json(502, { error: 'authorization_failed' });
-  if (message === 'rate_limited') return json(429, { error: 'rate_limited' });
+  if (message === 'rate_limited' || message === 'drive_rate_limited') return json(429, { error: 'rate_limited' });
+  if (message === 'drive_forbidden') return json(403, { error: 'drive_forbidden' });
+  if (message === 'drive_not_found') return json(404, { error: 'drive_not_found' });
+  if (message === 'drive_unavailable') return json(503, { error: 'drive_unavailable' });
+  if (message === 'drive_error') return json(502, { error: 'drive_error' });
   if (message === 'invalid_json') return json(400, { error: 'invalid_json' });
   return json(500, { error: 'server_error' });
 }

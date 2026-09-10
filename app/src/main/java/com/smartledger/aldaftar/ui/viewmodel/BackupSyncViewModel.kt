@@ -76,16 +76,43 @@ class BackupSyncViewModel(
         }.getOrDefault(emptyList())
     }
 
+    private val _busyMessage = MutableStateFlow<String?>(null)
+    val busyMessage: StateFlow<String?> = _busyMessage.asStateFlow()
+    private var connectJob: Job? = null
+
     fun connectCloud(onComplete: (Boolean) -> Unit = {}) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
-            _error.value = null
-            val ok = runCatching { cloud.connect() }.getOrDefault(false)
-            _cloudConnected.value = ok
-            if (ok) _cloudBackups.value = runCatching { cloud.list(_cloudSearch.value) }.getOrDefault(emptyList())
-            _busy.value = false
-            withContext(Dispatchers.Main) { onComplete(ok) }
+        if (connectJob?.isActive == true) {
+            return
         }
+        connectJob = viewModelScope.launch(Dispatchers.IO) {
+            _busy.value = true
+            _busyMessage.value = "جارٍ انتظار إكمال تسجيل الدخول إلى Google..."
+            _error.value = null
+            var ok = false
+            try {
+                ok = cloud.connect()
+                _cloudConnected.value = ok
+                if (ok) {
+                    _cloudBackups.value = runCatching { cloud.list(_cloudSearch.value) }.getOrDefault(emptyList())
+                }
+            } catch (t: Throwable) {
+                ok = false
+                _cloudConnected.value = false
+                val safeMsg = t.message?.takeIf { it.isNotBlank() } ?: "تعذر إكمال ربط Google Drive"
+                _error.value = safeMsg
+            } finally {
+                _busy.value = false
+                _busyMessage.value = null
+                withContext(Dispatchers.Main) { onComplete(ok) }
+            }
+        }
+    }
+
+    fun cancelConnectCloud() {
+        connectJob?.cancel()
+        connectJob = null
+        _busy.value = false
+        _busyMessage.value = null
     }
     fun disconnectCloud() { viewModelScope.launch(Dispatchers.IO) { cloud.disconnect(); _cloudConnected.value = false; _cloudBackups.value = emptyList() } }
     fun setCloudSearch(value: String) {

@@ -48,6 +48,7 @@ fun BackupRestoreBottomSheet(
     val cloudSearch by backupSyncViewModel.cloudSearch.collectAsStateWithLifecycle()
     val busy by backupSyncViewModel.isBusy.collectAsStateWithLifecycle()
     val automaticBackupEnabled by backupSyncViewModel.automaticBackupEnabled.collectAsStateWithLifecycle()
+    val busyMessage by backupSyncViewModel.busyMessage.collectAsStateWithLifecycle()
     val error by backupSyncViewModel.error.collectAsStateWithLifecycle()
 
     var selectedCloud by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -155,7 +156,9 @@ fun BackupRestoreBottomSheet(
                                 } else {
                                     Button(onClick = {
                                         backupSyncViewModel.connectCloud { ok ->
-                                            Toast.makeText(context, if (ok) "تم ربط Google Drive بنجاح" else "تعذر إكمال ربط Google Drive", Toast.LENGTH_LONG).show()
+                                            if (ok) {
+                                                Toast.makeText(context, "تم ربط Google Drive بنجاح", Toast.LENGTH_LONG).show()
+                                            }
                                         }
                                     }, enabled = !busy) { Text("ربط Google Drive") }
                                 }
@@ -306,7 +309,22 @@ fun BackupRestoreBottomSheet(
                 Surface(Modifier.fillMaxWidth().align(Alignment.TopCenter), tonalElevation = 4.dp) {
                     Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         LinearProgressIndicator(Modifier.fillMaxWidth())
-                        Text("جاري تنفيذ العملية، يرجى الانتظار...", style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                busyMessage ?: "جاري تنفيذ العملية، يرجى الانتظار...",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (busyMessage != null) {
+                                TextButton(onClick = { backupSyncViewModel.cancelConnectCloud() }) {
+                                    Text("إلغاء")
+                                }
+                            }
+                        }
                     }
                 }
             }
