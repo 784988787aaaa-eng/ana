@@ -44,9 +44,21 @@ class BackupSyncViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            _cloudConnected.value = cloud.connected()
-            _cloudEmail.value = cloud.email()
+            val isConn = cloud.connected()
+            val mail = cloud.email()
+            _cloudConnected.value = isConn
+            _cloudEmail.value = mail
+            if (isConn) {
+                refreshCloud()
+            }
         }
+    }
+
+    fun saveConnectedAccount(email: String) {
+        cloud.saveEmail(email)
+        _cloudConnected.value = true
+        _cloudEmail.value = email.trim().lowercase()
+        refreshCloud()
     }
 
     fun connectCloud(onComplete: (Boolean) -> Unit = {}) {
@@ -63,6 +75,9 @@ class BackupSyncViewModel(
             _cloudEmail.value = cloud.email()
             _busy.value = false
             _busyMessage.value = null
+            if (ok) {
+                refreshCloud()
+            }
             withContext(Dispatchers.Main) { onComplete(ok) }
         }
     }
@@ -80,6 +95,7 @@ class BackupSyncViewModel(
             if (ok) {
                 cloud.saveEmail(email)
                 _cloudEmail.value = email?.trim()?.lowercase()
+                refreshCloud()
             }
             _cloudConnected.value = ok
             _busy.value = false
@@ -111,7 +127,10 @@ class BackupSyncViewModel(
     }
 
     fun refreshCloud() {
-        if (!_cloudConnected.value) { _cloudBackups.value = emptyList(); return }
+        if (!_cloudConnected.value && !cloud.connected()) {
+            _cloudBackups.value = emptyList()
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             _busyMessage.value = "جارٍ تحميل قائمة النسخ من السحابة..."
             val result = runCatching { cloud.list(_cloudSearch.value) }
@@ -124,7 +143,7 @@ class BackupSyncViewModel(
     fun createCloudBackup(onComplete: (CloudBackupFile?, File?) -> Unit = { _, _ -> }) {
         launchBusy({ pair -> onComplete(pair?.first, pair?.second) }) {
             val file = engine.createManual()
-            if (!_cloudConnected.value) return@launchBusy null to file
+            if (!_cloudConnected.value && !cloud.connected()) return@launchBusy null to file
             val remote = cloud.upload(file.readBytes(), file.name)
             refreshCloud()
             remote to file

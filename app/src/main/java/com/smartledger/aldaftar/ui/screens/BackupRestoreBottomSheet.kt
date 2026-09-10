@@ -127,10 +127,8 @@ fun BackupRestoreBottomSheet(
         }
     }
 
-    LaunchedEffect(Unit) { backupSyncViewModel.googleClientId { clientId = it } }
-
-    val googleClient = remember(clientId) {
-        clientId?.takeIf(String::isNotBlank)?.let { GoogleDriveInternalAuth(context).client(it) }
+    val googleClient = remember {
+        GoogleDriveInternalAuth(context).client()
     }
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -140,9 +138,13 @@ fun BackupRestoreBottomSheet(
             GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 .getResult(com.google.android.gms.common.api.ApiException::class.java)
         }.onSuccess { account ->
-            account.serverAuthCode?.takeIf(String::isNotBlank)?.let { code ->
-                backupSyncViewModel.connectCloudWithServerAuthCode(code, account.email)
+            val userEmail = account.email
+            if (!userEmail.isNullOrBlank()) {
+                backupSyncViewModel.saveConnectedAccount(userEmail)
+                Toast.makeText(context, "تم ربط حساب Google Drive بنجاح", Toast.LENGTH_SHORT).show()
             }
+        }.onFailure { ex ->
+            Toast.makeText(context, "تعذر تسجيل الدخول بحساب Google: ${ex.localizedMessage ?: ex.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -181,13 +183,13 @@ fun BackupRestoreBottomSheet(
                     email = email,
                     busy = busy,
                     manualOptions = manualOptions,
-                    onInternalConnect = { googleClient?.let { signInLauncher.launch(it.signInIntent) } },
+                    onInternalConnect = { signInLauncher.launch(googleClient.signInIntent) },
                     onManualToggle = { manualOptions = !manualOptions },
                     onManualConnect = { backupSyncViewModel.connectCloud() },
                     onCreateCloudBackup = {
                         backupSyncViewModel.createCloudBackup { remote, _ ->
                             if (remote != null) {
-                                Toast.makeText(context, "تم إنشاء النسخة السحابية وتأمينها بنجاح", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "تم إنشاء النسخة السحابية وتأمينها بنجاح في Google Drive", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "تم حفظ النسخة محليًا (يرجى التأكد من اتصال السحابة)", Toast.LENGTH_SHORT).show()
                             }
@@ -245,7 +247,7 @@ fun BackupRestoreBottomSheet(
                 },
                 onConnect = {
                     archiveOpen = false
-                    googleClient?.let { signInLauncher.launch(it.signInIntent) }
+                    signInLauncher.launch(googleClient.signInIntent)
                 }
             )
         }
@@ -746,6 +748,7 @@ private fun CloudArchiveBottomSheet(
     val email by vm.cloudEmail.collectAsStateWithLifecycle()
     val items by vm.cloudBackups.collectAsStateWithLifecycle()
     val busy by vm.isBusy.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var search by remember { mutableStateOf("") }
     var searchActive by remember { mutableStateOf(false) }
     var selectionMode by remember { mutableStateOf(false) }
@@ -855,7 +858,13 @@ private fun CloudArchiveBottomSheet(
                 }
             } else {
                 Button(
-                    onClick = { vm.createCloudBackup() },
+                    onClick = {
+                        vm.createCloudBackup { remote, _ ->
+                            if (remote != null) {
+                                Toast.makeText(context, "تم رفع النسخة السحابية بنجاح إلى Google Drive", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().height(46.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
                     shape = RoundedCornerShape(12.dp)

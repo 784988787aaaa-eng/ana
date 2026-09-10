@@ -11,10 +11,19 @@ class CloudConnectionStore(context: Context) {
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
+
     fun token(): String? = preferences.getString(KEY_TOKEN, null)
     fun email(): String? = preferences.getString(KEY_EMAIL, null)
+    fun folderId(): String? = preferences.getString(KEY_FOLDER_ID, null)
+
     fun save(token: String) = preferences.edit().putString(KEY_TOKEN, token).apply()
     fun saveEmail(email: String?) = preferences.edit().putString(KEY_EMAIL, email?.trim()?.lowercase()).apply()
-    fun clear() = preferences.edit().remove(KEY_TOKEN).remove(KEY_EMAIL).apply()
-    companion object { private const val KEY_TOKEN = "drive_session_token"; private const val KEY_EMAIL = "drive_account_email" }
+    fun saveFolderId(folderId: String?) = preferences.edit().putString(KEY_FOLDER_ID, folderId).apply()
+    fun clear() = preferences.edit().remove(KEY_TOKEN).remove(KEY_EMAIL).remove(KEY_FOLDER_ID).apply()
+
+    companion object {
+        private const val KEY_TOKEN = "drive_session_token"
+        private const val KEY_EMAIL = "drive_account_email"
+        private const val KEY_FOLDER_ID = "drive_backup_folder_id"
+    }
 }

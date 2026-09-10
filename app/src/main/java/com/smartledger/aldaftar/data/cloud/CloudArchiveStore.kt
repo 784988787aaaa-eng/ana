@@ -1,308 +1,426 @@
 package com.smartledger.aldaftar.data.cloud
 
+import android.accounts.Account
 import android.content.Context
+import com.google.android.gms.auth.GoogleAuthUtil
+import com.google.android.gms.auth.UserRecoverableAuthException
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.UnknownHostException
-import java.net.SocketTimeoutException
+import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.util.UUID
+import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
+import java.net.URL
+import java.net.URLEncoder
+import java.net.UnknownHostException
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class CloudArchiveStore(context: Context) {
     private val appContext = context.applicationContext
     private val connection = CloudConnectionStore(appContext)
-    private val endpoint = appContext.assets.open("license_endpoint.txt").bufferedReader().use { it.readText().trim().trimEnd('/') }.removeSuffix("/license") + "/driveApi"
 
     companion object {
-        private const val TOTAL_POLL_TIMEOUT_MS = 570_000L // 9 minutes and 30 seconds
-        private const val POLL_INTERVAL_MS = 2_500L
+        private const val DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
+        private const val DRIVE_UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3"
+        private const val SCOPES = "oauth2:https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata"
+        private const val BACKUP_FOLDER_NAME = "الدفتر الذكي - النسخ الاحتياطي"
+        private const val BOUNDARY = "===SMART_LEDGER_BACKUP_BOUNDARY==="
     }
 
-    fun connected(): Boolean = connection.token() != null
-    fun email(): String? = connection.email()
-    fun saveEmail(email: String?) = connection.saveEmail(email)
+    fun connected(): Boolean {
+        val storedEmail = connection.email()
+        if (!storedEmail.isNullOrBlank()) return true
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(appContext)
+        if (lastAccount?.email != null) {
+            connection.saveEmail(lastAccount.email)
+            return true
+        }
+        return false
+    }
+
+    fun email(): String? {
+        val stored = connection.email()
+        if (!stored.isNullOrBlank()) return stored
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(appContext)
+        return lastAccount?.email?.also { connection.saveEmail(it) }
+    }
+
+    fun saveEmail(email: String?) {
+        connection.saveEmail(email)
+        if (email != null) {
+            connection.save("connected")
+        }
+    }
 
     suspend fun googleClientId(): String = withContext(Dispatchers.IO) {
-        val response = post("$endpoint/config", JSONObject())
-        response.optString("googleClientId").trim()
-            .ifBlank { throw CloudOperationException(0, "not_configured", "خدمة Google Drive غير مهيأة") }
+        // Return default or empty if not configured
+        ""
     }
 
     suspend fun connectWithServerAuthCode(serverAuthCode: String): Boolean = withContext(Dispatchers.IO) {
-        val response = post("$endpoint/connect/google-signin", JSONObject().put("serverAuthCode", serverAuthCode))
-        val token = response.optString("cloudToken")
-        if (response.optString("status") != "connected" || token.isBlank()) {
-            throw CloudOperationException(400, "oauth_failed", "تعذر إكمال ربط Google Drive")
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(appContext)
+        if (lastAccount?.email != null) {
+            saveEmail(lastAccount.email)
+            return@withContext true
         }
-        connection.save(token)
         true
     }
 
     suspend fun connect(): Boolean = withContext(Dispatchers.IO) {
-        if (endpoint.isBlank() || endpoint.startsWith("__")) {
-            throw CloudOperationException(
-                statusCode = 0,
-                errorCode = "not_configured",
-                userMessage = "خدمة السحابة غير مهيأة"
-            )
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(appContext)
+        if (lastAccount?.email != null) {
+            saveEmail(lastAccount.email)
+            return@withContext true
         }
-        val connectionId = UUID.randomUUID().toString()
-        val start = post("$endpoint/connect/start", JSONObject().put("connectionId", connectionId))
-        val authUrl = start.optString("authorizationUrl")
-        if (authUrl.isBlank()) {
-            throw CloudOperationException(
-                statusCode = 0,
-                errorCode = "invalid_auth_url",
-                userMessage = "تعذر بدء تفويض Google Drive"
-            )
-        }
-
-        appContext.startActivity(
-            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(authUrl))
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
-
-        val startTime = System.currentTimeMillis()
-        while (System.currentTimeMillis() - startTime < TOTAL_POLL_TIMEOUT_MS) {
-            delay(POLL_INTERVAL_MS)
-            val statusResponse = try {
-                post("$endpoint/connect/status", JSONObject().put("connectionId", connectionId))
-            } catch (ex: CloudOperationException) {
-                if (ex.statusCode == 404) {
-                    throw CloudOperationException(
-                        statusCode = 404,
-                        errorCode = "not_found",
-                        userMessage = "جلسة ربط Google Drive غير موجودة أو ملغاة، أعد المحاولة."
-                    )
-                }
-                if (ex.statusCode == 410) {
-                    throw CloudOperationException(
-                        statusCode = 410,
-                        errorCode = "expired",
-                        userMessage = "انتهت جلسة ربط Google Drive. أعد المحاولة."
-                    )
-                }
-                throw ex
-            }
-
-            when (statusResponse.optString("status")) {
-                "connected" -> {
-                    val token = statusResponse.optString("cloudToken")
-                    if (token.isNotBlank()) {
-                        connection.save(token)
-                        return@withContext true
-                    } else {
-                        throw CloudOperationException(
-                            statusCode = 0,
-                            errorCode = "missing_token",
-                            userMessage = "تعذر استلام رمز تفويض السحابة"
-                        )
-                    }
-                }
-                "failed" -> {
-                    val failureCode = statusResponse.optString("failureCode", "oauth_failed")
-                    val msg = when (failureCode) {
-                        "oauth_access_denied" -> "تم إلغاء أو رفض تفويض Google Drive من قبل المستخدم."
-                        "oauth_token_exchange_failed" -> "فشل تبادل رمز تفويض Google Drive مع الخادم."
-                        "oauth_invalid_grant" -> "رمز تفويض Google Drive غير صالح أو منتهي."
-                        "oauth_redirect_uri_mismatch" -> "خطأ في تهيئة عنوان إعادة التوجيه لـ Google Drive."
-                        "oauth_invalid_client" -> "بيانات اعتماد Google Cloud غير متطابقة."
-                        "oauth_no_refresh_token" -> "لم تمنح Google رمز وصول دائم، يرجى إعادة الربط واختيار الموافقة الكاملة."
-                        else -> "فشل تفويض Google Drive: $failureCode"
-                    }
-                    throw CloudOperationException(
-                        statusCode = 400,
-                        errorCode = failureCode,
-                        userMessage = msg
-                    )
-                }
-                "pending" -> {
-                    // Continue waiting
-                }
-            }
-        }
-
-        throw CloudOperationException(
-            statusCode = 408,
-            errorCode = "timeout",
-            userMessage = "انتهت مهلة ربط Google Drive. أعد المحاولة."
-        )
+        false
     }
 
     suspend fun disconnect() = withContext(Dispatchers.IO) {
-        connection.token()?.let { runCatching { post("$endpoint/disconnect", JSONObject().put("cloudToken", it)) } }
+        runCatching {
+            GoogleDriveInternalAuth(appContext).client().signOut()
+        }
         connection.clear()
     }
 
     suspend fun list(search: String = ""): List<CloudBackupFile> = withContext(Dispatchers.IO) {
-        val token = requireToken()
-        val response = post("$endpoint/list", JSONObject().put("cloudToken", token).put("search", search.trim()))
-        val items = response.optJSONArray("items") ?: JSONArray()
-        buildList(items.length()) {
-            for (i in 0 until items.length()) {
-                val item = items.getJSONObject(i)
-                add(CloudBackupFile(
-                    item.getString("id"), item.getString("name"), item.optLong("size"),
-                    item.optLong("modifiedTime"), item.optString("month")
-                ))
+        executeWithTokenRetry { token ->
+            val folderId = getOrCreateBackupFolder(token)
+            val queryParts = mutableListOf<String>()
+            queryParts.add("trashed = false")
+
+            if (folderId != null) {
+                queryParts.add("('$folderId' in parents or name contains '.mzd' or name contains 'smartledger' or name contains 'backup' or mimeType = 'application/vnd.smartledger.backup')")
+            } else {
+                queryParts.add("(name contains '.mzd' or name contains 'smartledger' or name contains 'backup' or mimeType = 'application/vnd.smartledger.backup')")
             }
+
+            if (search.isNotBlank()) {
+                val cleanSearch = search.trim().replace("'", "\\'")
+                queryParts.add("name contains '$cleanSearch'")
+            }
+
+            val fullQuery = queryParts.joinToString(" and ")
+            val urlStr = "$DRIVE_API_BASE/files?q=${URLEncoder.encode(fullQuery, "UTF-8")}&fields=files(id,name,size,modifiedTime,createdTime,mimeType)&orderBy=modifiedTime+desc&pageSize=100&spaces=drive"
+
+            val json = getJson(urlStr, token)
+            val filesArray = json.optJSONArray("files") ?: JSONArray()
+            val result = mutableListOf<CloudBackupFile>()
+
+            for (i in 0 until filesArray.length()) {
+                val fileObj = filesArray.getJSONObject(i)
+                val mime = fileObj.optString("mimeType", "")
+                if (mime == "application/vnd.google-apps.folder") continue
+
+                val id = fileObj.getString("id")
+                val name = fileObj.optString("name", "smartledger_backup.mzd")
+                val size = fileObj.optLong("size", 0L)
+                val modifiedTimeStr = fileObj.optString("modifiedTime", fileObj.optString("createdTime", ""))
+                val modifiedTime = parseIsoTime(modifiedTimeStr)
+                val month = SimpleDateFormat("yyyy-MM", Locale.US).format(modifiedTime)
+
+                result.add(CloudBackupFile(id = id, name = name, size = size, modifiedTime = modifiedTime, month = month))
+            }
+            result
         }
     }
 
     suspend fun upload(bytes: ByteArray, name: String): CloudBackupFile = withContext(Dispatchers.IO) {
-        val response = postBytes("$endpoint/upload", bytes, requireToken(), name)
-        val item = response.getJSONObject("item")
-        CloudBackupFile(item.getString("id"), item.getString("name"), item.optLong("size", bytes.size.toLong()), item.optLong("modifiedTime"), item.optString("month"))
+        executeWithTokenRetry { token ->
+            val folderId = getOrCreateBackupFolder(token)
+            val uploadUrlStr = "$DRIVE_UPLOAD_BASE/files?uploadType=multipart&fields=id,name,size,modifiedTime,createdTime"
+
+            val metadataJson = JSONObject().apply {
+                put("name", name)
+                put("description", "SmartLedger Encrypted Backup")
+                put("mimeType", "application/octet-stream")
+                if (folderId != null) {
+                    put("parents", JSONArray().put(folderId))
+                }
+            }
+
+            val bodyStream = ByteArrayOutputStream()
+            val header1 = "--$BOUNDARY\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadataJson}\r\n"
+            val header2 = "--$BOUNDARY\r\nContent-Type: application/octet-stream\r\n\r\n"
+            val footer = "\r\n--$BOUNDARY--\r\n"
+
+            bodyStream.write(header1.toByteArray(Charsets.UTF_8))
+            bodyStream.write(header2.toByteArray(Charsets.UTF_8))
+            bodyStream.write(bytes)
+            bodyStream.write(footer.toByteArray(Charsets.UTF_8))
+
+            val payloadBytes = bodyStream.toByteArray()
+
+            val conn = (URL(uploadUrlStr).openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                doOutput = true
+                connectTimeout = 30_000
+                readTimeout = 90_000
+                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("Content-Type", "multipart/related; boundary=$BOUNDARY")
+                setRequestProperty("Content-Length", payloadBytes.size.toString())
+                setRequestProperty("Accept", "application/json")
+            }
+
+            try {
+                conn.outputStream.use { it.write(payloadBytes) }
+                val code = conn.responseCode
+                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                val responseText = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+
+                if (code !in 200..299) {
+                    throw createExceptionFromResponse(code, responseText)
+                }
+
+                val item = JSONObject(responseText)
+                val id = item.getString("id")
+                val fileName = item.optString("name", name)
+                val size = item.optLong("size", bytes.size.toLong())
+                val modifiedTimeStr = item.optString("modifiedTime", item.optString("createdTime", ""))
+                val modifiedTime = parseIsoTime(modifiedTimeStr)
+                val month = SimpleDateFormat("yyyy-MM", Locale.US).format(modifiedTime)
+
+                CloudBackupFile(id = id, name = fileName, size = size, modifiedTime = modifiedTime, month = month)
+            } finally {
+                conn.disconnect()
+            }
+        }
     }
 
     suspend fun download(id: String): ByteArray = withContext(Dispatchers.IO) {
-        val conn: HttpURLConnection
-        try {
-            conn = (URL("$endpoint/download").openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"
-                doOutput = true
-                connectTimeout = 15_000
-                readTimeout = 30_000
+        executeWithTokenRetry { token ->
+            val urlStr = "$DRIVE_API_BASE/files/$id?alt=media"
+            val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 25_000
+                readTimeout = 90_000
+                setRequestProperty("Authorization", "Bearer $token")
                 setRequestProperty("Accept", "application/octet-stream")
-                setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                setRequestProperty("Cache-Control", "no-store")
             }
-        } catch (e: Exception) {
-            throw mapNetworkException(e)
-        }
 
-        try {
-            conn.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(JSONObject().put("cloudToken", requireToken()).put("fileId", id).toString()) }
-            val code = conn.responseCode
-            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-            if (code !in 200..299) {
-                val errText = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-                val json = runCatching { JSONObject(errText) }.getOrElse { JSONObject() }
-                val errCode = json.optString("error", "drive_error")
-                if (errCode == "invalid_session") this@CloudArchiveStore.connection.clear()
-                throw CloudOperationException(code, errCode, errorMessage(code, errCode))
+            try {
+                val code = conn.responseCode
+                if (code !in 200..299) {
+                    val errText = conn.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                    throw createExceptionFromResponse(code, errText)
+                }
+                conn.inputStream.use { it.readBytes() }
+            } finally {
+                conn.disconnect()
             }
-            stream?.use { it.readBytes() } ?: throw CloudOperationException(code, "empty_response", "تعذر استلام ملف النسخة السحابية")
-        } catch (e: Exception) {
-            if (e is CloudOperationException) throw e
-            throw mapNetworkException(e)
-        } finally {
-            conn.disconnect()
         }
     }
 
     suspend fun delete(ids: Set<String>): Int = withContext(Dispatchers.IO) {
         if (ids.isEmpty()) return@withContext 0
-        post("$endpoint/delete", JSONObject().put("cloudToken", requireToken()).put("fileIds", JSONArray(ids.toList()))).optInt("deleted", 0)
+        executeWithTokenRetry { token ->
+            var count = 0
+            for (id in ids) {
+                val urlStr = "$DRIVE_API_BASE/files/$id"
+                val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "DELETE"
+                    connectTimeout = 15_000
+                    readTimeout = 20_000
+                    setRequestProperty("Authorization", "Bearer $token")
+                }
+                try {
+                    val code = conn.responseCode
+                    if (code in 200..299 || code == 404) {
+                        count++
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            }
+            count
+        }
     }
 
-    private fun requireToken(): String = connection.token() ?: throw CloudOperationException(
-        statusCode = 401,
-        errorCode = "not_connected",
-        userMessage = "السحابة غير مرتبطة"
-    )
-
-    private fun postBytes(url: String, bytes: ByteArray, token: String, name: String): JSONObject {
-        val conn: HttpURLConnection
-        try {
-            conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"
-                doOutput = true
-                connectTimeout = 15_000
-                readTimeout = 60_000
-                setRequestProperty("Accept", "application/json")
-                setRequestProperty("Content-Type", "application/vnd.smartledger.backup")
-                setRequestProperty("X-SmartLedger-Cloud-Token", token)
-                setRequestProperty("X-SmartLedger-File-Name", java.net.URLEncoder.encode(name, "UTF-8"))
-                setRequestProperty("Cache-Control", "no-store")
+    private suspend fun <T> executeWithTokenRetry(block: suspend (String) -> T): T {
+        var token = getAccessToken()
+        return try {
+            block(token)
+        } catch (e: CloudOperationException) {
+            if (e.statusCode == 401) {
+                // Clear old token and retry once with a fresh token
+                invalidateToken(token)
+                token = getAccessToken()
+                block(token)
+            } else {
+                throw e
             }
         } catch (e: Exception) {
             throw mapNetworkException(e)
         }
+    }
+
+    private fun getAccessToken(): String {
+        val email = email() ?: throw CloudOperationException(
+            statusCode = 401,
+            errorCode = "not_connected",
+            userMessage = "يرجى ربط حساب Google Drive أولاً."
+        )
+
+        val account = Account(email, "com.google")
+        return try {
+            GoogleAuthUtil.getToken(appContext, account, SCOPES)
+        } catch (e: UserRecoverableAuthException) {
+            throw CloudOperationException(
+                statusCode = 401,
+                errorCode = "auth_required",
+                userMessage = "يلزم تأكيد تفويض حساب Google Drive. يرجى الضغط على زر ربط الحساب.",
+                cause = e
+            )
+        } catch (e: Exception) {
+            // Try with last signed-in account if available
+            val last = GoogleSignIn.getLastSignedInAccount(appContext)
+            if (last?.account != null) {
+                try {
+                    return GoogleAuthUtil.getToken(appContext, last.account!!, SCOPES)
+                } catch (ex: Exception) {
+                    // Fallthrough to exception mapping
+                }
+            }
+            throw mapNetworkException(e)
+        }
+    }
+
+    private fun invalidateToken(token: String) {
+        runCatching {
+            GoogleAuthUtil.clearToken(appContext, token)
+        }
+    }
+
+    private fun getOrCreateBackupFolder(token: String): String? {
+        val cachedFolderId = connection.folderId()
+        if (!cachedFolderId.isNullOrBlank()) {
+            return cachedFolderId
+        }
 
         return try {
-            conn.outputStream.use { it.write(bytes) }
+            val query = "mimeType = 'application/vnd.google-apps.folder' and name = '$BACKUP_FOLDER_NAME' and trashed = false"
+            val searchUrl = "$DRIVE_API_BASE/files?q=${URLEncoder.encode(query, "UTF-8")}&fields=files(id,name)&spaces=drive"
+            val searchJson = getJson(searchUrl, token)
+            val files = searchJson.optJSONArray("files")
+
+            if (files != null && files.length() > 0) {
+                val id = files.getJSONObject(0).getString("id")
+                connection.saveFolderId(id)
+                return id
+            }
+
+            // Create new folder
+            val createConn = (URL("$DRIVE_API_BASE/files").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                doOutput = true
+                connectTimeout = 15_000
+                readTimeout = 20_000
+                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                setRequestProperty("Accept", "application/json")
+            }
+
+            val meta = JSONObject().apply {
+                put("name", BACKUP_FOLDER_NAME)
+                put("mimeType", "application/vnd.google-apps.folder")
+                put("description", "مجلد النسخ الاحتياطية لتطبيق الدفتر الذكي")
+            }
+
+            createConn.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(meta.toString()) }
+            val code = createConn.responseCode
+            if (code in 200..299) {
+                val res = createConn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val newId = JSONObject(res).optString("id")
+                if (newId.isNotBlank()) {
+                    connection.saveFolderId(newId)
+                    return newId
+                }
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun getJson(urlStr: String, token: String): JSONObject {
+        val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 20_000
+            readTimeout = 40_000
+            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Cache-Control", "no-cache")
+        }
+
+        try {
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val text = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-            val json = runCatching { JSONObject(text) }.getOrElse { JSONObject() }
             if (code !in 200..299) {
-                val errCode = json.optString("error", "drive_error")
-                if (errCode == "invalid_session") this@CloudArchiveStore.connection.clear()
-                throw CloudOperationException(code, errCode, errorMessage(code, errCode))
+                throw createExceptionFromResponse(code, text)
             }
-            json
-        } catch (e: Exception) {
-            if (e is CloudOperationException) throw e
-            throw mapNetworkException(e)
+            return JSONObject(text)
         } finally {
             conn.disconnect()
         }
     }
 
-    private fun post(url: String, body: JSONObject): JSONObject {
-        val conn: HttpURLConnection
-        try {
-            conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"
-                doOutput = true
-                connectTimeout = 15_000
-                readTimeout = 30_000
-                setRequestProperty("Accept", "application/json")
-                setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                setRequestProperty("Cache-Control", "no-store")
+    private fun parseIsoTime(isoStr: String): Long {
+        if (isoStr.isBlank()) return System.currentTimeMillis()
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
             }
-        } catch (e: Exception) {
-            throw mapNetworkException(e)
+            sdf.parse(isoStr)?.time ?: parseFallbackIso(isoStr)
+        } catch (_: Exception) {
+            parseFallbackIso(isoStr)
+        }
+    }
+
+    private fun parseFallbackIso(isoStr: String): Long {
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            sdf.parse(isoStr)?.time ?: System.currentTimeMillis()
+        } catch (_: Exception) {
+            System.currentTimeMillis()
+        }
+    }
+
+    private fun createExceptionFromResponse(code: Int, body: String): CloudOperationException {
+        val json = runCatching { JSONObject(body) }.getOrNull()
+        val errorObj = json?.optJSONObject("error")
+        val errorMsg = errorObj?.optString("message") ?: json?.optString("error", "") ?: ""
+
+        val friendlyMessage = when (code) {
+            401 -> "انتهت صلاحية جلسة Google Drive. يرجى إعادة ربط الحساب."
+            403 -> "تم رفض الوصول إلى Google Drive. يرجى التأكد من منح صلاحية إدارة ملفات التطبيق."
+            404 -> "الملف أو المجلد المطلوب غير موجود في Google Drive."
+            429 -> "تم تجاوز حد الطلبات مؤقتًا لـ Google Drive. يرجى الانتظار دقيقة والمحاولة ثانية."
+            in 500..599 -> "خدمة Google Drive تواجه ضغطًا مؤقتًا. يرجى المحاولة بعد قليل."
+            else -> if (errorMsg.isNotBlank()) "خطأ من Google Drive: $errorMsg" else "تعذر إتمام العملية على Google Drive (رمز: $code)"
         }
 
-        return try {
-            conn.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(body.toString()) }
-            val code = conn.responseCode
-            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-            val text = stream?.let { BufferedReader(InputStreamReader(it, Charsets.UTF_8)).use { reader -> reader.readText() } }.orEmpty()
-            val json = runCatching { JSONObject(text) }.getOrElse { JSONObject() }
-            if (code !in 200..299) {
-                val errCode = json.optString("error", "drive_error")
-                if (errCode == "invalid_session") this@CloudArchiveStore.connection.clear()
-                throw CloudOperationException(code, errCode, errorMessage(code, errCode))
-            }
-            json
-        } catch (e: Exception) {
-            if (e is CloudOperationException) throw e
-            throw mapNetworkException(e)
-        } finally {
-            conn.disconnect()
-        }
+        return CloudOperationException(
+            statusCode = code,
+            errorCode = "drive_http_$code",
+            userMessage = friendlyMessage
+        )
     }
 
     private fun mapNetworkException(e: Exception): CloudOperationException {
+        if (e is CloudOperationException) return e
         return when (e) {
-            is UnknownHostException -> CloudOperationException(0, "network_offline", "تعذر الاتصال بخدمة السحابة. تحقق من اتصال الإنترنت وحاول مرة أخرى.", e)
-            is SocketTimeoutException -> CloudOperationException(0, "network_timeout", "انتهت مهلة الاتصال بخدمة السحابة. تحقق من جودة الإنترنت وحاول ثانية.", e)
-            is IOException -> CloudOperationException(0, "network_io", "حدث خطأ أثناء نقل البيانات عبر الشبكة. تحقق من الاتصال وحاول مرة أخرى.", e)
-            else -> CloudOperationException(0, "unexpected_network", "تعذر إتمام الاتصال بخدمة السحابة.", e)
-        }
-    }
-
-    private fun errorMessage(statusCode: Int, error: String): String {
-        return when {
-            error == "invalid_session" || error == "not_connected" -> "جلسة Google Drive غير صالحة أو منتهية، أعد الربط."
-            error == "authorization_failed" -> "تعذر إتمام تفويض Google Drive."
-            error == "rate_limited" || statusCode == 429 -> "تم تجاوز محاولات السحابة مؤقتًا. حاول لاحقًا."
-            error == "drive_forbidden" || statusCode == 403 -> "تم رفض الوصول إلى Google Drive. تأكد من إعطاء الصلاحيات المطلوبة."
-            error == "drive_not_found" || statusCode == 404 -> "العنصر المطلوب غير موجود في Google Drive."
-            error == "drive_unavailable" || statusCode in 500..599 -> "خدمة Google Drive غير متاحة حاليًا. حاول لاحقًا."
-            statusCode == 410 -> "انتهت جلسة ربط Google Drive. أعد الربط."
-            else -> "تعذر تنفيذ عملية Google Drive ($error)."
+            is UnknownHostException -> CloudOperationException(0, "network_offline", "تعذر الاتصال بـ Google Drive. تحقق من اتصال الإنترنت وحاول ثانية.", e)
+            is SocketTimeoutException -> CloudOperationException(0, "network_timeout", "انتهت مهلة الاتصال بـ Google Drive. تحقق من جودة الإنترنت وحاول ثانية.", e)
+            is IOException -> CloudOperationException(0, "network_io", "حدث انقطاع في الشبكة أثناء الاتصال بـ Google Drive.", e)
+            else -> CloudOperationException(0, "unexpected_error", e.message ?: "تعذر إتمام الاتصال بـ Google Drive", e)
         }
     }
 }
