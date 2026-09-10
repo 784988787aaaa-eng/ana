@@ -193,6 +193,9 @@ class FinanceViewModel(
         }
     }
 
+    fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate()
+    fun triggerLicensePrompt() = licenseRepository.triggerLicenseRequired()
+
     fun addTransaction(type: String, category: String, amount: BigDecimal, description: String, timestamp: Long = System.currentTimeMillis() / 1000, presetId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             val created = licenseRepository.runAuthorizedCreation {
@@ -209,7 +212,7 @@ class FinanceViewModel(
                 true
             }
             if (created != true) {
-                sendUiEvent(UiEvent.ShowToast(R.string.license_trial_ended))
+                licenseRepository.triggerLicenseRequired()
                 return@launch
             }
         }

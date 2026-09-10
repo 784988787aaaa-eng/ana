@@ -37,6 +37,9 @@ class LedgerViewModel(
     private val _uiEventChannel = Channel<LedgerUiEvent>(Channel.BUFFERED)
     val uiEventFlow = _uiEventChannel.receiveAsFlow()
 
+    fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate()
+    fun triggerLicensePrompt() = licenseRepository.triggerLicenseRequired()
+
     fun emitScrollToTop() {
         viewModelScope.launch { _uiEventChannel.send(LedgerUiEvent.ScrollToTop) }
     }
@@ -148,7 +151,7 @@ class LedgerViewModel(
                     true
                 }
                 if (created != true) {
-                    withContext(Dispatchers.Main) { Toast.makeText(getApplication(), "انتهت التجربة المجانية", Toast.LENGTH_SHORT).show() }
+                    licenseRepository.triggerLicenseRequired()
                     return@launch
                 }
                 _uiEventChannel.send(LedgerUiEvent.ScrollToTop)

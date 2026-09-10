@@ -78,11 +78,8 @@ fun MainAppLayout(
         }
     }
 
-    LaunchedEffect(licenseSnapshot.status, licenseSnapshot.trialUsed, licenseSnapshot.trialLimit) {
-        if (licenseSnapshot.isPaid) {
-            forceLicenseDialog = false
-        } else if (licenseSnapshot.requiresActivation) {
-            forceLicenseDialog = true
+    LaunchedEffect(Unit) {
+        licenseViewModel.licenseRequiredEvent.collect {
             showLicenseDialog = true
         }
     }
@@ -238,7 +235,7 @@ fun MainAppLayout(
     )
 
     if (showLicenseDialog) {
-        LicenseDialog(viewModel = licenseViewModel, forced = forceLicenseDialog, onDismiss = { if (!forceLicenseDialog) showLicenseDialog = false })
+        LicenseDialog(viewModel = licenseViewModel, onDismiss = { showLicenseDialog = false })
     }
 
     if (showBackupRestoreSheet) {

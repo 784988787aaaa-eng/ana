@@ -242,14 +242,18 @@ fun HabayebScreen(
         }
     }
 
-    val onQuickAddRemembered = remember {
+    val onQuickAddRemembered = remember(viewModel) {
         { customer: CustomerUiState ->
-            val defaultType = if (customer.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) >= 0) {
-                TransactionType.OWED_BY_THEM.value
+            if (!viewModel.isEligibleToCreate()) {
+                viewModel.triggerLicensePrompt()
             } else {
-                TransactionType.OWED_TO_THEM.value
+                val defaultType = if (customer.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) >= 0) {
+                    TransactionType.OWED_BY_THEM.value
+                } else {
+                    TransactionType.OWED_TO_THEM.value
+                }
+                activeDialogState = HabayebDialogState.AddTransaction(customer.originalCustomer, defaultType)
             }
-            activeDialogState = HabayebDialogState.AddTransaction(customer.originalCustomer, defaultType)
         }
     }
 
@@ -354,7 +358,11 @@ fun HabayebScreen(
                 isHistoryTxMultiSelectActive = isHistoryTxMultiSelectActive,
                 onAddCustomerClick = { activeDialogState = HabayebDialogState.AddCustomer },
                 onAddTransactionForCustomer = { c ->
-                    activeDialogState = HabayebDialogState.AddTransaction(c)
+                    if (!viewModel.isEligibleToCreate()) {
+                        viewModel.triggerLicensePrompt()
+                    } else {
+                        activeDialogState = HabayebDialogState.AddTransaction(c)
+                    }
                 },
                 persisted = viewModel.floatingAddState(),
                 onPersist = viewModel::saveFloatingAddState,

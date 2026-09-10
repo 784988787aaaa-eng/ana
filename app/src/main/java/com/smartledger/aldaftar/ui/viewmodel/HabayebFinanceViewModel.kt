@@ -58,6 +58,9 @@ class HabayebFinanceViewModel(
     fun floatingAddState() = floatingUiRepository.add()
     fun saveFloatingAddState(state: com.smartledger.aldaftar.data.repository.FloatingAddState) = floatingUiRepository.saveAdd(state)
 
+    fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate()
+    fun triggerLicensePrompt() = licenseRepository.triggerLicenseRequired()
+
     private val transactionUseCase = HabayebTransactionUseCase(habayebRepository, transactionsRepository, mutationRepository)
 
     private val _uiEventChannel = Channel<HabayebUiEvent>(Channel.BUFFERED)

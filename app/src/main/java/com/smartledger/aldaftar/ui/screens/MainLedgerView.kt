@@ -208,8 +208,20 @@ fun MainLedgerView(
                 uiController.clearSelection()
             },
             onShowCommitmentsClick = { uiController.activeDialogState = MainLedgerDialogState.CommitmentsList },
-            onAddIncomeClick = { uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "INCOME", editingTx = null) },
-            onAddExpenseClick = { uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "EXPENSE", editingTx = null) }
+            onAddIncomeClick = {
+                if (!viewModel.isEligibleToCreate()) {
+                    viewModel.triggerLicensePrompt()
+                } else {
+                    uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "INCOME", editingTx = null)
+                }
+            },
+            onAddExpenseClick = {
+                if (!viewModel.isEligibleToCreate()) {
+                    viewModel.triggerLicensePrompt()
+                } else {
+                    uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "EXPENSE", editingTx = null)
+                }
+            }
         )
 
         MainLedgerSelectionBar(
@@ -245,12 +257,17 @@ fun MainLedgerView(
             val editingTx = (uiController.activeDialogState as? MainLedgerDialogState.AddTransaction)?.editingTx
             if (editingTx != null) {
                 viewModel.updateTransaction(editingTx.copy(amount = amt, description = desc, category = cat))
+                uiController.dismissDialog()
             } else {
-                viewModel.addTransaction(type = type, category = cat, amount = amt, description = desc)
-            }
-            uiController.dismissDialog()
-            scope.launch {
-                lazyListState.scrollToItem(0)
+                if (!viewModel.isEligibleToCreate()) {
+                    viewModel.triggerLicensePrompt()
+                } else {
+                    viewModel.addTransaction(type = type, category = cat, amount = amt, description = desc)
+                    uiController.dismissDialog()
+                    scope.launch {
+                        lazyListState.scrollToItem(0)
+                    }
+                }
             }
         },
         showSearch = uiController.activeDialogState is MainLedgerDialogState.Search,

@@ -5,6 +5,9 @@ import com.smartledger.aldaftar.domain.license.*
 import com.smartledger.aldaftar.platform.license.DeviceIdentity
 import com.smartledger.aldaftar.platform.license.LicenseCrypto
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -19,6 +22,19 @@ class LicenseRepository(private val context: Context) {
     private val crypto = LicenseCrypto(context)
     private val device = DeviceIdentity()
     private val creationMutex = Mutex()
+    private val _onLicenseRequired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val onLicenseRequired: SharedFlow<Unit> = _onLicenseRequired.asSharedFlow()
+
+    fun triggerLicenseRequired() {
+        _onLicenseRequired.tryEmit(Unit)
+    }
+
+    fun isEligibleToCreate(): Boolean {
+        val state = snapshot()
+        if (state.status == LicenseStatus.REVOKED || state.status == LicenseStatus.VERIFICATION_REQUIRED) return false
+        if (state.isPaid) return true
+        return store.trialUsed < TRIAL_LIMIT
+    }
 
     fun snapshot(now: Long = System.currentTimeMillis()): LicenseSnapshot {
         if (store.serverRevoked) return LicenseSnapshot(status = LicenseStatus.REVOKED, accountCode = store.accountCode, trialUsed = store.trialUsed)
@@ -46,9 +62,15 @@ class LicenseRepository(private val context: Context) {
 
     suspend fun <T> runAuthorizedCreation(block: suspend () -> T): T? = creationMutex.withLock {
         val state = snapshot()
-        if (state.status == LicenseStatus.REVOKED || state.status == LicenseStatus.VERIFICATION_REQUIRED) return@withLock null
+        if (state.status == LicenseStatus.REVOKED || state.status == LicenseStatus.VERIFICATION_REQUIRED) {
+            _onLicenseRequired.tryEmit(Unit)
+            return@withLock null
+        }
         if (state.isPaid) return@withLock block()
-        if (store.trialUsed >= TRIAL_LIMIT) return@withLock null
+        if (store.trialUsed >= TRIAL_LIMIT) {
+            _onLicenseRequired.tryEmit(Unit)
+            return@withLock null
+        }
         store.trialUsed += 1
         try {
             block()
