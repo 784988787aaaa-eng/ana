@@ -1,1 +1,1 @@
-__LICENSE_ENDPOINT__
+https://al-daftar-license-api.mansour-ghawy.workers.dev/license
