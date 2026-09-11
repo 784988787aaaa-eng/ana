@@ -16,9 +16,9 @@ class AppViewModelFactory(
         HabayebFinanceViewModel::class.java -> HabayebFinanceViewModel(application, container.license, container.categoryUseCase, container.habayeb, container.transactions, container.categories, container.settings, container.recurring, container.mutation, container.floatingUi) as T
         LedgerViewModel::class.java -> LedgerViewModel(application, container.license, container.settings, container.transactions, container.categories, container.trash) as T
         SecurityViewModel::class.java -> SecurityViewModel(application, container.settings) as T
-        BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance, container.backupEngine) as T
+        BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance, container.backupEngine, container.unifiedAccount, container.cloudArchiveStore) as T
         BusinessProfileViewModel::class.java -> BusinessProfileViewModel(container.businessProfile) as T
-        LicenseViewModel::class.java -> LicenseViewModel(application, container.license) as T
+        LicenseViewModel::class.java -> LicenseViewModel(application, container.license, container.unifiedAccount) as T
         else -> throw IllegalArgumentException("Unsupported ViewModel: ${modelClass.name}")
     }
 }

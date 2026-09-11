@@ -85,7 +85,13 @@ class LicenseRepository(private val context: Context) {
         val request = "RQ-" + UUID.randomUUID().toString().replace("-", "").take(4).uppercase() + "-" + UUID.randomUUID().toString().replace("-", "").take(2).uppercase()
         return account to request
     }
-    fun signOutAccount() { store.clearAccountSession() }
+    fun signOutAccount() {
+        val state = snapshot()
+        if (state.type == LicenseType.ACCOUNT) {
+            store.clearToken()
+        }
+        store.clearAccountSession()
+    }
 
     suspend fun activateAccountOnline(accountCode: String, activationCode: String): LicenseSnapshot = withContext(Dispatchers.IO) {
         val clean = accountCode.trim().uppercase()
@@ -98,8 +104,37 @@ class LicenseRepository(private val context: Context) {
         applySignedToken(response.getString("token"))
     }
 
-    suspend fun reconnectAccountOnline(accountCode: String): LicenseSnapshot = withContext(Dispatchers.IO) {
-        val clean = accountCode.trim().uppercase()
+    suspend fun activateWithAccountOrCode(activationInput: String, email: String? = null): LicenseSnapshot = withContext(Dispatchers.IO) {
+        val trimmed = activationInput.trim()
+        val accountMatch = Regex("SL-[A-Z0-9]{4}-[A-Z0-9]{4}", RegexOption.IGNORE_CASE).find(trimmed)
+        val extractedAccountCode = accountMatch?.value?.uppercase()
+        val resolvedAccountCode = extractedAccountCode ?: store.accountCode
+
+        val cleanActivationCode = if (extractedAccountCode != null) {
+            trimmed.replace(accountMatch.value, "").trim(':', '-', ' ', '_', '/')
+        } else {
+            trimmed
+        }
+
+        if (!resolvedAccountCode.isNullOrBlank()) {
+            val codeToUse = if (cleanActivationCode.isNotBlank()) cleanActivationCode else trimmed
+            return@withContext activateAccountOnline(resolvedAccountCode, codeToUse)
+        }
+
+        val endpoint = endpoint()
+        val payload = JSONObject()
+            .put("activationCode", trimmed)
+            .put("devicePublicKey", device.publicKeyBase64())
+        if (!email.isNullOrBlank()) {
+            payload.put("email", email.trim().lowercase())
+        }
+        val response = post(endpoint + "/activate", payload)
+        applySignedToken(response.getString("token"))
+    }
+
+    suspend fun reconnectAccountOnline(accountCode: String? = null): LicenseSnapshot = withContext(Dispatchers.IO) {
+        val clean = (accountCode ?: store.accountCode)?.trim()?.uppercase()
+            ?: throw IllegalArgumentException("لا يوجد حساب مسجل لإعادة الربط")
         require(Regex("SL-[A-Z0-9]{4}-[A-Z0-9]{4}").matches(clean)) { "كود الحساب غير صالح" }
         val challenge = "${System.currentTimeMillis()}:${UUID.randomUUID()}"
         val response = post(endpoint() + "/verify", JSONObject()

@@ -1,13 +1,15 @@
 package com.smartledger.aldaftar.ui.screens.license
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +40,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.smartledger.aldaftar.data.account.UnifiedAccountSession
+import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.domain.license.LicenseStatus
 import com.smartledger.aldaftar.domain.license.LicenseType
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
@@ -51,6 +56,7 @@ fun LicenseDialog(
     onDismiss: () -> Unit,
     forced: Boolean = false
 ) {
+    val session by viewModel.session.collectAsStateWithLifecycle()
     val state by viewModel.snapshot.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val busy by viewModel.isBusy.collectAsStateWithLifecycle()
@@ -58,9 +64,25 @@ fun LicenseDialog(
     val clipboard = LocalClipboardManager.current
 
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
-    var accountCode by rememberSaveable { mutableStateOf("") }
     var activationCode by rememberSaveable { mutableStateOf("") }
     var signedToken by rememberSaveable { mutableStateOf("") }
+
+    val googleClient = remember {
+        GoogleDriveInternalAuth(context).client()
+    }
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        runCatching {
+            GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                .getResult(com.google.android.gms.common.api.ApiException::class.java)
+        }.onSuccess { account ->
+            viewModel.signInWithGoogle(account, account.serverAuthCode)
+        }.onFailure { ex ->
+            Toast.makeText(context, "تعذر تسجيل الدخول بحساب Google: ${ex.localizedMessage ?: ex.message}", Toast.LENGTH_LONG).show()
+        }
+    }
 
     val title = when {
         state.isPaid -> "الترخيص مفعل"
@@ -86,8 +108,8 @@ fun LicenseDialog(
                     .fillMaxWidth(0.92f)
                     .widthIn(max = 420.dp)
                     .wrapContentHeight()
-                    .heightIn(max = 580.dp),
-                shape = RoundedCornerShape(18.dp),
+                    .heightIn(max = 620.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
                     1.dp,
@@ -103,7 +125,7 @@ fun LicenseDialog(
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Header
+                    // 1. Header
                     CompactLicenseHeader(
                         title = title,
                         active = state.isPaid,
@@ -111,10 +133,14 @@ fun LicenseDialog(
                     )
 
                     if (state.isPaid) {
-                        // Active License Card
-                        ActiveLicenseCompactCard(state.accountCode, state.type)
+                        // 2. Active License Card
+                        ActiveLicenseCompactCard(
+                            session = session,
+                            type = state.type,
+                            onSignOut = { viewModel.signOutUnified() }
+                        )
                     } else {
-                        // State Banner
+                        // 3. State Banner (Trial count or Alert)
                         CompactStateBanner(
                             isExpired = state.isTrialExpired,
                             isRevoked = state.status == LicenseStatus.REVOKED,
@@ -123,7 +149,7 @@ fun LicenseDialog(
                             trialLimit = state.trialLimit
                         )
 
-                        // Mode Selector Tabs
+                        // 4. Mode Selector Tabs
                         CompactModeTabs(
                             selected = selectedMode,
                             onSelected = {
@@ -132,19 +158,21 @@ fun LicenseDialog(
                             }
                         )
 
-                        // Mode Content
+                        // 5. Mode Content
                         if (selectedMode == 0) {
-                            AccountLoginSection(
-                                accountCode = accountCode,
+                            UnifiedAccountLoginSection(
+                                session = session,
                                 activationCode = activationCode,
                                 busy = busy,
-                                onAccountChange = { accountCode = it.uppercase() },
                                 onActivationChange = { activationCode = it },
-                                onActivate = {
-                                    viewModel.activateAccount(accountCode, activationCode)
+                                onSignInGoogle = {
+                                    googleSignInLauncher.launch(googleClient.signInIntent)
                                 },
-                                onReconnect = {
-                                    viewModel.reconnectAccount(accountCode)
+                                onSignOutGoogle = {
+                                    viewModel.signOutUnified()
+                                },
+                                onActivate = {
+                                    viewModel.activateWithCode(activationCode)
                                 }
                             )
                         } else {
@@ -158,7 +186,7 @@ fun LicenseDialog(
                             )
                         }
 
-                        // Compact Device Code Row
+                        // 6. Compact Device Code Row
                         CompactDeviceCodeRow(
                             deviceCode = viewModel.deviceCode(),
                             onCopy = {
@@ -167,15 +195,16 @@ fun LicenseDialog(
                             }
                         )
 
-                        // WhatsApp Support Button
+                        // 7. WhatsApp Support Button
                         CompactWhatsAppButton(
                             context = context,
-                            accountCode = accountCode,
+                            email = session.email,
+                            accountCode = session.accountCode,
                             deviceCode = viewModel.deviceCode()
                         )
                     }
 
-                    // Progress Bar
+                    // 8. Progress Bar
                     if (busy) {
                         LinearProgressIndicator(
                             modifier = Modifier
@@ -186,7 +215,7 @@ fun LicenseDialog(
                         )
                     }
 
-                    // Message / Error Banner
+                    // 9. Message / Error Banner
                     if (!message.isNullOrBlank()) {
                         CompactMessageBanner(
                             message = message!!,
@@ -194,7 +223,7 @@ fun LicenseDialog(
                         )
                     }
 
-                    // Bottom Action Button
+                    // 10. Bottom Action Button
                     if (state.isPaid) {
                         Button(
                             onClick = onDismiss,
@@ -255,7 +284,7 @@ private fun CompactLicenseHeader(
                     imageVector = if (active) Icons.Default.VerifiedUser else Icons.Default.VpnKey,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
             Column {
@@ -309,7 +338,7 @@ private fun CompactStateBanner(
     val description = when {
         isExpired -> "انتهت المعاملات المجانية المتاحة ($trialUsed من $trialLimit). سجّل الدخول بحسابك أو أدخل رمز الترخيص للمتابعة."
         isRevoked -> "تعذر اعتماد الترخيص الحالي. يرجى تفعيل ترخيص صالح للمتابعة."
-        isVerification -> "يلزم إعادة التحقق من الترخيص بالإنترنت لمتابعة العمليات."
+        isVerification -> "يلزم إعادة التحقق من الترخيص عبر الإنترنت لمتابعة العمليات."
         else -> "المتبقي من التجربة المجانية: ${trialLimit - trialUsed} معاملة."
     }
 
@@ -358,7 +387,7 @@ private fun CompactModeTabs(
             modifier = Modifier.weight(1f),
             selected = selected == 0,
             icon = Icons.Default.AccountCircle,
-            label = "تسجيل الدخول للحساب",
+            label = "تسجيل الدخول بالحساب",
             onClick = { onSelected(0) }
         )
         CompactTabItem(
@@ -412,64 +441,158 @@ private fun CompactTabItem(
 }
 
 @Composable
-private fun AccountLoginSection(
-    accountCode: String,
+private fun UnifiedAccountLoginSection(
+    session: UnifiedAccountSession,
     activationCode: String,
     busy: Boolean,
-    onAccountChange: (String) -> Unit,
     onActivationChange: (String) -> Unit,
-    onActivate: () -> Unit,
-    onReconnect: () -> Unit
+    onSignInGoogle: () -> Unit,
+    onSignOutGoogle: () -> Unit,
+    onActivate: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        OutlinedTextField(
-            value = accountCode,
-            onValueChange = onAccountChange,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            singleLine = true,
-            enabled = !busy,
-            label = { Text("كود الحساب (مثال: SL-XXXX-XXXX)", fontSize = 10.sp) },
-            shape = RoundedCornerShape(10.dp)
-        )
+        if (!session.isSignedIn) {
+            // Unconnected State
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "استخدم حساب Google الموحد للترخيص والنسخ الاحتياطي السحابي معاً.",
+                        fontSize = 10.5.sp,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 15.sp
+                    )
 
-        OutlinedTextField(
-            value = activationCode,
-            onValueChange = onActivationChange,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            singleLine = true,
-            enabled = !busy,
-            label = { Text("رمز التفعيل (من المطور)", fontSize = 10.sp) },
-            shape = RoundedCornerShape(10.dp)
-        )
+                    Button(
+                        onClick = onSignInGoogle,
+                        enabled = !busy,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.AccountCircle, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "تسجيل الدخول بحساب Google",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        } else {
+            // Connected Google Account Card
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = session.email ?: "حساب Google متصل",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "الحساب متصل وموحد",
+                                fontSize = 9.5.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
 
-        Button(
-            onClick = onActivate,
-            enabled = !busy && accountCode.isNotBlank() && activationCode.isNotBlank(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(38.dp),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Icon(Icons.Default.LockOpen, null, Modifier.size(15.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("تسجيل الدخول والتفعيل", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
-        }
+                    TextButton(
+                        onClick = onSignOutGoogle,
+                        enabled = !busy,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "تسجيل الخروج",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
 
-        if (accountCode.isNotBlank() && activationCode.isBlank()) {
-            OutlinedButton(
-                onClick = onReconnect,
-                enabled = !busy,
+            // Activation code field for the connected account
+            Text(
+                text = "أدخل رمز التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
+                fontSize = 10.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            OutlinedTextField(
+                value = activationCode,
+                onValueChange = onActivationChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(34.dp),
-                shape = RoundedCornerShape(9.dp)
+                    .height(52.dp),
+                singleLine = true,
+                enabled = !busy,
+                label = { Text("رمز التفعيل (من المطور)", fontSize = 10.sp) },
+                placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 9.5.sp) },
+                shape = RoundedCornerShape(10.dp)
+            )
+
+            Button(
+                onClick = onActivate,
+                enabled = !busy && activationCode.isNotBlank(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(38.dp),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Icon(Icons.Default.Sync, null, Modifier.size(14.dp))
-                Spacer(Modifier.width(5.dp))
-                Text("إعادة ربط الحساب بهذا الجهاز", fontSize = 10.5.sp, fontWeight = FontWeight.Medium)
+                Icon(Icons.Default.LockOpen, null, Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("تفعيل الترخيص للحساب", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -495,7 +618,7 @@ private fun SignedTokenCompactSection(
             minLines = 2,
             maxLines = 3,
             enabled = !busy,
-            label = { Text("رمز الترخيص", fontSize = 10.sp) },
+            label = { Text("رمز الترخيص المحلي", fontSize = 10.sp) },
             placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 9.5.sp) },
             shape = RoundedCornerShape(10.dp)
         )
@@ -570,12 +693,13 @@ private fun CompactDeviceCodeRow(
 @Composable
 private fun CompactWhatsAppButton(
     context: Context,
-    accountCode: String,
+    email: String?,
+    accountCode: String?,
     deviceCode: String
 ) {
     Button(
         onClick = {
-            openDeveloperWhatsApp(context, accountCode, deviceCode)
+            openDeveloperWhatsApp(context, email, accountCode, deviceCode)
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -596,8 +720,9 @@ private fun CompactWhatsAppButton(
 
 @Composable
 private fun ActiveLicenseCompactCard(
-    accountCode: String?,
-    type: LicenseType?
+    session: UnifiedAccountSession,
+    type: LicenseType?,
+    onSignOut: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -609,29 +734,59 @@ private fun ActiveLicenseCompactCard(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "الترخيص نشط ومُعتمد",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                if (session.isSignedIn) {
+                    TextButton(
+                        onClick = onSignOut,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            "تسجيل الخروج",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            if (!session.email.isNullOrBlank()) {
                 Text(
-                    "الترخيص نشط ومُعتمد",
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "الحساب: ${session.email}",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Text(
+                    text = "نوع الترخيص: ${if (type == LicenseType.LOCAL) "ترخيص محلي" else "ترخيص حساب"}",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-            Text(
-                text = if (!accountCode.isNullOrBlank()) "كود الحساب: $accountCode"
-                else "نوع الترخيص: ${if (type == LicenseType.LOCAL) "ترخيص محلي" else "ترخيص حساب"}",
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
             Text(
                 text = "جميع العمليات غير محدودة ومحمية على هذا الجهاز.",
                 fontSize = 9.5.sp,
@@ -678,11 +833,19 @@ private fun CompactMessageBanner(
     }
 }
 
-private fun openDeveloperWhatsApp(context: Context, accountCode: String, deviceCode: String) {
+private fun openDeveloperWhatsApp(
+    context: Context,
+    email: String?,
+    accountCode: String?,
+    deviceCode: String
+) {
     val msg = buildString {
         append("مرحباً، أريد تفعيل ترخيص تطبيق الدفتر الذكي.\n")
-        if (accountCode.isNotBlank()) {
-            append("كود الحساب: $accountCode\n")
+        if (!email.isNullOrBlank()) {
+            append("الحساب: ${email.trim()}\n")
+        }
+        if (!accountCode.isNullOrBlank() && accountCode != "غير مرتبط") {
+            append("كود الحساب: ${accountCode.trim()}\n")
         }
         append("رمز الجهاز: $deviceCode")
     }

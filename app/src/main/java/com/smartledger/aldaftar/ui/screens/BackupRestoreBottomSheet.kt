@@ -138,10 +138,10 @@ fun BackupRestoreBottomSheet(
             GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 .getResult(com.google.android.gms.common.api.ApiException::class.java)
         }.onSuccess { account ->
-            val userEmail = account.email
-            if (!userEmail.isNullOrBlank()) {
-                backupSyncViewModel.saveConnectedAccount(userEmail)
-                Toast.makeText(context, "تم ربط حساب Google Drive بنجاح", Toast.LENGTH_SHORT).show()
+            backupSyncViewModel.signInWithGoogle(account, account.serverAuthCode) { success ->
+                if (success) {
+                    Toast.makeText(context, "تم ربط حساب Google Drive بنجاح", Toast.LENGTH_SHORT).show()
+                }
             }
         }.onFailure { ex ->
             Toast.makeText(context, "تعذر تسجيل الدخول بحساب Google: ${ex.localizedMessage ?: ex.message}", Toast.LENGTH_LONG).show()

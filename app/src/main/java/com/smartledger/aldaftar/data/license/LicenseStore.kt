@@ -31,5 +31,14 @@ class LicenseStore(context: Context) {
     var lastSeenAt: Long
         get() = prefs.getLong("last_seen_at", 0L)
         set(value) { prefs.edit().putLong("last_seen_at", value).apply() }
-    fun clearAccountSession() { token = null; accountCode = null; lastVerifiedAt = 0L; lastSeenAt = 0L; serverRevoked = false }
+    fun clearAccountSession() {
+        accountCode = null
+        lastVerifiedAt = 0L
+        lastSeenAt = 0L
+        serverRevoked = false
+    }
+
+    fun clearToken() {
+        token = null
+    }
 }

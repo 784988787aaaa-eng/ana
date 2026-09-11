@@ -7,6 +7,7 @@ import com.smartledger.aldaftar.domain.usecase.habayeb.HabayebCategoryUseCase
 import com.smartledger.aldaftar.data.backup.BackupEngine
 import com.smartledger.aldaftar.data.backup.AutomaticBackupCoordinator
 import com.smartledger.aldaftar.data.cloud.CloudArchiveStore
+import com.smartledger.aldaftar.data.account.UnifiedAccountSessionRepository
 import com.smartledger.aldaftar.data.license.LicenseRepository
 
 /** تركيب الاعتماديات طويلة العمر داخل جذر التطبيق فقط. */
@@ -28,4 +29,5 @@ class AppContainer(context: Context) {
     val cloudArchiveStore = CloudArchiveStore(context.applicationContext)
     val automaticBackup = AutomaticBackupCoordinator(backupEngine, cloudArchiveStore)
     val license = LicenseRepository(context.applicationContext)
+    val unifiedAccount = UnifiedAccountSessionRepository(context.applicationContext, license, cloudArchiveStore)
 }

@@ -139,7 +139,12 @@ async function licenseRecord(env, accountCode) {
 
 async function activate(request, env) {
   const body = await readJson(request);
-  const accountCode = String(body.accountCode || '').trim().toUpperCase();
+  let accountCode = String(body.accountCode || '').trim().toUpperCase();
+  const email = String(body.email || '').trim().toLowerCase();
+  if (!accountCode && email) {
+    const mappedAccount = await env.SMARTLEDGER_KV.get(`email:${email}`);
+    if (mappedAccount) accountCode = String(mappedAccount).trim().toUpperCase();
+  }
   const activationCode = String(body.activationCode || '').trim();
   const publicKey = String(body.devicePublicKey || '').trim();
   if (!ACCOUNT_PATTERN.test(accountCode) || activationCode.length < 16 || !publicKey) return json(400, { error: 'invalid_activation' });
