@@ -200,12 +200,12 @@ fun BackupRestoreBottomSheet(
                     onDisconnect = { backupSyncViewModel.disconnectCloud() }
                 )
 
-                // 2. Local Backup Card (.mzd)
+                // 2. Local Backup Card
                 LocalBackupCard(
                     busy = busy,
                     onExportLocal = {
                         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-                        createDocumentLauncher.launch("smartledger_backup_$timestamp.mzd")
+                        createDocumentLauncher.launch("smartledger_backup_$timestamp.slb")
                     },
                     onImportLocal = {
                         openDocumentLauncher.launch(arrayOf("*/*"))
@@ -394,8 +394,9 @@ private fun CloudSyncCard(
                     enabled = !busy,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .height(46.dp),
                     shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
                 ) {
                     Icon(Icons.Default.Link, null, Modifier.size(18.dp))
@@ -424,7 +425,8 @@ private fun CloudSyncCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    color = TonalLavender.copy(alpha = 0.6f)
+                    color = TonalLavender.copy(alpha = 0.6f),
+                    border = BorderStroke(0.8.dp, TonalLavenderBorder.copy(alpha = 0.5f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -435,8 +437,12 @@ private fun CloudSyncCard(
                             text = "الحساب المتصل: ${email ?: "حساب Google"}",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
+                        Spacer(Modifier.width(6.dp))
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
@@ -448,10 +454,10 @@ private fun CloudSyncCard(
 
                 // Subtitle Info
                 Text(
-                    text = "يتم حفظ ومزامنة السجلات بأمان مع هذا الحساب.",
+                    text = "يتم حفظ ومزامنة السجلات بأمان مع حسابك السحابي.",
                     fontSize = 10.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF7F1D1D),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
                 )
@@ -467,30 +473,59 @@ private fun CloudSyncCard(
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp),
+                            .height(46.dp),
                         shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
                     ) {
-                        Text("إنشاء نسخة سحابية", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.CloudUpload, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                text = "إنشاء نسخة سحابية",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
 
-                    // Left button: استعادة نسخة احتياطية (Tonal Lavender)
+                    // Left button: استعادة من السحابة (Tonal Lavender)
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp)
+                            .height(46.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .clickable(enabled = !busy, onClick = onRestoreCloud),
                         shape = RoundedCornerShape(12.dp),
                         color = TonalLavender,
-                        border = BorderStroke(1.dp, TonalLavenderBorder.copy(alpha = 0.6f))
+                        border = BorderStroke(1.dp, TonalLavenderBorder.copy(alpha = 0.7f))
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = PrimaryPurple
+                            )
+                            Spacer(Modifier.width(5.dp))
                             Text(
-                                text = "استعادة نسخة احتياطية",
+                                text = "استعادة من السحابة",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryPurple
+                                color = PrimaryPurple,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -502,12 +537,13 @@ private fun CloudSyncCard(
                     enabled = !busy,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .height(46.dp),
                     shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ArchiveBlue)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.BackupTable,
+                        imageVector = Icons.Default.FolderShared,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = Color.White
@@ -540,7 +576,7 @@ private fun CloudSyncCard(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(17.dp),
                             tint = DangerText
                         )
                         Spacer(Modifier.width(8.dp))
@@ -581,7 +617,7 @@ private fun LocalBackupCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "النسخ الاحتياطي المحلي (.mzd)",
+                    text = "النسخ الاحتياطي المحلي",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -596,8 +632,8 @@ private fun LocalBackupCard(
 
             // Subtitle
             Text(
-                text = "تصدير أو استيراد ملف النسخة الاحتياطية",
-                fontSize = 11.sp,
+                text = "تصدير أو استيراد ملف النسخة الاحتياطية على جهازك",
+                fontSize = 10.5.sp,
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -609,36 +645,65 @@ private fun LocalBackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Right button: تصدير نسخة احتياطية (Solid Purple)
+                // Right button: تصدير نسخة محلية (Solid Purple)
                 Button(
                     onClick = onExportLocal,
                     enabled = !busy,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
+                        .height(46.dp),
                     shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
                 ) {
-                    Text("تصدير نسخة احتياطية", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.FileUpload, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            text = "تصدير نسخة محلية",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
-                // Left button: استيراد نسخة احتياطية (Tonal Lavender)
+                // Left button: استيراد نسخة محلية (Tonal Lavender)
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp)
+                        .height(46.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .clickable(enabled = !busy, onClick = onImportLocal),
                     shape = RoundedCornerShape(12.dp),
                     color = TonalLavender,
-                    border = BorderStroke(1.dp, TonalLavenderBorder.copy(alpha = 0.6f))
+                    border = BorderStroke(1.dp, TonalLavenderBorder.copy(alpha = 0.7f))
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = PrimaryPurple
+                        )
+                        Spacer(Modifier.width(5.dp))
                         Text(
-                            text = "استيراد نسخة احتياطية",
+                            text = "استيراد نسخة محلية",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryPurple
+                            color = PrimaryPurple,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -670,13 +735,13 @@ private fun ResetAllDataButton(
             Icon(
                 imageVector = Icons.Default.DeleteForever,
                 contentDescription = null,
-                modifier = Modifier.size(19.dp),
+                modifier = Modifier.size(18.dp),
                 tint = DangerText
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "مسح كافة البيانات وإعادة الضبط",
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = DangerText
             )

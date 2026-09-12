@@ -171,6 +171,9 @@ fun LicenseDialog(
                                 onSignOutGoogle = {
                                     viewModel.signOutUnified()
                                 },
+                                onCheckCloudLicense = {
+                                    viewModel.checkCloudLicense()
+                                },
                                 onActivate = {
                                     viewModel.activateWithCode(activationCode)
                                 }
@@ -448,6 +451,7 @@ private fun UnifiedAccountLoginSection(
     onActivationChange: (String) -> Unit,
     onSignInGoogle: () -> Unit,
     onSignOutGoogle: () -> Unit,
+    onCheckCloudLicense: () -> Unit,
     onActivate: () -> Unit
 ) {
     Column(
@@ -468,7 +472,7 @@ private fun UnifiedAccountLoginSection(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "استخدم حساب Google الموحد للترخيص والنسخ الاحتياطي السحابي معاً.",
+                        text = "سجّل الدخول بحساب Google ليتم تفعيل التطبيق تلقائياً بمجرد ترخيص حسابك.",
                         fontSize = 10.5.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -497,7 +501,7 @@ private fun UnifiedAccountLoginSection(
                 }
             }
         } else {
-            // Connected Google Account Card
+            // Connected Google Account Card (Unlicensed state)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -540,7 +544,7 @@ private fun UnifiedAccountLoginSection(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = "الحساب متصل وموحد",
+                                text = "الحساب متصل | بانتظار الترخيص السحابي",
                                 fontSize = 9.5.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -562,10 +566,25 @@ private fun UnifiedAccountLoginSection(
                 }
             }
 
-            // Activation code field for the connected account
+            // Quick Cloud License Check Button
+            OutlinedButton(
+                onClick = onCheckCloudLicense,
+                enabled = !busy,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(38.dp),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            ) {
+                Icon(Icons.Default.CloudSync, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(6.dp))
+                Text("التحقق من الترخيص السحابي الآن", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+
+            // Manual Activation code field (for unlicensed accounts only)
             Text(
-                text = "أدخل رمز التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
-                fontSize = 10.5.sp,
+                text = "أو أدخل رمز التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 

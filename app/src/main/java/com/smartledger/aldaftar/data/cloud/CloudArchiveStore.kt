@@ -95,9 +95,9 @@ class CloudArchiveStore(context: Context) {
             queryParts.add("trashed = false")
 
             if (folderId != null) {
-                queryParts.add("('$folderId' in parents or name contains '.mzd' or name contains 'smartledger' or name contains 'backup' or mimeType = 'application/vnd.smartledger.backup')")
+                queryParts.add("('$folderId' in parents or name contains '.slb' or name contains '.mzd' or name contains 'smartledger' or name contains 'backup' or mimeType = 'application/vnd.smartledger.backup')")
             } else {
-                queryParts.add("(name contains '.mzd' or name contains 'smartledger' or name contains 'backup' or mimeType = 'application/vnd.smartledger.backup')")
+                queryParts.add("(name contains '.slb' or name contains '.mzd' or name contains 'smartledger' or name contains 'backup' or mimeType = 'application/vnd.smartledger.backup')")
             }
 
             if (search.isNotBlank()) {
@@ -118,7 +118,7 @@ class CloudArchiveStore(context: Context) {
                 if (mime == "application/vnd.google-apps.folder") continue
 
                 val id = fileObj.getString("id")
-                val name = fileObj.optString("name", "smartledger_backup.mzd")
+                val name = fileObj.optString("name", "smartledger_backup.slb")
                 val size = fileObj.optLong("size", 0L)
                 val modifiedTimeStr = fileObj.optString("modifiedTime", fileObj.optString("createdTime", ""))
                 val modifiedTime = parseIsoTime(modifiedTimeStr)

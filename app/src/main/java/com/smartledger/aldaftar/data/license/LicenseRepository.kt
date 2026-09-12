@@ -93,6 +93,24 @@ class LicenseRepository(private val context: Context) {
         store.clearAccountSession()
     }
 
+    suspend fun checkAndAutoActivateCloudAccount(email: String): LicenseSnapshot? = withContext(Dispatchers.IO) {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isBlank()) return@withContext null
+        val endpoint = runCatching { endpoint() }.getOrNull() ?: return@withContext null
+        val payload = JSONObject()
+            .put("email", cleanEmail)
+            .put("devicePublicKey", device.publicKeyBase64())
+        val response = runCatching {
+            post(endpoint + "/license/auto-activate", payload)
+        }.getOrNull() ?: return@withContext null
+
+        if (response.optBoolean("licensed", false) && response.has("token")) {
+            val token = response.getString("token")
+            return@withContext applySignedToken(token)
+        }
+        null
+    }
+
     suspend fun activateAccountOnline(accountCode: String, activationCode: String): LicenseSnapshot = withContext(Dispatchers.IO) {
         val clean = accountCode.trim().uppercase()
         require(Regex("SL-[A-Z0-9]{4}-[A-Z0-9]{4}").matches(clean)) { "كود الحساب غير صالح" }

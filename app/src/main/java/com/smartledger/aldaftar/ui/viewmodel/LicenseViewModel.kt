@@ -93,6 +93,36 @@ class LicenseViewModel(
         }
     }
 
+    fun checkCloudLicense(onDone: (Boolean) -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val email = session.value.email
+            if (email.isNullOrBlank()) {
+                _message.value = "يرجى تسجيل الدخول بحساب Google أولاً"
+                onDone(false)
+                return@launch
+            }
+            _busy.value = true
+            _message.value = null
+            try {
+                val newSnap = repository.checkAndAutoActivateCloudAccount(email)
+                if (newSnap != null && newSnap.isPaid) {
+                    _snapshot.value = newSnap
+                    unifiedAccountRepository.updateLicenseSnapshot(newSnap)
+                    _message.value = "تم التحقق وتفعيل الترخيص السحابي بنجاح"
+                    onDone(true)
+                } else {
+                    _message.value = "هذا الحساب غير مسجل بترخيص سحابي مفعل بعد"
+                    onDone(false)
+                }
+            } catch (e: Exception) {
+                _message.value = e.message ?: "تعذر التحقق من الترخيص السحابي"
+                onDone(false)
+            } finally {
+                _busy.value = false
+            }
+        }
+    }
+
     fun activateWithCode(activationCode: String, onDone: (Boolean) -> Unit = {}) {
         viewModelScope.launch(Dispatchers.IO) {
             _busy.value = true

@@ -137,6 +137,69 @@ async function licenseRecord(env, accountCode) {
   return env.SMARTLEDGER_KV.get(`license:${accountCode}`, 'json');
 }
 
+async function autoActivateByEmail(request, env) {
+  const body = await readJson(request);
+  const email = String(body.email || '').trim().toLowerCase();
+  const publicKey = String(body.devicePublicKey || '').trim();
+  if (!email || !publicKey) return json(400, { error: 'invalid_request' });
+
+  if (!(await rateLimit(env, email, clientIp(request)))) return json(429, { error: 'rate_limited' });
+
+  let accountCode = await env.SMARTLEDGER_KV.get(`email:${email}`);
+  if (!accountCode) {
+    return json(200, { licensed: false, error: 'no_license_for_email' });
+  }
+
+  accountCode = String(accountCode).trim().toUpperCase();
+  const license = await licenseRecord(env, accountCode);
+  if (!license || license.revoked === true) {
+    return json(200, { licensed: false, error: 'license_revoked_or_missing' });
+  }
+
+  if (license.type !== 'ACCOUNT' || license.plan !== 'LIFETIME') {
+    return json(200, { licensed: false, error: 'license_not_lifetime' });
+  }
+
+  const fingerprint = await hexHash(fromB64(publicKey));
+  if (!FINGERPRINT_PATTERN.test(fingerprint)) return json(400, { error: 'invalid_device_key' });
+
+  await env.SMARTLEDGER_KV.put(
+    `install:${accountCode}:${fingerprint}`,
+    JSON.stringify({ publicKey, createdAt: Date.now(), lastSeenAt: Date.now(), revoked: false, email })
+  );
+
+  const token = await issueAccountToken(accountCode, license, fingerprint, env);
+  return json(200, {
+    licensed: true,
+    accountCode,
+    token
+  });
+}
+
+async function checkLicenseStatus(request, env) {
+  const body = await readJson(request);
+  const email = String(body.email || '').trim().toLowerCase();
+  const accountCodeInput = String(body.accountCode || '').trim().toUpperCase();
+
+  let accountCode = accountCodeInput;
+  if (!accountCode && email) {
+    const mapped = await env.SMARTLEDGER_KV.get(`email:${email}`);
+    if (mapped) accountCode = String(mapped).trim().toUpperCase();
+  }
+
+  if (!accountCode) return json(200, { licensed: false, registered: false });
+
+  const license = await licenseRecord(env, accountCode);
+  if (!license || license.revoked === true) return json(200, { licensed: false, registered: true, revoked: true });
+
+  return json(200, {
+    licensed: license.plan === 'LIFETIME' && license.type === 'ACCOUNT',
+    registered: true,
+    accountCode,
+    plan: license.plan
+  });
+}
+
 async function activate(request, env) {
   const body = await readJson(request);
   let accountCode = String(body.accountCode || '').trim().toUpperCase();
@@ -566,6 +629,8 @@ export default {
       if (request.method === 'GET' && url.pathname === '/driveOAuthCallback') return await driveCallback(request, env);
       if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
       if (url.pathname === '/license/activate') return await activate(request, env);
+      if (url.pathname === '/license/auto-activate') return await autoActivateByEmail(request, env);
+      if (url.pathname === '/license/check-status') return await checkLicenseStatus(request, env);
       if (url.pathname === '/license/verify') return await verify(request, env);
       if (url.pathname === '/driveApi/config') return json(200, { googleClientId: String(env.GOOGLE_CLIENT_ID || '') });
       if (url.pathname === '/driveApi/connect/google-signin') return await driveConnectWithServerAuthCode(request, env);

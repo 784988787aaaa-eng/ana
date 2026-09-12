@@ -62,12 +62,22 @@ class UnifiedAccountSessionRepository(
         val lastGoogleAccount = googleAuth.getLastSignedInAccount()
         val storedEmail = cloudConnectionStore.email() ?: lastGoogleAccount?.email
         val isSignedIn = !storedEmail.isNullOrBlank() || lastGoogleAccount != null
-        val licenseSnap = licenseRepository.snapshot()
+        var licenseSnap = licenseRepository.snapshot()
+
+        // إذا كان المستخدم مسجلاً بحساب Google والترخيص غير مفعل بعد، نحاول التفعيل التلقائي إن كان الحساب مرخصاً في السحابة
+        if (isSignedIn && !storedEmail.isNullOrBlank() && !licenseSnap.isPaid) {
+            val autoActivated = runCatching {
+                licenseRepository.checkAndAutoActivateCloudAccount(storedEmail)
+            }.getOrNull()
+            if (autoActivated != null) {
+                licenseSnap = autoActivated
+            }
+        }
 
         // إذا كان المستخدم مسجلاً بحساب Google ومعه ترخيص حساب، نحاول تحديث التحقق
         if (isSignedIn && licenseSnap.type == LicenseType.ACCOUNT && !licenseSnap.accountCode.isNullOrBlank()) {
             runCatching {
-                licenseRepository.verifyAccountOnline()
+                licenseSnap = licenseRepository.verifyAccountOnline()
             }
         }
 
@@ -102,24 +112,34 @@ class UnifiedAccountSessionRepository(
             }
         }
 
-        // التحقق من وجود ترخيص مرتبط بهذا الحساب إن وُجد
-        val currentSnap = licenseRepository.snapshot()
-        if (currentSnap.type == LicenseType.ACCOUNT && !currentSnap.accountCode.isNullOrBlank()) {
-            runCatching {
-                licenseRepository.verifyAccountOnline()
+        // 1. التحقق التلقائي والتفعيل السحابي الفوري بمجرد تسجيل الدخول بنفس الحساب المرخص
+        var finalSnap = licenseRepository.snapshot()
+        if (!email.isNullOrBlank()) {
+            val autoActivatedSnap = runCatching {
+                licenseRepository.checkAndAutoActivateCloudAccount(email)
+            }.getOrNull()
+            if (autoActivatedSnap != null) {
+                finalSnap = autoActivatedSnap
             }
         }
 
-        val finalSnap = licenseRepository.snapshot()
+        // 2. التحقق من وجود ترخيص حساب مسبق مرتبط إن وُجد
+        if (!finalSnap.isPaid && finalSnap.type == LicenseType.ACCOUNT && !finalSnap.accountCode.isNullOrBlank()) {
+            runCatching {
+                finalSnap = licenseRepository.verifyAccountOnline()
+            }
+        }
+
+        val updatedSnap = licenseRepository.snapshot()
         val newSession = UnifiedAccountSession(
             isSignedIn = true,
             email = email,
             displayName = account.displayName,
             photoUrl = account.photoUrl?.toString(),
             provider = AccountProvider.GOOGLE,
-            accountCode = finalSnap.accountCode,
+            accountCode = updatedSnap.accountCode,
             isCloudConnected = true,
-            licenseSnapshot = finalSnap
+            licenseSnapshot = updatedSnap
         )
         _session.value = newSession
         newSession
