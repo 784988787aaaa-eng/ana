@@ -73,12 +73,10 @@ fun AppLockScreen(
     val triggerErrorAnimationAndHaptic = {
         scope.launch {
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
-            shakeOffset.animateTo(24f, tween(40))
-            shakeOffset.animateTo(-24f, tween(40))
-            shakeOffset.animateTo(16f, tween(35))
-            shakeOffset.animateTo(-16f, tween(35))
-            shakeOffset.animateTo(8f, tween(30))
-            shakeOffset.animateTo(0f, tween(30))
+            shakeOffset.animateTo(10f, tween(50))
+            shakeOffset.animateTo(-10f, tween(50))
+            shakeOffset.animateTo(5f, tween(50))
+            shakeOffset.animateTo(0f, tween(50))
         }
         Unit
     }

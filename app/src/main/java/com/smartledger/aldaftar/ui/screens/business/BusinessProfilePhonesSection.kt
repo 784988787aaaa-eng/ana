@@ -3,9 +3,11 @@ package com.smartledger.aldaftar.ui.screens.business
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -52,98 +54,100 @@ fun BusinessProfilePhonesSection(
     activeThemeColor: Color
 ) {
     val focusManager = LocalFocusManager.current
-    val focusRequesters = remember(phoneList.size) { List(phoneList.size) { FocusRequester() } }
+    val effectivePhones = remember(phoneList) { if (phoneList.isEmpty()) listOf("") else phoneList }
+    val focusRequesters = remember(effectivePhones.size) { List(effectivePhones.size) { FocusRequester() } }
 
-    LaunchedEffect(phoneList.size) {
-        if (phoneList.size > 1) {
-            focusRequesters.lastOrNull()?.requestFocus()
-        }
-    }
-
-    Card(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isDialog) 0.dp else 4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = stringResource(id = R.string.biz_phones_section),
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.testTag("biz_phones_section")
             )
 
-            for (index in phoneList.indices) {
-                val phone = phoneList[index]
-                val primaryLabel = stringResource(id = R.string.biz_label_primary_phone)
-                val secLabel = stringResource(id = R.string.biz_label_secondary_phone, index + 1)
-                val phoneLabel = if (index == 0) primaryLabel else secLabel
-                val placeholderText = stringResource(id = R.string.biz_placeholder_phone)
-                val focusRequester = focusRequesters.getOrNull(index) ?: remember { FocusRequester() }
-                val isLastItem = index == phoneList.lastIndex
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            if (effectivePhones.size < 3) {
+                androidx.compose.material3.TextButton(
+                    onClick = onAddPhone,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 36.dp)
                 ) {
-                    OutlinedTextField(
-                        value = phone,
-                        onValueChange = { newVal -> if (newVal.length <= 16) onPhoneChange(index, newVal) },
-                        label = { Text(text = phoneLabel, fontSize = 13.sp) },
-                        placeholder = { Text(text = placeholderText, fontSize = 13.sp) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focusRequester),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = activeThemeColor,
-                            focusedLabelColor = activeThemeColor,
-                            cursorColor = activeThemeColor
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone,
-                            imeAction = if (isLastItem) ImeAction.Done else ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                            onDone = { focusManager.clearFocus() }
-                        ),
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
+                    Icon(
+                        imageVector = Icons.Default.AddCircleOutline,
+                        contentDescription = null,
+                        tint = activeThemeColor,
+                        modifier = Modifier.size(16.dp)
                     )
+                    Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+                    Text(
+                        text = stringResource(id = R.string.biz_btn_add_phone),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = activeThemeColor
+                    )
+                }
+            }
+        }
 
-                    if (index > 0) {
-                        IconButton(
-                            onClick = { onRemovePhone(index) },
-                            modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(id = R.string.biz_desc_delete_phone)
-                            )
-                        }
-                    }
+        for (index in effectivePhones.indices) {
+            val phone = effectivePhones[index]
+            val primaryLabel = stringResource(id = R.string.biz_label_primary_phone)
+            val secLabel = stringResource(id = R.string.biz_label_secondary_phone, index + 1)
+            val phoneLabel = if (index == 0) primaryLabel else secLabel
+            val placeholderText = stringResource(id = R.string.biz_placeholder_phone)
+            val focusRequester = focusRequesters.getOrNull(index) ?: remember { FocusRequester() }
+            val isLastItem = index == effectivePhones.lastIndex
 
-                    if (index == phoneList.lastIndex && phoneList.size < 3) {
-                        IconButton(
-                            onClick = { onAddPhone() },
-                            modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = activeThemeColor)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AddCircleOutline,
-                                contentDescription = stringResource(id = R.string.biz_btn_add_phone)
-                            )
-                        }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { newVal -> if (newVal.length <= 16) onPhoneChange(index, newVal) },
+                    label = { Text(text = phoneLabel, fontSize = 12.sp) },
+                    placeholder = { Text(text = placeholderText, fontSize = 12.sp) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = activeThemeColor,
+                        focusedLabelColor = activeThemeColor,
+                        cursorColor = activeThemeColor
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = if (isLastItem) ImeAction.Done else ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                        onDone = { focusManager.clearFocus() }
+                    ),
+                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start, fontSize = 13.sp)
+                )
+
+                if (index > 0) {
+                    IconButton(
+                        onClick = { onRemovePhone(index) },
+                        modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(id = R.string.biz_desc_delete_phone),
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }

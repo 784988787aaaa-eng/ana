@@ -47,6 +47,11 @@ class SecurityViewModel(
         }
     }
 
+    suspend fun saveSettingsSync(settings: AppSettings) {
+        securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
+        repository.saveSettings(settings)
+    }
+
     fun verifyCredentials(input: String): Boolean {
         val inputChars = input.trim().toCharArray()
         return try {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -83,12 +84,7 @@ fun SearchLedgerDialog(
     ) {
         val searchFocusRequester = remember { FocusRequester() }
         val keyboardController = LocalSoftwareKeyboardController.current
-        val view = LocalView.current
-        DisposableEffect(view) {
-            val window = (view.parent as? DialogWindowProvider)?.window
-            window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-            onDispose {}
-        }
+
         LaunchedEffect(Unit) {
             try {
                 kotlinx.coroutines.android.awaitFrame()
@@ -99,19 +95,21 @@ fun SearchLedgerDialog(
             }
         }
         Card(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
             modifier = Modifier
+                .widthIn(max = 360.dp)
                 .fillMaxWidth(0.92f)
-                .heightIn(max = 620.dp)
+                .heightIn(max = 520.dp)
                 .padding(8.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(16.dp),
+                    .padding(14.dp),
                 horizontalAlignment = Alignment.End
             ) {
                 Row(
@@ -165,7 +163,7 @@ fun SearchLedgerDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (results.isEmpty()) {
-                    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
                         Text(
                             if (query.isBlank()) stringResource(id = R.string.ledger_search_empty_state) else stringResource(id = R.string.ledger_search_no_results),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

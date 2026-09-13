@@ -162,14 +162,19 @@ fun SecurityScreen(
                         if (isValid) {
                             isSaving = true
                             coroutineScope.launch {
-                                val updated = withContext(Dispatchers.Default) {
-                                    buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
+                                try {
+                                    val updated = withContext(Dispatchers.Default) {
+                                        buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
+                                    }
+                                    viewModel.saveSettingsSync(updated)
+                                    isSaving = false
+                                    isEditingPasscode = false
+                                    Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
+                                    onBack()
+                                } catch (e: Exception) {
+                                    isSaving = false
+                                    Toast.makeText(context, e.message ?: "Error", Toast.LENGTH_SHORT).show()
                                 }
-                                viewModel.saveSettings(updated)
-                                isSaving = false
-                                isEditingPasscode = false
-                                Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                onBack()
                             }
                         }
                     }

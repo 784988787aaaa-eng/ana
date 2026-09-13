@@ -121,17 +121,10 @@ fun AddTransactionPopup(
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    val view = androidx.compose.ui.platform.LocalView.current
-    DisposableEffect(view) {
-        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-        onDispose {}
-    }
-
     LaunchedEffect(Unit) {
-kotlinx.coroutines.android.awaitFrame()
-            amountFocusRequester.requestFocus()
-            softwareKeyboardController?.show()
+        kotlinx.coroutines.android.awaitFrame()
+        amountFocusRequester.requestFocus()
+        softwareKeyboardController?.show()
     }
 
     var dateMillis by rememberSaveable { mutableStateOf(editingTransaction?.timestamp?.let { it * 1000 } ?: System.currentTimeMillis()) }
@@ -158,6 +151,7 @@ kotlinx.coroutines.android.awaitFrame()
 
     val scope = rememberCoroutineScope()
     val executeSave = { finalActionType: String ->
+        focusManager.clearFocus()
         softwareKeyboardController?.hide()
         if (!isSaving) {
             isSaving = true

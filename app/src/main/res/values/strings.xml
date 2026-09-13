@@ -705,6 +705,8 @@
     <string name="biz_toast_err_empty_name">الرجاء إدخال الاسم التجاري لحفظ الملف</string>
     <string name="biz_toast_save_success">تم حفظ بيانات النشاط التجاري بنجاح ✅</string>
     <string name="biz_btn_save">حفظ البيانات وتطبيقها</string>
+    <string name="biz_btn_reset">إعادة ضبط الملف التجاري</string>
+    <string name="biz_reset_success">تمت إعادة ضبط بيانات النشاط التجاري للوضع الافتراضي</string>
     <string name="biz_crop_title">قص وتعديل الصورة</string>
     <string name="biz_crop_preview_desc">معاينة التعديل</string>
     <string name="biz_crop_square">قص مربع</string>
