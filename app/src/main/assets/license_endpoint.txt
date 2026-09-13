@@ -1,1 +1,1 @@
-https://al-daftar-license-api.mansour-ghawy.workers.dev/license
+https://al-daftar-license-api.mansour-ghawy.workers.dev

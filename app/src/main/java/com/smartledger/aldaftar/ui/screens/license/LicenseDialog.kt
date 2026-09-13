@@ -43,8 +43,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.data.account.UnifiedAccountSession
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
+import com.smartledger.aldaftar.domain.license.LicensePlan
+import com.smartledger.aldaftar.domain.license.LicenseSnapshot
 import com.smartledger.aldaftar.domain.license.LicenseStatus
 import com.smartledger.aldaftar.domain.license.LicenseType
+import com.smartledger.aldaftar.domain.license.RevocationReason
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
 
@@ -60,6 +63,8 @@ fun LicenseDialog(
     val state by viewModel.snapshot.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val busy by viewModel.isBusy.collectAsStateWithLifecycle()
+    val deviceReplacedNotice by viewModel.deviceReplacedNotice.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
 
@@ -84,10 +89,23 @@ fun LicenseDialog(
         }
     }
 
+    // Device Replaced Alert Dialog
+    if (!deviceReplacedNotice.isNullOrBlank()) {
+        DeviceReplacedDialog(
+            message = deviceReplacedNotice!!,
+            onDismiss = { viewModel.dismissDeviceReplacedNotice() },
+            onReSignIn = {
+                viewModel.dismissDeviceReplacedNotice()
+                googleSignInLauncher.launch(googleClient.signInIntent)
+            }
+        )
+    }
+
     val title = when {
-        state.isPaid -> "الترخيص مفعل"
-        state.isTrialExpired -> "انتهى الحد المسموح"
-        state.status == LicenseStatus.VERIFICATION_REQUIRED -> "تحديث الترخيص"
+        state.isLifetime -> "ترخيص مدى الحياة"
+        state.isTrialActive -> "نسخة تجريبية نشطة"
+        state.isTrialExpired -> "انتهت الفترة التجريبية"
+        state.status == LicenseStatus.VERIFICATION_REQUIRED -> "تحديث التحقق من الترخيص"
         state.status == LicenseStatus.REVOKED -> "الترخيص غير صالح"
         else -> "تفعيل الترخيص"
     }
@@ -108,7 +126,7 @@ fun LicenseDialog(
                     .fillMaxWidth(0.92f)
                     .widthIn(max = 420.dp)
                     .wrapContentHeight()
-                    .heightIn(max = 620.dp),
+                    .heightIn(max = 640.dp),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
@@ -133,20 +151,19 @@ fun LicenseDialog(
                     )
 
                     if (state.isPaid) {
-                        // 2. Active License Card
+                        // 2. Active License Card (Lifetime or active Trial)
                         ActiveLicenseCompactCard(
+                            snapshot = state,
                             session = session,
-                            type = state.type,
                             onSignOut = { viewModel.signOutUnified() }
                         )
                     } else {
                         // 3. State Banner (Trial count or Alert)
                         CompactStateBanner(
+                            snapshot = state,
                             isExpired = state.isTrialExpired,
                             isRevoked = state.status == LicenseStatus.REVOKED,
-                            isVerification = state.status == LicenseStatus.VERIFICATION_REQUIRED,
-                            trialUsed = state.trialUsed,
-                            trialLimit = state.trialLimit
+                            isVerification = state.status == LicenseStatus.VERIFICATION_REQUIRED
                         )
 
                         // 4. Mode Selector Tabs
@@ -162,6 +179,7 @@ fun LicenseDialog(
                         if (selectedMode == 0) {
                             UnifiedAccountLoginSection(
                                 session = session,
+                                snapshot = state,
                                 activationCode = activationCode,
                                 busy = busy,
                                 onActivationChange = { activationCode = it },
@@ -202,7 +220,7 @@ fun LicenseDialog(
                         CompactWhatsAppButton(
                             context = context,
                             email = session.email,
-                            accountCode = session.accountCode,
+                            accountCode = session.accountCode ?: state.accountCode,
                             deviceCode = viewModel.deviceCode()
                         )
                     }
@@ -255,6 +273,58 @@ fun LicenseDialog(
             }
         }
     }
+}
+
+@Composable
+fun DeviceReplacedDialog(
+    message: String,
+    onDismiss: () -> Unit,
+    onReSignIn: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.DevicesOther,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(28.dp)
+            )
+        },
+        title = {
+            Text(
+                "تنبيه الأجهزة",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Text(
+                text = message,
+                fontSize = 12.5.sp,
+                lineHeight = 18.sp,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onReSignIn,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("تسجيل الدخول مجدداً", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("إغلاق", fontSize = 12.sp)
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 @Composable
@@ -324,11 +394,10 @@ private fun CompactLicenseHeader(
 
 @Composable
 private fun CompactStateBanner(
+    snapshot: LicenseSnapshot,
     isExpired: Boolean,
     isRevoked: Boolean,
-    isVerification: Boolean,
-    trialUsed: Int,
-    trialLimit: Int
+    isVerification: Boolean
 ) {
     val isAlert = isExpired || isRevoked || isVerification
     val bgColor = if (isAlert) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
@@ -339,10 +408,15 @@ private fun CompactStateBanner(
     else MaterialTheme.colorScheme.onPrimaryContainer
 
     val description = when {
-        isExpired -> "انتهت المعاملات المجانية المتاحة ($trialUsed من $trialLimit). سجّل الدخول بحسابك أو أدخل رمز الترخيص للمتابعة."
-        isRevoked -> "تعذر اعتماد الترخيص الحالي. يرجى تفعيل ترخيص صالح للمتابعة."
+        isExpired -> "انتهت الفترة التجريبية لهذا الترخيص. سجّل الدخول بحسابك المرخص أو أدخل رمز التفعيل للمتابعة."
+        snapshot.isDeviceReplaced -> snapshot.revocationMessage ?: "تم تفعيل حساب SmartLedger على جهاز آخر، وتم إلغاء تفعيل هذا الجهاز."
+        isRevoked -> snapshot.revocationMessage ?: "تعذر اعتماد الترخيص الحالي. يرجى تفعيل ترخيص صالح للمتابعة."
         isVerification -> "يلزم إعادة التحقق من الترخيص عبر الإنترنت لمتابعة العمليات."
-        else -> "المتبقي من التجربة المجانية: ${trialLimit - trialUsed} معاملة."
+        snapshot.isTrialPlan && snapshot.trialEndsAt != null -> {
+            val days = snapshot.calculateRemainingDays() ?: 0
+            "فترة تجريبية نشطة (متبقي $days يوماً)."
+        }
+        else -> "المتبقي من التجربة المجانية: ${snapshot.trialLimit - snapshot.trialUsed} معاملة."
     }
 
     Surface(
@@ -446,6 +520,7 @@ private fun CompactTabItem(
 @Composable
 private fun UnifiedAccountLoginSection(
     session: UnifiedAccountSession,
+    snapshot: LicenseSnapshot,
     activationCode: String,
     busy: Boolean,
     onActivationChange: (String) -> Unit,
@@ -501,7 +576,7 @@ private fun UnifiedAccountLoginSection(
                 }
             }
         } else {
-            // Connected Google Account Card (Unlicensed state)
+            // Connected Google Account Card (Unlicensed or awaiting activation)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -544,7 +619,7 @@ private fun UnifiedAccountLoginSection(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = "الحساب متصل | بانتظار الترخيص السحابي",
+                                text = if (snapshot.activationRequired) "الحساب بحاجة للتفعيل لأول مرة" else "الحساب متصل | بانتظار الترخيص السحابي",
                                 fontSize = 9.5.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -581,9 +656,9 @@ private fun UnifiedAccountLoginSection(
                 Text("التحقق من الترخيص السحابي الآن", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             }
 
-            // Manual Activation code field (for unlicensed accounts only)
+            // Manual Activation code field (Only shown for unlicensed accounts)
             Text(
-                text = "أو أدخل رمز التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
+                text = if (snapshot.activationRequired) "أدخل كود التفعيل لتفعيل حسابك لأول مرة:" else "أو أدخل كود التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -739,39 +814,55 @@ private fun CompactWhatsAppButton(
 
 @Composable
 private fun ActiveLicenseCompactCard(
+    snapshot: LicenseSnapshot,
     session: UnifiedAccountSession,
-    type: LicenseType?,
     onSignOut: () -> Unit
 ) {
+    val isLifetime = snapshot.isLifetime
+    val isTrial = snapshot.isTrialPlan
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Icon(
-                        Icons.Default.CheckCircle,
+                        Icons.Default.Verified,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        "الترخيص نشط ومُعتمد",
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Column {
+                        Text(
+                            text = if (isLifetime) "ترخيص مدى الحياة - نشط" else "نسخة تجريبية - نشطة",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (isTrial) {
+                            val remaining = snapshot.calculateRemainingDays() ?: snapshot.remainingDays ?: 0
+                            Text(
+                                text = "متبقي $remaining يوماً",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
 
                 if (session.isSignedIn) {
@@ -790,20 +881,35 @@ private fun ActiveLicenseCompactCard(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            if (!session.email.isNullOrBlank()) {
+            if (!session.email.isNullOrBlank() || !snapshot.email.isNullOrBlank()) {
                 Text(
-                    text = "الحساب: ${session.email}",
-                    fontSize = 10.5.sp,
+                    text = "الحساب: ${session.email ?: snapshot.email}",
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            } else {
-                Text(
-                    text = "نوع الترخيص: ${if (type == LicenseType.LOCAL) "ترخيص محلي" else "ترخيص حساب"}",
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            }
+
+            if (!snapshot.accountCode.isNullOrBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "كود الحساب: ${snapshot.accountCode}",
+                        fontSize = 10.5.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "الأجهزة: ${snapshot.maxDevices}",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Text(

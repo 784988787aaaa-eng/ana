@@ -1,6 +1,9 @@
 package com.smartledger.aldaftar.ui.root
 
+import android.app.Activity
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -15,10 +18,13 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.ui.components.WelcomeOnboardingDialog
 import com.smartledger.aldaftar.ui.main.MainAppLayout
 import com.smartledger.aldaftar.ui.screens.AppLockScreen
+import com.smartledger.aldaftar.ui.screens.license.DeviceReplacedDialog
 import com.smartledger.aldaftar.ui.theme.AppTheme
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
@@ -43,6 +49,24 @@ fun SmartLedgerApp(
     val settings by financeViewModel.settingsState.collectAsStateWithLifecycle()
     val settingsLoaded by financeViewModel.isSettingsLoaded.collectAsStateWithLifecycle()
     val themeMode by financeViewModel.themeModeState.collectAsStateWithLifecycle()
+    val deviceReplacedNotice by licenseViewModel.deviceReplacedNotice.collectAsStateWithLifecycle()
+
+    val googleClient = remember {
+        GoogleDriveInternalAuth(context).client()
+    }
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        runCatching {
+            GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                .getResult(com.google.android.gms.common.api.ApiException::class.java)
+        }.onSuccess { account ->
+            licenseViewModel.signInWithGoogle(account, account.serverAuthCode)
+        }.onFailure { ex ->
+            Toast.makeText(context, "تعذر تسجيل الدخول بحساب Google: ${ex.localizedMessage ?: ex.message}", Toast.LENGTH_LONG).show()
+        }
+    }
     val systemDark = isSystemInDarkTheme()
     val darkTheme = when (themeMode) {
         1 -> false
@@ -86,6 +110,17 @@ fun SmartLedgerApp(
 
     AppTheme(darkTheme = darkTheme) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            if (!deviceReplacedNotice.isNullOrBlank()) {
+                DeviceReplacedDialog(
+                    message = deviceReplacedNotice!!,
+                    onDismiss = { licenseViewModel.dismissDeviceReplacedNotice() },
+                    onReSignIn = {
+                        licenseViewModel.dismissDeviceReplacedNotice()
+                        googleSignInLauncher.launch(googleClient.signInIntent)
+                    }
+                )
+            }
+
             if (firstLaunch && showOnboarding) {
                 WelcomeOnboardingDialog(
                     onDismiss = {

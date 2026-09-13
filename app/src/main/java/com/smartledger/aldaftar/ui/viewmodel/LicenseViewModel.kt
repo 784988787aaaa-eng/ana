@@ -29,6 +29,9 @@ class LicenseViewModel(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    private val _deviceReplacedNotice = MutableStateFlow<String?>(null)
+    val deviceReplacedNotice: StateFlow<String?> = _deviceReplacedNotice.asStateFlow()
+
     private val _busy = MutableStateFlow(false)
     val isBusy: StateFlow<Boolean> = _busy.asStateFlow()
 
@@ -40,6 +43,17 @@ class LicenseViewModel(
                 _snapshot.value = session.licenseSnapshot
             }
         }
+
+        viewModelScope.launch {
+            repository.onDeviceReplaced.collect { notice ->
+                _deviceReplacedNotice.value = notice
+                _snapshot.value = repository.snapshot()
+            }
+        }
+    }
+
+    fun dismissDeviceReplacedNotice() {
+        _deviceReplacedNotice.value = null
     }
 
     fun isEligibleToCreate(): Boolean = repository.isEligibleToCreate()
@@ -49,22 +63,32 @@ class LicenseViewModel(
     }
 
     fun refresh() {
-        val snap = repository.snapshot()
-        _snapshot.value = snap
-        unifiedAccountRepository.updateLicenseSnapshot(snap)
+        viewModelScope.launch(Dispatchers.IO) {
+            val snap = repository.snapshot()
+            _snapshot.value = snap
+            unifiedAccountRepository.updateLicenseSnapshot(snap)
+        }
     }
 
     fun deviceCode(): String = repository.deviceCode()
+    fun deviceFingerprint(): String = repository.deviceFingerprint()
 
-    fun signInWithGoogle(account: GoogleSignInAccount, serverAuthCode: String? = null, onDone: (Boolean) -> Unit = {}) {
+    fun signInWithGoogle(
+        account: GoogleSignInAccount,
+        serverAuthCode: String? = null,
+        onDone: (Boolean) -> Unit = {}
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             _busy.value = true
             _message.value = null
+            _deviceReplacedNotice.value = null
             try {
                 val newSession = unifiedAccountRepository.signInWithGoogle(account, serverAuthCode)
                 _snapshot.value = newSession.licenseSnapshot
                 if (newSession.licenseSnapshot.isPaid) {
                     _message.value = "تم تسجيل الدخول وتفعيل الترخيص بنجاح"
+                } else if (newSession.licenseSnapshot.activationRequired) {
+                    _message.value = "تم تسجيل الدخول. الحساب بحاجة لإدخال رمز التفعيل لأول مرة."
                 } else {
                     _message.value = "تم تسجيل الدخول بالحساب بنجاح"
                 }
@@ -110,6 +134,11 @@ class LicenseViewModel(
                     unifiedAccountRepository.updateLicenseSnapshot(newSnap)
                     _message.value = "تم التحقق وتفعيل الترخيص السحابي بنجاح"
                     onDone(true)
+                } else if (newSnap != null && newSnap.activationRequired) {
+                    _snapshot.value = newSnap
+                    unifiedAccountRepository.updateLicenseSnapshot(newSnap)
+                    _message.value = "الحساب بحاجة لإدخال كود التفعيل لأول مرة"
+                    onDone(false)
                 } else {
                     _message.value = "هذا الحساب غير مسجل بترخيص سحابي مفعل بعد"
                     onDone(false)
@@ -186,7 +215,8 @@ class LicenseViewModel(
             _busy.value = true
             _message.value = null
             try {
-                val newSnap = repository.activateAccountOnline(accountCode, activationCode)
+                val email = session.value.email
+                val newSnap = repository.activateAccountOnline(accountCode, activationCode, email)
                 _snapshot.value = newSnap
                 unifiedAccountRepository.updateLicenseSnapshot(newSnap)
                 _message.value = "تم تفعيل حساب الترخيص بنجاح"
