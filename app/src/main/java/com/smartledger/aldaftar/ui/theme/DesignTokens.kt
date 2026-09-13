@@ -76,6 +76,9 @@ object MizanIconSizes {
 
 object MizanAnimationTokens {
     const val DURATION_FAST = 150
+    const val DURATION_DIALOG_ENTER = 160
+    const val DURATION_DIALOG_EXIT = 120
+    const val DURATION_CROSSFADE = 170
     const val DURATION_STANDARD = 260
     const val DURATION_MEDIUM = 300
     const val DURATION_LONG = 400

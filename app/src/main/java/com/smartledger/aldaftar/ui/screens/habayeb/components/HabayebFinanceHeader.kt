@@ -126,7 +126,6 @@ fun HabayebFinanceHeader(
                 ) {
                     IconButton(
                         onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onMenuClick()
                         },
                         modifier = Modifier

@@ -50,29 +50,28 @@ fun AppNavigationDrawer(
     onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
     versionName: String,
     onComprehensiveReportClick: () -> Unit,
+    onBusinessProfileClick: () -> Unit,
+    onCurrencySettingsClick: () -> Unit,
+    onSecurityClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val supportPhoneNumber = stringResource(id = R.string.support_phone_number)
     val licenseSnapshot by licenseViewModel.snapshot.collectAsStateWithLifecycle()
-    
-    var isShowingCurrencySettings by remember { mutableStateOf(false) }
-    var isShowingBusinessProfile by remember { mutableStateOf(false) }
-    var isShowingSecuritySettings by remember { mutableStateOf(false) }
 
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.surface,
         modifier = modifier
-            .fillMaxWidth(0.85f)
-            .widthIn(max = 310.dp)
+            .fillMaxWidth(0.78f)
+            .widthIn(min = 260.dp, max = 300.dp)
             .fillMaxHeight(),
         windowInsets = WindowInsets(0, 0, 0, 0)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
                 .background(MaterialTheme.colorScheme.primary)
         ) {
             Box(
@@ -88,7 +87,7 @@ fun AppNavigationDrawer(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .statusBarsPadding()
-                        .padding(8.dp)
+                        .padding(6.dp)
                 ) {
                     Icon(
                         imageVector = if (isDark) Icons.Default.WbSunny else Icons.Default.NightsStay,
@@ -102,12 +101,12 @@ fun AppNavigationDrawer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 22.dp),
+                        .padding(horizontal = 20.dp, vertical = 18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(48.dp)
                             .background(
                                 color = MaterialTheme.mizanColors.headerControlContainer,
                                 shape = CircleShape
@@ -122,7 +121,7 @@ fun AppNavigationDrawer(
                         )
                     }
                     
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
                         text = stringResource(id = R.string.app_name_main),
@@ -134,7 +133,7 @@ fun AppNavigationDrawer(
             }
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         
         Column(
             modifier = Modifier
@@ -142,52 +141,40 @@ fun AppNavigationDrawer(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.People,
                 label = stringResource(id = R.string.drawer_business_profile_label),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    isShowingBusinessProfile = true
-                }
+                onClick = onBusinessProfileClick
             )
 
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Assessment,
                 label = stringResource(id = R.string.drawer_comprehensive_report_label),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onComprehensiveReportClick()
-                }
+                onClick = onComprehensiveReportClick
             )
             
             DrawerItem(
                 selected = false,
-                icon = Icons.Default.Settings,
+                icon = Icons.Default.MonetizationOn,
                 label = stringResource(id = R.string.drawer_currency_label),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    isShowingCurrencySettings = true
-                }
+                onClick = onCurrencySettingsClick
             )
             
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Lock,
                 label = stringResource(id = R.string.drawer_security_label),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    isShowingSecuritySettings = true
-                }
+                onClick = onSecurityClick
             )
             
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Verified,
-                label = if (licenseSnapshot.isPaid) "✓ الترخيص مفعل" else "الترخيص والتفعيل",
+                label = if (licenseSnapshot.isPaid) stringResource(id = R.string.drawer_license_active) else stringResource(id = R.string.drawer_license_label),
                 onClick = onLicenseClick
             )
 
@@ -197,7 +184,6 @@ fun AppNavigationDrawer(
                 label = stringResource(id = R.string.drawer_trash_label),
                 onClick = { onScreenSelected(Screen.TRASH) }
             )
-
 
             DrawerItem(
                 selected = false,
@@ -210,12 +196,12 @@ fun AppNavigationDrawer(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), thickness = 1.dp)
-            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = stringResource(id = R.string.drawer_app_version, versionName),
@@ -225,7 +211,7 @@ fun AppNavigationDrawer(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             
             Text(
                 text = stringResource(id = R.string.developer_credit),
@@ -235,7 +221,7 @@ fun AppNavigationDrawer(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -243,6 +229,7 @@ fun AppNavigationDrawer(
             ) {
                 ContactIcon(
                     icon = Icons.Default.Call,
+                    contentDescription = stringResource(id = R.string.settings_desc_call_support),
                     onClick = {
                         dialPhoneNumber(context, supportPhoneNumber)
                     }
@@ -250,6 +237,7 @@ fun AppNavigationDrawer(
                 
                 ContactIcon(
                     icon = Icons.Default.Share,
+                    contentDescription = stringResource(id = R.string.whatsapp_contact_msg),
                     onClick = {
                         val msg = context.getString(R.string.whatsapp_contact_msg)
                         openWhatsAppChat(context, supportPhoneNumber, msg)
@@ -257,28 +245,5 @@ fun AppNavigationDrawer(
                 )
             }
         }
-    }
-
-    if (isShowingCurrencySettings) {
-        CurrencySettingsDialog(
-            settings = settings,
-            onSaveSettings = onSaveSettings,
-            onDismiss = { isShowingCurrencySettings = false }
-        )
-    }
-
-    if (isShowingBusinessProfile) {
-        BusinessProfileDialog(
-            viewModel = businessProfileViewModel,
-            onDismiss = { isShowingBusinessProfile = false }
-        )
-    }
-
-    if (isShowingSecuritySettings) {
-        SecurityDialog(
-            settings = settings,
-            viewModel = securityViewModel,
-            onDismiss = { isShowingSecuritySettings = false }
-        )
     }
 }

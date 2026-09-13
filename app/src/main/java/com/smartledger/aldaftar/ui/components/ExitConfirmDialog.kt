@@ -1,6 +1,5 @@
 package com.smartledger.aldaftar.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.mizanColors
 
 @Composable
 fun ExitConfirmDialog(
@@ -27,21 +25,16 @@ fun ExitConfirmDialog(
 
     var dontShowAgain by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.mizanColors.dialogScrim)
-            .clickable { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissWithAnimation ->
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
-                .widthIn(max = 310.dp)
-                .fillMaxWidth(0.80f)
-                .clickable(enabled = false) { } // منع انتقال الحدث.
+                .widthIn(max = 320.dp)
+                .fillMaxWidth(0.85f)
         ) {
             Column(
                 modifier = Modifier
@@ -53,7 +46,7 @@ fun ExitConfirmDialog(
                     text = stringResource(id = R.string.dialog_exit_title),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary, // اتساق الهوية.
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -62,10 +55,10 @@ fun ExitConfirmDialog(
 
                 Text(
                     text = stringResource(id = R.string.dialog_exit_message),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    fontSize = 13.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
-                    lineHeight = 18.sp
+                    lineHeight = 19.sp
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -73,6 +66,7 @@ fun ExitConfirmDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .defaultMinSize(minHeight = 48.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { dontShowAgain = !dontShowAgain }
                         .padding(horizontal = 4.dp, vertical = 6.dp),
@@ -83,14 +77,14 @@ fun ExitConfirmDialog(
                         checked = dontShowAgain,
                         onCheckedChange = { dontShowAgain = it },
                         colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = stringResource(id = R.string.dialog_exit_dont_show_again),
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
 
@@ -102,17 +96,17 @@ fun ExitConfirmDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = onDismiss,
+                        onClick = dismissWithAnimation,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .weight(1f)
-                            .height(42.dp)
+                            .defaultMinSize(minHeight = 48.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.common_cancel),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.5.sp
                         )
                     }
 
@@ -122,13 +116,13 @@ fun ExitConfirmDialog(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .weight(1.2f)
-                            .height(42.dp)
+                            .defaultMinSize(minHeight = 48.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.dialog_exit_confirm),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.5.sp
                         )
                     }
                 }

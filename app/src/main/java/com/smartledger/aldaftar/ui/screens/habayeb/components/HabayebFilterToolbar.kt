@@ -103,12 +103,12 @@ fun HabayebFilterToolbar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .padding(horizontal = 8.dp, vertical = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp)
+                .height(36.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(surfaceContainer)
                 .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -122,7 +122,6 @@ fun HabayebFilterToolbar(
                 label = stringResource(id = R.string.habayeb_filter_all) + " " + allCount,
                 activeThemeColor = activeThemeColor,
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onCategorySelected(null)
                     activeCategoryOptions = null
                     onScrollToTop()
@@ -227,7 +226,6 @@ fun HabayebFilterToolbar(
                                     label = "$displayName $count",
                                     activeThemeColor = activeThemeColor,
                                     onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         if (isSelected) {
                                             activeCategoryOptions = if (activeCategoryOptions == categoryKey) null else categoryKey
                                         } else {
@@ -247,7 +245,6 @@ fun HabayebFilterToolbar(
                                     label = "$displayName $count",
                                     activeThemeColor = activeThemeColor,
                                     onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         if (isSelected) {
                                             activeCategoryOptions = if (activeCategoryOptions == categoryKey) null else categoryKey
                                         } else {
@@ -278,7 +275,6 @@ fun HabayebFilterToolbar(
                             .clip(CircleShape)
                             .background(activeThemeColor.copy(alpha = 0.12f))
                             .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onAddCategoryClick()
                             },
                         contentAlignment = Alignment.Center
@@ -300,7 +296,6 @@ fun HabayebFilterToolbar(
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                         IconButton(
                             onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 isSortMenuExpanded = true
                             },
                             modifier = Modifier
@@ -325,7 +320,6 @@ fun HabayebFilterToolbar(
                         onFinancialSortModeChanged = onFinancialSortModeChanged,
                         onHistoricalSortModeChanged = onHistoricalSortModeChanged,
                         onScrollToTop = onScrollToTop,
-                        haptic = haptic,
                         neutralWhite = neutralWhite,
                         textPrimary = textPrimary,
                         backgroundLight = backgroundLight
@@ -335,7 +329,7 @@ fun HabayebFilterToolbar(
         }
 
         activeCategoryOptions?.let { categoryKey ->
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             CategoryOptionsPanel(
                 categoryKey = categoryKey,
                 closedCategoryName = closedCategoryName,

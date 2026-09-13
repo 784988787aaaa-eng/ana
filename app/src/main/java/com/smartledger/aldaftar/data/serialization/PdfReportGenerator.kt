@@ -28,7 +28,9 @@ import com.smartledger.aldaftar.ui.state.CustomerUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -57,13 +59,18 @@ object PdfReportGenerator {
         )
 
         var totalPages = 1
+        val headerData = BusinessProfileLoader.load(context, businessProfile)
+        val headerBottomYCalc = PdfPageRenderer.calculateHeaderBottomY(
+            headerData.displayedName, headerData.displayedDesc, headerData.phonesStr, headerData.hasLogo, headerData.logoH
+        )
+
         var dryPageCount = 1
         PdfPageRenderer.drawCustomerStatementSheet(
             canvas = null,
             context = context,
             customer = customerUiState,
             summary = summary,
-            startY = 98f,
+            startY = headerBottomYCalc + 20f,
             primaryColorHex = primaryColorHex,
             currencySymbol = currencySymbol,
             isDryRun = true,
@@ -75,7 +82,6 @@ object PdfReportGenerator {
         )
         totalPages = dryPageCount
 
-        val header = BusinessProfileLoader.load(context, businessProfile)
         val pdfDocument = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
@@ -87,15 +93,15 @@ object PdfReportGenerator {
             var canvas = page.canvas
 
             val now = Date()
-            PdfPageRenderer.drawBusinessHeader(
+            val headerBottomY = PdfPageRenderer.drawBusinessHeader(
                 canvas = canvas,
-                displayedName = header.displayedName,
-                displayedDesc = header.displayedDesc,
-                phonesStr = header.phonesStr,
-                hasLogo = header.hasLogo,
-                scaledLogo = header.scaledLogo,
-                logoW = header.logoW,
-                logoH = header.logoH,
+                displayedName = headerData.displayedName,
+                displayedDesc = headerData.displayedDesc,
+                phonesStr = headerData.phonesStr,
+                hasLogo = headerData.hasLogo,
+                scaledLogo = headerData.scaledLogo,
+                logoW = headerData.logoW,
+                logoH = headerData.logoH,
                 docDateText = context.getString(R.string.pdf_doc_date, PdfPageRenderer.formatDayAr(now), PdfPageRenderer.formatDateEn(now)),
                 docTimeText = context.getString(R.string.pdf_doc_time, PdfPageRenderer.formatTimeAr(now))
             )
@@ -106,14 +112,14 @@ object PdfReportGenerator {
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }
-            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, 74f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, (headerBottomY - 4f).coerceAtLeast(65f), 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
             PdfPageRenderer.drawCustomerStatementSheet(
                 canvas = canvas,
                 context = context,
                 customer = customerUiState,
                 summary = summary,
-                startY = 98f,
+                startY = headerBottomY + 20f,
                 primaryColorHex = primaryColorHex,
                 currencySymbol = currencySymbol,
                 isDryRun = false,
@@ -153,11 +159,11 @@ object PdfReportGenerator {
             null
         } finally {
             pdfDocument.close()
-            PdfIntentLauncher.recycleBitmapsSafely(header.rawBitmap, header.scaledLogo)
+            PdfIntentLauncher.recycleBitmapsSafely(headerData.rawBitmap, headerData.scaledLogo)
         }
     }
 
-    private fun generateAllCustomersPdfFileInternal(
+    private suspend fun generateAllCustomersPdfFileInternal(
         context: Context,
         customers: List<CustomerUiState>,
         businessProfile: BusinessProfile,
@@ -167,9 +173,14 @@ object PdfReportGenerator {
         val summary = PdfReportCalculator.calculateComprehensiveReport(customers)
         val totalItems = customers.size
 
+        val header = BusinessProfileLoader.load(context, businessProfile)
+        val headerBottomYCalc = PdfPageRenderer.calculateHeaderBottomY(
+            header.displayedName, header.displayedDesc, header.phonesStr, header.hasLogo, header.logoH
+        )
+
         var totalPages = 1
         run {
-            var dryY = 186f
+            var dryY = headerBottomYCalc + 108f
             var dryPages = 1
             for (c in customers) {
                 val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
@@ -182,7 +193,6 @@ object PdfReportGenerator {
             totalPages = dryPages
         }
 
-        val header = BusinessProfileLoader.load(context, businessProfile)
         val pdfDocument = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
@@ -197,7 +207,7 @@ object PdfReportGenerator {
             val docDateText = context.getString(R.string.pdf_doc_date, PdfPageRenderer.formatDayAr(now), PdfPageRenderer.formatDateEn(now))
             val docTimeText = context.getString(R.string.pdf_doc_time, PdfPageRenderer.formatTimeAr(now))
 
-            PdfPageRenderer.drawBusinessHeader(
+            val headerBottomY = PdfPageRenderer.drawBusinessHeader(
                 canvas = canvas,
                 displayedName = header.displayedName,
                 displayedDesc = header.displayedDesc,
@@ -216,7 +226,7 @@ object PdfReportGenerator {
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }
-            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_title), 25f, 74f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_title), 25f, (headerBottomY - 4f).coerceAtLeast(65f), 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
             PdfRowRenderer.drawComprehensiveSummaryCard(
                 canvas = canvas,
@@ -225,14 +235,15 @@ object PdfReportGenerator {
                 summary = summary,
                 totalItems = totalItems,
                 currencySymbol = currencySymbol,
-                startY = 94f
+                startY = headerBottomY + 16f
             )
 
-            PdfPageRenderer.drawAllCustomersTableHeader(canvas, 156f, context)
+            PdfPageRenderer.drawAllCustomersTableHeader(canvas, headerBottomY + 78f, context)
 
-            var currentY = 186f
+            var currentY = headerBottomY + 108f
 
             for ((index, c) in customers.withIndex()) {
+                kotlin.coroutines.coroutineContext.ensureActive()
                 val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
                 if (currentY + rowHeight > 760f) {
                     PdfPageRenderer.drawFooter(canvas, currentPageNumber, totalPages, primaryColorHex, context)
@@ -358,14 +369,16 @@ object PdfReportGenerator {
         action: PdfAction,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
         onFinished: () -> Unit = {}
-    ) {
-        scope.launch(Dispatchers.IO) {
+    ): Job {
+        return scope.launch(Dispatchers.IO) {
             try {
                 val file = generateAllCustomersPdfFileInternal(context, customers, businessProfile, currencySymbol, primaryColorHex)
+                coroutineContext.ensureActive()
                 withContext(Dispatchers.Main) {
                     triggerShareOrViewIntent(context, file, action)
                 }
             } catch (e: CancellationException) {
+                Log.i(TAG, "All customers PDF generation cancelled")
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error generating all customers PDF async", e)

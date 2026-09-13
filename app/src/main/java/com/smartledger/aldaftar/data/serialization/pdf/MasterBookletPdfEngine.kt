@@ -117,7 +117,10 @@ object MasterBookletPdfEngine {
                         reportMetaData = reportMetaData
                     )
 
-                    dryCtx.currentY = 78f
+                    val headerBottomY = PdfPageRenderer.calculateHeaderBottomY(
+                        dryCtx.displayedName, dryCtx.displayedDesc, dryCtx.phonesStr, dryCtx.hasLogo, dryCtx.logoH
+                    )
+                    dryCtx.currentY = headerBottomY
 
                     val customerChunks = targetCustomers.chunked(50)
                     var processedCount = 0
@@ -158,12 +161,12 @@ object MasterBookletPdfEngine {
 
                 val canvas = realCtx.currentPageCanvas
                 if (canvas != null) {
-                    PdfPageRenderer.drawBusinessHeader(
+                    val headerBottomY = PdfPageRenderer.drawBusinessHeader(
                         canvas, realCtx.displayedName, realCtx.displayedDesc, realCtx.phonesStr,
                         realCtx.hasLogo, realCtx.scaledLogo, realCtx.logoW, realCtx.logoH, realCtx.docDateText, realCtx.docTimeText
                     )
+                    realCtx.currentY = headerBottomY
                 }
-                realCtx.currentY = 78f
 
                 val customerChunks = targetCustomers.chunked(50)
                 var processedCount = 0
@@ -230,7 +233,10 @@ object MasterBookletPdfEngine {
     }
 
     private fun drawCoverAndIndexDryRun(ctx: BookletDrawingContext, customers: List<CustomerUiState>) {
-        ctx.currentY = 78f
+        val headerBottomY = PdfPageRenderer.calculateHeaderBottomY(
+            ctx.displayedName, ctx.displayedDesc, ctx.phonesStr, ctx.hasLogo, ctx.logoH
+        )
+        ctx.currentY = headerBottomY
         ctx.currentY += 22f
         ctx.currentY += 18f
 
@@ -255,11 +261,11 @@ object MasterBookletPdfEngine {
         val context = ctx.context
         val canvas = ctx.currentPageCanvas ?: return
 
-        PdfPageRenderer.drawBusinessHeader(
+        val headerBottomY = PdfPageRenderer.drawBusinessHeader(
             canvas, ctx.displayedName, ctx.displayedDesc, ctx.phonesStr,
             ctx.hasLogo, ctx.scaledLogo, ctx.logoW, ctx.logoH, ctx.docDateText, ctx.docTimeText
         )
-        ctx.currentY = 78f
+        ctx.currentY = headerBottomY
 
         val paintTitle = Paint().apply {
             color = Color.parseColor(ctx.primaryColorHex)

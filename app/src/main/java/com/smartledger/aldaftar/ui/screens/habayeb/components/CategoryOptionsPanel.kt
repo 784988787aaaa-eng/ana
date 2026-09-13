@@ -152,21 +152,17 @@ private fun OptionCircularIconButton(
     tint: Color,
     backgroundColor: Color = MaterialTheme.colorScheme.surface
 ) {
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     IconButton(
-        onClick = {
-            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
+        onClick = onClick,
         modifier = Modifier
-            .size(24.dp)
+            .size(36.dp)
             .background(backgroundColor, CircleShape)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = tint,
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(18.dp)
         )
     }
 }

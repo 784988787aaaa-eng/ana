@@ -246,6 +246,37 @@ class BackupSyncViewModel(
         }
     }
 
+    fun restoreLatestCloudBackup(
+        onConfirmationRequired: (CloudBackupFile) -> Unit,
+        onError: (Int) -> Unit
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _busy.value = true
+            _busyMessage.value = null
+            _error.value = null
+            val currentList = _cloudBackups.value
+            val list = if (currentList.isNotEmpty()) {
+                currentList
+            } else if (_cloudConnected.value || cloud.connected()) {
+                val fetched = runCatching { cloud.list("") }.getOrDefault(emptyList())
+                _cloudBackups.value = fetched
+                fetched
+            } else {
+                emptyList()
+            }
+            _busy.value = false
+
+            val latest = list.maxByOrNull { it.modifiedTime } ?: list.firstOrNull()
+            withContext(Dispatchers.Main) {
+                if (latest != null) {
+                    onConfirmationRequired(latest)
+                } else {
+                    onError(com.smartledger.aldaftar.R.string.backup_err_no_backups_found)
+                }
+            }
+        }
+    }
+
     fun restoreCloud(
         item: CloudBackupFile,
         recoveryCode: String? = null,

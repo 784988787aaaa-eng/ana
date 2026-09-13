@@ -51,9 +51,6 @@ fun SmartLedgerApp(
     val themeMode by financeViewModel.themeModeState.collectAsStateWithLifecycle()
     val deviceReplacedNotice by licenseViewModel.deviceReplacedNotice.collectAsStateWithLifecycle()
 
-    val googleClient = remember {
-        GoogleDriveInternalAuth(context).client()
-    }
     val googleSignInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -93,6 +90,7 @@ fun SmartLedgerApp(
     }
 
     LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1200)
         habayebViewModel.processRecurringTransactions { count ->
             if (count > 0) {
                 Toast.makeText(
@@ -116,7 +114,8 @@ fun SmartLedgerApp(
                     onDismiss = { licenseViewModel.dismissDeviceReplacedNotice() },
                     onReSignIn = {
                         licenseViewModel.dismissDeviceReplacedNotice()
-                        googleSignInLauncher.launch(googleClient.signInIntent)
+                        val client = GoogleDriveInternalAuth(context).client()
+                        googleSignInLauncher.launch(client.signInIntent)
                     }
                 )
             }

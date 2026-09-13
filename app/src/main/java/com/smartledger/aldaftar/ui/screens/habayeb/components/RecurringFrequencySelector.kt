@@ -92,7 +92,6 @@ fun RecurringFrequencySelector(
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (selected) activeThemeColor else Color.Transparent)
                     .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onFrequencyChange(key)
                     },
                 contentAlignment = Alignment.Center
@@ -118,7 +117,6 @@ fun RecurringFrequencySelector(
                     daysOfWeek = arabicDaysOfWeek,
                     activeColor = activeThemeColor,
                     onDayToggle = { dayInt ->
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         val isSelected = selectedDaysOfWeek.contains(dayInt)
                         val updated = if (isSelected) {
                             if (selectedDaysOfWeek.size > 1) selectedDaysOfWeek - dayInt else selectedDaysOfWeek
@@ -134,7 +132,6 @@ fun RecurringFrequencySelector(
                     selectedDays = selectedDaysOfMonth,
                     activeColor = activeThemeColor,
                     onDayToggle = { dayNum ->
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         val isSelected = selectedDaysOfMonth.contains(dayNum)
                         val updated = if (isSelected) {
                             if (selectedDaysOfMonth.size > 1) selectedDaysOfMonth - dayNum else selectedDaysOfMonth

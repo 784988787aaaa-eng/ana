@@ -108,7 +108,7 @@ object AddCustomerSaveHelper {
                     val finalAmountBd = if (isForeignSelected && applyExchangeRate) finalEquivalentAmountBd else actualInitialAmountBd
                     val finalDetails = if (notesStr.trim().isBlank()) context.getString(R.string.habayeb_opening_balance_default_desc) else notesStr.trim()
 
-                    viewModel.saveHabayebCustomer(
+                    val saved = viewModel.saveHabayebCustomer(
                         customer = newCustomer,
                         initialAmount = finalAmountBd,
                         initialType = currentType,
@@ -122,9 +122,13 @@ object AddCustomerSaveHelper {
                         equivalentAmount = finalEquivalentAmountBd
                     )
 
-                    Toast.makeText(context, context.getString(R.string.habayeb_toast_save_success), Toast.LENGTH_SHORT).show()
-                    onSuccess(newCustomerId)
-                    onDismiss()
+                    if (saved) {
+                        Toast.makeText(context, context.getString(R.string.habayeb_toast_save_success), Toast.LENGTH_SHORT).show()
+                        onSuccess(newCustomerId)
+                        onDismiss()
+                    } else {
+                        onIsSavingChange(false)
+                    }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

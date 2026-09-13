@@ -134,13 +134,9 @@ kotlinx.coroutines.android.awaitFrame()
         if (phone.isNotBlank()) phoneStr = phone
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = true
-        )
-    ) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = RoundedCornerShape(12.dp),
@@ -151,7 +147,14 @@ kotlinx.coroutines.android.awaitFrame()
                     .imePadding()
                     .padding(2.dp)
             ) {
-                Crossfade(targetState = showRateSetupOverlay, label = "CustomerFormTransition") { isSetup ->
+                Crossfade(
+                    targetState = showRateSetupOverlay,
+                    label = "CustomerFormTransition",
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.DURATION_CROSSFADE,
+                        easing = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.easeInOut
+                    )
+                ) { isSetup ->
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false
@@ -189,12 +192,12 @@ kotlinx.coroutines.android.awaitFrame()
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                                IconButton(onClick = dismissDialog, modifier = Modifier.size(36.dp)) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = stringResource(id = R.string.habayeb_cancel),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                                 Text(
@@ -205,7 +208,7 @@ kotlinx.coroutines.android.awaitFrame()
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Spacer(modifier = Modifier.size(24.dp))
+                                Spacer(modifier = Modifier.size(36.dp))
                             }
 
                             AddCustomerFormFields(

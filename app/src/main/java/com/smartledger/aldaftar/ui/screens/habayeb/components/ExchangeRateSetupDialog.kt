@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -105,9 +106,9 @@ fun ExchangeRateSetupContent(
     }
 
     LaunchedEffect(Unit) {
-kotlinx.coroutines.delay(150)
-            focusRequester.requestFocus()
-            keyboardController?.show()
+        kotlinx.coroutines.android.awaitFrame()
+        focusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     val mizanColors = MaterialTheme.mizanColors
@@ -163,10 +164,10 @@ kotlinx.coroutines.delay(150)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(30.dp)
+                    .defaultMinSize(minHeight = 36.dp)
                     .border(1.dp, inputBorderColor, RoundedCornerShape(4.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
                 BasicTextField(
@@ -182,6 +183,7 @@ kotlinx.coroutines.delay(150)
                         .onFocusChanged { isFocused = it.isFocused }
                         .focusRequester(focusRequester),
                     singleLine = true,
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(activeThemeColor),
                     textStyle = TextStyle(
                         textAlign = TextAlign.Center,
                         fontSize = 12.sp,
@@ -285,7 +287,7 @@ kotlinx.coroutines.delay(150)
                     onClick = onDismiss,
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .defaultMinSize(minHeight = 36.dp),
                     shape = RoundedCornerShape(4.dp),
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -310,7 +312,7 @@ kotlinx.coroutines.delay(150)
                     },
                     modifier = Modifier
                         .weight(1.2f)
-                        .height(32.dp),
+                        .defaultMinSize(minHeight = 36.dp),
                     shape = RoundedCornerShape(4.dp),
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(

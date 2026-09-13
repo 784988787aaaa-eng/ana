@@ -45,7 +45,7 @@ fun HabayebDualMetricCards(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = 4.dp),
+            .padding(top = 6.dp, start = 16.dp, end = 16.dp, bottom = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

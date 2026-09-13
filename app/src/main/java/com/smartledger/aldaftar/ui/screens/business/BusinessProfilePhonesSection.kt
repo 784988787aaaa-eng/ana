@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens.business
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,9 +23,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -47,6 +52,13 @@ fun BusinessProfilePhonesSection(
     activeThemeColor: Color
 ) {
     val focusManager = LocalFocusManager.current
+    val focusRequesters = remember(phoneList.size) { List(phoneList.size) { FocusRequester() } }
+
+    LaunchedEffect(phoneList.size) {
+        if (phoneList.size > 1) {
+            focusRequesters.lastOrNull()?.requestFocus()
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -74,6 +86,8 @@ fun BusinessProfilePhonesSection(
                 val secLabel = stringResource(id = R.string.biz_label_secondary_phone, index + 1)
                 val phoneLabel = if (index == 0) primaryLabel else secLabel
                 val placeholderText = stringResource(id = R.string.biz_placeholder_phone)
+                val focusRequester = focusRequesters.getOrNull(index) ?: remember { FocusRequester() }
+                val isLastItem = index == phoneList.lastIndex
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -87,20 +101,29 @@ fun BusinessProfilePhonesSection(
                         placeholder = { Text(text = placeholderText, fontSize = 13.sp) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = activeThemeColor,
                             focusedLabelColor = activeThemeColor,
                             cursorColor = activeThemeColor
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = if (isLastItem) ImeAction.Done else ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                            onDone = { focusManager.clearFocus() }
+                        ),
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
                     )
 
                     if (index > 0) {
                         IconButton(
                             onClick = { onRemovePhone(index) },
+                            modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
                             colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(
@@ -113,6 +136,7 @@ fun BusinessProfilePhonesSection(
                     if (index == phoneList.lastIndex && phoneList.size < 3) {
                         IconButton(
                             onClick = { onAddPhone() },
+                            modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
                             colors = IconButtonDefaults.iconButtonColors(contentColor = activeThemeColor)
                         ) {
                             Icon(

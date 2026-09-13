@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -155,7 +156,7 @@ fun ReorderCommitmentDialog(
 
         LaunchedEffect(Unit) {
             try {
-                kotlinx.coroutines.delay(120)
+                kotlinx.coroutines.android.awaitFrame()
                 focusRequester.requestFocus()
                 keyboardController?.show()
             } catch (e: Exception) {
@@ -182,8 +183,8 @@ fun ReorderCommitmentDialog(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Surface(
                     modifier = Modifier
-                        .widthIn(max = 280.dp)
-                        .fillMaxWidth(0.78f)
+                        .widthIn(max = 340.dp)
+                        .fillMaxWidth(0.90f)
                         .clip(RoundedCornerShape(20.dp)),
                     shadowElevation = 8.dp,
                     color = MaterialTheme.colorScheme.surface,
@@ -195,21 +196,21 @@ fun ReorderCommitmentDialog(
                             .navigationBarsPadding()
                             .imePadding()
                             .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.ledger_reorder_dialog_title),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 14.sp,
+                            fontSize = 15.sp,
                             textAlign = TextAlign.Center
                         )
 
                         Text(
                             text = stringResource(id = R.string.ledger_reorder_dialog_prompt, reorderCommitmentTarget.name),
-                            fontSize = 12.sp,
+                            fontSize = 12.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
@@ -226,7 +227,7 @@ fun ReorderCommitmentDialog(
                             ),
                             keyboardActions = KeyboardActions(onDone = { applyAction() }),
                             singleLine = true,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
@@ -236,8 +237,8 @@ fun ReorderCommitmentDialog(
                                 unfocusedContainerColor = Color.Transparent
                             ),
                             modifier = Modifier
-                                .width(70.dp)
-                                .height(44.dp)
+                                .width(88.dp)
+                                .defaultMinSize(minHeight = 48.dp)
                                 .focusRequester(focusRequester),
                             textStyle = TextStyle(
                                 textAlign = TextAlign.Center,
@@ -251,13 +252,13 @@ fun ReorderCommitmentDialog(
                             Text(
                                 text = errorMsg,
                                 color = MaterialTheme.colorScheme.error,
-                                fontSize = 10.5.sp,
+                                fontSize = 11.sp,
                                 textAlign = TextAlign.Center
                             )
                         } else {
                             Text(
                                 text = "(من 1 إلى $commitmentsSize)",
-                                fontSize = 11.sp,
+                                fontSize = 11.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                 textAlign = TextAlign.Center
                             )
@@ -273,18 +274,18 @@ fun ReorderCommitmentDialog(
                             OutlinedButton(
                                 onClick = onDismiss,
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(36.dp),
+                                    .height(com.smartledger.aldaftar.ui.theme.MizanTouchTarget.standardButtonHeight),
                                 contentPadding = PaddingValues(vertical = 0.dp)
                             ) {
                                 Text(
-                                    text = "إلغاء",
-                                    fontSize = 12.sp,
+                                    text = stringResource(id = R.string.common_cancel),
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -292,16 +293,16 @@ fun ReorderCommitmentDialog(
                             Button(
                                 onClick = { applyAction() },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
-                                    .weight(1.1f)
-                                    .height(36.dp),
+                                    .weight(1.2f)
+                                    .height(com.smartledger.aldaftar.ui.theme.MizanTouchTarget.standardButtonHeight),
                                 contentPadding = PaddingValues(vertical = 0.dp)
                             ) {
                                 Text(
-                                    text = "تطبيق",
+                                    text = stringResource(id = R.string.ledger_reorder_apply),
                                     color = MaterialTheme.colorScheme.onPrimary,
-                                    fontSize = 12.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }

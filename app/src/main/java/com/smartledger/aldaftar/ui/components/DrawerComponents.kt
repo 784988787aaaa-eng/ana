@@ -2,13 +2,17 @@ package com.smartledger.aldaftar.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,8 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.sp
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
 fun DrawerItem(
@@ -28,23 +32,23 @@ fun DrawerItem(
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val accentColor = MaterialTheme.colorScheme.secondary
-    val containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
+    val containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent
     val textPrimary = MaterialTheme.colorScheme.onSurface
     val fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
     Surface(
         onClick = onClick,
         color = containerColor,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(MizanTouchTarget.standardButtonHeight)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
@@ -54,12 +58,13 @@ fun DrawerItem(
                     tint = primaryColor,
                     modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = label,
                     fontSize = 14.sp,
                     fontWeight = fontWeight,
-                    color = textPrimary
+                    color = textPrimary,
+                    maxLines = 1
                 )
             }
 
@@ -67,7 +72,7 @@ fun DrawerItem(
                 Box(
                     modifier = Modifier
                         .width(4.dp)
-                        .fillMaxHeight(0.6f)
+                        .fillMaxHeight(0.55f)
                         .align(Alignment.CenterEnd)
                         .background(
                             color = accentColor,
@@ -82,25 +87,36 @@ fun DrawerItem(
 @Composable
 fun ContactIcon(
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    contentDescription: String? = null
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+    val backgroundLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
 
     Box(
         modifier = Modifier
-            .padding(2.dp)
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(backgroundLight)
-            .clickable { onClick() },
+            .size(MizanTouchTarget.minimum)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true, radius = 22.dp),
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = primaryColor,
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(backgroundLight),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = primaryColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
+

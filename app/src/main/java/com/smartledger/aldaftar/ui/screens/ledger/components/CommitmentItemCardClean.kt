@@ -32,6 +32,9 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.ui.theme.isDark
 import com.smartledger.aldaftar.ui.theme.mizanColors
+import androidx.compose.ui.text.style.TextOverflow
+import com.smartledger.aldaftar.ui.theme.MizanIconSizes
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import java.math.BigDecimal
 
 private fun String.toWesternDigits(): String {
@@ -95,8 +98,8 @@ fun CommitmentItemCardClean(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 11.dp, vertical = 9.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -105,47 +108,57 @@ fun CommitmentItemCardClean(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f, fill = false)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.weight(1f, fill = true)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(MizanTouchTarget.minimum)
                             .clip(CircleShape)
-                            .background(if (isCovered) mizanColors.credit else Color.Transparent)
-                            .border(
-                                1.5.dp,
-                                if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                                CircleShape
-                            )
                             .clickable {
                                 onCheckedChange(fc, !isCovered)
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isCovered) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(12.dp)
-                            )
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(CircleShape)
+                                .background(if (isCovered) mizanColors.credit else Color.Transparent)
+                                .border(
+                                    1.5.dp,
+                                    if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isCovered) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
                         }
                     }
 
                     Text(
                         text = fc.name.toWesternDigits(),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.5.sp,
+                        fontSize = 14.sp,
                         color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(start = 4.dp)
                 ) {
                     if (isCovered) {
                         Surface(
@@ -220,17 +233,17 @@ fun CommitmentItemCardClean(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     IconButton(
                         onClick = { onEditCommitmentClick(fc) },
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(MizanTouchTarget.minimum)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(id = R.string.ledger_edit_commitment_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-                            modifier = Modifier.size(13.dp)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                            modifier = Modifier.size(MizanIconSizes.sm)
                         )
                     }
 
@@ -239,20 +252,20 @@ fun CommitmentItemCardClean(
                             onDeleteClick(fc)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         },
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(MizanTouchTarget.minimum)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(id = R.string.ledger_commitment_delete),
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.65f),
-                            modifier = Modifier.size(13.dp)
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                            modifier = Modifier.size(MizanIconSizes.sm)
                         )
                     }
 
                     var dragOffset by remember { mutableFloatStateOf(0f) }
                     Box(
                         modifier = Modifier
-                            .size(26.dp)
+                            .size(MizanTouchTarget.minimum)
                             .clip(CircleShape)
                             .clickable {
                                 onSetReorderTarget(fc)
@@ -263,7 +276,7 @@ fun CommitmentItemCardClean(
                                     onDrag = { _, dragAmount ->
                                         dragOffset += dragAmount.y
                                         if (dragOffset > 60f) {
-                                            dragOffset = 0f
+                                             dragOffset = 0f
                                             val pos = index + 2
                                             if (pos <= totalCommitmentsCount) {
                                                 onReorderCommitment(fc, pos)
@@ -286,8 +299,8 @@ fun CommitmentItemCardClean(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = stringResource(id = R.string.ledger_reorder_apply),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-                            modifier = Modifier.size(13.dp)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                            modifier = Modifier.size(MizanIconSizes.sm)
                         )
                     }
                 }

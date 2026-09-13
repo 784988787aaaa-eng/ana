@@ -21,9 +21,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -46,6 +49,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,7 +91,7 @@ fun SearchLedgerDialog(
         }
         LaunchedEffect(Unit) {
             try {
-                kotlinx.coroutines.delay(150)
+                kotlinx.coroutines.android.awaitFrame()
                 searchFocusRequester.requestFocus()
                 keyboardController?.show()
             } catch (e: Exception) {
@@ -121,7 +125,7 @@ fun SearchLedgerDialog(
                     Text(
                         stringResource(id = R.string.ledger_search_title),
                         fontWeight = FontWeight.ExtraBold,
-                        color = BrandPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 18.sp
                     )
                 }
@@ -136,12 +140,22 @@ fun SearchLedgerDialog(
                     modifier = Modifier.fillMaxWidth().focusRequester(searchFocusRequester),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
-                    trailingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = subColor) },
-                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() }),
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { onQueryChange("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(id = R.string.habayeb_close_search), tint = subColor)
+                            }
+                        } else {
+                            Icon(Icons.Default.Search, contentDescription = null, tint = subColor)
+                        }
+                    },
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Start),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = BrandPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedPlaceholderColor = subColor,
                         unfocusedPlaceholderColor = subColor

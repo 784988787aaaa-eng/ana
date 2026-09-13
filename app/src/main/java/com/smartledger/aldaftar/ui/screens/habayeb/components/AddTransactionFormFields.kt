@@ -155,7 +155,7 @@ fun AddTransactionFormFields(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = formattedSelectedDate,
-                        fontSize = 9.sp,
+                        fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
@@ -164,7 +164,7 @@ fun AddTransactionFormFields(
                             focusManager.clearFocus()
                             onOpenDatePicker()
                         },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
@@ -173,7 +173,7 @@ fun AddTransactionFormFields(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                 }
             },
             shape = fieldShape,

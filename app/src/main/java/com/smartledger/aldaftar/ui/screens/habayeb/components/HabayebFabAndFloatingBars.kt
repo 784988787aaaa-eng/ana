@@ -158,14 +158,13 @@ fun HabayebFab(
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
                                 isInteracting = true
-                                VibrationHelper.triggerSuccessVibration(context)
+                                VibrationHelper.triggerClickVibration(context)
                             },
                             onDragEnd = {
                                 isInteracting = false
                                 if (ratioX >= 0f && ratioY >= 0f) {
-onPersist(FloatingAddState(sizeLevel, ratioX, ratioY, true))
+                                    onPersist(FloatingAddState(sizeLevel, ratioX, ratioY, true))
                                 }
-                                VibrationHelper.triggerSuccessVibration(context)
                             },
                             onDragCancel = {
                                 isInteracting = false
@@ -187,7 +186,6 @@ onPersist(FloatingAddState(sizeLevel, ratioX, ratioY, true))
                     .pointerInput(sizeLevel, targetCustomer) {
                         detectTapGestures(
                             onTap = {
-                                VibrationHelper.triggerSuccessVibration(context)
                                 if (targetCustomer != null) {
                                     onAddTransactionForCustomer(targetCustomer)
                                 } else {
@@ -198,7 +196,7 @@ onPersist(FloatingAddState(sizeLevel, ratioX, ratioY, true))
                                 val newSizeLevel = (sizeLevel + 1) % 3
                                 sizeLevel = newSizeLevel
                                 onPersist(FloatingAddState(newSizeLevel, ratioX, ratioY, hasSavedRatio))
-                                VibrationHelper.triggerSuccessVibration(context)
+                                VibrationHelper.triggerClickVibration(context)
                             }
                         )
                     }

@@ -141,10 +141,9 @@ fun BusinessProfileDialog(
     viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
@@ -169,7 +168,7 @@ fun BusinessProfileDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = dismissDialog,
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(

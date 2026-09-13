@@ -83,10 +83,10 @@ fun SettingsView(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 40.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 32.dp)
     ) {
         item(key = "settings_header_card") {
             SettingsHeaderCard()

@@ -429,20 +429,13 @@ object TrashItemParser {
 
                         currencyBreakdownVal.putAll(currencySums)
 
-                        val nonZeroSums = currencySums.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
-                        if (nonZeroSums.isNotEmpty()) {
-                            val summaryParts = nonZeroSums.map { (curr, sum) ->
-                                "${HabayebMathHelper.formatSmart(sum.abs())} $curr"
-                            }
-                            amountText = summaryParts.joinToString(" • ")
-                            val firstVal = nonZeroSums.values.first()
-                            isExpense = firstVal < BigDecimal.ZERO
-                            amountDec = firstVal
-                        } else {
-                            amountText = ""
-                        }
+                        val defaultCurrencySum = currencySums[currencySymbol] ?: BigDecimal.ZERO
+                        amountDec = defaultCurrencySum.abs()
+                        isExpense = defaultCurrencySum < BigDecimal.ZERO
+                        amountText = "${HabayebMathHelper.formatSmart(defaultCurrencySum.abs())} $currencySymbol"
                     } else {
-                        amountText = ""
+                        amountDec = BigDecimal.ZERO
+                        amountText = "0 $currencySymbol"
                     }
                 }
 

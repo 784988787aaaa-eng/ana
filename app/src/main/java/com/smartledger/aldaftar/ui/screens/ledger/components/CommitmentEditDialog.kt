@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens.ledger.components
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -59,6 +60,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import java.math.BigDecimal
 
 private const val TAG = "CommitmentEditDialog"
@@ -113,7 +115,7 @@ fun CommitmentEditDialog(
 
     LaunchedEffect(Unit) {
         try {
-            kotlinx.coroutines.delay(120)
+            kotlinx.coroutines.android.awaitFrame()
             if (editingCommitment == null) {
                 nameFocus.requestFocus()
             } else {
@@ -125,18 +127,14 @@ fun CommitmentEditDialog(
         }
     }
 
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = true
-        )
-    ) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismissRequest
+    ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
                 modifier = modifier
-                    .widthIn(max = 340.dp)
-                    .fillMaxWidth(0.88f)
+                    .widthIn(max = 360.dp)
+                    .fillMaxWidth(0.92f)
                     .clip(RoundedCornerShape(22.dp)),
                 shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.surface,
@@ -148,15 +146,15 @@ fun CommitmentEditDialog(
                         .navigationBarsPadding()
                         .imePadding()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                        .padding(horizontal = 18.dp, vertical = 18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
                         text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_title_edit) else stringResource(id = R.string.ledger_commitment_dialog_title_add),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
+                        fontSize = 16.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -166,11 +164,11 @@ fun CommitmentEditDialog(
                     OutlinedTextField(
                         value = obligationNameTfv,
                         onValueChange = { if (editingCommitment == null) obligationNameTfv = it },
-                        enabled = (editingCommitment == null),
+                        readOnly = (editingCommitment != null),
                         placeholder = {
                             Text(
-                                text = "اسم الالتزام (مثال: إيجار، قسط...)",
-                                fontSize = 11.5.sp,
+                                text = stringResource(id = R.string.ledger_commitment_name_label),
+                                fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
                         },
@@ -179,22 +177,20 @@ fun CommitmentEditDialog(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                            disabledBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            .defaultMinSize(minHeight = 52.dp)
                             .focusRequester(nameFocus),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { targetFocus.requestFocus() }),
                         textStyle = TextStyle(
-                            textAlign = TextAlign.Right,
-                            fontSize = 13.sp,
+                            textAlign = TextAlign.Start,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium
                         )
                     )
@@ -214,8 +210,8 @@ fun CommitmentEditDialog(
                                 keyboardActions = KeyboardActions(onNext = { progressFocus.requestFocus() }),
                                 placeholder = {
                                     Text(
-                                        text = "المبلغ المستهدف",
-                                        fontSize = 11.sp,
+                                        text = stringResource(id = R.string.ledger_commitment_target_amount_label),
+                                        fontSize = 11.5.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth()
@@ -233,11 +229,11 @@ fun CommitmentEditDialog(
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp)
+                                    .defaultMinSize(minHeight = 52.dp)
                                     .focusRequester(targetFocus),
                                 textStyle = TextStyle(
                                     textAlign = TextAlign.Center,
-                                    fontSize = 13.sp,
+                                    fontSize = 13.5.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             )
@@ -254,8 +250,8 @@ fun CommitmentEditDialog(
                                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                                 placeholder = {
                                     Text(
-                                        text = "المتوفر (اختياري)",
-                                        fontSize = 11.sp,
+                                        text = stringResource(id = R.string.ledger_commitment_current_progress_label),
+                                        fontSize = 11.5.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth()
@@ -273,11 +269,11 @@ fun CommitmentEditDialog(
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp)
+                                    .defaultMinSize(minHeight = 52.dp)
                                     .focusRequester(progressFocus),
                                 textStyle = TextStyle(
                                     textAlign = TextAlign.Center,
-                                    fontSize = 13.sp,
+                                    fontSize = 13.5.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             )
@@ -292,7 +288,7 @@ fun CommitmentEditDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         OutlinedButton(
-                            onClick = onDismissRequest,
+                            onClick = dismissDialog,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -300,13 +296,13 @@ fun CommitmentEditDialog(
                             ),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(40.dp),
+                                .height(MizanTouchTarget.standardButtonHeight),
                             contentPadding = PaddingValues(vertical = 0.dp)
                         ) {
                             Text(
-                                text = "إلغاء",
+                                text = stringResource(id = R.string.common_cancel),
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.5.sp
+                                fontSize = 13.sp
                             )
                         }
 
@@ -315,7 +311,6 @@ fun CommitmentEditDialog(
                                 val tar = targetAmtStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 val prg = progressAmtStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 if (obligationName.isNotBlank() && tar > BigDecimal.ZERO) {
-                                    com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                                     onSaveCommitment(obligationName, tar, prg)
                                 }
                             },
@@ -323,14 +318,14 @@ fun CommitmentEditDialog(
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1.3f)
-                                .height(40.dp),
+                                .height(MizanTouchTarget.standardButtonHeight),
                             contentPadding = PaddingValues(vertical = 0.dp)
                         ) {
                             Text(
                                 text = if (editingCommitment != null) stringResource(id = R.string.ledger_commitment_dialog_save_edit) else stringResource(id = R.string.ledger_commitment_dialog_save_goal),
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.5.sp
+                                fontSize = 13.sp
                             )
                         }
                     }

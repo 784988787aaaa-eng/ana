@@ -110,20 +110,17 @@ fun TransactionRecordDialog(
     val textInputBgColor = if (isIncome) mizanColors.creditContainer.copy(alpha = 0.35f) else mizanColors.debtContainer.copy(alpha = 0.35f)
     val textColor = MaterialTheme.colorScheme.onSurface
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = true
-        )
-    ) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = dialogBgColor,
             tonalElevation = 0.dp, // تعطيل الارتفاع اللوني. to prevent neutral gray overlays
-            border = BorderStroke(2.dp, themeColor),
+            border = BorderStroke(1.dp, themeColor.copy(alpha = 0.7f)),
             modifier = Modifier
-                .width(280.dp)
+                .widthIn(max = 360.dp)
+                .fillMaxWidth(0.92f)
                 .wrapContentHeight()
                 .imePadding()
         ) {
@@ -176,7 +173,7 @@ fun TransactionRecordDialog(
                         leadingIcon = {
                             IconButton(
                                 onClick = { showCalcPopup = true },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Calculate,
@@ -236,7 +233,7 @@ fun TransactionRecordDialog(
                         ),
                         textStyle = LocalTextStyle.current.copy(
                             color = textColor,
-                            textAlign = TextAlign.Right,
+                            textAlign = TextAlign.Start,
                             fontSize = 13.sp
                         ),
                         keyboardOptions = KeyboardOptions(
@@ -271,7 +268,7 @@ fun TransactionRecordDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = onDismiss,
+                        onClick = dismissDialog,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = themeColorSub
@@ -290,7 +287,6 @@ fun TransactionRecordDialog(
                             if (isSavingTx) return@Button
                             if (parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
                                 isSavingTx = true
-                                com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                                 onSave(
                                     editingTransaction?.id,
                                     txDialogType,

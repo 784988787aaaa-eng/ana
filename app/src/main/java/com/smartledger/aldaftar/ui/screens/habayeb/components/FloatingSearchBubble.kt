@@ -168,12 +168,11 @@ fun FloatingSearchBubble(
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
                                 isInteracting = true
-                                VibrationHelper.triggerSuccessVibration(context)
+                                VibrationHelper.triggerClickVibration(context)
                             },
                             onDragEnd = {
                                 isInteracting = false
-onPersist(FloatingSearchState(sizeLevel, ratioX, ratioY))
-                                VibrationHelper.triggerSuccessVibration(context)
+                                onPersist(FloatingSearchState(sizeLevel, ratioX, ratioY))
                             },
                             onDragCancel = {
                                 isInteracting = false
@@ -195,14 +194,13 @@ onPersist(FloatingSearchState(sizeLevel, ratioX, ratioY))
                     .pointerInput(sizeLevel) {
                         detectTapGestures(
                             onTap = {
-                                VibrationHelper.triggerSuccessVibration(context)
                                 onSearchClick()
                             },
                             onDoubleTap = {
                                 val newSizeLevel = (sizeLevel + 1) % 3
                                 sizeLevel = newSizeLevel
                                 onPersist(FloatingSearchState(newSizeLevel, ratioX, ratioY))
-                                VibrationHelper.triggerSuccessVibration(context)
+                                VibrationHelper.triggerClickVibration(context)
                             }
                         )
                     },

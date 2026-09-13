@@ -112,7 +112,6 @@ fun AddCustomerTypeAndCurrencySelector(
                             if (selectedTransactionCurrency != sym) {
                                 onCurrencySelected(sym)
                             }
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         }
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                 ) {
@@ -290,7 +289,6 @@ fun AddCustomerTypeAndCurrencySelector(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onTypeSelected(TransactionType.OWED_BY_THEM.value)
                         }
                         .padding(horizontal = 2.dp, vertical = 2.dp)
@@ -329,7 +327,6 @@ fun AddCustomerTypeAndCurrencySelector(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onTypeSelected(TransactionType.OWED_TO_THEM.value)
                         }
                         .padding(horizontal = 2.dp, vertical = 2.dp)

@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.ui.helper
 
 import android.content.Context
 import android.os.Build
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -10,9 +11,11 @@ import android.util.Log
 object VibrationHelper {
     private const val TAG = "VibrationHelper"
 
-    private val SUCCESS_PATTERN = longArrayOf(0, 40, 80, 80)
-
-    private val DELETE_PATTERN = longArrayOf(0, 100, 60, 100)
+    private const val DEBOUNCE_MS = 200L
+    private var lastSuccessTime = 0L
+    private var lastDeleteTime = 0L
+    private var lastErrorTime = 0L
+    private var lastClickTime = 0L
 
     private fun getVibrator(context: Context): Vibrator? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -24,7 +27,7 @@ object VibrationHelper {
         }
     }
 
-    fun vibrate(context: Context, milliseconds: Long = 100) {
+    fun vibrate(context: Context, milliseconds: Long = 40) {
         try {
             val vibrator = getVibrator(context)
             if (vibrator != null && vibrator.hasVibrator()) {
@@ -55,17 +58,53 @@ object VibrationHelper {
             Log.w(TAG, "Failed to trigger vibration pattern: ${e.message}")
         }
     }
-    
+
+    /**
+     * Single crisp success pulse (35ms) with debounce protection.
+     */
     fun triggerSuccessVibration(context: Context) {
-        vibratePattern(context, SUCCESS_PATTERN)
+        val now = SystemClock.uptimeMillis()
+        if (now - lastSuccessTime < DEBOUNCE_MS) return
+        lastSuccessTime = now
+        vibrate(context, 35)
     }
 
+    /**
+     * Single distinct delete pulse (45ms) with debounce protection.
+     */
     fun triggerDeleteVibration(context: Context) {
-        vibratePattern(context, DELETE_PATTERN)
+        val now = SystemClock.uptimeMillis()
+        if (now - lastDeleteTime < DEBOUNCE_MS) return
+        lastDeleteTime = now
+        vibrate(context, 45)
     }
 
+    /**
+     * Micro pulse for subtle user interaction (15ms).
+     */
     fun triggerClickVibration(context: Context) {
-        vibrate(context, 25)
+        val now = SystemClock.uptimeMillis()
+        if (now - lastClickTime < 80L) return
+        lastClickTime = now
+        vibrate(context, 15)
     }
+
+    /**
+     * Error vibration feedback (double tap pattern) with debounce.
+     */
+    fun triggerErrorVibration(context: Context) {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastErrorTime < DEBOUNCE_MS) return
+        lastErrorTime = now
+        vibratePattern(context, longArrayOf(0, 40, 60, 40))
+    }
+
+    // Semantic API aliases
+    fun success(context: Context) = triggerSuccessVibration(context)
+    fun delete(context: Context) = triggerDeleteVibration(context)
+    fun error(context: Context) = triggerErrorVibration(context)
+    fun selection(context: Context) = triggerClickVibration(context)
+    fun keyPress(context: Context) = triggerClickVibration(context)
 }
+
 

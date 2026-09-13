@@ -132,7 +132,6 @@ private fun HabayebSearchHeaderBar(
     ) {
         IconButton(
             onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onCloseSearch()
             },
             modifier = Modifier.size(32.dp)

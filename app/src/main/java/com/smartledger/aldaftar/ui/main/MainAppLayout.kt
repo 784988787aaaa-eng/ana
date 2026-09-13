@@ -46,6 +46,9 @@ fun MainAppLayout(
         }
     }
     var showComprehensiveReportDialog by remember { mutableStateOf(false) }
+    var showCurrencySettingsDialog by remember { mutableStateOf(false) }
+    var showBusinessProfileDialog by remember { mutableStateOf(false) }
+    var showSecurityDialog by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
 
@@ -134,6 +137,18 @@ fun MainAppLayout(
                 onComprehensiveReportClick = {
                     scope.launch { drawerState.close() }
                     showComprehensiveReportDialog = true
+                },
+                onBusinessProfileClick = {
+                    scope.launch { drawerState.close() }
+                    showBusinessProfileDialog = true
+                },
+                onCurrencySettingsClick = {
+                    scope.launch { drawerState.close() }
+                    showCurrencySettingsDialog = true
+                },
+                onSecurityClick = {
+                    scope.launch { drawerState.close() }
+                    showSecurityDialog = true
                 }
             )
         }
@@ -259,6 +274,34 @@ fun MainAppLayout(
             businessProfile = businessProfile,
             loadTransactionsForReport = habayebViewModel::transactionsForReport,
             reportCoroutineScope = scope
+        )
+    }
+
+    if (showCurrencySettingsDialog) {
+        CurrencySettingsDialog(
+            settings = settings,
+            onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
+                viewModel.saveSettings(updated)
+                if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
+                    habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, java.math.BigDecimal.valueOf(newRate))
+                }
+            },
+            onDismiss = { showCurrencySettingsDialog = false }
+        )
+    }
+
+    if (showBusinessProfileDialog) {
+        com.smartledger.aldaftar.ui.screens.BusinessProfileDialog(
+            viewModel = businessProfileViewModel,
+            onDismiss = { showBusinessProfileDialog = false }
+        )
+    }
+
+    if (showSecurityDialog) {
+        com.smartledger.aldaftar.ui.screens.SecurityDialog(
+            settings = settings,
+            viewModel = securityViewModel,
+            onDismiss = { showSecurityDialog = false }
         )
     }
 }

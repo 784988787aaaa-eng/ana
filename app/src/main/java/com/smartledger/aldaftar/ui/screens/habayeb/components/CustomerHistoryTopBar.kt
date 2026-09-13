@@ -74,7 +74,10 @@ kotlinx.coroutines.android.awaitFrame()
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(id = R.string.habayeb_back),
@@ -127,7 +130,7 @@ kotlinx.coroutines.android.awaitFrame()
                 if (txSearchQuery.isNotEmpty()) {
                     IconButton(
                         onClick = { onSearchQueryChange("") },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -138,11 +141,15 @@ kotlinx.coroutines.android.awaitFrame()
                     }
                 }
             }
-            IconButton(onClick = onSearchClose) {
+            IconButton(
+                onClick = onSearchClose,
+                modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = stringResource(id = R.string.habayeb_cancel_search),
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         } else {
@@ -216,9 +223,12 @@ kotlinx.coroutines.android.awaitFrame()
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                IconButton(onClick = onFilterClick, modifier = Modifier.size(36.dp)) {
+                IconButton(
+                    onClick = onFilterClick,
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
                         contentDescription = stringResource(id = R.string.habayeb_smart_filter),
@@ -227,7 +237,10 @@ kotlinx.coroutines.android.awaitFrame()
                     )
                 }
 
-                IconButton(onClick = onSearchOpen, modifier = Modifier.size(36.dp)) {
+                IconButton(
+                    onClick = onSearchOpen,
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = stringResource(id = R.string.habayeb_search_tx_hint),
@@ -236,12 +249,15 @@ kotlinx.coroutines.android.awaitFrame()
                     )
                 }
 
-                IconButton(onClick = onShareClick, modifier = Modifier.size(36.dp)) {
+                IconButton(
+                    onClick = onShareClick,
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                ) {
                     if (isPdfExporting) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(16.dp),
                             color = activeThemeColor,
-                            strokeWidth = 1.5.dp
+                            strokeWidth = 2.dp
                         )
                     } else {
                         Icon(
@@ -254,7 +270,10 @@ kotlinx.coroutines.android.awaitFrame()
                 }
 
                 Box {
-                    IconButton(onClick = { isMenuExpanded = true }, modifier = Modifier.size(36.dp)) {
+                    IconButton(
+                        onClick = { isMenuExpanded = true },
+                        modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = stringResource(id = R.string.habayeb_more_options),
@@ -264,7 +283,9 @@ kotlinx.coroutines.android.awaitFrame()
                     }
                     DropdownMenu(
                         expanded = isMenuExpanded,
-                        onDismissRequest = { isMenuExpanded = false }
+                        onDismissRequest = { isMenuExpanded = false },
+                        shape = RoundedCornerShape(12.dp),
+                        containerColor = MaterialTheme.colorScheme.surface
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(id = R.string.habayeb_search_tx_hint)) },

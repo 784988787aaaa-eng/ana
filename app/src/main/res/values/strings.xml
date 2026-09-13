@@ -138,6 +138,7 @@
     <string name="habayeb_delete_account_confirm">هل أنت متأكد من حذف الحساب \'%s\' مع جميع حركاته المالية نهائياً؟</string>
     <string name="habayeb_delete_yes">نعم، حذف</string>
     <string name="habayeb_edit_name_title">تعديل اسم الزبون</string>
+    <string name="habayeb_edit_customer_dialog_title">تعديل الحساب</string>
     <string name="habayeb_save_edit">حفظ التعديل</string>
     <string name="habayeb_edit_name_desc">تعديل الاسم</string>
     <string name="habayeb_status_balanced">حساب مصفّى</string>
@@ -337,6 +338,10 @@
     <string name="ledger_reorder_position_label">أدخل رقم المكان الذي تريد نقله إليه (1 إلى %1$d):</string>
     <string name="ledger_reorder_position_error">لا يوجد التزام بهذا الرقم.</string>
     <string name="ledger_reorder_input_range_error">أدخل رقماً بين 1 و %1$d</string>
+    <string name="ledger_commitments_dialog_title">الأهداف والالتزامات</string>
+    <string name="ledger_commitment_add_btn_label">+ إضافة التزام / هدف جديد</string>
+    <string name="ledger_commitments_empty_title">لا توجد أهداف أو التزامات مدونة حالياً</string>
+    <string name="ledger_commitments_empty_desc">اضغط على الزر أدناه لإضافة هدفك المالي الأول</string>
     <string name="ledger_reorder_dialog_title">تغيير موضع الالتزام</string>
     <string name="ledger_reorder_dialog_prompt">نقل «%1$s» إلى الترتيب رقم:</string>
     <string name="ledger_reorder_apply">تطبيق النقل</string>
@@ -508,6 +513,7 @@
     <string name="report_active_accounts_count">%1$d حساب نشط</string>
     <string name="report_other_currencies_label">العملات الأخرى:</string>
     <string name="report_booklet_generating_title">جاري إعداد السجل التفصيلي الشامل...</string>
+    <string name="report_general_generating_title">جاري إعداد التقرير العام...</string>
     <string name="report_booklet_progress_fmt">تمت معالجة %1$d من %2$d حساب مالي</string>
     <string name="report_booklet_cancel_btn">إلغاء العملية</string>
     <string name="report_booklet_cancelled_toast">تم إلغاء إعداد السجل التفصيلي</string>
@@ -571,6 +577,71 @@
     <string name="settings_developer_info">تصميم وتطوير م/ منصور قطينه للبرمجيات</string>
     <string name="settings_desc_call_support">اتصال هاتفي بالدعم</string>
     <string name="settings_desc_whatsapp">مراسلة واتساب مستعجلة</string>
+    <!-- ============================================================================== -->
+    <!-- 15. النسخ الاحتياطي والمزامنة السحابية (Backup & Cloud Sync)                    -->
+    <!-- ============================================================================== -->
+
+    <string name="backup_screen_title">النسخ الاحتياطي والمزامنة</string>
+    <string name="backup_status_connected">متصل</string>
+    <string name="backup_status_disconnected">غير متصل</string>
+    <string name="backup_status_local">غير متصل</string>
+
+    <string name="backup_cloud_title">Google Drive</string>
+    <string name="backup_cloud_desc">مزامنة السجلات مع حساب التخزين السحابي.</string>
+    <string name="backup_btn_connect_google">ربط حساب Google Drive</string>
+    <string name="backup_btn_cloud_upload">نسخ احتياطي سحابي</string>
+    <string name="backup_btn_restore_latest">استعادة أحدث نسخة</string>
+    <string name="backup_btn_view_history">محفوظات النسخ الاحتياطي</string>
+    <string name="backup_btn_disconnect">تسجيل الخروج من الحساب</string>
+
+    <string name="backup_local_title">وحدة التخزين المحلية</string>
+    <string name="backup_local_desc">تصدير ملف النسخة أو استيراده من وحدة التخزين.</string>
+    <string name="backup_btn_local_export">تصدير ملف</string>
+    <string name="backup_btn_local_import">استيراد ملف</string>
+
+    <string name="backup_btn_wipe_data">مسح كافة البيانات</string>
+    <string name="dialog_wipe_title">تأكيد مسح كافة البيانات</string>
+    <string name="dialog_wipe_desc">سيؤدي هذا الإجراء إلى حذف كافة الحسابات، المعاملات، والسجلات المالية نهائياً. لا يمكن التراجع إلا باستعادة نسخة احتياطية.</string>
+    <string name="dialog_btn_confirm_wipe">مسح البيانات نهائياً</string>
+
+    <string name="dialog_restore_title">استعادة أحدث نسخة احتياطية</string>
+    <string name="dialog_restore_desc">سيتم استبدال البيانات الحالية على هذا الهاتف بالبيانات المحفوظة في النسخة المحددة. هل تريد المتابعة؟</string>
+    <string name="dialog_btn_restore">استعادة</string>
+
+    <string name="history_sheet_title">محفوظات النسخ الاحتياطي</string>
+    <string name="history_items_count">%1$d نسخ متوفرة</string>
+    <string name="history_btn_refresh">تحديث</string>
+    <string name="history_select_all">تحديد الكل</string>
+    <string name="history_deselect_all">إلغاء التحديد</string>
+    <string name="history_btn_create_new">إنشاء نسخة احتياطية</string>
+    <string name="history_delete_selected_confirm">حذف النسخ المحددة نهائياً من السحابة؟</string>
+
+    <string name="msg_backup_complete">اكتمل النسخ الاحتياطي السحابي بنجاح.</string>
+    <string name="msg_restore_complete">اكتملت استعادة السجلات بنجاح.</string>
+    <string name="msg_processing">جارٍ معالجة البيانات...</string>
+    <string name="msg_google_connect_error">تعذر الاتصال بحساب Google Drive.</string>
+    <string name="backup_err_no_backups_found">لا توجد نسخ احتياطية متوفرة في حساب السحابة.</string>
+    <string name="backup_unit_kb">ك.ب</string>
+    <string name="backup_delete_single_confirm">سيتم حذف النسخة (%1$s) نهائياً من حساب Google Drive.</string>
+    <string name="backup_delete_title">حذف النسخة السحابية</string>
+    <string name="backup_btn_delete_confirm">حذف نهائي</string>
+    <string name="backup_search_hint">بحث في النسخ السحابية...</string>
+    <string name="backup_search_close">إغلاق البحث</string>
+    <string name="backup_search_clear">مسح البحث</string>
+    <string name="backup_empty_cloud_title">السحابة غير متصلة</string>
+    <string name="backup_empty_cloud_desc">قم بربط حساب Google Drive لتصفح واسترجاع نسخك الاحتياطية السحابية بأمان.</string>
+    <string name="backup_empty_list_title">لا توجد نسخ سحابية محفوظة</string>
+    <string name="backup_empty_list_desc">أنشئ نسختك الأولى لتأمين بياناتك وسجلاتك المالية في السحابة.</string>
+    <string name="backup_loading_cloud">جارٍ تحميل النسخ السحابية...</string>
+    <string name="backup_manual_steps_title">خطوات الربط اليدوي</string>
+    <string name="backup_manual_step_1">١. سجّل الدخول عبر المتصفح وامنح الصلاحية.</string>
+    <string name="backup_manual_step_2">٢. بعد اكتمال الربط، عد إلى التطبيق وسيتعرف على الحساب تلقائياً.</string>
+    <string name="backup_manual_btn">فتح الربط اليدوي عبر المتصفح</string>
+    <string name="backup_manual_toggle_show">خيارات الربط اليدوي عبر المتصفح</string>
+    <string name="backup_manual_toggle_hide">إخفاء خيارات الربط اليدوي</string>
+    <string name="backup_delete_selected_btn">حذف %1$d نسخ محددة</string>
+    <string name="backup_export_file_name">smartledger_backup_%1$s.slb</string>
+
     <string name="backup_toast_linked_success">تم ربط الحساب (%s) بنجاح</string>
     <string name="backup_toast_connect_failed">تعذر الاتصال بخدمات Google، يرجى التحقق من الشبكة وإعادة المحاولة.</string>
     <string name="backup_toast_invalid_code">تعذر التحقق من كود الربط الصادر من Google.</string>
@@ -587,8 +658,6 @@
     <string name="backup_toast_cloud_download_failed">تعذر تنزيل النسخة من السحابة.</string>
     <string name="backup_toast_delete_failed">تعذر حذف النسخة.</string>
 
-    <string name="backup_status_connected">متصل بالسحابة</string>
-    <string name="backup_status_local">غير متصل</string>
     <string name="backup_toast_browser_failed">تعذر فتح المتصفح على هذا الجهاز.</string>
     <string name="backup_btn_upload_backup">إنشاء نسخة سحابية</string>
     <string name="backup_btn_browse_archives">سجل النسخ السحابية</string>
@@ -869,4 +938,8 @@
     <string name="excel_account_phone_format">%1$s (📱 %2$s)</string>
     <string name="license_trial_ended">انتهت التجربة المجانية. فعّل ترخيصًا للمتابعة.</string>
     <string name="settings_signature_unavailable">غير متوفر</string>
+    <string name="drawer_license_active">✓ الترخيص مفعل</string>
+    <string name="drawer_license_label">الترخيص والتفعيل</string>
+    <string name="license_whatsapp_request_help">طلب ترخيص أو مساعدة عبر واتساب</string>
+    <string name="report_scope_display_icon">📋 %1$s</string>
 </resources>

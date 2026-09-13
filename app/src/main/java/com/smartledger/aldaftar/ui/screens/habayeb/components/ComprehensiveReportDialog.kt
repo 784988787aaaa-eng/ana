@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
@@ -77,6 +80,7 @@ fun ComprehensiveReportDialog(
 ) {
     val context = LocalContext.current
     var isGeneratingPdf by remember { mutableStateOf(false) }
+    var generalPdfJob by remember { mutableStateOf<Job?>(null) }
 
     var isGeneratingBooklet by remember { mutableStateOf(false) }
     var bookletProgress by remember { mutableStateOf(0) }
@@ -117,16 +121,15 @@ fun ComprehensiveReportDialog(
     val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
+        com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+            onDismissRequest = onDismiss
+        ) { dismissDialog ->
             Surface(
                 modifier = modifier
-                    .fillMaxWidth(0.9f)
+                    .fillMaxWidth(0.92f)
                     .widthIn(max = 480.dp)
-                    .wrapContentHeight()
-                    .padding(16.dp),
+                    .heightIn(max = 620.dp)
+                    .padding(horizontal = 4.dp, vertical = 12.dp),
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp
@@ -134,6 +137,7 @@ fun ComprehensiveReportDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -150,7 +154,7 @@ fun ComprehensiveReportDialog(
                             color = activeThemeColor
                         )
                         IconButton(
-                            onClick = onDismiss,
+                            onClick = dismissDialog,
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
@@ -279,7 +283,7 @@ fun ComprehensiveReportDialog(
                     }
 
                     Text(
-                        text = "📋 $scopeText",
+                        text = stringResource(id = R.string.report_scope_display_icon, scopeText),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = textSecondary,
@@ -296,14 +300,14 @@ fun ComprehensiveReportDialog(
                     ) {
                         Button(
                             onClick = {
-                                if (!isGeneratingPdf) {
+                                if (!isGeneratingPdf && !isGeneratingBooklet) {
                                     isGeneratingPdf = true
                                     val targetCustomers = if (selectedCustomerIds.isNotEmpty()) {
                                         customers.filter { selectedIdsSet.contains(it.id) }
                                     } else {
                                         customers
                                     }
-                                    PdfReportGenerator.generateAndHandleAllCustomersPdfReportAsync(
+                                    generalPdfJob = PdfReportGenerator.generateAndHandleAllCustomersPdfReportAsync(
                                         context = context,
                                         scope = reportCoroutineScope,
                                         customers = targetCustomers,
@@ -312,6 +316,7 @@ fun ComprehensiveReportDialog(
                                         action = PdfAction.SHARE,
                                         onFinished = {
                                             isGeneratingPdf = false
+                                            generalPdfJob = null
                                         }
                                     )
                                 }
@@ -403,6 +408,55 @@ fun ComprehensiveReportDialog(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    if (isGeneratingPdf) {
+        Dialog(
+            onDismissRequest = { },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.report_general_generating_title),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = activeThemeColor,
+                        textAlign = TextAlign.Center
+                    )
+
+                    CircularProgressIndicator(
+                        color = activeThemeColor,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(36.dp)
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            generalPdfJob?.cancel()
+                            generalPdfJob = null
+                            isGeneratingPdf = false
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(stringResource(id = R.string.report_booklet_cancel_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

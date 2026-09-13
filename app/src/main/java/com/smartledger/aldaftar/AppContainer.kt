@@ -12,22 +12,22 @@ import com.smartledger.aldaftar.data.license.LicenseRepository
 
 /** تركيب الاعتماديات طويلة العمر داخل جذر التطبيق فقط. */
 class AppContainer(context: Context) {
-    private val database = AppDatabase.getDatabase(context)
-    val categories = CategoryRepository(database.customCategoryDao())
-    val settings = SettingsRepository(database.settingsDao())
-    val commitments = CommitmentRepository(database.commitmentDao())
-    val transactions = TransactionRepository(database.transactionDao())
-    val categoryUseCase = HabayebCategoryUseCase(categories, HabayebCategoryDataRepository(database, categories))
-    val habayeb = HabayebRepository(database, database.habayebDao())
-    val trash = TrashRepository(database.trashDao())
-    val maintenance = DataMaintenanceRepository(database, database.settingsDao(), database.commitmentDao(), database.transactionDao(), database.customCategoryDao(), database.trashDao(), database.habayebDao())
-    val businessProfile = BusinessProfileRepository(database.businessProfileDao())
-    val recurring = RecurringRepository(database, database.recurringConfigDao())
-    val floatingUi = FloatingUiPreferencesRepository(context.applicationContext)
-    val mutation = HabayebMutationRepository(database)
-    val backupEngine = BackupEngine(context.applicationContext, database)
-    val cloudArchiveStore = CloudArchiveStore(context.applicationContext)
-    val automaticBackup = AutomaticBackupCoordinator(backupEngine, cloudArchiveStore)
-    val license = LicenseRepository(context.applicationContext)
-    val unifiedAccount = UnifiedAccountSessionRepository(context.applicationContext, license, cloudArchiveStore)
+    private val database by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AppDatabase.getDatabase(context) }
+    val categories by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CategoryRepository(database.customCategoryDao()) }
+    val settings by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SettingsRepository(database.settingsDao()) }
+    val commitments by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CommitmentRepository(database.commitmentDao()) }
+    val transactions by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { TransactionRepository(database.transactionDao()) }
+    val categoryUseCase by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebCategoryUseCase(categories, HabayebCategoryDataRepository(database, categories)) }
+    val habayeb by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebRepository(database, database.habayebDao()) }
+    val trash by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { TrashRepository(database.trashDao()) }
+    val maintenance by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DataMaintenanceRepository(database, database.settingsDao(), database.commitmentDao(), database.transactionDao(), database.customCategoryDao(), database.trashDao(), database.habayebDao()) }
+    val businessProfile by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BusinessProfileRepository(database.businessProfileDao()) }
+    val recurring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RecurringRepository(database, database.recurringConfigDao()) }
+    val floatingUi by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { FloatingUiPreferencesRepository(context.applicationContext) }
+    val mutation by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebMutationRepository(database) }
+    val backupEngine by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BackupEngine(context.applicationContext, database) }
+    val cloudArchiveStore by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CloudArchiveStore(context.applicationContext) }
+    val automaticBackup by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AutomaticBackupCoordinator(backupEngine, cloudArchiveStore) }
+    val license by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { LicenseRepository(context.applicationContext) }
+    val unifiedAccount by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { UnifiedAccountSessionRepository(context.applicationContext, license, cloudArchiveStore) }
 }

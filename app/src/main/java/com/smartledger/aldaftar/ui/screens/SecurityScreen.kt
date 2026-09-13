@@ -178,12 +178,6 @@ fun SecurityScreen(
                 SecurityActivePanel(
                     currentSettings = currentSettings,
                     viewModel = viewModel,
-                    onCopyRecoveryPhrase = {
-                        currentSettings.recoveryPhraseHash?.takeIf { it.isNotBlank() }?.let { phrase ->
-                            clipboardManager.setText(AnnotatedString(phrase))
-                            Toast.makeText(context, context.getString(R.string.sec_toast_copied), Toast.LENGTH_SHORT).show()
-                        }
-                    },
                     onChangePasscode = {
                         passcode = ""
                         confirmPasscode = ""
@@ -228,10 +222,9 @@ fun SecurityDialog(
     var checkAcknowledged by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
@@ -282,9 +275,9 @@ fun SecurityDialog(
                     }
 
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = dismissDialog,
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     ) {
@@ -345,12 +338,6 @@ fun SecurityDialog(
                         SecurityActivePanel(
                             currentSettings = currentSettings,
                             viewModel = viewModel,
-                            onCopyRecoveryPhrase = {
-                                currentSettings.recoveryPhraseHash?.takeIf { it.isNotBlank() }?.let { phrase ->
-                                    clipboardManager.setText(AnnotatedString(phrase))
-                                    Toast.makeText(context, context.getString(R.string.sec_toast_copied), Toast.LENGTH_SHORT).show()
-                                }
-                            },
                             onChangePasscode = {
                                 passcode = ""
                                 confirmPasscode = ""

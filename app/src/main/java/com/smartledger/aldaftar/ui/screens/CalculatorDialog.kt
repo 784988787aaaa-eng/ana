@@ -56,15 +56,6 @@ fun CalculatorDialog(
         }
     }
 
-    val haptic = LocalHapticFeedback.current
-
-    fun performClickFeedback() {
-        try {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        } catch (e: Exception) {
-        }
-    }
-
     fun handleDigit(digit: String) {
         if (rawExpression == "0") {
             rawExpression = digit
@@ -89,7 +80,6 @@ fun CalculatorDialog(
     }
 
     fun handleClear() {
-        performClickFeedback()
         rawExpression = ""
     }
 
@@ -100,7 +90,6 @@ fun CalculatorDialog(
     }
 
     fun evaluate() {
-        performClickFeedback()
         val result = calculatedResult ?: evaluateSimpleExpression(rawExpression)
         if (result != null) {
             rawExpression = if (result.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
@@ -113,7 +102,6 @@ fun CalculatorDialog(
 
     fun confirmAndDismiss() {
         if (!isExpressionValid) return
-        performClickFeedback()
         val finalBigDecimal = calculatedResult ?: evaluateSimpleExpression(rawExpression)
         val finalValue: BigDecimal = finalBigDecimal ?: (rawExpression.toBigDecimalOrNull() ?: BigDecimal.ZERO)
         onValueConfirmed(finalValue)
@@ -144,17 +132,19 @@ fun CalculatorDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         Card(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
                 containerColor = calcBgColor
             ),
-            border = BorderStroke(2.dp, calcBorderColor),
+            border = BorderStroke(1.dp, calcBorderColor.copy(alpha = 0.8f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // دون ارتفاع. to remove automatic gray overlays
             modifier = Modifier
                 .widthIn(max = 360.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
                 .padding(4.dp)
         ) {
             Column(
@@ -168,7 +158,7 @@ fun CalculatorDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = dismissDialog) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = stringResource(id = R.string.calc_close_desc),

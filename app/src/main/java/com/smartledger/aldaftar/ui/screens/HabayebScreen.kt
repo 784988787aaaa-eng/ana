@@ -214,7 +214,7 @@ fun HabayebScreen(
         }
     }
 
-    val onCustomerClickRemembered = remember(isMultiSelectActive) {
+    val onCustomerClickRemembered: (CustomerUiState) -> Unit = remember(isMultiSelectActive) {
         { customer: CustomerUiState ->
             if (isMultiSelectActive) {
                 if (selectedCustomerIds.contains(customer.id)) {
@@ -226,7 +226,7 @@ fun HabayebScreen(
             } else {
                 activeCustomerForHistory = customer.originalCustomer
             }
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            Unit
         }
     }
 
@@ -296,8 +296,6 @@ fun HabayebScreen(
                         onToggleFloatingClick = { onFloatingSearchActiveChanged(!isFloatingSearchActive) },
                         activeThemeColor = activeThemeColor
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
 
                     HabayebFilterToolbar(
                         selectedCategory = uiState.selectedCategory,

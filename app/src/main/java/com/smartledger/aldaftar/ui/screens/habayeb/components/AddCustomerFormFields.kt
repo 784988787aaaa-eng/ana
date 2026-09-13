@@ -58,6 +58,8 @@ fun AddCustomerFormFields(
         errorBorderColor = MaterialTheme.colorScheme.error
     )
 
+    val inputTextStyle = androidx.compose.material3.LocalTextStyle.current.copy(fontSize = 13.5.sp)
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -66,8 +68,9 @@ fun AddCustomerFormFields(
         OutlinedTextField(
             value = nameStr,
             onValueChange = onNameChange,
-            label = { Text(stringResource(id = R.string.hint_account_name), fontSize = 10.sp) },
-            placeholder = { Text(stringResource(id = R.string.habayeb_edit_name_desc), fontSize = 10.sp) },
+            textStyle = inputTextStyle,
+            label = { Text(stringResource(id = R.string.hint_account_name), fontSize = 11.sp) },
+            placeholder = { Text(stringResource(id = R.string.habayeb_edit_name_desc), fontSize = 11.sp) },
             singleLine = true,
             shape = fieldShape,
             isError = isDuplicateName && nameStr.isNotBlank(),
@@ -92,8 +95,9 @@ fun AddCustomerFormFields(
         OutlinedTextField(
             value = initialAmountStr,
             onValueChange = onInitialAmountChange,
-            label = { Text(stringResource(id = R.string.hint_opening_balance), fontSize = 10.sp) },
-            placeholder = { Text("0", fontSize = 10.sp) },
+            textStyle = inputTextStyle,
+            label = { Text(stringResource(id = R.string.hint_opening_balance), fontSize = 11.sp) },
+            placeholder = { Text("0", fontSize = 11.sp) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { notesFocusRequester.requestFocus() }),
             singleLine = true,
@@ -103,19 +107,19 @@ fun AddCustomerFormFields(
                 .focusRequester(initialAmountFocusRequester),
             colors = fieldColors,
             leadingIcon = {
-                IconButton(onClick = onCalculatorClick, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onCalculatorClick, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Default.Calculate,
                         contentDescription = stringResource(id = R.string.habayeb_calculator),
                         tint = activeThemeColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             },
             trailingIcon = {
                 Text(
                     text = selectedTransactionCurrency,
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     color = activeThemeColor,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -126,8 +130,9 @@ fun AddCustomerFormFields(
         OutlinedTextField(
             value = notesStr,
             onValueChange = onNotesChange,
-            label = { Text(stringResource(id = R.string.hint_description), fontSize = 10.sp) },
-            placeholder = { Text(stringResource(id = R.string.hint_description), fontSize = 10.sp) },
+            textStyle = inputTextStyle,
+            label = { Text(stringResource(id = R.string.hint_description), fontSize = 11.sp) },
+            placeholder = { Text(stringResource(id = R.string.hint_description), fontSize = 11.sp) },
             singleLine = true,
             shape = fieldShape,
             modifier = Modifier
@@ -139,13 +144,13 @@ fun AddCustomerFormFields(
             trailingIcon = {
                 IconButton(
                     onClick = onCalendarClick,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
                         contentDescription = stringResource(id = R.string.habayeb_tx_date),
                         tint = activeThemeColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -154,8 +159,9 @@ fun AddCustomerFormFields(
         OutlinedTextField(
             value = phoneStr,
             onValueChange = onPhoneChange,
-            label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 10.sp) },
-            placeholder = { Text(stringResource(id = R.string.habayeb_contact_picker), fontSize = 10.sp) },
+            textStyle = inputTextStyle,
+            label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 11.sp) },
+            placeholder = { Text(stringResource(id = R.string.habayeb_contact_picker), fontSize = 11.sp) },
             singleLine = true,
             shape = fieldShape,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
@@ -165,12 +171,12 @@ fun AddCustomerFormFields(
                 .focusRequester(phoneFocusRequester),
             colors = fieldColors,
             trailingIcon = {
-                IconButton(onClick = onContactPickerClick, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onContactPickerClick, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Default.Contacts,
                         contentDescription = stringResource(id = R.string.habayeb_contact_picker),
                         tint = activeThemeColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

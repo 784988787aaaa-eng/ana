@@ -62,15 +62,13 @@ fun MainAppContent(
 
     Box(modifier = modifier.fillMaxSize()) {
         val navFadeSpec = remember {
-            spring<Float>(
-                dampingRatio = 0.9f,
-                stiffness = 500f
+            com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.tweenStandard<Float>(
+                duration = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.DURATION_STANDARD
             )
         }
         val navOffsetSpec = remember {
-            spring<IntOffset>(
-                dampingRatio = 0.9f,
-                stiffness = 500f
+            com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.tweenStandard<IntOffset>(
+                duration = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.DURATION_STANDARD
             )
         }
 
@@ -81,29 +79,29 @@ fun MainAppContent(
                 val isTargetSub = targetState == Screen.SETTINGS || targetState == Screen.TRASH || targetState == Screen.BUSINESS_PROFILE || targetState == Screen.SECURITY
 
                 if (isTargetSub && !isInitialSub) {
-                    val slideIn = slideInVertically(animationSpec = navOffsetSpec) { (it * 0.12f).toInt() } +
+                    val slideIn = slideInVertically(animationSpec = navOffsetSpec) { (it * 0.08f).toInt() } +
                             fadeIn(animationSpec = navFadeSpec)
                     val slideOut = fadeOut(animationSpec = navFadeSpec)
                     slideIn togetherWith slideOut
                 } else if (isInitialSub && !isTargetSub) {
                     val slideIn = fadeIn(animationSpec = navFadeSpec)
-                    val slideOut = slideOutVertically(animationSpec = navOffsetSpec) { (it * 0.12f).toInt() } +
+                    val slideOut = slideOutVertically(animationSpec = navOffsetSpec) { (it * 0.08f).toInt() } +
                             fadeOut(animationSpec = navFadeSpec)
                     slideIn togetherWith slideOut
                 } else {
                     val isForward = targetState.ordinal > initialState.ordinal
                     val slideIn = if (isForward) {
-                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.2f).toInt() } +
+                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.10f).toInt() } +
                         fadeIn(animationSpec = navFadeSpec)
                     } else {
-                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.2f).toInt() } +
+                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.10f).toInt() } +
                         fadeIn(animationSpec = navFadeSpec)
                     }
                     val slideOut = if (isForward) {
-                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.2f).toInt() } +
+                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.10f).toInt() } +
                         fadeOut(animationSpec = navFadeSpec)
                     } else {
-                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.2f).toInt() } +
+                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.10f).toInt() } +
                         fadeOut(animationSpec = navFadeSpec)
                     }
                     slideIn togetherWith slideOut

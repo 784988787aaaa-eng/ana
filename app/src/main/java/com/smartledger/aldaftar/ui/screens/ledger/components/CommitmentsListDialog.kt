@@ -1,8 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.ledger.components
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,19 +13,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
-import kotlinx.coroutines.launch
+import com.smartledger.aldaftar.ui.theme.MizanIconSizes
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import java.math.BigDecimal
 
 @Composable
@@ -51,29 +49,15 @@ fun CommitmentsListDialog(
     if (!showCommitmentsListSheet) return
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    val commitmentsScaleFraction = remember { Animatable(0f) }
     var commitmentToDelete by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(showCommitmentsListSheet) {
-        commitmentsScaleFraction.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(300, easing = FastOutSlowInEasing)
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = true
         )
-    }
-
-    val closeAction = {
-        scope.launch {
-            commitmentsScaleFraction.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(220, easing = FastOutSlowInEasing)
-            )
-            onDismissRequest()
-        }
-    }
-
-    Dialog(onDismissRequest = { closeAction() }) {
+    ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = RoundedCornerShape(22.dp),
@@ -81,14 +65,10 @@ fun CommitmentsListDialog(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(0.92f)
+                    .widthIn(max = 420.dp)
+                    .heightIn(max = 640.dp)
                     .padding(vertical = 12.dp)
-                    .graphicsLayer(
-                        scaleX = commitmentsScaleFraction.value,
-                        scaleY = commitmentsScaleFraction.value,
-                        alpha = commitmentsScaleFraction.value,
-                        transformOrigin = TransformOrigin(0.5f, 0.8f)
-                    )
             ) {
                 Column(
                     modifier = Modifier
@@ -98,7 +78,7 @@ fun CommitmentsListDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     CommitmentHeaderClean(
-                        onCloseClick = { closeAction() },
+                        onCloseClick = onDismissRequest,
                         onShareClick = {
                             CommitmentShareHelper.shareCommitments(
                                 context = context,
@@ -120,14 +100,14 @@ fun CommitmentsListDialog(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "لا توجد أهداف أو التزامات مدونة حالياً",
+                                text = stringResource(id = R.string.ledger_commitments_empty_title),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "اضغط على الزر أدناه لإضافة هدفك المالي الأول",
+                                text = stringResource(id = R.string.ledger_commitments_empty_desc),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -186,7 +166,7 @@ fun CommitmentsListDialog(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp)
+                            .height(MizanTouchTarget.standardButtonHeight)
                             .clip(RoundedCornerShape(14.dp))
                             .clickable {
                                 onAddCommitmentClick()
@@ -201,11 +181,11 @@ fun CommitmentsListDialog(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(MizanIconSizes.sm)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "+ إضافة التزام / هدف جديد",
+                                text = stringResource(id = R.string.ledger_commitment_add_btn_label),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,16 +27,19 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 @Composable
@@ -71,7 +75,7 @@ fun CustomerDeleteConfirmationDialog(
                 } else {
                     stringResource(id = R.string.habayeb_bulk_delete_confirm, selectedCustomerIds.size)
                 },
-                fontSize = 13.sp,
+                fontSize = 13.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
@@ -82,25 +86,36 @@ fun CustomerDeleteConfirmationDialog(
                     containerColor = debtRed,
                     contentColor = mizanColors.onDebt
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
             ) {
                 Text(
                     text = stringResource(id = R.string.habayeb_delete_yes),
                     color = mizanColors.onDebt,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp
                 )
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
+            ) {
                 Text(
                     text = stringResource(id = R.string.habayeb_cancel),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.5.sp
                 )
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(22.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .fillMaxWidth(0.92f)
+            .widthIn(max = 360.dp)
     )
 }
 
@@ -139,6 +154,7 @@ fun CustomerEditDialog(
     }
 
     val editNameFocusRequester = remember { FocusRequester() }
+    val editPhoneFocusRequester = remember { FocusRequester() }
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     val view = androidx.compose.ui.platform.LocalView.current
@@ -158,14 +174,14 @@ fun CustomerEditDialog(
     }
 
     LaunchedEffect(Unit) {
-kotlinx.coroutines.delay(150)
-            editNameFocusRequester.requestFocus()
-            keyboardController?.show()
+        kotlinx.coroutines.android.awaitFrame()
+        editNameFocusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(
+        properties = DialogProperties(
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = true
         )
@@ -173,10 +189,11 @@ kotlinx.coroutines.delay(150)
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 modifier = Modifier
-                    .widthIn(max = 340.dp)
                     .fillMaxWidth(0.92f)
+                    .widthIn(max = 360.dp)
+                    .navigationBarsPadding()
                     .imePadding(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
@@ -185,7 +202,7 @@ kotlinx.coroutines.delay(150)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(18.dp),
+                        .padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Row(
@@ -194,7 +211,7 @@ kotlinx.coroutines.delay(150)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(34.dp)
+                                .size(36.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(activeThemeColor.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
@@ -203,7 +220,7 @@ kotlinx.coroutines.delay(150)
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
                                 tint = activeThemeColor,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                         Text(
@@ -228,6 +245,11 @@ kotlinx.coroutines.delay(150)
                                 singleLine = true,
                                 isError = isDuplicateName && editedNameStr.isNotBlank(),
                                 shape = RoundedCornerShape(12.dp),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { editPhoneFocusRequester.requestFocus() }),
+                                textStyle = LocalTextStyle.current.copy(
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                                ),
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Person,
@@ -242,8 +264,8 @@ kotlinx.coroutines.delay(150)
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                     focusedBorderColor = activeThemeColor,
                                     focusedLabelColor = activeThemeColor,
                                     cursorColor = activeThemeColor,
@@ -255,7 +277,7 @@ kotlinx.coroutines.delay(150)
                                 Text(
                                     text = stringResource(id = R.string.habayeb_error_duplicate_name),
                                     color = MaterialTheme.colorScheme.error,
-                                    fontSize = 11.sp,
+                                    fontSize = 11.5.sp,
                                     modifier = Modifier.padding(start = 8.dp, top = 4.dp)
                                 )
                             }
@@ -266,7 +288,16 @@ kotlinx.coroutines.delay(150)
                             onValueChange = { editedPhoneTfv = it },
                             label = { Text(stringResource(id = R.string.habayeb_phone_label)) },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Phone,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { keyboardController?.hide() }
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                            ),
                             shape = RoundedCornerShape(12.dp),
                             leadingIcon = {
                                 Icon(
@@ -295,12 +326,14 @@ kotlinx.coroutines.delay(150)
                                     )
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(editPhoneFocusRequester),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                 focusedBorderColor = activeThemeColor,
                                 focusedLabelColor = activeThemeColor,
                                 cursorColor = activeThemeColor,
@@ -318,12 +351,16 @@ kotlinx.coroutines.delay(150)
                     ) {
                         TextButton(
                             onClick = onDismiss,
-                            modifier = Modifier.padding(end = 6.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .padding(end = 6.dp)
+                                .height(MizanTouchTarget.standardButtonHeight)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.habayeb_cancel),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.5.sp
                             )
                         }
 
@@ -342,12 +379,14 @@ kotlinx.coroutines.delay(150)
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
+                            contentPadding = PaddingValues(horizontal = 22.dp, vertical = 0.dp),
+                            modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.habayeb_save_edit),
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontSize = 13.5.sp
                             )
                         }
                     }

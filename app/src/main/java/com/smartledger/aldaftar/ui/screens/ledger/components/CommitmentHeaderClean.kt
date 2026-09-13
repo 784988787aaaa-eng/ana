@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanIconSizes
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
 fun CommitmentHeaderClean(
@@ -34,21 +36,26 @@ fun CommitmentHeaderClean(
     ) {
         IconButton(
             onClick = onCloseClick,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+            modifier = Modifier.size(MizanTouchTarget.iconButtonSize)
         ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = stringResource(id = R.string.report_btn_close),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(id = R.string.report_btn_close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(MizanIconSizes.sm)
+                )
+            }
         }
 
         Text(
-            text = "الأهداف والالتزامات",
+            text = stringResource(id = R.string.ledger_commitments_dialog_title),
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 16.sp
@@ -56,17 +63,22 @@ fun CommitmentHeaderClean(
 
         IconButton(
             onClick = onShareClick,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+            modifier = Modifier.size(MizanTouchTarget.iconButtonSize)
         ) {
-            Icon(
-                imageVector = Icons.Default.Share,
-                contentDescription = stringResource(id = R.string.ledger_whatsapp_whatsapp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(17.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = stringResource(id = R.string.ledger_whatsapp_whatsapp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(MizanIconSizes.sm)
+                )
+            }
         }
     }
 }

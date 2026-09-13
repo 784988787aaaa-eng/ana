@@ -154,8 +154,51 @@ object PdfPageRenderer {
         drawArabicText(canvas, footerTextRight, 200f, 815f, 370, paintFooterText, Layout.Alignment.ALIGN_NORMAL)
     }
 
-    fun drawBusinessHeader(canvas: Canvas, headerData: PdfBusinessHeaderData) {
-        drawBusinessHeader(
+    fun calculateHeaderBottomY(
+        displayedName: String,
+        displayedDesc: String,
+        phonesStr: String,
+        hasLogo: Boolean,
+        logoH: Float
+    ): Float {
+        val maxColWidth = 210
+
+        val namePaint = Paint(paintBizName)
+        var nameSize = 14.5f
+        namePaint.textSize = nameSize
+        while (namePaint.measureText(displayedName) > maxColWidth && nameSize > 9.0f) {
+            nameSize -= 0.4f
+            namePaint.textSize = nameSize
+        }
+        val nameHeight = PdfDrawingUtils.measureTextHeight(displayedName, namePaint, maxColWidth)
+
+        val descPaint = Paint(paintBizDesc)
+        var descSize = 9.5f
+        descPaint.textSize = descSize
+        while (descPaint.measureText(displayedDesc) > maxColWidth && descSize > 6.0f) {
+            descSize -= 0.3f
+            descPaint.textSize = descSize
+        }
+        val descHeight = if (displayedDesc.isNotBlank()) PdfDrawingUtils.measureTextHeight(displayedDesc, descPaint, maxColWidth) else 0
+
+        val phonePaint = Paint(paintBizPhones)
+        var phoneSize = 8.5f
+        phonePaint.textSize = phoneSize
+        while (phonePaint.measureText(phonesStr) > maxColWidth && phoneSize > 5.0f) {
+            phoneSize -= 0.3f
+            phonePaint.textSize = phoneSize
+        }
+        val phoneHeight = if (phonesStr.isNotBlank()) PdfDrawingUtils.measureTextHeight(phonesStr, phonePaint, maxColWidth) else 0
+
+        val rightColBottom = 16f + nameHeight + (if (descHeight > 0) 2f + descHeight else 0f) + (if (phoneHeight > 0) 2f + phoneHeight else 0f)
+        val centerLogoBottom = if (hasLogo) 16f + logoH else 0f
+        val contentBottomY = maxOf(46f, rightColBottom, centerLogoBottom)
+        val dividerY = maxOf(66f, contentBottomY + 6f)
+        return dividerY + 10f
+    }
+
+    fun drawBusinessHeader(canvas: Canvas, headerData: PdfBusinessHeaderData): Float {
+        return drawBusinessHeader(
             canvas = canvas,
             displayedName = headerData.displayedName,
             displayedDesc = headerData.displayedDesc,
@@ -180,9 +223,9 @@ object PdfPageRenderer {
         logoH: Float,
         docDateText: String,
         docTimeText: String
-    ) {
+    ): Float {
         val rightColX = 360f
-        val maxColWidth = 210f
+        val maxColWidth = 210
 
         val namePaint = Paint(paintBizName)
         var nameSize = 14.5f
@@ -191,7 +234,6 @@ object PdfPageRenderer {
             nameSize -= 0.4f
             namePaint.textSize = nameSize
         }
-        drawArabicText(canvas, displayedName, rightColX, 20f, 210, namePaint, Layout.Alignment.ALIGN_NORMAL)
 
         val descPaint = Paint(paintBizDesc)
         var descSize = 9.5f
@@ -200,7 +242,6 @@ object PdfPageRenderer {
             descSize -= 0.3f
             descPaint.textSize = descSize
         }
-        drawArabicText(canvas, displayedDesc, rightColX, 38f, 210, descPaint, Layout.Alignment.ALIGN_NORMAL)
 
         val phonePaint = Paint(paintBizPhones)
         var phoneSize = 8.5f
@@ -209,18 +250,38 @@ object PdfPageRenderer {
             phoneSize -= 0.3f
             phonePaint.textSize = phoneSize
         }
-        drawArabicText(canvas, phonesStr, rightColX, 52f, 210, phonePaint, Layout.Alignment.ALIGN_NORMAL)
 
-        if (hasLogo && scaledLogo != null) {
+        var currentRightY = 16f
+        val nameHeight = drawArabicText(canvas, displayedName, rightColX, currentRightY, maxColWidth, namePaint, Layout.Alignment.ALIGN_NORMAL)
+        currentRightY += nameHeight + 2f
+
+        if (displayedDesc.isNotBlank()) {
+            val descHeight = drawArabicText(canvas, displayedDesc, rightColX, currentRightY, maxColWidth, descPaint, Layout.Alignment.ALIGN_NORMAL)
+            currentRightY += descHeight + 2f
+        }
+
+        if (phonesStr.isNotBlank()) {
+            drawArabicText(canvas, phonesStr, rightColX, currentRightY, maxColWidth, phonePaint, Layout.Alignment.ALIGN_NORMAL)
+        }
+
+        val rightColBottom = currentRightY + 8f
+        val centerLogoBottom = if (hasLogo && scaledLogo != null && !scaledLogo.isRecycled) 16f + logoH else 0f
+        val contentBottomY = maxOf(46f, rightColBottom, centerLogoBottom)
+        val dividerY = maxOf(66f, contentBottomY + 6f)
+
+        if (hasLogo && scaledLogo != null && !scaledLogo.isRecycled) {
             val logoX = 297.5f - (logoW / 2f)
-            val logoY = 20f + ((45f - logoH) / 2f)
+            val availableHeight = (dividerY - 6f - 16f).coerceAtLeast(logoH)
+            val logoY = 16f + ((availableHeight - logoH) / 2f).coerceAtLeast(0f)
             canvas.drawBitmap(scaledLogo, logoX, logoY, null)
         }
 
-        drawArabicText(canvas, docDateText, 25f, 22f, 180, paintLeft1, Layout.Alignment.ALIGN_OPPOSITE)
-        drawArabicText(canvas, docTimeText, 25f, 36f, 180, paintLeft2, Layout.Alignment.ALIGN_OPPOSITE)
+        drawArabicText(canvas, docDateText, 25f, 20f, 180, paintLeft1, Layout.Alignment.ALIGN_OPPOSITE)
+        drawArabicText(canvas, docTimeText, 25f, 34f, 180, paintLeft2, Layout.Alignment.ALIGN_OPPOSITE)
 
-        canvas.drawLine(25f, 68f, 570f, 68f, paintDivider)
+        canvas.drawLine(25f, dividerY, 570f, dividerY, paintDivider)
+
+        return dividerY + 10f
     }
 
     fun drawAllCustomersTableHeader(canvas: Canvas, y: Float, context: Context) {

@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit
 import android.content.Context
 import com.smartledger.aldaftar.ui.viewmodel.AppViewModelFactory
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 class FinanceApplication : Application(), Configuration.Provider {
     companion object {
         private const val DAILY_BACKUP_WORK_NAME = "smartledger_daily_backup"
@@ -25,20 +29,24 @@ class FinanceApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        container
-        viewModelFactory
-        val workManager = WorkManager.getInstance(this)
-        workManager.enqueueUniquePeriodicWork(
-            DAILY_BACKUP_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<com.smartledger.aldaftar.work.DailyBackupWorker>(24, TimeUnit.HOURS).build()
-        )
-        workManager.enqueueUniquePeriodicWork(
-            LICENSE_VERIFICATION_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<com.smartledger.aldaftar.work.LicenseVerificationWorker>(24, TimeUnit.HOURS)
-                .setConstraints(Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build()).build()
-        )
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val workManager = WorkManager.getInstance(this@FinanceApplication)
+                workManager.enqueueUniquePeriodicWork(
+                    DAILY_BACKUP_WORK_NAME,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    PeriodicWorkRequestBuilder<com.smartledger.aldaftar.work.DailyBackupWorker>(24, TimeUnit.HOURS).build()
+                )
+                workManager.enqueueUniquePeriodicWork(
+                    LICENSE_VERIFICATION_WORK_NAME,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    PeriodicWorkRequestBuilder<com.smartledger.aldaftar.work.LicenseVerificationWorker>(24, TimeUnit.HOURS)
+                        .setConstraints(Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build()).build()
+                )
+            } catch (e: Exception) {
+                android.util.Log.w("FinanceApplication", "Failed to schedule background workers", e)
+            }
+        }
     }
 
     override val workManagerConfiguration: Configuration

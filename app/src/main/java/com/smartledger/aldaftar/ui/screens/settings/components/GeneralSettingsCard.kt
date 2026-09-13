@@ -20,12 +20,12 @@ fun GeneralSettingsCard(
     onCurrencySymbolChange: (String) -> Unit
 ) {
     ElevatedCard(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.End
         ) {
             Text(
@@ -34,7 +34,7 @@ fun GeneralSettingsCard(
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = currencySymbol,

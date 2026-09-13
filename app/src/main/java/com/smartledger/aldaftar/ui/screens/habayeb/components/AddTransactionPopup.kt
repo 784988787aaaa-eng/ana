@@ -178,7 +178,6 @@ kotlinx.coroutines.android.awaitFrame()
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
                 isSaving = false
             } else {
-                com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                 val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
                     CurrencyConfig.convertAmountBigDecimal(amountBd, currencySymbol, selectedTransactionCurrency, effectiveRateBd)
                 } else {
@@ -210,25 +209,29 @@ kotlinx.coroutines.android.awaitFrame()
         }
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = true
-        )
-    ) {
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .widthIn(max = 360.dp)
+                    .fillMaxWidth(0.92f)
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
             ) {
-                Crossfade(targetState = showRateSetupOverlay, label = "FormTransition") { isSetup ->
+                Crossfade(
+                    targetState = showRateSetupOverlay,
+                    label = "FormTransition",
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.DURATION_CROSSFADE,
+                        easing = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.easeInOut
+                    )
+                ) { isSetup ->
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false

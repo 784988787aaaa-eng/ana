@@ -422,6 +422,7 @@ class FinanceViewModel(
                 val count = commitmentsState.value.size
                 val fc = FixedCommitment(name, targetAmount, currentProgress, count)
                 commitmentsRepository.saveCommitment(fc)
+                com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -466,6 +467,7 @@ class FinanceViewModel(
                     trashRepository.softDeleteCommitmentToTrash(oldFc)
                 }
                 commitmentsRepository.deleteCommitment(name)
+                com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

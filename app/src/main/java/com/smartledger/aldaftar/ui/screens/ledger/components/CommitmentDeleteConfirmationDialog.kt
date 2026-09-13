@@ -15,6 +15,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
+
 @Composable
 fun CommitmentDeleteConfirmationDialog(
     commitmentName: String?,
@@ -38,7 +42,7 @@ fun CommitmentDeleteConfirmationDialog(
         text = {
             Text(
                 text = stringResource(id = R.string.ledger_confirm_delete_commitment_msg),
-                fontSize = 14.sp,
+                fontSize = 13.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Right,
                 modifier = Modifier.fillMaxWidth()
@@ -51,7 +55,8 @@ fun CommitmentDeleteConfirmationDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
             ) {
                 Text(
                     text = stringResource(id = R.string.ledger_confirm_delete_btn),
@@ -65,7 +70,8 @@ fun CommitmentDeleteConfirmationDialog(
             OutlinedButton(
                 onClick = onDismiss,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
             ) {
                 Text(
                     text = stringResource(id = R.string.common_cancel),
@@ -77,6 +83,8 @@ fun CommitmentDeleteConfirmationDialog(
         shape = RoundedCornerShape(22.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier.fillMaxWidth(0.90f)
+        modifier = Modifier
+            .fillMaxWidth(0.90f)
+            .widthIn(max = 360.dp)
     )
 }

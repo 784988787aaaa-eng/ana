@@ -15,7 +15,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
 fun CategoryDeleteConfirmationDialog(
@@ -25,30 +27,35 @@ fun CategoryDeleteConfirmationDialog(
     onConfirmDelete: (deleteLinkedAccounts: Boolean) -> Unit
 ) {
     val errorColor = MaterialTheme.colorScheme.error
-    val buttonShape = remember { RoundedCornerShape(8.dp) }
+    val buttonShape = remember { RoundedCornerShape(12.dp) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(22.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
-                .widthIn(max = 300.dp)
-                .fillMaxWidth(0.88f)
+                .fillMaxWidth(0.90f)
+                .widthIn(max = 340.dp)
                 .padding(8.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = stringResource(R.string.habayeb_category_delete_confirm, categoryName),
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Button(
                     onClick = onDismiss,
@@ -59,11 +66,11 @@ fun CategoryDeleteConfirmationDialog(
                     shape = buttonShape,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(38.dp)
+                        .height(MizanTouchTarget.standardButtonHeight)
                 ) {
                     Text(
                         text = stringResource(R.string.habayeb_category_delete_cancel),
-                        fontSize = 12.sp,
+                        fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -80,12 +87,12 @@ fun CategoryDeleteConfirmationDialog(
                     shape = buttonShape,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(MizanTouchTarget.standardButtonHeight)
                 ) {
                     Text(
                         text = stringResource(R.string.habayeb_category_delete_only),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
@@ -94,19 +101,19 @@ fun CategoryDeleteConfirmationDialog(
                         onConfirmDelete(true)
                         onDismiss()
                     },
-                    border = BorderStroke(1.dp, errorColor.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, errorColor.copy(alpha = 0.5f)),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = errorColor
                     ),
                     shape = buttonShape,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(MizanTouchTarget.standardButtonHeight)
                 ) {
                     Text(
                         text = stringResource(R.string.habayeb_category_delete_all_accounts),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }

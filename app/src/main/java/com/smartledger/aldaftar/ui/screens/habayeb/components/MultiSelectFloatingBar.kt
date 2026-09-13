@@ -76,7 +76,6 @@ fun MultiSelectFloatingBar(
         ) {
             IconButton(
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onCancel()
                 },
                 modifier = Modifier.size(40.dp)
@@ -95,7 +94,6 @@ fun MultiSelectFloatingBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onToggleSelectAll()
                     }
                     .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -119,7 +117,6 @@ fun MultiSelectFloatingBar(
 
             IconButton(
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onDelete()
                 },
                 modifier = Modifier

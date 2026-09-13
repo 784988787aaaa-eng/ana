@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,6 +48,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import kotlinx.coroutines.delay
 
 @Composable
@@ -77,9 +79,9 @@ fun MicroAddCategoryDialog(
     }
 
     LaunchedEffect(Unit) {
-delay(150)
-            focusRequester.requestFocus()
-            keyboardController?.show()
+        kotlinx.coroutines.android.awaitFrame()
+        focusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     Dialog(
@@ -90,16 +92,18 @@ delay(150)
         )
     ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
-                .width(320.dp)
+                .fillMaxWidth(0.92f)
+                .widthIn(max = 360.dp)
+                .navigationBarsPadding()
                 .imePadding()
                 .padding(vertical = 12.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -108,19 +112,20 @@ delay(150)
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
 
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
-                    placeholder = { Text(stringResource(R.string.habayeb_category_add_placeholder), fontSize = 14.sp) },
+                    placeholder = { Text(stringResource(R.string.habayeb_category_add_placeholder), fontSize = 13.5.sp) },
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontSize = 14.5.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Start
                     ),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = activeThemeColor,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -141,11 +146,12 @@ delay(150)
                 ) {
                     TextButton(
                         onClick = onDismiss,
-                        modifier = Modifier.height(40.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
                     ) {
                         Text(
                             text = stringResource(R.string.habayeb_category_cancel),
-                            fontSize = 14.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -153,13 +159,13 @@ delay(150)
                     Button(
                         onClick = handleSave,
                         colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        modifier = Modifier.height(40.dp)
+                        modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
                     ) {
                         Text(
                             text = stringResource(R.string.habayeb_category_save),
-                            fontSize = 14.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
                         )

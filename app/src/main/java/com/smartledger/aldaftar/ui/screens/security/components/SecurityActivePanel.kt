@@ -47,7 +47,6 @@ enum class SecurityActiveAction {
 fun SecurityActivePanel(
     currentSettings: AppSettings,
     viewModel: SecurityViewModel,
-    onCopyRecoveryPhrase: (() -> Unit)? = null,
     onChangePasscode: () -> Unit,
     onDeactivateSecurity: () -> Unit,
     modifier: Modifier = Modifier
@@ -165,7 +164,7 @@ fun SecurityActivePanel(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
+                    .height(44.dp)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
@@ -174,13 +173,13 @@ fun SecurityActivePanel(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = null,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.sec_btn_change_pin),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.5.sp
+                        fontSize = 13.sp
                     )
                 }
             }
@@ -192,7 +191,7 @@ fun SecurityActivePanel(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
+                    .height(44.dp)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
@@ -201,13 +200,13 @@ fun SecurityActivePanel(
                     Icon(
                         imageVector = Icons.Default.LockOpen,
                         contentDescription = null,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.sec_deactivate_btn),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.5.sp
+                        fontSize = 13.sp
                     )
                 }
             }
@@ -280,7 +279,7 @@ fun VerifyOldPinDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
                         Icon(imageVector = Icons.Default.Close, contentDescription = "Close", modifier = Modifier.size(18.dp))
                     }
                     Text(
@@ -385,7 +384,9 @@ fun VerifyOldPinDialog(
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Text(stringResource(id = R.string.sec_btn_cancel), fontSize = 13.sp)
@@ -402,7 +403,9 @@ fun VerifyOldPinDialog(
                                 if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {

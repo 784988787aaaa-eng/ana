@@ -250,23 +250,23 @@ fun LicenseDialog(
                             onClick = onDismiss,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(40.dp),
+                                .height(44.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.Check, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("إغلاق", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                            Text("إغلاق", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         OutlinedButton(
                             onClick = onDismiss,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(38.dp),
+                                .height(44.dp),
                             shape = RoundedCornerShape(11.dp),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         ) {
-                            Text("المتابعة لاحقًا", fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("المتابعة لاحقًا", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -647,19 +647,19 @@ private fun UnifiedAccountLoginSection(
                 enabled = !busy,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp),
+                    .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
             ) {
-                Icon(Icons.Default.CloudSync, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.CloudSync, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(6.dp))
-                Text("التحقق من الترخيص السحابي الآن", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text("التحقق من الترخيص السحابي الآن", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             }
 
             // Manual Activation code field (Only shown for unlicensed accounts)
             Text(
                 text = if (snapshot.activationRequired) "أدخل كود التفعيل لتفعيل حسابك لأول مرة:" else "أو أدخل كود التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -668,11 +668,11 @@ private fun UnifiedAccountLoginSection(
                 onValueChange = onActivationChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(56.dp),
                 singleLine = true,
                 enabled = !busy,
-                label = { Text("رمز التفعيل (من المطور)", fontSize = 10.sp) },
-                placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 9.5.sp) },
+                label = { Text("رمز التفعيل (من المطور)", fontSize = 11.sp) },
+                placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 11.sp) },
                 shape = RoundedCornerShape(10.dp)
             )
 
@@ -681,12 +681,12 @@ private fun UnifiedAccountLoginSection(
                 enabled = !busy && activationCode.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp),
+                    .height(44.dp),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Icon(Icons.Default.LockOpen, null, Modifier.size(15.dp))
+                Icon(Icons.Default.LockOpen, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("تفعيل الترخيص للحساب", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                Text("تفعيل الترخيص للحساب", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -708,12 +708,12 @@ private fun SignedTokenCompactSection(
             onValueChange = onTokenChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(76.dp),
+                .height(84.dp),
             minLines = 2,
             maxLines = 3,
             enabled = !busy,
-            label = { Text("رمز الترخيص المحلي", fontSize = 10.sp) },
-            placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 9.5.sp) },
+            label = { Text("رمز الترخيص المحلي", fontSize = 11.sp) },
+            placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 11.sp) },
             shape = RoundedCornerShape(10.dp)
         )
 
@@ -722,12 +722,12 @@ private fun SignedTokenCompactSection(
             enabled = !busy && token.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp),
+                .height(44.dp),
             shape = RoundedCornerShape(10.dp)
         ) {
-            Icon(Icons.Default.VpnKey, null, Modifier.size(15.dp))
+            Icon(Icons.Default.VpnKey, null, Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
-            Text("تفعيل برمز الترخيص", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+            Text("تفعيل برمز الترخيص", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -744,26 +744,26 @@ private fun CompactDeviceCodeRow(
         border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 Icons.Default.PhoneAndroid,
                 contentDescription = null,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.width(6.dp))
             Text(
                 text = "رمز الجهاز:",
-                fontSize = 9.5.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.width(6.dp))
             Text(
                 text = deviceCode,
                 modifier = Modifier.weight(1f),
-                fontSize = 10.5.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 maxLines = 1,
@@ -771,12 +771,12 @@ private fun CompactDeviceCodeRow(
             )
             IconButton(
                 onClick = onCopy,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
                     contentDescription = "نسخ",
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -797,15 +797,15 @@ private fun CompactWhatsAppButton(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(36.dp),
-        shape = RoundedCornerShape(9.dp),
+            .height(44.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen)
     ) {
-        Icon(Icons.Default.Chat, null, Modifier.size(15.dp), tint = Color.White)
+        Icon(Icons.Default.Chat, null, Modifier.size(16.dp), tint = Color.White)
         Spacer(Modifier.width(6.dp))
         Text(
             text = "طلب ترخيص أو مساعدة عبر واتساب",
-            fontSize = 10.5.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
         )

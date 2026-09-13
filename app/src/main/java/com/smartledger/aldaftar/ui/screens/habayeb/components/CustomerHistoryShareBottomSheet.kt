@@ -15,7 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
@@ -51,6 +53,7 @@ fun CustomerHistoryShareBottomSheet(
 
     val context = LocalContext.current
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
+    val scrollState = androidx.compose.foundation.rememberScrollState()
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -62,6 +65,7 @@ fun CustomerHistoryShareBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -79,7 +83,7 @@ fun CustomerHistoryShareBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                 shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Row(
                     modifier = Modifier
@@ -108,12 +112,16 @@ fun CustomerHistoryShareBottomSheet(
                             text = activeCustomer.name,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = if (isPhoneAvailable) activeCustomer.phone else stringResource(id = R.string.habayeb_no_phone_registered),
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -160,7 +168,7 @@ fun CustomerHistoryShareBottomSheet(
             FileShareOptionRow(
                 icon = Icons.Default.PictureAsPdf,
                 iconTint = DebtRed,
-                iconBgColor = DebtContainerLight,
+                iconBgColor = DebtRed.copy(alpha = 0.12f),
                 title = stringResource(id = R.string.share_pdf_title),
                 description = stringResource(id = R.string.share_pdf_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -178,7 +186,7 @@ fun CustomerHistoryShareBottomSheet(
             FileShareOptionRow(
                 icon = Icons.Default.GridOn,
                 iconTint = CreditGreen,
-                iconBgColor = CreditContainerLight,
+                iconBgColor = CreditGreen.copy(alpha = 0.12f),
                 title = stringResource(id = R.string.share_csv_title),
                 description = stringResource(id = R.string.share_csv_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -193,7 +201,7 @@ fun CustomerHistoryShareBottomSheet(
                 }
             )
             HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                 modifier = Modifier.padding(vertical = 4.dp)
             )
 
@@ -213,7 +221,9 @@ fun CustomerHistoryShareBottomSheet(
                         onDismissRequest()
                         CustomerShareHelper.triggerWhatsAppStatement(context, activeCustomer, netDebt, currencySymbol, allCustomerTxs)
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = WhatsAppGreen,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -239,7 +249,9 @@ fun CustomerHistoryShareBottomSheet(
                         onDismissRequest()
                         CustomerShareHelper.triggerSmsStatement(context, activeCustomer, netDebt, currencySymbol, allCustomerTxs)
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -279,18 +291,19 @@ private fun FileShareOptionRow(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(42.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(iconBgColor),
                 contentAlignment = Alignment.Center
@@ -308,13 +321,17 @@ private fun FileShareOptionRow(
                     text = title,
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = description,
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 15.sp
+                    lineHeight = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -326,45 +343,47 @@ private fun FileShareOptionRow(
                     onClick = onWhatsAppDirectClick,
                     enabled = isPhoneAvailable,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = if (isPhoneAvailable) WhatsAppGreen.copy(alpha = 0.1f) else Color.Transparent,
-                        contentColor = WhatsAppGreen
+                        containerColor = if (isPhoneAvailable) WhatsAppGreen.copy(alpha = 0.12f) else Color.Transparent,
+                        contentColor = WhatsAppGreen,
+                        disabledContainerColor = Color.Transparent,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                     ),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Chat,
                         contentDescription = stringResource(id = R.string.share_action_whatsapp_desc),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 IconButton(
                     onClick = onShareClick,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                         contentColor = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
                         contentDescription = stringResource(id = R.string.share_action_share_desc),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 IconButton(
                     onClick = onSaveClick,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f),
+                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
                         contentColor = MaterialTheme.colorScheme.secondary
                     ),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Download,
                         contentDescription = stringResource(id = R.string.share_action_download_desc),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

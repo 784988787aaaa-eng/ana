@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.RestoreFromTrash
@@ -274,11 +276,10 @@ fun TrashItemCard(
             ) {
                 if (parsedData.amountText.isNotEmpty()) {
                     val amountColor = if (parsedData.isExpense) debtColor else creditColor
-                    val arrow = if (parsedData.isExpense) "↗️" else "↙️"
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
                             text = parsedData.amountText,
@@ -287,9 +288,11 @@ fun TrashItemCard(
                             color = amountColor
                         )
                         if (isTransaction) {
-                            Text(
-                                text = arrow,
-                                fontSize = 10.sp
+                            Icon(
+                                imageVector = if (parsedData.isExpense) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                contentDescription = null,
+                                tint = amountColor,
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                     }
@@ -317,24 +320,24 @@ fun TrashItemCard(
                     ) {
                         IconButton(
                             onClick = onRestore,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.RestoreFromTrash,
                                 contentDescription = stringResource(id = R.string.trash_action_restore_btn),
-                                tint = CreditGreen,
+                                tint = creditColor,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
 
                         IconButton(
                             onClick = { showDeleteConfirm = true },
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DeleteForever,
                                 contentDescription = stringResource(id = R.string.trash_delete_permanently),
-                                tint = DebtRed,
+                                tint = debtColor,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
