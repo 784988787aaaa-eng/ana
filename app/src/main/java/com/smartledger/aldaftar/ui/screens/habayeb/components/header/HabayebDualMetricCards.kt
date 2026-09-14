@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -21,10 +20,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.helper.AutoScaleText
 import com.smartledger.aldaftar.ui.theme.mizanColors
+import com.smartledger.aldaftar.ui.theme.MizanRadii
+import com.smartledger.aldaftar.ui.theme.MizanSpacing
 
 @Composable
 fun HabayebDualMetricCards(
@@ -45,8 +45,8 @@ fun HabayebDualMetricCards(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 4.dp, start = 16.dp, end = 16.dp, bottom = 0.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(top = MizanSpacing.xs, start = MizanSpacing.lg, end = MizanSpacing.lg, bottom = 0.dp),
+        horizontalArrangement = Arrangement.spacedBy(MizanSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val isOwedBySelected = selectedFilterTab == 1
@@ -54,7 +54,7 @@ fun HabayebDualMetricCards(
         val owedByBorderColor = if (isOwedBySelected) effectiveDebtColor else mizanColors.chipDebtUnselectedBorder
 
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = MizanRadii.shapeMd,
             colors = CardDefaults.cardColors(containerColor = owedByCardBg),
             elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedBySelected) 3.dp else 1.dp),
             border = BorderStroke(
@@ -63,7 +63,7 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(49.dp)
+                .defaultMinSize(minHeight = 52.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -80,20 +80,20 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = MizanSpacing.xs, vertical = MizanSpacing.xxs),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = stringResource(id = R.string.habayeb_filter_owed_by),
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = effectiveDebtColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(1.dp))
+                    Spacer(modifier = Modifier.height(MizanSpacing.xxs))
                     AutoScaleText(
                         text = formattedOwedByThem,
                         baseFontSize = 14.5.sp,
@@ -112,7 +112,7 @@ fun HabayebDualMetricCards(
         val owedToBorderColor = if (isOwedToSelected) effectiveCreditColor else mizanColors.chipCreditUnselectedBorder
 
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = MizanRadii.shapeMd,
             colors = CardDefaults.cardColors(containerColor = owedToCardBg),
             elevation = CardDefaults.cardElevation(defaultElevation = if (isOwedToSelected) 3.dp else 1.dp),
             border = BorderStroke(
@@ -121,7 +121,7 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(49.dp)
+                .defaultMinSize(minHeight = 52.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -138,20 +138,20 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = MizanSpacing.xs, vertical = MizanSpacing.xxs),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = stringResource(id = R.string.habayeb_filter_owed_to),
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = effectiveCreditColor,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(1.dp))
+                    Spacer(modifier = Modifier.height(MizanSpacing.xxs))
                     AutoScaleText(
                         text = formattedOwedToThem,
                         baseFontSize = 14.5.sp,

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.helper.AutoScaleText
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
 
@@ -63,16 +65,18 @@ fun DayCardSummaryBar(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .padding(horizontal = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
+                AutoScaleText(
                     text = "${stringResource(id = R.string.ledger_daily_income).replace("اليوم", "").trim()}: ${formatCurrency(dailyIncome, currencySymbol).toWesternDigits()}",
-                    fontSize = 11.5.sp,
+                    baseFontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = mizanColors.credit,
-                    maxLines = 1
+                    maxLines = 1,
+                    minFontSize = 8.5.sp
                 )
             }
 
@@ -85,16 +89,18 @@ fun DayCardSummaryBar(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .padding(horizontal = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
+                AutoScaleText(
                     text = "${stringResource(id = R.string.ledger_daily_expense).replace("اليوم", "").trim()}: ${formatCurrency(dailyExpense, currencySymbol).toWesternDigits()}",
-                    fontSize = 11.5.sp,
+                    baseFontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = mizanColors.debt,
-                    maxLines = 1
+                    maxLines = 1,
+                    minFontSize = 8.5.sp
                 )
             }
         }

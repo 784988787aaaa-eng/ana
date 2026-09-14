@@ -79,7 +79,7 @@ fun CommitmentsSummaryCards(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -92,7 +92,7 @@ fun CommitmentsSummaryCards(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(1.dp))
                 AutoScaleText(
                     text = formatCurrency(netAmount, currencySymbol).toWesternDigits(),
                     baseFontSize = 14.sp,
@@ -122,7 +122,7 @@ fun CommitmentsSummaryCards(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -135,7 +135,7 @@ fun CommitmentsSummaryCards(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(1.dp))
                 AutoScaleText(
                     text = formatCurrency(totalRemainingCommitments, currencySymbol).toWesternDigits(),
                     baseFontSize = 14.sp,

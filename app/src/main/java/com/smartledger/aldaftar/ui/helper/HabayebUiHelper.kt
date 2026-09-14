@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,20 +37,19 @@ fun AutoScaleText(
     color: Color,
     fontWeight: FontWeight,
     modifier: Modifier = Modifier,
-    minFontSize: TextUnit = 9.sp,
+    minFontSize: TextUnit = 8.5.sp,
     textAlign: TextAlign = TextAlign.Center,
     maxLines: Int = 1
 ) {
     val initialSize = remember(text, baseFontSize) {
         when {
-            text.length > 22 -> (baseFontSize.value * 0.68f).sp
-            text.length > 16 -> (baseFontSize.value * 0.78f).sp
-            text.length > 12 -> (baseFontSize.value * 0.88f).sp
+            text.length > 22 -> (baseFontSize.value * 0.65f).sp
+            text.length > 16 -> (baseFontSize.value * 0.75f).sp
+            text.length > 12 -> (baseFontSize.value * 0.85f).sp
             else -> baseFontSize
         }
     }
     var fontSizeState by remember(text, baseFontSize) { mutableStateOf(initialSize) }
-    var readyToDraw by remember(text, baseFontSize) { mutableStateOf(true) }
 
     Text(
         text = text,
@@ -59,33 +59,26 @@ fun AutoScaleText(
             fontSize = fontSizeState,
             fontWeight = fontWeight,
             color = color,
-            textAlign = textAlign
+            textAlign = textAlign,
+            platformStyle = PlatformTextStyle(
+                includeFontPadding = false
+            )
         ),
         textAlign = textAlign,
         maxLines = maxLines,
         softWrap = false,
         overflow = TextOverflow.Ellipsis,
-        modifier = modifier.drawWithContent {
-            if (readyToDraw) {
-                drawContent()
-            }
-        },
+        modifier = modifier,
         onTextLayout = { textLayoutResult ->
             if (textLayoutResult.hasVisualOverflow) {
                 val currentSize = fontSizeState.value
                 val minSizeVal = minFontSize.value
                 if (currentSize > minSizeVal) {
-                    val nextSize = (currentSize - 1.0f).coerceAtLeast(minSizeVal)
+                    val nextSize = (currentSize - 0.75f).coerceAtLeast(minSizeVal)
                     if (nextSize != currentSize) {
                         fontSizeState = nextSize.sp
-                    } else {
-                        readyToDraw = true
                     }
-                } else {
-                    readyToDraw = true
                 }
-            } else {
-                readyToDraw = true
             }
         }
     )

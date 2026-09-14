@@ -3,14 +3,12 @@ package com.smartledger.aldaftar.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -22,24 +20,26 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.navigation.Screen
-
-private const val LABEL_TAB_COLOR_PREFIX = "tab_color_"
+import com.smartledger.aldaftar.ui.theme.MizanIconSizes
+import com.smartledger.aldaftar.ui.theme.MizanRadii
+import com.smartledger.aldaftar.ui.theme.MizanSpacing
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
 fun MainBottomNavigation(
@@ -50,7 +50,6 @@ fun MainBottomNavigation(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-
     val items = remember(context) {
         listOf(
             Triple(Screen.HABAYEB, Icons.Default.People, context.getString(R.string.nav_habayeb_plain)),
@@ -60,54 +59,42 @@ fun MainBottomNavigation(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(
-            initialOffsetY = { it },
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-        ) + fadeIn(),
-        exit = slideOutVertically(
-            targetOffsetY = { it },
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-        ) + fadeOut(),
+        enter = slideInVertically(initialOffsetY = { it }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(),
         modifier = modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(bottom = 4.dp),
+                .padding(horizontal = MizanSpacing.md, vertical = MizanSpacing.xs),
             contentAlignment = Alignment.BottomCenter
         ) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(
-                    0.5.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                ),
-                shadowElevation = 3.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+                shadowElevation = 4.dp,
                 modifier = Modifier
-                    .wrapContentWidth()
-                    .height(50.dp)
+                    .fillMaxWidth()
+                    .widthIn(min = 200.dp, max = 360.dp)
+                    .height(MizanTouchTarget.standardButtonHeight)
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                        .width(230.dp)
-                        .fillMaxHeight(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .padding(horizontal = MizanSpacing.xs, vertical = MizanSpacing.xxs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     items.forEachIndexed { index, (screen, icon, label) ->
                         val isSelected = currentScreen == screen
                         val contentColor by animateColorAsState(
-                            targetValue = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-                            },
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                            label = "$LABEL_TAB_COLOR_PREFIX$index"
+                            label = "tab_color_$index"
                         )
-
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -116,31 +103,31 @@ fun MainBottomNavigation(
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
+                                    role = Role.Button,
                                     onClick = {
-                                        if (currentScreen != screen) {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (!isSelected) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             onNavigate(screen)
                                         }
                                     }
-                                ),
+                                )
+                                .semantics {
+                                    selected = isSelected
+                                    role = Role.Button
+                                    contentDescription = label
+                                },
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(vertical = 2.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(MizanSpacing.xs),
+                                modifier = Modifier.padding(horizontal = MizanSpacing.sm)
                             ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = label,
-                                    tint = contentColor,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(MizanIconSizes.sm))
                                 Text(
                                     text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Medium,
                                     color = contentColor,
                                     maxLines = 1
                                 )
