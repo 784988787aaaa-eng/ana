@@ -45,7 +45,7 @@ fun HabayebDualMetricCards(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 6.dp, start = 16.dp, end = 16.dp, bottom = 2.dp),
+            .padding(top = 4.dp, start = 16.dp, end = 16.dp, bottom = 0.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -63,7 +63,7 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(52.dp)
+                .height(49.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -80,7 +80,7 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -93,7 +93,7 @@ fun HabayebDualMetricCards(
                         maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(1.dp))
                     AutoScaleText(
                         text = formattedOwedByThem,
                         baseFontSize = 14.5.sp,
@@ -121,7 +121,7 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(52.dp)
+                .height(49.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -138,7 +138,7 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -151,7 +151,7 @@ fun HabayebDualMetricCards(
                         maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(1.dp))
                     AutoScaleText(
                         text = formattedOwedToThem,
                         baseFontSize = 14.5.sp,

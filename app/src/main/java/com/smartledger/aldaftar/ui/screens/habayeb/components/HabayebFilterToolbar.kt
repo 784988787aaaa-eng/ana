@@ -103,13 +103,13 @@ fun HabayebFilterToolbar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 1.dp)
+            .padding(start = 8.dp, top = 2.dp, end = 8.dp, bottom = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp)
-                .padding(horizontal = 2.dp, vertical = 2.dp),
+                .height(32.dp)
+                .padding(horizontal = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -266,15 +266,20 @@ fun HabayebFilterToolbar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            onAddCategoryClick()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .size(26.dp)
                             .clip(CircleShape)
-                            .background(activeThemeColor.copy(alpha = 0.12f))
-                            .clickable {
-                                onAddCategoryClick()
-                            },
+                            .background(activeThemeColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -291,15 +296,21 @@ fun HabayebFilterToolbar(
                     val sortBtnBg = if (isSortActive) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant
                     val sortIconTint = if (isSortActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                        IconButton(
-                            onClick = {
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
                                 isSortMenuExpanded = true
                             },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
                             modifier = Modifier
                                 .size(26.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(sortBtnBg)
+                                .background(sortBtnBg),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.SwapVert,

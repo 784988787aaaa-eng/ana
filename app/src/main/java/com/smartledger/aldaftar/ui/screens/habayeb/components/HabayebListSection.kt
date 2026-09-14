@@ -89,7 +89,7 @@ fun HabayebListSection(
                     )
                 }
             },
-        contentPadding = PaddingValues(top = 2.dp, bottom = 72.dp)
+        contentPadding = PaddingValues(top = 0.dp, bottom = 72.dp)
     ) {
         if (filteredCustomers.isEmpty()) {
             item(key = "empty_state_${catKey}_$selectedFilterTab") {

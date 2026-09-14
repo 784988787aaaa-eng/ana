@@ -35,7 +35,7 @@ fun CustomCategoryChip(
         shape = RoundedCornerShape(8.dp),
         color = containerColor,
         modifier = modifier
-            .height(26.dp)
+            .height(27.dp)
             .clip(RoundedCornerShape(8.dp))
             .combinedClickable(
                 onClick = onClick,
@@ -48,7 +48,7 @@ fun CustomCategoryChip(
         ) {
             Text(
                 text = label,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = textColor
             )
