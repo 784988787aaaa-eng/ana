@@ -51,27 +51,29 @@ fun BusinessProfileLogoSection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isDialog) 0.dp else 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 10.dp, vertical = if (isDialog) 4.dp else 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = stringResource(id = R.string.biz_logo_title),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            if (!isDialog) {
+                Text(
+                    text = stringResource(id = R.string.biz_logo_title),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+            }
 
             Box(
                 modifier = Modifier
-                    .size(70.dp)
+                    .size(if (isDialog) 56.dp else 70.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.outlineVariant)
                     .border(2.dp, activeThemeColor.copy(alpha = 0.3f), CircleShape)

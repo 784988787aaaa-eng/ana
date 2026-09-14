@@ -1,9 +1,10 @@
 package com.smartledger.aldaftar.data.backup
 
 import com.smartledger.aldaftar.data.cloud.CloudArchiveStore
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** دورة النسخ اليومية: نسخة محلية داخلية، ثم نسخة سحابية عند توفر الربط. */
+/** دورة النسخ اليومية: نسخة محلية مؤكدة أولاً، ثم رفع النسخة نفسها إلى السحابة. */
 class AutomaticBackupCoordinator(
     private val engine: BackupEngine,
     private val cloud: CloudArchiveStore
@@ -15,10 +16,11 @@ class AutomaticBackupCoordinator(
         return try {
             val local = engine.createAutomatic()
             if (!cloud.connected()) return Result.LocalOnly(local)
+
             runCatching { cloud.upload(local.readBytes(), local.name) }
                 .fold(
                     onSuccess = { Result.LocalAndCloud(local) },
-                    onFailure = { Result.LocalOnly(local) }
+                    onFailure = { Result.LocalOnly(local, it) }
                 )
         } finally {
             running.set(false)
@@ -26,8 +28,8 @@ class AutomaticBackupCoordinator(
     }
 
     sealed interface Result {
-        data class LocalAndCloud(val file: java.io.File) : Result
-        data class LocalOnly(val file: java.io.File) : Result
+        data class LocalAndCloud(val file: File) : Result
+        data class LocalOnly(val file: File, val cloudError: Throwable? = null) : Result
         data object AlreadyRunning : Result
     }
 }

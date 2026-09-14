@@ -48,6 +48,7 @@ import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
 import com.smartledger.aldaftar.ui.helper.VibrationHelper
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -149,9 +150,9 @@ fun BackupRestoreBottomSheet(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
             dragHandle = {
                 Box(
                     modifier = Modifier
@@ -168,9 +169,10 @@ fun BackupRestoreBottomSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 14.dp)
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 12.dp)
+                    .padding(bottom = 10.dp)
+                    .imePadding(),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 // Header with Title and Connection Pill Badge
                 BackupMainHeader(connected = connected)
@@ -222,7 +224,7 @@ fun BackupRestoreBottomSheet(
                 LocalBackupCard(
                     busy = busy,
                     onExportLocal = {
-                        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+                        val timestamp = WesternDigits.normalize(SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date()))
                         createDocumentLauncher.launch(context.getString(R.string.backup_export_file_name, timestamp))
                     },
                     onImportLocal = {
@@ -368,7 +370,7 @@ private fun BackupMainHeader(connected: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .padding(vertical = 0.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -380,13 +382,13 @@ private fun BackupMainHeader(connected: Boolean) {
             Icon(
                 imageVector = Icons.Default.CloudQueue,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = stringResource(R.string.backup_screen_title),
-                fontSize = 15.sp,
-                lineHeight = 20.sp,
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -406,7 +408,7 @@ private fun BackupMainHeader(connected: Boolean) {
             )
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
@@ -445,13 +447,13 @@ private fun CloudSyncCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             // Card Title Row
             Row(
@@ -480,8 +482,8 @@ private fun CloudSyncCard(
                     enabled = !busy,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
-                    shape = RoundedCornerShape(10.dp),
+                        .height(42.dp),
+                    shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
@@ -565,8 +567,8 @@ private fun CloudSyncCard(
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(10.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
@@ -592,8 +594,8 @@ private fun CloudSyncCard(
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(10.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                     ) {
                         Row(
@@ -680,14 +682,14 @@ private fun DirectCloudRestoreDialog(
     val context = LocalContext.current
     val formattedDateTime = remember(file.modifiedTime) {
         runCatching {
-            SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale("ar")).format(Date(file.modifiedTime))
+            WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.ENGLISH).format(Date(file.modifiedTime)))
         }.getOrElse {
-            SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.getDefault()).format(Date(file.modifiedTime))
+            WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.ENGLISH).format(Date(file.modifiedTime)))
         }
     }
     val sizeText = remember(file.size) {
         val kb = file.size / 1024.0
-        "${"%.1f".format(Locale.US, kb)} ${context.getString(R.string.backup_unit_kb)}"
+        WesternDigits.normalize("${"%.1f".format(Locale.US, kb)} ${context.getString(R.string.backup_unit_kb)}")
     }
 
     AlertDialog(
@@ -775,13 +777,13 @@ private fun LocalBackupCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             // Card Title Row
             Row(
@@ -822,8 +824,8 @@ private fun LocalBackupCard(
                     enabled = !busy,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
-                    shape = RoundedCornerShape(10.dp),
+                        .height(42.dp),
+                    shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
                     Row(
@@ -848,8 +850,8 @@ private fun LocalBackupCard(
                     enabled = !busy,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
-                    shape = RoundedCornerShape(10.dp),
+                        .height(42.dp),
+                    shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                 ) {
@@ -1338,7 +1340,7 @@ private fun ArchiveSubBar(
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ) {
             Text(
-                text = stringResource(R.string.history_items_count, count),
+                text = WesternDigits.normalize(stringResource(R.string.history_items_count, count)),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
@@ -1445,14 +1447,14 @@ private fun CloudBackupRow(
     val context = LocalContext.current
     val formattedDateTime = remember(item.modifiedTime) {
         runCatching {
-            SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale("ar")).format(Date(item.modifiedTime))
+            WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.ENGLISH).format(Date(item.modifiedTime)))
         }.getOrElse {
-            SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.getDefault()).format(Date(item.modifiedTime))
+            WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.ENGLISH).format(Date(item.modifiedTime)))
         }
     }
     val sizeText = remember(item.size) {
         val kb = item.size / 1024.0
-        "${"%.1f".format(Locale.US, kb)} ${context.getString(R.string.backup_unit_kb)}"
+        WesternDigits.normalize("${"%.1f".format(Locale.US, kb)} ${context.getString(R.string.backup_unit_kb)}")
     }
 
     Card(

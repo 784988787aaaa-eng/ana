@@ -6,6 +6,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.view.WindowManager
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
@@ -53,7 +56,9 @@ fun RequestFocusAndShowKeyboard(
     LaunchedEffect(enabled, key) {
         if (!enabled) return@LaunchedEffect
 
-        val window = (view.parent as? DialogWindowProvider)?.window
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        val activityWindow = view.context.findActivity()?.window
+        val window = dialogWindow ?: activityWindow
         window?.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
@@ -62,9 +67,18 @@ fun RequestFocusAndShowKeyboard(
         requestFocusAndShowKeyboard(
             focusRequester = focusRequester,
             keyboardController = keyboardController,
+            attempts = 12,
+            delayMs = 40L,
             postToView = {
                 view.post { runCatching { keyboardController?.show() } }
             }
         )
     }
 }
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+

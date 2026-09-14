@@ -87,17 +87,17 @@ fun SecuritySetupForm(
             )
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp) // تقارب الحقول بمسافات دقيقة واحترافية تمنع التشتت
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp) // تقارب الحقول بمسافات دقيقة واحترافية تمنع التشتت
         ) {
             Text(
                 text = stringResource(id = R.string.sec_setup_title),
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 4.dp)
+                    .padding(bottom = 1.dp)
             )
 
             OutlinedTextField(
@@ -132,7 +132,7 @@ fun SecuritySetupForm(
                 visualTransformation = if (passcodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { confirmPasscodeFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -141,6 +141,7 @@ fun SecuritySetupForm(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(50.dp)
                     .focusRequester(passcodeFocus)
                     .testTag(TEST_TAG_PIN_CODE_INPUT)
             )
@@ -177,7 +178,7 @@ fun SecuritySetupForm(
                 visualTransformation = if (confirmPasscodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryPhraseFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -186,6 +187,7 @@ fun SecuritySetupForm(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(50.dp)
                     .focusRequester(confirmPasscodeFocus)
                     .testTag(TEST_TAG_PIN_CODE_CONFIRM_INPUT)
             )
@@ -193,7 +195,7 @@ fun SecuritySetupForm(
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), 
                 thickness = 0.5.dp,
-                modifier = Modifier.padding(vertical = 4.dp)
+                modifier = Modifier.padding(vertical = 1.dp)
             )
 
             Text(
@@ -224,7 +226,7 @@ fun SecuritySetupForm(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryHintFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -233,6 +235,7 @@ fun SecuritySetupForm(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(50.dp)
                     .focusRequester(recoveryPhraseFocus)
                     .testTag(TEST_TAG_RECOVERY_PHRASE_INPUT)
             )
@@ -257,7 +260,7 @@ fun SecuritySetupForm(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -266,6 +269,7 @@ fun SecuritySetupForm(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(50.dp)
                     .focusRequester(recoveryHintFocus)
                     .testTag(TEST_TAG_RECOVERY_HINT_INPUT)
             )
@@ -318,7 +322,7 @@ fun SecuritySetupForm(
                     disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 ),
                 enabled = isValid,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)

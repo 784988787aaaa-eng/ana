@@ -228,24 +228,25 @@ fun SecurityDialog(
     var isSaving by remember { mutableStateOf(false) }
 
     com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
-        onDismissRequest = onDismiss
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) { dismissDialog ->
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .widthIn(max = 340.dp)
-                .padding(4.dp)
+                .fillMaxWidth(0.90f)
+                .widthIn(max = 330.dp)
+                .padding(3.dp)
                 .imePadding(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(22.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -270,10 +271,10 @@ fun SecurityDialog(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(id = R.string.sec_title),
-                            fontSize = 15.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -282,7 +283,7 @@ fun SecurityDialog(
                     IconButton(
                         onClick = dismissDialog,
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     ) {
@@ -295,7 +296,7 @@ fun SecurityDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Column(
                     modifier = Modifier
@@ -303,7 +304,7 @@ fun SecurityDialog(
                         .weight(1f, fill = false)
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (!isAlreadyPasscodeEnabled || isEditingPasscodeInDialog) {
                         SecuritySetupForm(

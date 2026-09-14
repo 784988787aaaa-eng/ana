@@ -11,6 +11,6 @@ private val Context.backupDataStore by preferencesDataStore("smartledger_backup_
 
 class BackupSettingsRepository(private val context: Context) {
     private val enabledKey = booleanPreferencesKey("automatic_backup_enabled")
-    val enabled: Flow<Boolean> = context.backupDataStore.data.map { it[enabledKey] ?: false }
+    val enabled: Flow<Boolean> = context.backupDataStore.data.map { it[enabledKey] ?: true }
     suspend fun setEnabled(value: Boolean) { context.backupDataStore.edit { it[enabledKey] = value } }
 }

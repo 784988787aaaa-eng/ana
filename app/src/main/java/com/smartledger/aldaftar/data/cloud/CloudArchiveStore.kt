@@ -133,6 +133,15 @@ class CloudArchiveStore(context: Context) {
     suspend fun upload(bytes: ByteArray, name: String): CloudBackupFile = withContext(Dispatchers.IO) {
         executeWithTokenRetry { token ->
             val folderId = getOrCreateBackupFolder(token)
+            // النسخة اليومية تستخدم اسماً ثابتاً لليوم نفسه؛ عند إعادة المحاولة نحدّث الملف
+            // بدلاً من إنشاء نسخ مكررة في Google Drive.
+            val existingId = findExistingBackupId(token, folderId, name)
+            // HttpURLConnection على بعض إصدارات Android لا يسمح بطلب PATCH.
+            // لذلك نستبدل الملف اليومي بأمان: حذف النسخة السابقة ثم رفع الجديدة بنفس الاسم.
+            if (!existingId.isNullOrBlank()) {
+                deleteExistingBackup(token, existingId)
+            }
+
             val uploadUrlStr = "$DRIVE_UPLOAD_BASE/files?uploadType=multipart&fields=id,name,size,modifiedTime,createdTime"
 
             val metadataJson = JSONObject().apply {
@@ -190,6 +199,37 @@ class CloudArchiveStore(context: Context) {
                 conn.disconnect()
             }
         }
+    }
+
+    private fun deleteExistingBackup(token: String, id: String) {
+        val conn = (URL("$DRIVE_API_BASE/files/$id").openConnection() as HttpURLConnection).apply {
+            requestMethod = "DELETE"
+            connectTimeout = 15_000
+            readTimeout = 20_000
+            setRequestProperty("Authorization", "Bearer $token")
+        }
+        try {
+            val code = conn.responseCode
+            if (code !in 200..299 && code != 404) {
+                val body = conn.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                throw createExceptionFromResponse(code, body)
+            }
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private fun findExistingBackupId(token: String, folderId: String?, name: String): String? {
+        return runCatching {
+            val escapedName = name.replace("'", "\\'")
+            val query = buildString {
+                append("trashed = false and name = '").append(escapedName).append("'")
+                if (!folderId.isNullOrBlank()) append(" and '").append(folderId).append("' in parents")
+            }
+            val url = "$DRIVE_API_BASE/files?q=${URLEncoder.encode(query, "UTF-8")}&fields=files(id)&pageSize=1&spaces=drive"
+            val json = getJson(url, token)
+            json.optJSONArray("files")?.optJSONObject(0)?.optString("id")?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 
     suspend fun download(id: String): ByteArray = withContext(Dispatchers.IO) {
