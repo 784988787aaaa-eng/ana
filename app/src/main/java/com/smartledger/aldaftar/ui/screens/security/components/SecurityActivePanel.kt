@@ -57,7 +57,6 @@ fun SecurityActivePanel(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
     val mizanColors = MaterialTheme.mizanColors
     var pendingAction by remember { mutableStateOf<SecurityActiveAction?>(null) }
 
@@ -326,7 +325,7 @@ fun VerifyOldPinDialog(
                         visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            focusManager.clearFocus()
+                            LocalFocusManager.current.clearFocus()
                         }),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
