@@ -54,6 +54,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.ui.helper.AutoScaleText
 import com.smartledger.aldaftar.ui.screens.habayeb.components.TinyFloatingSearchToggle
+import com.smartledger.aldaftar.ui.screens.habayeb.components.header.HabayebHeaderSearchBar
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -69,6 +70,10 @@ fun PinnedMainLedgerHeader(
     selectedDayKeysCountText: String,
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
+    isSearchActive: Boolean,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    onCloseSearch: () -> Unit,
     isFloatingSearchActive: Boolean,
     onFloatingSearchActiveChanged: (Boolean) -> Unit,
     totalCash: BigDecimal,
@@ -102,7 +107,15 @@ fun PinnedMainLedgerHeader(
                 .statusBarsPadding()
                 .padding(bottom = if (commitments.isNotEmpty()) 8.dp else 6.dp)
         ) {
-            if (isDaySelectionMode) {
+            if (isSearchActive) {
+                HabayebHeaderSearchBar(
+                    searchQuery = searchQuery,
+                    onSearchQueryChanged = onSearchQueryChanged,
+                    onCloseSearch = onCloseSearch,
+                    haptic = haptic,
+                    searchHint = stringResource(id = R.string.ledger_search_subtitle)
+                )
+            } else if (isDaySelectionMode) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

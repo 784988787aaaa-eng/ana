@@ -114,7 +114,8 @@ fun HabayebFinanceHeader(
                         onSearchQueryChanged("")
                         onSearchActiveChanged(false)
                     },
-                    haptic = haptic
+                    haptic = haptic,
+                    searchHint = stringResource(id = R.string.habayeb_search_hint)
                 )
             } else {
                 Row(

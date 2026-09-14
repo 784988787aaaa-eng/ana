@@ -40,6 +40,7 @@ import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import com.smartledger.aldaftar.ui.viewmodel.ledger.DayLedger
 import com.smartledger.aldaftar.ui.components.circularReveal
 import com.smartledger.aldaftar.ui.screens.ledger.components.LedgerBottomDock
+import com.smartledger.aldaftar.ui.screens.ledger.components.LedgerSearchResults
 import com.smartledger.aldaftar.ui.screens.ledger.components.MainLedgerDialogsManager
 import com.smartledger.aldaftar.ui.screens.ledger.components.MainLedgerListSection
 import com.smartledger.aldaftar.ui.screens.ledger.components.MainLedgerSelectionBar
@@ -91,6 +92,7 @@ fun MainLedgerView(
         if (isSearchActive && uiController.activeDialogState !is MainLedgerDialogState.Search) {
             uiController.activeDialogState = MainLedgerDialogState.Search
         } else if (!isSearchActive && uiController.activeDialogState is MainLedgerDialogState.Search) {
+            viewModel.updateSearchQuery("")
             uiController.activeDialogState = MainLedgerDialogState.None
         }
     }
@@ -109,6 +111,9 @@ fun MainLedgerView(
     BackHandler(enabled = !isDrawerOpen && (uiController.isHabayebActive || uiController.activeDialogState !is MainLedgerDialogState.None || uiController.isSelectionMode || uiController.isDaySelectionMode || uiController.expandedDayKeys.isNotEmpty())) {
         if (uiController.isHabayebActive) {
             uiController.isHabayebActive = false
+        } else if (uiController.activeDialogState is MainLedgerDialogState.Search) {
+            viewModel.updateSearchQuery("")
+            uiController.activeDialogState = MainLedgerDialogState.None
         } else if (uiController.activeDialogState !is MainLedgerDialogState.None) {
             uiController.activeDialogState = MainLedgerDialogState.None
         } else if (uiController.isSelectionMode || uiController.isDaySelectionMode) {
@@ -160,6 +165,13 @@ fun MainLedgerView(
                 selectedDayKeysCountText = selectedDayKeysCountText,
                 onMenuClick = onMenuClick,
                 onSearchClick = { uiController.activeDialogState = MainLedgerDialogState.Search },
+                isSearchActive = uiController.activeDialogState is MainLedgerDialogState.Search,
+                searchQuery = searchQuery,
+                onSearchQueryChanged = { viewModel.updateSearchQuery(it) },
+                onCloseSearch = {
+                    viewModel.updateSearchQuery("")
+                    uiController.dismissDialog()
+                },
                 isFloatingSearchActive = isFloatingSearchActive,
                 onFloatingSearchActiveChanged = onFloatingSearchActiveChanged,
                 totalCash = totalCash,
@@ -173,56 +185,67 @@ fun MainLedgerView(
                 onLinkHabayebDebtsChange = { habayebViewModel.toggleLinkHabayebDebts(it) }
             )
 
-            MainLedgerListSection(
-                lazyListState = lazyListState,
-                bottomPadding = bottomPadding,
-                isDaySelectionMode = uiController.isDaySelectionMode,
-                selectedDayKeys = uiController.selectedDayKeys,
-                currencySymbol = settings.currencySymbol,
-                formatCurrency = { v, s -> FormatUtils.formatCurrency(v, s, context) },
-                formatDoubleCurrency = { v, s -> FormatUtils.formatDoubleCurrency(v, s, context) },
-                monthlyLedger = monthlyLedger,
-                isScreenReady = true,
-                collapsedMonths = uiController.collapsedMonths,
-                onToggleMonthCollapsed = { mKey -> uiController.toggleMonthCollapsed(mKey) },
-                expandedDayKeys = uiController.expandedDayKeys,
-                haptic = haptic,
-                context = context,
-                viewModel = viewModel,
-                onEditTransaction = { tx -> uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = tx.type, editingTx = tx) },
-                onDayClick = { key -> uiController.handleDayClick(key) },
-                onDayLongClick = { key -> uiController.handleDayLongClick(key) },
-                isSelectionMode = uiController.isSelectionMode,
-                selectedTxIds = uiController.selectedTxIds,
-                onTransactionSelectToggle = { txId -> uiController.handleTransactionSelectToggle(txId) },
-                modifier = Modifier.weight(1f)
-            )
+            if (uiController.activeDialogState is MainLedgerDialogState.Search) {
+                LedgerSearchResults(
+                    query = searchQuery,
+                    results = searchResults,
+                    formatCurrency = { amount -> FormatUtils.formatCurrency(amount, settings.currencySymbol, context) },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                MainLedgerListSection(
+                    lazyListState = lazyListState,
+                    bottomPadding = bottomPadding,
+                    isDaySelectionMode = uiController.isDaySelectionMode,
+                    selectedDayKeys = uiController.selectedDayKeys,
+                    currencySymbol = settings.currencySymbol,
+                    formatCurrency = { v, s -> FormatUtils.formatCurrency(v, s, context) },
+                    formatDoubleCurrency = { v, s -> FormatUtils.formatDoubleCurrency(v, s, context) },
+                    monthlyLedger = monthlyLedger,
+                    isScreenReady = true,
+                    collapsedMonths = uiController.collapsedMonths,
+                    onToggleMonthCollapsed = { mKey -> uiController.toggleMonthCollapsed(mKey) },
+                    expandedDayKeys = uiController.expandedDayKeys,
+                    haptic = haptic,
+                    context = context,
+                    viewModel = viewModel,
+                    onEditTransaction = { tx -> uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = tx.type, editingTx = tx) },
+                    onDayClick = { key -> uiController.handleDayClick(key) },
+                    onDayLongClick = { key -> uiController.handleDayLongClick(key) },
+                    isSelectionMode = uiController.isSelectionMode,
+                    selectedTxIds = uiController.selectedTxIds,
+                    onTransactionSelectToggle = { txId -> uiController.handleTransactionSelectToggle(txId) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
-        LedgerBottomDock(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomPadding + 12.dp),
-            isSelectionMode = uiController.isSelectionMode || uiController.isDaySelectionMode,
-            selectedTxIdsCount = uiController.selectedTxIds.size,
-            onDeleteSelectedClick = {
-                viewModel.deleteTransactionsBulk(uiController.selectedTxIds.toList(), context.getString(R.string.ledger_delete_selected_warning, uiController.selectedTxIds.size))
-                uiController.clearSelection()
-            },
-            onShowCommitmentsClick = { uiController.activeDialogState = MainLedgerDialogState.CommitmentsList },
-            onAddIncomeClick = {
-                if (!viewModel.isEligibleToCreate()) {
-                    viewModel.triggerLicensePrompt()
-                } else {
-                    uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "INCOME", editingTx = null)
+        if (uiController.activeDialogState !is MainLedgerDialogState.Search) {
+            LedgerBottomDock(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomPadding + 12.dp),
+                isSelectionMode = uiController.isSelectionMode || uiController.isDaySelectionMode,
+                selectedTxIdsCount = uiController.selectedTxIds.size,
+                onDeleteSelectedClick = {
+                    viewModel.deleteTransactionsBulk(uiController.selectedTxIds.toList(), context.getString(R.string.ledger_delete_selected_warning, uiController.selectedTxIds.size))
+                    uiController.clearSelection()
+                },
+                onShowCommitmentsClick = { uiController.activeDialogState = MainLedgerDialogState.CommitmentsList },
+                onAddIncomeClick = {
+                    if (!viewModel.isEligibleToCreate()) {
+                        viewModel.triggerLicensePrompt()
+                    } else {
+                        uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "INCOME", editingTx = null)
+                    }
+                },
+                onAddExpenseClick = {
+                    if (!viewModel.isEligibleToCreate()) {
+                        viewModel.triggerLicensePrompt()
+                    } else {
+                        uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "EXPENSE", editingTx = null)
+                    }
                 }
-            },
-            onAddExpenseClick = {
-                if (!viewModel.isEligibleToCreate()) {
-                    viewModel.triggerLicensePrompt()
-                } else {
-                    uiController.activeDialogState = MainLedgerDialogState.AddTransaction(type = "EXPENSE", editingTx = null)
-                }
-            }
-        )
+            )
+        }
 
         MainLedgerSelectionBar(
             isSelectionActive = (uiController.isSelectionMode && uiController.selectedTxIds.isNotEmpty()) || (uiController.isDaySelectionMode && uiController.selectedDayKeys.isNotEmpty()),
@@ -270,11 +293,6 @@ fun MainLedgerView(
                 }
             }
         },
-        showSearch = uiController.activeDialogState is MainLedgerDialogState.Search,
-        searchQuery = searchQuery,
-        searchResults = searchResults,
-        onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-        onDismissSearch = { uiController.dismissDialog() },
         showCommitmentsListSheet = uiController.activeDialogState is MainLedgerDialogState.CommitmentsList || uiController.activeDialogState is MainLedgerDialogState.AddCommitment || uiController.activeDialogState is MainLedgerDialogState.ReorderCommitment,
         commitments = commitments,
         computedCommitments = computedCommitments,

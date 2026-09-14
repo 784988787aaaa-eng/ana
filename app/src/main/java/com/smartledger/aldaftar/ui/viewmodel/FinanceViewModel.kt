@@ -126,7 +126,8 @@ class FinanceViewModel(
         else {
             val normalizedQuery = StringUtils.normalizeArabic(query, app)
             transactions.filter { tx ->
-                StringUtils.normalizeArabic(tx.description, app).contains(normalizedQuery, ignoreCase = true)
+                StringUtils.normalizeArabic(tx.description, app).contains(normalizedQuery, ignoreCase = true) ||
+                    StringUtils.normalizeArabic(tx.category, app).contains(normalizedQuery, ignoreCase = true)
             }.sortedByDescending { it.timestamp }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

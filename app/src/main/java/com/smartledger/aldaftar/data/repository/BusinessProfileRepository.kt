@@ -7,4 +7,5 @@ class BusinessProfileRepository(private val dao:BusinessProfileDao){
  suspend fun get():BusinessProfile = dao.get() ?: BusinessProfile()
  fun getDirect():BusinessProfile = dao.getDirect() ?: BusinessProfile()
  suspend fun save(profile:BusinessProfile)=dao.save(profile.copy(id=1, phones=profile.phones.map(String::trim).filter(String::isNotBlank)))
+ suspend fun clearProfile() = dao.deleteProfile()
 }

@@ -166,14 +166,14 @@ fun SecurityScreen(
                                     val updated = withContext(Dispatchers.Default) {
                                         buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                     }
-                                    viewModel.saveSettingsSuspend(updated)
+                                    viewModel.saveSettingsSync(updated)
                                     isSaving = false
                                     isEditingPasscode = false
                                     Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
                                     onBack()
                                 } catch (e: Exception) {
                                     isSaving = false
-                                    Toast.makeText(context, "حدث خطأ أثناء حفظ الإعدادات", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, e.message ?: "Error", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
@@ -189,21 +189,15 @@ fun SecurityScreen(
                         isEditingPasscode = true
                     },
                     onDeactivateSecurity = {
-                        coroutineScope.launch {
-                            try {
-                                val updated = currentSettings.copy(
-                                    isPasscodeEnabled = false,
-                                    passcodeHash = null,
-                                    recoveryPhraseHash = null,
-                                    recoveryHint = null
-                                )
-                                viewModel.saveSettingsSuspend(updated)
-                                isEditingPasscode = false
-                                Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "حدث خطأ أثناء إلغاء الحماية", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                        val updated = currentSettings.copy(
+                            isPasscodeEnabled = false,
+                            passcodeHash = null,
+                            recoveryPhraseHash = null,
+                            recoveryHint = null
+                        )
+                        viewModel.saveSettings(updated)
+                        isEditingPasscode = false
+                        Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -238,43 +232,59 @@ fun SecurityDialog(
     ) { dismissDialog ->
         Card(
             modifier = Modifier
-                .widthIn(max = 340.dp)
                 .fillMaxWidth(0.92f)
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(4.dp),
+                .widthIn(max = 340.dp)
+                .padding(4.dp)
+                .imePadding(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            shape = RoundedCornerShape(20.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.sec_title),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Security,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = stringResource(id = R.string.sec_title),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
 
                     IconButton(
                         onClick = dismissDialog,
                         modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -285,13 +295,15 @@ fun SecurityDialog(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = false)
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (!isAlreadyPasscodeEnabled || isEditingPasscodeInDialog) {
                         SecuritySetupForm(
@@ -315,19 +327,14 @@ fun SecurityDialog(
                                 if (isValid) {
                                     isSaving = true
                                     coroutineScope.launch {
-                                        try {
-                                            val updated = withContext(Dispatchers.Default) {
-                                                buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
-                                            }
-                                            viewModel.saveSettingsSuspend(updated)
-                                            isSaving = false
-                                            isEditingPasscodeInDialog = false
-                                            Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                            onDismiss()
-                                        } catch (e: Exception) {
-                                            isSaving = false
-                                            Toast.makeText(context, "حدث خطأ أثناء حفظ الإعدادات", Toast.LENGTH_SHORT).show()
+                                        val updated = withContext(Dispatchers.Default) {
+                                            buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                         }
+                                        viewModel.saveSettings(updated)
+                                        isSaving = false
+                                        isEditingPasscodeInDialog = false
+                                        Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
+                                        onDismiss()
                                     }
                                 }
                             }
@@ -342,21 +349,15 @@ fun SecurityDialog(
                                 isEditingPasscodeInDialog = true
                             },
                             onDeactivateSecurity = {
-                                coroutineScope.launch {
-                                    try {
-                                        val updated = currentSettings.copy(
-                                            isPasscodeEnabled = false,
-                                            passcodeHash = null,
-                                            recoveryPhraseHash = null,
-                                            recoveryHint = null
-                                        )
-                                        viewModel.saveSettingsSuspend(updated)
-                                        isEditingPasscodeInDialog = false
-                                        Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "حدث خطأ أثناء إلغاء الحماية", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                val updated = currentSettings.copy(
+                                    isPasscodeEnabled = false,
+                                    passcodeHash = null,
+                                    recoveryPhraseHash = null,
+                                    recoveryHint = null
+                                )
+                                viewModel.saveSettings(updated)
+                                isEditingPasscodeInDialog = false
+                                Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
                             }
                         )
                     }

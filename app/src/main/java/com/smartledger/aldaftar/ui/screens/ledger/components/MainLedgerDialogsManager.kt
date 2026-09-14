@@ -17,11 +17,6 @@ fun MainLedgerDialogsManager(
     currencySymbol: String,
     onDismissTxDialog: () -> Unit,
     onSaveTransaction: (id: String?, type: String, category: String, amount: BigDecimal, description: String) -> Unit,
-    showSearch: Boolean,
-    searchQuery: String,
-    searchResults: List<TransactionDb>,
-    onSearchQueryChange: (String) -> Unit,
-    onDismissSearch: () -> Unit,
     showCommitmentsListSheet: Boolean,
     commitments: List<FixedCommitment>,
     computedCommitments: List<Triple<FixedCommitment, BigDecimal, BigDecimal>>,
@@ -59,18 +54,6 @@ fun MainLedgerDialogsManager(
             currencySymbol = currencySymbol,
             onDismiss = onDismissTxDialog,
             onSave = onSaveTransaction
-        )
-    }
-
-    if (showSearch) {
-        SearchLedgerDialog(
-            query = searchQuery,
-            onQueryChange = onSearchQueryChange,
-            results = searchResults,
-            formatCurrency = { amt ->
-                formatCurrency(amt, currencySymbol)
-            },
-            onDismiss = onDismissSearch
         )
     }
 

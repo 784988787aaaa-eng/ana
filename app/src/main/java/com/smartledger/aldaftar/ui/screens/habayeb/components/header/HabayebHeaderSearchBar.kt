@@ -38,7 +38,8 @@ fun HabayebHeaderSearchBar(
     onSearchQueryChanged: (String) -> Unit,
     onCloseSearch: () -> Unit,
     haptic: HapticFeedback,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    searchHint: String
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -88,7 +89,7 @@ fun HabayebHeaderSearchBar(
                 ) {
                     if (searchQuery.isEmpty()) {
                         Text(
-                            text = stringResource(id = R.string.habayeb_search_hint),
+                            text = searchHint,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.65f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Normal,
