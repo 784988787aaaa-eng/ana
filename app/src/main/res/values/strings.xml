@@ -7,7 +7,7 @@
     <string name="app_name">الدفتر الذكي</string>
     <string name="app_name_main">الدفتر الذكي</string>
     <string name="drawer_trash_label">سلة المحذوفات</string>
-    <string name="drawer_app_version">الإصدار v%s</string>
+    <string name="drawer_app_version">الإصدار %s</string>
     <string name="drawer_comprehensive_report_label">التقرير المالي الشامل</string>
     <string name="share_whatsapp">واتساب</string>
     <string name="share_sms">رسالة SMS</string>
