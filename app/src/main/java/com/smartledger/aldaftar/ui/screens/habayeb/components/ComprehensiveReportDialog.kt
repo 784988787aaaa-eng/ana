@@ -156,13 +156,13 @@ fun ComprehensiveReportDialog(
                         )
                         IconButton(
                             onClick = dismissDialog,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(44.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = stringResource(id = R.string.report_btn_close),
                                 tint = textSecondary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }

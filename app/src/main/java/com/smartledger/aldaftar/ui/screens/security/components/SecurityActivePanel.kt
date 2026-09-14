@@ -280,8 +280,8 @@ fun VerifyOldPinDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", modifier = Modifier.size(18.dp))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.desc_close), modifier = Modifier.size(20.dp))
                     }
                     Text(
                         text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(id = R.string.sec_verify_change_pin) else stringResource(id = R.string.sec_verify_disable_lock),

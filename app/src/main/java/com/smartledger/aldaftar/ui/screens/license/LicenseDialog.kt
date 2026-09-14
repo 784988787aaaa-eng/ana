@@ -29,7 +29,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import com.smartledger.aldaftar.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -370,7 +372,7 @@ private fun CompactLicenseHeader(
                 )
                 Text(
                     text = if (active) "الترخيص نشط ومُعتمد" else "حماية السجلات والبيانات",
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -379,14 +381,14 @@ private fun CompactLicenseHeader(
         IconButton(
             onClick = onDismiss,
             modifier = Modifier
-                .size(30.dp)
+                .size(44.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Icon(
                 Icons.Default.Close,
-                contentDescription = "إغلاق",
-                modifier = Modifier.size(16.dp),
+                contentDescription = stringResource(R.string.desc_close),
+                modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -772,12 +774,12 @@ private fun CompactDeviceCodeRow(
             )
             IconButton(
                 onClick = onCopy,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
                     contentDescription = "نسخ",
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

@@ -282,15 +282,15 @@ fun SecurityDialog(
                     IconButton(
                         onClick = dismissDialog,
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(id = R.string.calc_close_desc),
+                            contentDescription = stringResource(id = R.string.desc_close),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

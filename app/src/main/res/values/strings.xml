@@ -13,6 +13,8 @@
     <string name="share_sms">رسالة SMS</string>
     <string name="share_label">مشاركة</string>
     <string name="common_cancel">إلغاء</string>
+    <string name="desc_close">إغلاق</string>
+    <string name="btn_close">إغلاق</string>
     <string name="developer_credit">تصميم وتطوير م/ منصور قطينه للبرمجيات</string>
     <string name="whatsapp_contact_msg">مرحباً أود التواصل بخصوص تطبيق الدفتر الذكي</string>
     <string name="support_phone_number">+967774004399</string>

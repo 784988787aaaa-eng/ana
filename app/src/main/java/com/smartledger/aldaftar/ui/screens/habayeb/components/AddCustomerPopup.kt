@@ -222,23 +222,23 @@ fun AddCustomerPopup(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                IconButton(onClick = dismissDialog, modifier = Modifier.size(36.dp)) {
+                                IconButton(onClick = dismissDialog, modifier = Modifier.size(44.dp)) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = stringResource(id = R.string.habayeb_cancel),
+                                        contentDescription = stringResource(id = R.string.desc_close),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                                 Text(
                                     text = stringResource(id = R.string.dialog_title_add_account),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
+                                    fontSize = 16.sp,
                                     color = dynamicThemeColor,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Spacer(modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.size(44.dp))
                             }
 
                             val performSave: () -> Unit = {

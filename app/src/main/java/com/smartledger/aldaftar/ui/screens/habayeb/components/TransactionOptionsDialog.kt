@@ -107,7 +107,7 @@ fun TransactionOptionsDialog(
                         Box {
                              IconButton(
                                 onClick = { showShareMenu = true },
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(44.dp)
                              ) {
                                 Icon(
                                     imageVector = Icons.Default.Share,
