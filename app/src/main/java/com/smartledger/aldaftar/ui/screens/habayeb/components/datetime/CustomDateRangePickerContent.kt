@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
@@ -39,6 +43,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -101,7 +106,9 @@ fun CustomDateRangePickerContent(
                 tonalElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.94f)
-                    .padding(horizontal = 4.dp),
+                    .widthIn(max = MizanDialogTokens.maxWidth)
+                    .padding(horizontal = 4.dp)
+                    .imePadding(),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -109,8 +116,9 @@ fun CustomDateRangePickerContent(
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(vertical = 14.dp, horizontal = 14.dp)
-                        .fillMaxWidth(),
+                        .padding(vertical = 12.dp, horizontal = 14.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -155,7 +163,7 @@ fun CustomDateRangePickerContent(
                                     color = if (isStart) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = dateFormatter.format(startCalendar.time),
+                                    text = WesternDigits.normalize(dateFormatter.format(startCalendar.time)),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Normal,
                                     color = if (isStart) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f) else MaterialTheme.colorScheme.primary
@@ -183,7 +191,7 @@ fun CustomDateRangePickerContent(
                                     color = if (isEnd) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = dateFormatter.format(endCalendar.time),
+                                    text = WesternDigits.normalize(dateFormatter.format(endCalendar.time)),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Normal,
                                     color = if (isEnd) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f) else MaterialTheme.colorScheme.primary
@@ -195,22 +203,32 @@ fun CustomDateRangePickerContent(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     val activeCalendar = if (activeTab == RangeTab.START) startCalendar else endCalendar
-                    DateAndTimeSection(
-                        calendar = activeCalendar,
-                        onCalendarChange = { updated ->
-                            if (activeTab == RangeTab.START) {
-                                startCalendar = updated
-                                if (endCalendar.timeInMillis < updated.timeInMillis) {
-                                    endCalendar = (updated.clone() as Calendar).apply {
-                                        add(Calendar.DAY_OF_MONTH, 30)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
+                        )
+                    ) {
+                        DateAndTimeSection(
+                            calendar = activeCalendar,
+                            onCalendarChange = { updated ->
+                                if (activeTab == RangeTab.START) {
+                                    startCalendar = updated
+                                    if (endCalendar.timeInMillis < updated.timeInMillis) {
+                                        endCalendar = (updated.clone() as Calendar).apply {
+                                            add(Calendar.DAY_OF_MONTH, 30)
+                                        }
                                     }
+                                } else {
+                                    endCalendar = updated
                                 }
-                            } else {
-                                endCalendar = updated
-                            }
-                        },
-                        showTime = false
-                    )
+                            },
+                            showTime = false
+                        )
+                    }
 
                     if (includeTime) {
                         Spacer(modifier = Modifier.height(8.dp))

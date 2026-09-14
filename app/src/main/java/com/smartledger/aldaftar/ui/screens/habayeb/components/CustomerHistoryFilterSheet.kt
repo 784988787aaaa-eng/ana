@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -68,9 +69,9 @@ fun CustomerHistoryFilterSheet(
     }
 
     val (startStr, endStr) = remember(customStartDate, customEndDate) {
-        val formatter = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-        val start = customStartDate?.let { formatter.format(Date(it)) } ?: "..."
-        val end = customEndDate?.let { formatter.format(Date(it)) } ?: "..."
+        val formatter = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
+        val start = customStartDate?.let { WesternDigits.normalize(formatter.format(Date(it))) } ?: "..."
+        val end = customEndDate?.let { WesternDigits.normalize(formatter.format(Date(it))) } ?: "..."
         Pair(start, end)
     }
 

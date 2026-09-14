@@ -3,7 +3,7 @@ package com.smartledger.aldaftar.work
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.Result as WorkResult
+import androidx.work.ListenableWorker.Result as WorkResult
 import com.smartledger.aldaftar.data.backup.AutomaticBackupCoordinator
 import com.smartledger.aldaftar.data.cloud.CloudOperationException
 import com.smartledger.aldaftar.platform.notifications.BackupNotificationManager

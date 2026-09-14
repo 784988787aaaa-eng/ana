@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.smartledger.aldaftar.ui.theme.isDark
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -73,19 +76,19 @@ fun RecurringTransactionPopup(
     var existingConfig by remember(transaction.id) { mutableStateOf<RecurringConfig?>(null) }
     LaunchedEffect(transaction.id) { existingConfig = viewModel.recurringByOriginalTransaction(transaction.id) }
 
-    var frequency by remember { mutableStateOf(existingConfig?.frequency ?: FinanceConstants.FREQ_DAILY) }
-    var selectedDaysOfWeek by remember {
+    var frequency by remember(existingConfig?.id) { mutableStateOf(existingConfig?.frequency ?: FinanceConstants.FREQ_DAILY) }
+    var selectedDaysOfWeek by remember(existingConfig?.id) {
         mutableStateOf(existingConfig?.daysOfWeek?.toSet() ?: setOf(Calendar.MONDAY))
     }
-    var selectedDaysOfMonth by remember {
+    var selectedDaysOfMonth by remember(existingConfig?.id) {
         mutableStateOf(existingConfig?.daysOfMonth?.toSet() ?: setOf(1))
     }
 
-    var hour by remember { mutableStateOf(existingConfig?.timeHour ?: 9) }
-    var minute by remember { mutableStateOf(existingConfig?.timeMinute ?: 0) }
+    var hour by remember(existingConfig?.id) { mutableStateOf(existingConfig?.timeHour ?: 9) }
+    var minute by remember(existingConfig?.id) { mutableStateOf(existingConfig?.timeMinute ?: 0) }
 
-    var startDateMillis by remember { mutableStateOf(existingConfig?.startDateMillis ?: System.currentTimeMillis()) }
-    var endDateMillis by remember {
+    var startDateMillis by remember(existingConfig?.id) { mutableStateOf(existingConfig?.startDateMillis ?: System.currentTimeMillis()) }
+    var endDateMillis by remember(existingConfig?.id) {
         mutableStateOf(
             existingConfig?.endDateMillis ?: (System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)
         )
@@ -99,7 +102,8 @@ fun RecurringTransactionPopup(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .heightIn(max = 520.dp)
+                    .widthIn(max = MizanDialogTokens.compactMaxWidth)
+                    .heightIn(max = 540.dp)
                     .imePadding(),
                 shape = RoundedCornerShape(18.dp),
                 color = MaterialTheme.colorScheme.surface,
@@ -117,7 +121,7 @@ fun RecurringTransactionPopup(
                                     colors = listOf(activeThemeColor, activeSubColor)
                                 )
                             )
-                            .padding(vertical = 10.dp, horizontal = 14.dp)
+                            .padding(vertical = 9.dp, horizontal = 12.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -172,7 +176,8 @@ fun RecurringTransactionPopup(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         RecurringFrequencySelector(

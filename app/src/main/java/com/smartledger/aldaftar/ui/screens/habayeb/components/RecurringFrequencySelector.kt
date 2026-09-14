@@ -88,7 +88,7 @@ fun RecurringFrequencySelector(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(30.dp)
+                    .height(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (selected) activeThemeColor else Color.Transparent)
                     .clickable {
@@ -99,8 +99,8 @@ fun RecurringFrequencySelector(
                 Text(
                     text = label,
                     color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -236,7 +236,7 @@ private fun MonthlyDayGrid(
                 val isSelected = selectedDays.contains(dayNum)
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(30.dp)
                         .clip(CircleShape)
                         .background(if (isSelected) activeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                         .border(
@@ -250,7 +250,7 @@ private fun MonthlyDayGrid(
                     Text(
                         text = dayNum.toString(),
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 10.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

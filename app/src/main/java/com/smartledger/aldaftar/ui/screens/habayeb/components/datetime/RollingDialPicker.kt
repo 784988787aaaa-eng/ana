@@ -99,8 +99,8 @@ fun RollingDialPicker(
         Box(
             modifier = Modifier
                 .padding(vertical = 1.dp)
-                .width(42.dp)
-                .height(26.dp)
+                .width(if (range.last >= 1000) 52.dp else 42.dp)
+                .height(30.dp)
                 .clip(RoundedCornerShape(6.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                 .border(
@@ -143,7 +143,7 @@ fun RollingDialPicker(
                         }
                     },
                     textStyle = LocalTextStyle.current.copy(
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
@@ -172,7 +172,7 @@ fun RollingDialPicker(
                 }
                 Text(
                     text = formattedText,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
