@@ -23,7 +23,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +54,7 @@ fun AppLockScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val vibrator = remember(context) { LockHapticHelper.getVibrator(context) }
+    val hapticFeedback = LocalHapticFeedback.current
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
@@ -111,6 +114,7 @@ fun AppLockScreen(
     val onKeyPress = remember(vibrator) {
         { key: String ->
             if (!currentIsCheckingPasscode && currentEnteredPasscode.length < 4) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
                 val nextPasscode = currentEnteredPasscode + key
                 enteredPasscode = nextPasscode

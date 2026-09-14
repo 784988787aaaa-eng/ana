@@ -1,19 +1,41 @@
 package com.smartledger.aldaftar.ui.screens.security.components
 
-import android.util.Log
-import androidx.compose.material3.MaterialTheme
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +60,6 @@ import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 
 private const val TAG = "SecuritySetupForm"
-private const val CD_TOGGLE_VISIBILITY = "Toggle Visibility"
 private const val TEST_TAG_PIN_CODE_INPUT = "pin_code_input"
 private const val TEST_TAG_PIN_CODE_CONFIRM_INPUT = "pin_code_confirm_input"
 private const val TEST_TAG_RECOVERY_PHRASE_INPUT = "recovery_phrase_input"
@@ -80,6 +101,7 @@ fun SecuritySetupForm(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .border(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
@@ -118,7 +140,7 @@ fun SecuritySetupForm(
                     IconButton(onClick = { passcodeVisible = !passcodeVisible }) {
                         Icon(
                             imageVector = if (passcodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = CD_TOGGLE_VISIBILITY,
+                            contentDescription = stringResource(id = if (passcodeVisible) R.string.sec_hide_pin else R.string.sec_show_pin),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -164,7 +186,7 @@ fun SecuritySetupForm(
                     IconButton(onClick = { confirmPasscodeVisible = !confirmPasscodeVisible }) {
                         Icon(
                             imageVector = if (confirmPasscodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = CD_TOGGLE_VISIBILITY,
+                            contentDescription = stringResource(id = if (confirmPasscodeVisible) R.string.sec_hide_pin else R.string.sec_show_pin),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -259,7 +281,10 @@ fun SecuritySetupForm(
                     fontSize = 14.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                keyboardActions = KeyboardActions(onDone = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                }),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,

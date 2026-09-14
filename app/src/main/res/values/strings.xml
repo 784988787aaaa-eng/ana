@@ -704,6 +704,7 @@
     <string name="biz_placeholder_name">تموينات بن قطينه</string>
     <string name="biz_label_desc">وصف النشاط</string>
     <string name="biz_placeholder_desc">للمواد الغذائية والبهارات</string>
+    <string name="biz_character_counter">%1$d/%2$d</string>
     <string name="biz_phones_section">أرقام الهواتف والتواصل</string>
     <string name="biz_btn_add_phone">إضافة هاتف</string>
     <string name="biz_label_primary_phone">رقم الهاتف الأساسي</string>
@@ -952,4 +953,10 @@
     <string name="drawer_license_label">الترخيص والتفعيل</string>
     <string name="license_whatsapp_request_help">طلب ترخيص أو مساعدة عبر واتساب</string>
     <string name="report_scope_display_icon">📋 %1$s</string>
+
+    <string name="close">Close</string>
+    <string name="sec_show_pin">Show PIN</string>
+    <string name="sec_hide_pin">Hide PIN</string>
+    <string name="common_error">Error</string>
+    <string name="common_zero">0</string>
 </resources>

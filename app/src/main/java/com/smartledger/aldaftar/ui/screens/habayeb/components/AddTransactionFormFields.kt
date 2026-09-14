@@ -187,7 +187,6 @@ fun AddTransactionFormFields(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {
                 focusManager.clearFocus()
-                onDone?.invoke()
             })
         )
     }

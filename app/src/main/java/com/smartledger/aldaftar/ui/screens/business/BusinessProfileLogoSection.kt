@@ -73,7 +73,7 @@ fun BusinessProfileLogoSection(
 
             Box(
                 modifier = Modifier
-                    .size(if (isDialog) 56.dp else 70.dp)
+                    .size(if (isDialog) 68.dp else 72.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.outlineVariant)
                     .border(2.dp, activeThemeColor.copy(alpha = 0.3f), CircleShape)

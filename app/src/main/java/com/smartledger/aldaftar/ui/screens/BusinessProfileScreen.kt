@@ -7,7 +7,6 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -50,18 +50,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.ui.helper.BusinessProfileImageHelper
@@ -147,48 +148,53 @@ fun BusinessProfileDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .widthIn(max = 340.dp)
-                .padding(3.dp)
+                .widthIn(max = 350.dp)
                 .imePadding(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                     .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    IconButton(
-                        onClick = dismissDialog,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.desc_close),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
                     Text(
                         text = stringResource(id = R.string.biz_title),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Right
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center)
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Absolute.Right,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = dismissDialog,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(id = R.string.desc_close),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 BusinessProfileForm(
                     viewModel = viewModel,
@@ -209,6 +215,11 @@ private fun BusinessProfileForm(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val activeThemeColor = MaterialTheme.colorScheme.primary
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val initialPhoneFocusRequester = remember { FocusRequester() }
+    val savedProfile by viewModel.profile.collectAsState()
+    var pendingSave by remember { mutableStateOf<BusinessProfile?>(null) }
 
     var bizName by remember { mutableStateOf("") }
     var bizDesc by remember { mutableStateOf("") }
@@ -271,6 +282,15 @@ private fun BusinessProfileForm(
         }
     }
 
+    LaunchedEffect(pendingSave, savedProfile) {
+        val requestedProfile = pendingSave ?: return@LaunchedEffect
+        if (savedProfile == requestedProfile) {
+            pendingSave = null
+            Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
+            onClose()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -306,7 +326,11 @@ private fun BusinessProfileForm(
             bizDesc = bizDesc,
             onBizDescChange = { bizDesc = it },
             isDialog = isDialog,
-            activeThemeColor = activeThemeColor
+            activeThemeColor = activeThemeColor,
+            onDescriptionNext = {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
         )
 
         BusinessProfilePhonesSection(
@@ -315,7 +339,8 @@ private fun BusinessProfileForm(
             onRemovePhone = { index -> phoneList.removeAt(index) },
             onAddPhone = { phoneList.add("") },
             isDialog = isDialog,
-            activeThemeColor = activeThemeColor
+            activeThemeColor = activeThemeColor,
+            initialPhoneFocusRequester = initialPhoneFocusRequester
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -327,11 +352,14 @@ private fun BusinessProfileForm(
                     return@Button
                 }
 
-                coroutineScope.launch {
-                    viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
-                    Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
-                    onClose()
-                }
+                val profileToSave = BusinessProfile(
+                    name = bizName.trim(),
+                    description = bizDesc.trim(),
+                    logoPath = logoPath,
+                    phones = phoneList.toList()
+                )
+                pendingSave = profileToSave
+                viewModel.save(profileToSave)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -362,6 +390,7 @@ private fun BusinessProfileForm(
                     logoPath = ""
                     phoneList.clear()
                     logoBitmapState = null
+                    pendingSave = null
                     Toast.makeText(context, context.getString(R.string.biz_reset_success), Toast.LENGTH_SHORT).show()
                 }
             },
