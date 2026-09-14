@@ -98,32 +98,34 @@ fun ExitConfirmDialog(
                 ) {
                     TextButton(
                         onClick = dismissWithAnimation,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MizanDialogTokens.buttonShape,
                         modifier = Modifier
                             .weight(1f)
-                            .defaultMinSize(minHeight = 48.dp)
+                            .height(MizanDialogTokens.buttonHeight)
                     ) {
                         Text(
                             text = stringResource(id = R.string.common_cancel),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp
+                            fontSize = 13.5.sp,
+                            maxLines = 1
                         )
                     }
 
                     Button(
                         onClick = { onConfirm(dontShowAgain) },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MizanDialogTokens.buttonShape,
                         modifier = Modifier
                             .weight(1.2f)
-                            .defaultMinSize(minHeight = 48.dp)
+                            .height(MizanDialogTokens.buttonHeight)
                     ) {
                         Text(
                             text = stringResource(id = R.string.dialog_exit_confirm),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp
+                            fontSize = 13.5.sp,
+                            maxLines = 1
                         )
                     }
                 }

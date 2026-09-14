@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
+import androidx.compose.foundation.layout.height
+
 @Composable
 fun TrashDetailDeleteConfirmDialog(
     onConfirmPermanentDelete: () -> Unit,
@@ -29,21 +31,30 @@ fun TrashDetailDeleteConfirmDialog(
             Button(
                 onClick = onConfirmPermanentDelete,
                 colors = ButtonDefaults.buttonColors(containerColor = errorColor),
-                shape = RoundedCornerShape(12.dp)
+                shape = MizanDialogTokens.buttonShape,
+                modifier = androidx.compose.ui.Modifier.height(MizanDialogTokens.buttonHeight)
             ) {
                 Text(
                     text = stringResource(id = R.string.trash_delete_permanently),
                     color = MaterialTheme.colorScheme.onError,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.5.sp,
+                    maxLines = 1
                 )
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                shape = MizanDialogTokens.buttonShape,
+                modifier = androidx.compose.ui.Modifier.height(MizanDialogTokens.buttonHeight)
+            ) {
                 Text(
                     text = stringResource(id = R.string.trash_cancel),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.5.sp,
+                    maxLines = 1
                 )
             }
         },

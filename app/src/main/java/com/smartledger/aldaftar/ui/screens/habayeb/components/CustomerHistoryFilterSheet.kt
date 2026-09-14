@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,7 +35,8 @@ fun CustomerHistoryFilterSheet(
     typeFilterMode: Int,
     onTypeFilterModeChange: (Int) -> Unit,
     activeThemeColor: Color,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    onResetFilters: () -> Unit = {}
 ) {
     var showRangePicker by remember { mutableStateOf(false) }
     var selectedRangeTab by remember { mutableStateOf(RangeTab.START) }
@@ -93,20 +95,23 @@ fun CustomerHistoryFilterSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = MizanDialogTokens.sheetTopRadius, topEnd = MizanDialogTokens.sheetTopRadius),
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
                 text = stringResource(id = R.string.habayeb_smart_filter),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 2.dp)
             )
 
             Text(
@@ -201,7 +206,7 @@ fun CustomerHistoryFilterSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 typeModes.forEach { (mode, label) ->
@@ -219,6 +224,41 @@ fun CustomerHistoryFilterSheet(
                     ) {
                         Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)
                     }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onResetFilters,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(MizanDialogTokens.buttonHeight),
+                    shape = MizanDialogTokens.buttonShape
+                ) {
+                    Text(
+                        stringResource(id = R.string.habayeb_filter_reset),
+                        fontSize = 13.sp,
+                        maxLines = 1
+                    )
+                }
+                Button(
+                    onClick = onDismissRequest,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(MizanDialogTokens.buttonHeight),
+                    colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                    shape = MizanDialogTokens.buttonShape
+                ) {
+                    Text(
+                        stringResource(id = R.string.habayeb_filter_apply),
+                        fontSize = 13.sp,
+                        maxLines = 1
+                    )
                 }
             }
         }

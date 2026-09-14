@@ -130,18 +130,37 @@ private fun HabayebSearchHeaderBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = {
-                onCloseSearch()
-            },
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = stringResource(id = R.string.habayeb_close_search),
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(18.dp)
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSearchQueryChanged("")
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(id = R.string.habayeb_close_search),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                IconButton(
+                    onClick = {
+                        onCloseSearch()
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(id = R.string.habayeb_close_search),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
 
         BasicTextField(
@@ -188,9 +207,12 @@ private fun HabayebSearchHeaderBar(
 
     val keyboardController = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
-awaitFrame()
-            focusRequester.requestFocus()
-            keyboardController?.show()
+        try {
+            com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard(
+                focusRequester = focusRequester,
+                keyboardController = keyboardController
+            )
+        } catch (_: Exception) {}
     }
 }
 

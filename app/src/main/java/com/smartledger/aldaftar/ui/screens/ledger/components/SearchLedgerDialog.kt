@@ -1,0 +1,298 @@
+package com.smartledger.aldaftar.ui.screens.ledger.components
+
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
+import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.TransactionDb
+import com.smartledger.aldaftar.presentation.utils.DateUtils
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.CreditGreen
+import com.smartledger.aldaftar.ui.theme.DebtRed
+import java.math.BigDecimal
+
+private const val TAG = "SearchLedgerDialog"
+
+@Composable
+fun SearchLedgerDialog(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    results: List<TransactionDb>,
+    formatCurrency: (BigDecimal) -> String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        val searchFocusRequester = remember { FocusRequester() }
+        val keyboardController = LocalSoftwareKeyboardController.current
+        val haptic = LocalHapticFeedback.current
+
+        val view = LocalView.current
+        DisposableEffect(view) {
+            val window = (view.parent as? DialogWindowProvider)?.window
+            window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            onDispose {}
+        }
+
+        LaunchedEffect(Unit) {
+            try {
+                requestFocusAndShowKeyboard(
+                    focusRequester = searchFocusRequester,
+                    keyboardController = keyboardController
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
+            }
+        }
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+            modifier = Modifier
+                .widthIn(max = 360.dp)
+                .fillMaxWidth(0.92f)
+                .heightIn(max = 520.dp)
+                .padding(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(14.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(id = R.string.habayeb_close_search))
+                    }
+                    Text(
+                        stringResource(id = R.string.ledger_search_title),
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 18.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val subColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    placeholder = { Text(stringResource(id = R.string.ledger_search_subtitle), color = subColor) },
+                    modifier = Modifier.fillMaxWidth().focusRequester(searchFocusRequester),
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() }),
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onQueryChange("")
+                            }) {
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(id = R.string.habayeb_close_search), tint = subColor)
+                            }
+                        } else {
+                            Icon(Icons.Default.Search, contentDescription = null, tint = subColor)
+                        }
+                    },
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Start),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedPlaceholderColor = subColor,
+                        unfocusedPlaceholderColor = subColor
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (results.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (query.isBlank()) stringResource(id = R.string.ledger_search_empty_state) else stringResource(id = R.string.ledger_search_no_results),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    Text(
+                        stringResource(id = R.string.ledger_search_results_count, results.size),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        itemsIndexed(items = results, key = { _, tx -> tx.id }) { index, tx ->
+                            SearchResultItem(
+                                tx = tx,
+                                nextTx = if (index < results.size - 1) results[index + 1] else null,
+                                formatCurrency = formatCurrency
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchResultItem(
+    tx: TransactionDb,
+    nextTx: TransactionDb?,
+    formatCurrency: (BigDecimal) -> String
+) {
+    val context = LocalContext.current
+    val dayName = remember(tx.timestamp) { DateUtils.getDayOfWeekArabic(tx.timestamp) }
+    val fullDate = remember(tx.timestamp) { DateUtils.formatDateFull(tx.timestamp) }
+    val timeStr = remember(tx.timestamp) { DateUtils.formatTime24Or12(tx.timestamp) }
+    val formattedAmount = remember(tx.amount, formatCurrency) { formatCurrency(tx.amount) }
+    val interval = remember(tx.timestamp, nextTx?.timestamp) {
+        if (nextTx != null) DateUtils.formatDurationBetween(tx.timestamp, nextTx.timestamp, context) else ""
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text(
+                        text = formattedAmount,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (tx.type == "INCOME") CreditGreen else DebtRed,
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = timeStr,
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = tx.description.ifBlank { if (tx.type == "INCOME") stringResource(id = R.string.ledger_category_overall_income) else stringResource(id = R.string.ledger_category_expense) },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = BrandPrimary,
+                        textAlign = TextAlign.Right
+                    )
+                    Text(
+                        text = "$dayName - $fullDate",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        if (nextTx != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = interval,
+                    fontSize = 9.sp,
+                    color = BrandPrimary.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(10.dp),
+                    tint = BrandPrimary.copy(alpha = 0.4f)
+                )
+            }
+        }
+    }
+}

@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+
 @Composable
 fun DialogActionButtons(
     onDismiss: () -> Unit,
@@ -32,23 +34,24 @@ fun DialogActionButtons(
             onClick = onDismiss,
             modifier = Modifier
                 .weight(1f)
-                .height(38.dp),
+                .height(MizanDialogTokens.buttonHeight),
             contentPadding = PaddingValues(0.dp),
-            shape = RoundedCornerShape(10.dp)
+            shape = MizanDialogTokens.buttonShape
         ) {
             Text(
                 text = stringResource(id = R.string.common_cancel),
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp
+                fontSize = 13.sp,
+                maxLines = 1
             )
         }
         Button(
             onClick = onConfirm,
             modifier = Modifier
                 .weight(1f)
-                .height(38.dp),
+                .height(MizanDialogTokens.buttonHeight),
             contentPadding = PaddingValues(0.dp),
-            shape = RoundedCornerShape(10.dp),
+            shape = MizanDialogTokens.buttonShape,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
             )
@@ -57,7 +60,8 @@ fun DialogActionButtons(
                 text = stringResource(id = R.string.datetime_picker_confirm),
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = MaterialTheme.colorScheme.onPrimary,
+                maxLines = 1
             )
         }
     }

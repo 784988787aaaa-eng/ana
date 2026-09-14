@@ -2,6 +2,8 @@ package com.smartledger.aldaftar.ui.screens.ledger.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -57,13 +59,15 @@ fun DayCardDeleteDialog(
                         onConfirm(txId)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = MizanDialogTokens.buttonShape,
+                    modifier = Modifier.height(MizanDialogTokens.buttonHeight)
                 ) {
                     Text(
                         text = stringResource(id = R.string.ledger_confirm_delete_btn),
                         color = MaterialTheme.colorScheme.onError,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        maxLines = 1
                     )
                 }
             },
@@ -71,19 +75,23 @@ fun DayCardDeleteDialog(
                 OutlinedButton(
                     onClick = onDismiss,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = MizanDialogTokens.buttonShape,
+                    modifier = Modifier.height(MizanDialogTokens.buttonHeight)
                 ) {
                     Text(
                         text = stringResource(id = R.string.common_cancel),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        maxLines = 1
                     )
                 }
             },
             shape = MizanDialogTokens.shape,
             containerColor = MaterialTheme.colorScheme.surface,
             properties = DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier.fillMaxWidth(0.90f)
+            modifier = Modifier
+                .fillMaxWidth(0.90f)
+                .widthIn(max = MizanDialogTokens.compactMaxWidth)
         )
     }
 }

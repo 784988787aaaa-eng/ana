@@ -36,6 +36,10 @@ import com.smartledger.aldaftar.ui.screens.CalculatorDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.util.Calendar
 import kotlinx.coroutines.launch
 
@@ -109,6 +113,7 @@ fun AddCustomerPopup(
         )
     }
 
+    val haptic = LocalHapticFeedback.current
     val focusRequester = remember { FocusRequester() }
     val phoneFocusRequester = remember { FocusRequester() }
     val initialAmountFocusRequester = remember { FocusRequester() }
@@ -119,14 +124,39 @@ fun AddCustomerPopup(
     val view = androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view) {
         val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         onDispose {}
     }
 
     LaunchedEffect(Unit) {
-kotlinx.coroutines.android.awaitFrame()
-            focusRequester.requestFocus()
-            softwareKeyboardController?.show()
+        try {
+            requestFocusAndShowKeyboard(
+                focusRequester = focusRequester,
+                keyboardController = softwareKeyboardController
+            )
+        } catch (_: Exception) {}
+    }
+
+    val onSanitizedInitialAmountChange: (String) -> Unit = { raw ->
+        if (raw.isEmpty()) {
+            initialAmountStr = ""
+        } else {
+            val normalized = CurrencyConfig.normalizeDigits(raw).replace(" ", "")
+            val dotCount = normalized.count { it == '.' }
+            val isValidChars = normalized.all { it.isDigit() || it == '.' }
+            val dotIdx = normalized.indexOf('.')
+            val validDecimals = dotIdx == -1 || (normalized.length - dotIdx - 1 <= 2)
+            if (isValidChars && dotCount <= 1 && validDecimals) {
+                val cleaned = if (normalized.startsWith("0") && normalized.length > 1 && normalized[1] != '.') {
+                    normalized.trimStart('0').ifEmpty { "0" }
+                } else if (normalized.startsWith(".")) {
+                    "0$normalized"
+                } else {
+                    normalized
+                }
+                initialAmountStr = cleaned
+            }
+        }
     }
 
     val launchContactPicker = rememberContactPicker { name, phone ->
@@ -211,6 +241,37 @@ kotlinx.coroutines.android.awaitFrame()
                                 Spacer(modifier = Modifier.size(36.dp))
                             }
 
+                            val performSave: () -> Unit = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                val formData = AddCustomerFormData(
+                                    nameStr = nameStr,
+                                    phoneStr = phoneStr,
+                                    notesStr = notesStr,
+                                    initialAmountStr = initialAmountStr,
+                                    initialType = initialType,
+                                    selectedTransactionCurrency = selectedTransactionCurrency,
+                                    currencySymbol = currencySymbol,
+                                    applyExchangeRate = applyExchangeRate,
+                                    selectedCalendar = selectedCalendar,
+                                    settingsRate = settingsRate,
+                                    isDuplicateName = isDuplicateName
+                                )
+                                coroutineScope.launch {
+                                    AddCustomerSaveHelper.handleSave(
+                                        context = context,
+                                        viewModel = viewModel,
+                                        formData = formData,
+                                        onIsSavingChange = { isSavingCustomer = it },
+                                        onShowRateSetup = { rate ->
+                                            tempRateStr = rate
+                                            showRateSetupOverlay = true
+                                        },
+                                        onSuccess = onCustomerAdded,
+                                        onDismiss = onDismiss
+                                    )
+                                }
+                            }
+
                             AddCustomerFormFields(
                                 nameStr = nameStr,
                                 onNameChange = { nameStr = it },
@@ -219,7 +280,7 @@ kotlinx.coroutines.android.awaitFrame()
                                 notesStr = notesStr,
                                 onNotesChange = { notesStr = it },
                                 initialAmountStr = initialAmountStr,
-                                onInitialAmountChange = { initialAmountStr = it },
+                                onInitialAmountChange = onSanitizedInitialAmountChange,
                                 isDuplicateName = isDuplicateName,
                                 selectedTransactionCurrency = selectedTransactionCurrency,
                                 activeThemeColor = dynamicThemeColor,
@@ -230,7 +291,13 @@ kotlinx.coroutines.android.awaitFrame()
                                     showCustomDatePicker = true
                                 },
                                 onContactPickerClick = { launchContactPicker() },
-                                onDone = { focusManager.clearFocus() },
+                                onDone = {
+                                    if (nameStr.isNotBlank() && initialType != null && initialAmountStr.isNotBlank() && !isSavingCustomer) {
+                                        performSave()
+                                    } else {
+                                        focusManager.clearFocus()
+                                    }
+                                },
                                 focusRequester = focusRequester,
                                 initialAmountFocusRequester = initialAmountFocusRequester,
                                 notesFocusRequester = notesFocusRequester,
@@ -251,35 +318,7 @@ kotlinx.coroutines.android.awaitFrame()
                                 initialType = initialType,
                                 onTypeSelected = { initialType = it },
                                 isSavingCustomer = isSavingCustomer,
-                                onSaveClick = {
-                                    val formData = AddCustomerFormData(
-                                        nameStr = nameStr,
-                                        phoneStr = phoneStr,
-                                        notesStr = notesStr,
-                                        initialAmountStr = initialAmountStr,
-                                        initialType = initialType,
-                                        selectedTransactionCurrency = selectedTransactionCurrency,
-                                        currencySymbol = currencySymbol,
-                                        applyExchangeRate = applyExchangeRate,
-                                        selectedCalendar = selectedCalendar,
-                                        settingsRate = settingsRate,
-                                        isDuplicateName = isDuplicateName
-                                    )
-                                    coroutineScope.launch {
-                                        AddCustomerSaveHelper.handleSave(
-                                            context = context,
-                                            viewModel = viewModel,
-                                            formData = formData,
-                                            onIsSavingChange = { isSavingCustomer = it },
-                                            onShowRateSetup = { rate ->
-                                                tempRateStr = rate
-                                                showRateSetupOverlay = true
-                                            },
-                                            onSuccess = onCustomerAdded,
-                                            onDismiss = onDismiss
-                                        )
-                                    }
-                                },
+                                onSaveClick = performSave,
                                 activeThemeColor = dynamicThemeColor,
                                 exchangeRatesJson = settings.exchangeRatesJson,
                                 onRequestRateSetup = { rate ->

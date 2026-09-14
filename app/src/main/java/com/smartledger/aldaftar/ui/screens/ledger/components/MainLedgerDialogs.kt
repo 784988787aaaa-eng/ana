@@ -66,6 +66,7 @@ import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
 
 private const val TAG = "MainLedgerDialogs"
 
@@ -84,6 +85,9 @@ fun DeleteDaysConfirmDialog(
         AlertDialog(
             shape = MizanDialogTokens.shape,
             onDismissRequest = onDismiss,
+            modifier = Modifier
+                .fillMaxWidth(0.90f)
+                .widthIn(max = MizanDialogTokens.compactMaxWidth),
             title = {
                 Text(
                     text = stringResource(id = R.string.ledger_bulk_delete_days_title),
@@ -121,14 +125,31 @@ fun DeleteDaysConfirmDialog(
                             onSuccess()
                         }
                     },
+                    shape = MizanDialogTokens.buttonShape,
+                    modifier = Modifier.height(MizanDialogTokens.buttonHeight),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        text = stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn),
+                        color = MaterialTheme.colorScheme.onError,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.5.sp,
+                        maxLines = 1
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(id = R.string.common_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                TextButton(
+                    onClick = onDismiss,
+                    shape = MizanDialogTokens.buttonShape,
+                    modifier = Modifier.height(MizanDialogTokens.buttonHeight)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.common_cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.5.sp,
+                        maxLines = 1
+                    )
                 }
             }
         )
@@ -152,15 +173,16 @@ fun ReorderCommitmentDialog(
         val view = androidx.compose.ui.platform.LocalView.current
         DisposableEffect(view) {
             val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-            window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             onDispose {}
         }
 
         LaunchedEffect(Unit) {
             try {
-                kotlinx.coroutines.android.awaitFrame()
-                focusRequester.requestFocus()
-                keyboardController?.show()
+                requestFocusAndShowKeyboard(
+                    focusRequester = focusRequester,
+                    keyboardController = keyboardController
+                )
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
             }
@@ -185,9 +207,9 @@ fun ReorderCommitmentDialog(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Surface(
                     modifier = Modifier
-                        .widthIn(max = 340.dp)
+                        .widthIn(max = MizanDialogTokens.compactMaxWidth)
                         .fillMaxWidth(0.90f)
-                        .clip(RoundedCornerShape(20.dp)),
+                        .clip(MizanDialogTokens.shape),
                     shadowElevation = 8.dp,
                     color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
@@ -229,7 +251,7 @@ fun ReorderCommitmentDialog(
                             ),
                             keyboardActions = KeyboardActions(onDone = { applyAction() }),
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MizanDialogTokens.inputShape,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
@@ -240,7 +262,7 @@ fun ReorderCommitmentDialog(
                             ),
                             modifier = Modifier
                                 .width(88.dp)
-                                .defaultMinSize(minHeight = 48.dp)
+                                .height(MizanDialogTokens.inputHeight)
                                 .focusRequester(focusRequester),
                             textStyle = TextStyle(
                                 textAlign = TextAlign.Center,
@@ -276,36 +298,38 @@ fun ReorderCommitmentDialog(
                             OutlinedButton(
                                 onClick = onDismiss,
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MizanDialogTokens.buttonShape,
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(com.smartledger.aldaftar.ui.theme.MizanTouchTarget.standardButtonHeight),
+                                    .height(MizanDialogTokens.buttonHeight),
                                 contentPadding = PaddingValues(vertical = 0.dp)
                             ) {
                                 Text(
                                     text = stringResource(id = R.string.common_cancel),
                                     fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
                                 )
                             }
 
                             Button(
                                 onClick = { applyAction() },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MizanDialogTokens.buttonShape,
                                 modifier = Modifier
                                     .weight(1.2f)
-                                    .height(com.smartledger.aldaftar.ui.theme.MizanTouchTarget.standardButtonHeight),
+                                    .height(MizanDialogTokens.buttonHeight),
                                 contentPadding = PaddingValues(vertical = 0.dp)
                             ) {
                                 Text(
                                     text = stringResource(id = R.string.ledger_reorder_apply),
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
                                 )
                             }
                         }

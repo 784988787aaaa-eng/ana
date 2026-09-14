@@ -15,13 +15,13 @@ class RecurringScheduleCalculatorTest {
         val due = RecurringScheduleCalculator.dueOccurrences(config, end)
         assertEquals(3, due.size)
         assertTrue(due.all { it < 10_000_000_000L })
-        assertEquals(start / 1000 + 9 * 60 + 30, due.first())
+        assertEquals(day(2026, Calendar.JANUARY, 10, 9, 30) / 1000, due.first())
     }
 
     @Test fun lastExecutedOccurrenceIsNotRepeated() {
         val start = day(2026, Calendar.JANUARY, 10)
         val end = day(2026, Calendar.JANUARY, 12, 23, 59)
-        val first = start / 1000 + 9 * 60 + 30
+        val first = day(2026, Calendar.JANUARY, 10, 9, 30) / 1000
         val due = RecurringScheduleCalculator.dueOccurrences(config(start, end, first), end)
         assertEquals(2, due.size)
         assertTrue(first !in due)

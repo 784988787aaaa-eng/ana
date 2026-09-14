@@ -105,10 +105,10 @@ fun AddTransactionPopup(
         if (editingTransaction != null) initialCurrencyAndDesc.second else INITIAL_EMPTY_TEXT
     }
 
-    var amountTfv by remember(editingTransaction) {
+    var amountTfv by rememberSaveable(editingTransaction?.id, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(text = initialAmountText, selection = TextRange(initialAmountText.length)))
     }
-    var descTfv by remember(editingTransaction) {
+    var descTfv by rememberSaveable(editingTransaction?.id, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(text = initialDescText, selection = TextRange(initialDescText.length)))
     }
 
@@ -122,10 +122,45 @@ fun AddTransactionPopup(
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
+    val view = androidx.compose.ui.platform.LocalView.current
+    DisposableEffect(view) {
+        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        onDispose {}
+    }
+
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.android.awaitFrame()
-        amountFocusRequester.requestFocus()
-        softwareKeyboardController?.show()
+        try {
+            com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard(
+                focusRequester = amountFocusRequester,
+                keyboardController = softwareKeyboardController
+            )
+        } catch (_: Exception) {}
+    }
+
+    val onSanitizedAmountChange: (TextFieldValue) -> Unit = { newTfv ->
+        val raw = newTfv.text
+        if (raw.isEmpty()) {
+            amountTfv = newTfv
+        } else {
+            val normalized = CurrencyConfig.normalizeDigits(raw).replace(" ", "")
+            val dotCount = normalized.count { it == '.' }
+            val isValidChars = normalized.all { it.isDigit() || it == '.' }
+            val dotIdx = normalized.indexOf('.')
+            val validDecimals = dotIdx == -1 || (normalized.length - dotIdx - 1 <= 2)
+            if (isValidChars && dotCount <= 1 && validDecimals) {
+                val cleanedText = if (normalized.startsWith("0") && normalized.length > 1 && normalized[1] != '.') {
+                    normalized.trimStart('0').ifEmpty { "0" }
+                } else if (normalized.startsWith(".")) {
+                    "0$normalized"
+                } else {
+                    normalized
+                }
+                val diff = cleanedText.length - raw.length
+                val newCursor = (newTfv.selection.end + diff).coerceIn(0, cleanedText.length)
+                amountTfv = TextFieldValue(text = cleanedText, selection = TextRange(newCursor))
+            }
+        }
     }
 
     var dateMillis by rememberSaveable { mutableStateOf(editingTransaction?.timestamp?.let { it * 1000 } ?: System.currentTimeMillis()) }
@@ -183,6 +218,7 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 onTransactionSaved()
                 onDismiss()
 
@@ -201,6 +237,20 @@ fun AddTransactionPopup(
                     equivalentAmount = finalEquivalentAmountBd
                 )
             }
+        }
+    }
+
+    val handleActionClick = { type: String ->
+        val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
+        val amountBd = CurrencyConfig.parseBigDecimal(cleanAmountStr)
+        if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
+            Toast.makeText(context, context.getString(R.string.add_transaction_error_empty), Toast.LENGTH_SHORT).show()
+        } else if (amountBd < BigDecimal.ZERO) {
+            Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
+        } else {
+            focusManager.clearFocus()
+            softwareKeyboardController?.hide()
+            executeSave(type)
         }
     }
 
@@ -299,7 +349,7 @@ fun AddTransactionPopup(
 
                             AddTransactionFormFields(
                                 amountTfv = amountTfv,
-                                onAmountChange = { amountTfv = it },
+                                onAmountChange = onSanitizedAmountChange,
                                 descTfv = descTfv,
                                 onDescChange = { descTfv = it },
                                 selectedTransactionCurrency = selectedTransactionCurrency,
@@ -308,7 +358,10 @@ fun AddTransactionPopup(
                                 amountFocusRequester = amountFocusRequester,
                                 descFocusRequester = descFocusRequester,
                                 onOpenCalculator = { showCalculator = true },
-                                onOpenDatePicker = { showCustomDatePicker = true }
+                                onOpenDatePicker = { showCustomDatePicker = true },
+                                onDone = {
+                                    handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value)
+                                }
                             )
 
                             Spacer(modifier = Modifier.height(4.dp))
@@ -336,20 +389,6 @@ fun AddTransactionPopup(
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
-
-                            val handleActionClick = { type: String ->
-                                val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
-                                val amountBd = CurrencyConfig.parseBigDecimal(cleanAmountStr)
-                                if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
-                                    Toast.makeText(context, context.getString(R.string.add_transaction_error_empty), Toast.LENGTH_SHORT).show()
-                                } else if (amountBd < BigDecimal.ZERO) {
-                                    Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
-                                } else {
-                                    focusManager.clearFocus()
-                                    softwareKeyboardController?.hide()
-                                    executeSave(type)
-                                }
-                            }
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

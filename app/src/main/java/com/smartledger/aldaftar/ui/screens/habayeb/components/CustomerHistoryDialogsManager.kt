@@ -209,7 +209,17 @@ fun CustomerHistoryDialogsManager(
             typeFilterMode = dialogState.typeFilterMode,
             onTypeFilterModeChange = { mode -> updateState { it.copy(typeFilterMode = mode) } },
             activeThemeColor = activeThemeColor,
-            onDismissRequest = { updateState { it.copy(showFilterMenu = false) } }
+            onDismissRequest = { updateState { it.copy(showFilterMenu = false) } },
+            onResetFilters = {
+                updateState {
+                    it.copy(
+                        dateFilterMode = 0,
+                        customStartDate = null,
+                        customEndDate = null,
+                        typeFilterMode = 0
+                    )
+                }
+            }
         )
     }
 

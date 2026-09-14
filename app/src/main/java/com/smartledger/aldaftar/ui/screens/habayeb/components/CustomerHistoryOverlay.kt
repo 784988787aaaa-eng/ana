@@ -238,6 +238,7 @@ fun CustomerHistoryOverlay(
                             onDeleteClick = { dialogState = dialogState.copy(confirmDeleteCust = true) },
                             onEditClick = { dialogState = dialogState.copy(showEditNameDialog = true) },
                             onFilterClick = { dialogState = dialogState.copy(showFilterMenu = true) },
+                            hasActiveFilters = (dialogState.dateFilterMode != 0 || dialogState.typeFilterMode != 0 || dialogState.customStartDate != null || dialogState.customEndDate != null),
                             onShareClick = { showShareSheet = true },
                             onDismiss = onDismiss
                         )

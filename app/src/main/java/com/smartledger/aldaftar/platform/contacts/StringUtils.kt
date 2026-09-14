@@ -122,7 +122,7 @@ object StringUtils {
         for (i in 0 until len) {
             val ch = input[i]
             val replacement = when (ch) {
-                ',' -> '.'
+                ',', '،', '٫' -> '.'
                 in '٠'..'٩' -> (ch - '٠' + '0'.code).toChar()
                 in '۰'..'۹' -> (ch - '۰' + '0'.code).toChar()
                 else -> ch

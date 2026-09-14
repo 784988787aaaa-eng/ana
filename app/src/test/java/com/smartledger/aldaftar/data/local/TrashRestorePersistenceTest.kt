@@ -10,8 +10,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.math.BigDecimal
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class TrashRestorePersistenceTest {
     @Test fun persistedDeletedTransactionRestoresCriticalFieldsAndRemovesTrashItem() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()

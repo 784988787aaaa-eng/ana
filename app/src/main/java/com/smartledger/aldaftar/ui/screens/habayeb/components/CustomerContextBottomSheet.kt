@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -50,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.ui.state.CustomerUiState
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -75,12 +77,13 @@ fun CustomerContextBottomSheet(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(
-            shape = RoundedCornerShape(24.dp),
+            shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
             modifier = Modifier
-                .width(310.dp)
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .fillMaxWidth(0.90f)
+                .widthIn(max = MizanDialogTokens.compactMaxWidth)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
         ) {
             AnimatedContent(
                 targetState = showCategoriesState,

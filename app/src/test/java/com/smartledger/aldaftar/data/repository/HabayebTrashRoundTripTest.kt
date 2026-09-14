@@ -7,8 +7,11 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import java.math.BigDecimal
 
+@RunWith(RobolectricTestRunner::class)
 class HabayebTrashRoundTripTest {
     @Test fun customerRoundTripPreservesRestoreCriticalFields() {
         val original = HabayebCustomer("c1", "عميل", "1", "ملاحظة", 123L, "OWED_TO_THEM", 7)

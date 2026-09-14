@@ -47,7 +47,7 @@ fun LedgerBottomDock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
+                    .height(44.dp)
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -66,16 +66,22 @@ fun LedgerBottomDock(
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .weight(1f)
-                        .height(42.dp)
+                        .height(44.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.ledger_add_income), tint = mizanColors.onCredit, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_income), color = mizanColors.onCredit, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        stringResource(id = R.string.ledger_add_income),
+                        color = mizanColors.onCredit,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        maxLines = 1
+                    )
                 }
 
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
@@ -101,11 +107,17 @@ fun LedgerBottomDock(
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .weight(1f)
-                        .height(42.dp)
+                        .height(44.dp)
                 ) {
                     Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(id = R.string.ledger_add_expense), tint = mizanColors.onDebt, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(id = R.string.ledger_add_expense), color = mizanColors.onDebt, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        stringResource(id = R.string.ledger_add_expense),
+                        color = mizanColors.onDebt,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        maxLines = 1
+                    )
                 }
             }
         }

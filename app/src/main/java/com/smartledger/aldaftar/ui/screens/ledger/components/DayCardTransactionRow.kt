@@ -169,13 +169,13 @@ fun DayCardTransactionRow(
         ) {
             Text(
                 text = formattedTxAmount,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
                 color = txAmountColor
             )
 
             IconButton(
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(28.dp),
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onEditTransaction(tx)
@@ -184,13 +184,13 @@ fun DayCardTransactionRow(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = stringResource(id = R.string.ledger_edit_transaction_title),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.40f),
-                    modifier = Modifier.size(11.5.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                    modifier = Modifier.size(13.dp)
                 )
             }
 
             IconButton(
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(28.dp),
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onDeleteRequest(tx.id)
@@ -199,8 +199,8 @@ fun DayCardTransactionRow(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(id = R.string.ledger_commitment_delete),
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.65f),
-                    modifier = Modifier.size(11.5.dp)
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                    modifier = Modifier.size(13.dp)
                 )
             }
         }

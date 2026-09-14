@@ -6,8 +6,11 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import java.math.BigDecimal
 
+@RunWith(RobolectricTestRunner::class)
 class HabayebTrashSerializationTest {
     @Test fun bundleKeepsStableCategoryAndPinScopes() {
         val customer = HabayebCustomer("c1", "عميل", "", "", 1L, categoryId = 7)

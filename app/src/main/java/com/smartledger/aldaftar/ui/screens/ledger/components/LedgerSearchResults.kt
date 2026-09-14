@@ -105,7 +105,7 @@ fun LedgerSearchResults(
 }
 
 @Composable
-fun SearchResultItem(
+private fun SearchResultItem(
     tx: TransactionDb,
     nextTx: TransactionDb?,
     formatCurrency: (BigDecimal) -> String

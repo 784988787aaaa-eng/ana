@@ -70,6 +70,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun ExchangeRateSetupContent(
@@ -287,15 +288,20 @@ fun ExchangeRateSetupContent(
                     onClick = onDismiss,
                     modifier = Modifier
                         .weight(1f)
-                        .defaultMinSize(minHeight = 36.dp),
-                    shape = RoundedCornerShape(4.dp),
+                        .height(MizanDialogTokens.buttonHeight),
+                    shape = MizanDialogTokens.buttonShape,
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    Text(stringResource(id = R.string.habayeb_cancel), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(id = R.string.habayeb_cancel),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
                 }
 
                 Button(
@@ -312,15 +318,20 @@ fun ExchangeRateSetupContent(
                     },
                     modifier = Modifier
                         .weight(1.2f)
-                        .defaultMinSize(minHeight = 36.dp),
-                    shape = RoundedCornerShape(4.dp),
+                        .height(MizanDialogTokens.buttonHeight),
+                    shape = MizanDialogTokens.buttonShape,
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = statusColor,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(stringResource(id = R.string.habayeb_save), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(id = R.string.habayeb_save),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
                 }
             }
         }
@@ -344,11 +355,11 @@ fun ExchangeRateSetupDialog(
     ) {
         Surface(
             modifier = Modifier
-                .width(260.dp)
+                .width(280.dp)
                 .wrapContentHeight()
                 .imePadding()
-                .shadow(8.dp, RoundedCornerShape(12.dp)),
-            shape = RoundedCornerShape(12.dp),
+                .shadow(8.dp, MizanDialogTokens.shape),
+            shape = MizanDialogTokens.shape,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.12f))
         ) {

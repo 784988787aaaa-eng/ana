@@ -56,14 +56,15 @@ fun CommitmentDeleteConfirmationDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
+                shape = MizanDialogTokens.buttonShape,
+                modifier = Modifier.height(MizanDialogTokens.buttonHeight)
             ) {
                 Text(
                     text = stringResource(id = R.string.ledger_confirm_delete_btn),
                     color = MaterialTheme.colorScheme.onError,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
+                    fontSize = 13.sp,
+                    maxLines = 1
                 )
             }
         },
@@ -71,13 +72,14 @@ fun CommitmentDeleteConfirmationDialog(
             OutlinedButton(
                 onClick = onDismiss,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
+                shape = MizanDialogTokens.buttonShape,
+                modifier = Modifier.height(MizanDialogTokens.buttonHeight)
             ) {
                 Text(
                     text = stringResource(id = R.string.common_cancel),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp
+                    fontSize = 13.sp,
+                    maxLines = 1
                 )
             }
         },
@@ -86,6 +88,6 @@ fun CommitmentDeleteConfirmationDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
             .fillMaxWidth(0.90f)
-            .widthIn(max = 360.dp)
+            .widthIn(max = MizanDialogTokens.compactMaxWidth)
     )
 }

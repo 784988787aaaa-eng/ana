@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -46,6 +47,7 @@ fun CustomerHistoryTopBar(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     onFilterClick: () -> Unit,
+    hasActiveFilters: Boolean = false,
     onShareClick: () -> Unit,
     onDismiss: () -> Unit,
     isPhoneAvailable: Boolean = false,
@@ -229,12 +231,22 @@ kotlinx.coroutines.android.awaitFrame()
                     onClick = onFilterClick,
                     modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = stringResource(id = R.string.habayeb_smart_filter),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = stringResource(id = R.string.habayeb_smart_filter),
+                            tint = if (hasActiveFilters) activeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        if (hasActiveFilters) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .align(Alignment.TopEnd)
+                                    .background(activeThemeColor, CircleShape)
+                            )
+                        }
+                    }
                 }
 
                 IconButton(

@@ -55,7 +55,8 @@ fun AddTransactionFormFields(
     amountFocusRequester: FocusRequester,
     descFocusRequester: FocusRequester,
     onOpenCalculator: () -> Unit,
-    onOpenDatePicker: () -> Unit
+    onOpenDatePicker: () -> Unit,
+    onDone: (() -> Unit)? = null
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -184,7 +185,10 @@ fun AddTransactionFormFields(
                 .height(48.dp)
                 .focusRequester(descFocusRequester),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                onDone?.invoke()
+            })
         )
     }
 }

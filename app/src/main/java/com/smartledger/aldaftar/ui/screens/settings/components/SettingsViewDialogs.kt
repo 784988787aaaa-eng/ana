@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.settings.components
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -66,18 +67,32 @@ fun RevalueConfirmDialog(
             Button(
                 onClick = onConfirmAll,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(10.dp)
+                shape = MizanDialogTokens.buttonShape,
+                modifier = Modifier.height(MizanDialogTokens.buttonHeight)
             ) {
-                Text(stringResource(id = R.string.currency_update_past_future), color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = stringResource(id = R.string.currency_update_past_future),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
             }
         },
         dismissButton = {
             Button(
                 onClick = onConfirmFutureOnly,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                shape = RoundedCornerShape(10.dp)
+                shape = MizanDialogTokens.buttonShape,
+                modifier = Modifier.height(MizanDialogTokens.buttonHeight)
             ) {
-                Text(stringResource(id = R.string.currency_update_future_only), color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = stringResource(id = R.string.currency_update_future_only),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
             }
         }
     )

@@ -21,6 +21,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +40,7 @@ import com.smartledger.aldaftar.ui.screens.CalculatorDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
 
 @Composable
 fun TransactionRecordDialog(
@@ -51,13 +56,14 @@ fun TransactionRecordDialog(
 
     val mizanColors = MaterialTheme.mizanColors
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val initialAmount = remember(editingTransaction, showTxDialog) { editingTransaction?.amount?.toPlainString() ?: "" }
     val initialDesc = remember(editingTransaction, showTxDialog) { editingTransaction?.description ?: "" }
 
-    var numAmountTfv by remember(editingTransaction, showTxDialog) {
+    var numAmountTfv by rememberSaveable(editingTransaction?.id, showTxDialog, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(text = initialAmount, selection = TextRange(initialAmount.length)))
     }
-    var descriptionTfv by remember(editingTransaction, showTxDialog) {
+    var descriptionTfv by rememberSaveable(editingTransaction?.id, showTxDialog, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(text = initialDesc, selection = TextRange(initialDesc.length)))
     }
     val numAmount = numAmountTfv.text
@@ -84,15 +90,16 @@ fun TransactionRecordDialog(
     val view = androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view) {
         val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         onDispose {}
     }
 
     LaunchedEffect(Unit) {
         try {
-            kotlinx.coroutines.android.awaitFrame()
-            focusRequester.requestFocus()
-            softwareKeyboardController?.show()
+            requestFocusAndShowKeyboard(
+                focusRequester = focusRequester,
+                keyboardController = softwareKeyboardController
+            )
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
         }
@@ -111,6 +118,31 @@ fun TransactionRecordDialog(
     val textInputBgColor = if (isIncome) mizanColors.creditContainer.copy(alpha = 0.35f) else mizanColors.debtContainer.copy(alpha = 0.35f)
     val textColor = MaterialTheme.colorScheme.onSurface
 
+    val onSanitizedAmountChange: (TextFieldValue) -> Unit = { newTfv ->
+        val raw = newTfv.text
+        if (raw.isEmpty()) {
+            numAmountTfv = newTfv
+        } else {
+            val normalized = CurrencyConfig.normalizeDigits(raw).replace(" ", "")
+            val dotCount = normalized.count { it == '.' }
+            val isValidChars = normalized.all { it.isDigit() || it == '.' }
+            val dotIdx = normalized.indexOf('.')
+            val validDecimals = dotIdx == -1 || (normalized.length - dotIdx - 1 <= 2)
+            if (isValidChars && dotCount <= 1 && validDecimals) {
+                val cleanedText = if (normalized.startsWith("0") && normalized.length > 1 && normalized[1] != '.') {
+                    normalized.trimStart('0').ifEmpty { "0" }
+                } else if (normalized.startsWith(".")) {
+                    "0$normalized"
+                } else {
+                    normalized
+                }
+                val diff = cleanedText.length - raw.length
+                val newCursor = (newTfv.selection.end + diff).coerceIn(0, cleanedText.length)
+                numAmountTfv = TextFieldValue(text = cleanedText, selection = TextRange(newCursor))
+            }
+        }
+    }
+
     com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
@@ -120,7 +152,7 @@ fun TransactionRecordDialog(
             tonalElevation = 0.dp, // تعطيل الارتفاع اللوني. to prevent neutral gray overlays
             border = BorderStroke(1.dp, themeColor.copy(alpha = 0.7f)),
             modifier = Modifier
-                .widthIn(max = 360.dp)
+                .widthIn(max = 350.dp)
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
                 .imePadding()
@@ -128,7 +160,8 @@ fun TransactionRecordDialog(
             Column(
                 modifier = Modifier
                     .padding(MizanDialogTokens.outerPadding)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -143,7 +176,7 @@ fun TransactionRecordDialog(
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = themeColor,
-                            fontSize = 15.sp
+                            fontSize = 14.5.sp
                         ),
                         textAlign = TextAlign.Center
                     )
@@ -155,9 +188,9 @@ fun TransactionRecordDialog(
                 ) {
                     OutlinedTextField(
                         value = numAmountTfv,
-                        onValueChange = { numAmountTfv = it },
+                        onValueChange = onSanitizedAmountChange,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
+                            keyboardType = KeyboardType.Decimal,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
@@ -246,6 +279,7 @@ fun TransactionRecordDialog(
                                 focusManager.clearFocus()
                                 softwareKeyboardController?.hide()
                                 if (isConfirmButtonEnabled && parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     isSavingTx = true
                                     onSave(
                                         editingTransaction?.id,
@@ -270,7 +304,10 @@ fun TransactionRecordDialog(
                 ) {
                     TextButton(
                         onClick = dismissDialog,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(MizanDialogTokens.buttonHeight),
+                        shape = MizanDialogTokens.buttonShape,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = themeColorSub
                         )
@@ -278,7 +315,8 @@ fun TransactionRecordDialog(
                         Text(
                             text = stringResource(id = R.string.common_cancel),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            maxLines = 1
                         )
                     }
 
@@ -287,6 +325,7 @@ fun TransactionRecordDialog(
                         onClick = {
                             if (isSavingTx) return@Button
                             if (parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 isSavingTx = true
                                 onSave(
                                     editingTransaction?.id,
@@ -298,8 +337,10 @@ fun TransactionRecordDialog(
                                 onDismiss()
                             }
                         },
-                        modifier = Modifier.weight(1.2f),
-                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .height(MizanDialogTokens.buttonHeight),
+                        shape = MizanDialogTokens.buttonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = themeColor,
                             contentColor = if (isIncome) mizanColors.onCredit else mizanColors.onDebt,
@@ -310,7 +351,8 @@ fun TransactionRecordDialog(
                         Text(
                             text = stringResource(id = R.string.ledger_save_tx_btn),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            maxLines = 1
                         )
                     }
                 }

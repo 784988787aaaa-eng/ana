@@ -35,8 +35,11 @@ fun TrashBundleTransactionsBottomSheet(
     onDismiss: () -> Unit,
     onRestoreSingleTx: (String) -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         shape = RoundedCornerShape(topStart = MizanDialogTokens.sheetTopRadius, topEnd = MizanDialogTokens.sheetTopRadius),
         containerColor = MaterialTheme.colorScheme.surface
     ) {

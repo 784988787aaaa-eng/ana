@@ -136,7 +136,7 @@ fun MicroRenameCategoryDialog(
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Start
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MizanDialogTokens.inputShape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = activeThemeColor,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -157,28 +157,31 @@ fun MicroRenameCategoryDialog(
                 ) {
                     TextButton(
                         onClick = onDismiss,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
+                        shape = MizanDialogTokens.buttonShape,
+                        modifier = Modifier.height(MizanDialogTokens.buttonHeight)
                     ) {
                         Text(
                             text = stringResource(R.string.habayeb_category_cancel),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
                         )
                     }
                     Button(
+                        enabled = categoryName.trim().isNotBlank(),
                         onClick = handleSave,
                         colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MizanDialogTokens.buttonShape,
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
+                        modifier = Modifier.height(MizanDialogTokens.buttonHeight)
                     ) {
                         Text(
                             text = stringResource(R.string.habayeb_category_save),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            maxLines = 1
                         )
                     }
                 }

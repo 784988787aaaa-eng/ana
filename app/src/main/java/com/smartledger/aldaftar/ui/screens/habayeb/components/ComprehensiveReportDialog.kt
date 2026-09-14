@@ -322,12 +322,14 @@ fun ComprehensiveReportDialog(
                                     )
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(MizanDialogTokens.buttonHeight),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = activeThemeColor.copy(alpha = 0.12f),
                                 contentColor = activeThemeColor
                             ),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = MizanDialogTokens.buttonShape,
                             enabled = !isGeneratingPdf && !isGeneratingBooklet
                         ) {
                             if (isGeneratingPdf) {
@@ -346,7 +348,8 @@ fun ComprehensiveReportDialog(
                                 Text(
                                     text = stringResource(id = R.string.report_type_general),
                                     fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -392,9 +395,11 @@ fun ComprehensiveReportDialog(
                                 }
                                 bookletJob = job
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(MizanDialogTokens.buttonHeight),
                             colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = MizanDialogTokens.buttonShape,
                             enabled = !isGeneratingBooklet && !isGeneratingPdf
                         ) {
                             Icon(
@@ -406,7 +411,8 @@ fun ComprehensiveReportDialog(
                             Text(
                                 text = stringResource(id = R.string.report_type_detailed),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
                             )
                         }
                     }

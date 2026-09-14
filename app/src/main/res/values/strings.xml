@@ -178,6 +178,8 @@
     <string name="habayeb_filter_type_debts">الديون فقط</string>
     <string name="habayeb_filter_type_payments">السداد فقط</string>
     <string name="habayeb_smart_filter">تصفية ذكية</string>
+    <string name="habayeb_filter_reset">إعادة تعيين</string>
+    <string name="habayeb_filter_apply">تطبيق</string>
     <string name="habayeb_toast_amount_or_details_required">يجب إدخال المبلغ أو التفاصيل لحفظ المعاملة</string>
     <string name="habayeb_toast_enter_valid_rate">الرجاء إدخال سعر صرف صحيح</string>
     <string name="habayeb_toast_confirm_rate_first">الرجاء تأكيد سعر الصرف أولاً</string>

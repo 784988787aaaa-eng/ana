@@ -39,7 +39,7 @@ private fun String.toWesternDigits(): String {
 fun DayCardSummaryBar(
     dailyIncome: BigDecimal,
     dailyExpense: BigDecimal,
-    dailyNet: BigDecimal,
+    dailyNet: BigDecimal = BigDecimal.ZERO,
     isDark: Boolean,
     currencySymbol: String,
     formatCurrency: (BigDecimal, String) -> String,
@@ -47,10 +47,6 @@ fun DayCardSummaryBar(
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val barBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceVariant
-    val netSummaryColor = if (dailyNet > BigDecimal.ZERO) mizanColors.credit
-    else if (dailyNet < BigDecimal.ZERO) mizanColors.debt
-    else MaterialTheme.colorScheme.onSurfaceVariant
-    val netSummaryPrefix = if (dailyNet > BigDecimal.ZERO) "+" else ""
 
     Surface(
         shape = RoundedCornerShape(8.dp),
@@ -73,7 +69,7 @@ fun DayCardSummaryBar(
             ) {
                 Text(
                     text = "${stringResource(id = R.string.ledger_daily_income).replace("اليوم", "").trim()}: ${formatCurrency(dailyIncome, currencySymbol).toWesternDigits()}",
-                    fontSize = 11.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = mizanColors.credit,
                     maxLines = 1
@@ -95,31 +91,9 @@ fun DayCardSummaryBar(
             ) {
                 Text(
                     text = "${stringResource(id = R.string.ledger_daily_expense).replace("اليوم", "").trim()}: ${formatCurrency(dailyExpense, currencySymbol).toWesternDigits()}",
-                    fontSize = 11.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = mizanColors.debt,
-                    maxLines = 1
-                )
-            }
-
-            VerticalDivider(
-                modifier = Modifier.height(18.dp),
-                thickness = 0.8.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            )
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "${stringResource(id = R.string.ledger_daily_net)}: $netSummaryPrefix${formatCurrency(dailyNet, currencySymbol).toWesternDigits()}",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = netSummaryColor,
                     maxLines = 1
                 )
             }
