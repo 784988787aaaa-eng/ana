@@ -6,7 +6,6 @@ import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
-import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -119,7 +118,7 @@ class CloudArchiveStore(context: Context) {
                 if (mime == "application/vnd.google-apps.folder") continue
 
                 val id = fileObj.getString("id")
-                val name = WesternDigits.normalize(fileObj.optString("name", "smartledger_backup.slb"))
+                val name = fileObj.optString("name", "smartledger_backup.slb")
                 val size = fileObj.optLong("size", 0L)
                 val modifiedTimeStr = fileObj.optString("modifiedTime", fileObj.optString("createdTime", ""))
                 val modifiedTime = parseIsoTime(modifiedTimeStr)

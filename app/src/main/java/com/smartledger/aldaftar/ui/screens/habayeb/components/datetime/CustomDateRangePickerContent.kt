@@ -155,11 +155,20 @@ fun CustomDateRangePickerContent(
                                 .clickable { activeTab = RangeTab.START },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "من: ${WesternDigits.normalize(dateFormatter.format(startCalendar.time))}",
-                                fontSize = 11.5.sp, fontWeight = FontWeight.Bold,
-                                color = if (isStart) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(id = R.string.datetime_picker_range_tab_start),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isStart) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = WesternDigits.normalize(dateFormatter.format(startCalendar.time)),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = if (isStart) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f) else MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
 
                         val isEnd = activeTab == RangeTab.END
@@ -174,11 +183,20 @@ fun CustomDateRangePickerContent(
                                 .clickable { activeTab = RangeTab.END },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "إلى: ${WesternDigits.normalize(dateFormatter.format(endCalendar.time))}",
-                                fontSize = 11.5.sp, fontWeight = FontWeight.Bold,
-                                color = if (isEnd) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(id = R.string.datetime_picker_range_tab_end),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isEnd) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = WesternDigits.normalize(dateFormatter.format(endCalendar.time)),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = if (isEnd) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f) else MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
 

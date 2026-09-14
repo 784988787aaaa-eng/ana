@@ -27,7 +27,7 @@ object AppDateTimeFormatter {
 
 
     fun formatDateArabic(date: Date): String {
-        return WesternDigits.normalize(dateArabicFormatter.get().format(date))
+        return dateArabicFormatter.get().format(date)
     }
 
     fun formatDateArabic(timestampSeconds: Long): String {
@@ -35,7 +35,7 @@ object AppDateTimeFormatter {
     }
 
     fun formatDateDefault(date: Date): String {
-        return WesternDigits.normalize(dateDefaultFormatter.get().format(date))
+        return dateDefaultFormatter.get().format(date)
     }
 
     fun formatDateDefault(timestampSeconds: Long): String {
@@ -43,7 +43,7 @@ object AppDateTimeFormatter {
     }
 
     fun formatShortDate(date: Date): String {
-        return WesternDigits.normalize(dateShortFormatter.get().format(date))
+        return dateShortFormatter.get().format(date)
     }
 
     fun formatShortDate(timestampSeconds: Long): String {
@@ -51,7 +51,7 @@ object AppDateTimeFormatter {
     }
 
     fun formatDateIso(date: Date): String {
-        return WesternDigits.normalize(dateIsoFormatter.get().format(date))
+        return dateIsoFormatter.get().format(date)
     }
 
     fun formatDateIso(timestampSeconds: Long): String {
@@ -60,7 +60,7 @@ object AppDateTimeFormatter {
 
 
     fun formatTime12h(date: Date): String {
-        return WesternDigits.normalize(time12hDefaultFormatter.get().format(date))
+        return time12hDefaultFormatter.get().format(date)
     }
 
     fun formatTime12h(timestampSeconds: Long): String {
@@ -68,11 +68,11 @@ object AppDateTimeFormatter {
     }
 
     fun formatTime12hArabic(date: Date): String {
-        return WesternDigits.normalize(time12hFormatter.get().format(date))
+        return time12hFormatter.get().format(date)
     }
 
     fun formatFullDateTime(date: Date): String {
-        return WesternDigits.normalize(fullDateTimeArabicFormatter.get().format(date))
+        return fullDateTimeArabicFormatter.get().format(date)
     }
 
     fun formatFullDateTime(timestampMillisOrSeconds: Long): String {
@@ -87,7 +87,7 @@ object AppDateTimeFormatter {
 
 
     fun getDayOfWeekArabic(timestampSeconds: Long): String =
-        WesternDigits.normalize(dayOfWeekFormatter.get().format(Date(normalizeToMillis(timestampSeconds))))
+        dayOfWeekFormatter.get().format(Date(normalizeToMillis(timestampSeconds)))
 
     fun getDayOfWeekResId(timestampSeconds: Long): Int {
         val cal = calendarLocal.get().apply {
@@ -112,7 +112,7 @@ object AppDateTimeFormatter {
 
     fun getMonthNameArabic(timestampSeconds: Long): String {
         val date = Date(normalizeToMillis(timestampSeconds))
-        return "${monthNameFormatter.get().format(date)} ${WesternDigits.normalize(yearOnlyFormatter.get().format(date))}"
+        return "${monthNameFormatter.get().format(date)} ${yearOnlyFormatter.get().format(date)}"
     }
 
     fun getYearMonthKey(timestampSeconds: Long): String =
@@ -124,11 +124,11 @@ object AppDateTimeFormatter {
         val hours = (diffSec % 86400) / 3600
 
         return when {
-            days > 30 -> WesternDigits.normalize(context?.getString(R.string.date_diff_over_month).orEmpty())
-            days > 1 -> WesternDigits.normalize(context?.getString(R.string.date_diff_days_pattern, days).orEmpty())
-            days == 1L -> WesternDigits.normalize(context?.getString(R.string.date_diff_one_day).orEmpty())
-            hours > 1 -> WesternDigits.normalize(context?.getString(R.string.date_diff_hours_pattern, hours).orEmpty())
-            else -> WesternDigits.normalize(context?.getString(R.string.date_diff_very_close).orEmpty())
+            days > 30 -> context?.getString(R.string.date_diff_over_month).orEmpty()
+            days > 1 -> context?.getString(R.string.date_diff_days_pattern, days).orEmpty()
+            days == 1L -> context?.getString(R.string.date_diff_one_day).orEmpty()
+            hours > 1 -> context?.getString(R.string.date_diff_hours_pattern, hours).orEmpty()
+            else -> context?.getString(R.string.date_diff_very_close).orEmpty()
         }
     }
 

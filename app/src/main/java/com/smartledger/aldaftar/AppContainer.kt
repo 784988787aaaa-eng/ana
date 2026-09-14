@@ -22,7 +22,7 @@ class AppContainer(context: Context) {
     val trash by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { TrashRepository(database.trashDao()) }
     val maintenance by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DataMaintenanceRepository(database, database.settingsDao(), database.commitmentDao(), database.transactionDao(), database.customCategoryDao(), database.trashDao(), database.habayebDao()) }
     val businessProfile by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BusinessProfileRepository(database.businessProfileDao()) }
-    val recurring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RecurringRepository(database, database.recurringConfigDao(), license) }
+    val recurring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RecurringRepository(database, database.recurringConfigDao()) }
     val floatingUi by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { FloatingUiPreferencesRepository(context.applicationContext) }
     val mutation by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebMutationRepository(database) }
     val backupEngine by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BackupEngine(context.applicationContext, database) }

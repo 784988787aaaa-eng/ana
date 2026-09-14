@@ -7,12 +7,11 @@ import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.RecurringConfig
-import com.smartledger.aldaftar.data.license.LicenseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
-class RecurringRepository(private val database:AppDatabase, private val dao:RecurringConfigDao, private val licenseRepository: LicenseRepository) {
+class RecurringRepository(private val database:AppDatabase, private val dao:RecurringConfigDao) {
  val configsFlow:Flow<List<RecurringConfig>> = dao.allFlow().map { it.map(::toModel) }
  suspend fun all():List<RecurringConfig> = dao.all().map(::toModel)
  suspend fun byOriginalTransaction(id:String):RecurringConfig? = dao.byOriginalTransaction(id)?.let(::toModel)
@@ -27,30 +26,14 @@ class RecurringRepository(private val database:AppDatabase, private val dao:Recu
   dao.all().filter { it.isActive }.forEach { entity ->
    val config=toModel(entity); val due=RecurringScheduleCalculator.dueOccurrences(config, nowMillis, maxOccurrences = 50)
    if(due.isNotEmpty()) {
-    var createdForConfig = 0
-    for (ts in due) {
-      val created = licenseRepository.runAuthorizedCreation {
-        database.habayebDao().insertTransaction(
-          HabayebTransaction(
-            id = UUID.randomUUID().toString(), customerId = config.customerId, type = config.type,
-            amount = FinancialPolicy.normalize(config.amount), timestamp = ts, description = config.description,
-            linkedMainTxId = config.originalTxId, isForeign = config.isForeign, currencyCode = config.currencyCode,
-            foreignAmount = FinancialPolicy.normalize(config.foreignAmount), exchangeRate = FinancialPolicy.normalize(config.exchangeRate),
-            isRateCalculated = config.isRateCalculated, equivalentAmount = FinancialPolicy.normalize(config.equivalentAmount)
-          )
-        )
-        true
-      }
-      if (created == true) {
-        count++
-        createdForConfig++
-      } else {
-        break
-      }
-    }
-    if (createdForConfig > 0) {
-      dao.save(entity.copy(lastExecutedTimestamp = due[createdForConfig - 1]))
-    }
+    due.forEach { ts -> database.habayebDao().insertTransaction(
+      HabayebTransaction(id=UUID.randomUUID().toString(), customerId=config.customerId, type=config.type,
+       amount=FinancialPolicy.normalize(config.amount), timestamp=ts, description=config.description,
+       linkedMainTxId=config.originalTxId, isForeign=config.isForeign, currencyCode=config.currencyCode,
+       foreignAmount=FinancialPolicy.normalize(config.foreignAmount), exchangeRate=FinancialPolicy.normalize(config.exchangeRate),
+       isRateCalculated=config.isRateCalculated, equivalentAmount=FinancialPolicy.normalize(config.equivalentAmount)) ) }
+    dao.save(entity.copy(lastExecutedTimestamp=due.last()))
+    count += due.size
    }
   }; count
  }

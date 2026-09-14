@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -159,8 +157,8 @@ fun CommitmentEditDialog(
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Box(Modifier.fillMaxWidth().height(42.dp)) {
-                        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 if (editingCommitment != null) stringResource(R.string.ledger_commitment_dialog_title_edit)
                                 else stringResource(R.string.ledger_commitment_dialog_title_add),
@@ -170,11 +168,11 @@ fun CommitmentEditDialog(
                             Text(
                                 if (editingCommitment != null) stringResource(R.string.ledger_commitment_edit_hint)
                                 else stringResource(R.string.ledger_commitment_add_hint),
-                                fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = dismiss, modifier = Modifier.size(40.dp).align(Alignment.CenterStart)) {
-                            Icon(Icons.Default.Close, stringResource(R.string.desc_close), modifier = Modifier.size(18.dp))
+                        TextButton(onClick = dismiss, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            Text(stringResource(R.string.common_cancel), fontSize = 12.sp)
                         }
                     }
 
@@ -212,7 +210,11 @@ fun CommitmentEditDialog(
                         keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done,
                         focusRequester = progressFocus,
                         onNext = {
-                            focusManager.clearFocus()
+                            if (valid) {
+                                executeSave()
+                            } else {
+                                focusManager.clearFocus()
+                            }
                         },
                         textAlign = TextAlign.Center
                     )

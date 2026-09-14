@@ -186,7 +186,6 @@ fun HabayebFab(
                     .pointerInput(sizeLevel, targetCustomer) {
                         detectTapGestures(
                             onTap = {
-                                VibrationHelper.triggerClickVibration(context)
                                 if (targetCustomer != null) {
                                     onAddTransactionForCustomer(targetCustomer)
                                 } else {

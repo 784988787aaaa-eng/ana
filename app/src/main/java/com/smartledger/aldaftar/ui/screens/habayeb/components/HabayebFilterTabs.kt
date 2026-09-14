@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.theme.mizanColors
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
 
 private const val PRIVACY_MASK = "*****"
@@ -55,11 +54,6 @@ fun HabayebFilterTabs(
     modifier: Modifier = Modifier
 ) {
     val mizanColors = MaterialTheme.mizanColors
-    // بطاقتا «لنا/علينا» تعرضان دائماً عملة التطبيق المحلية فقط.
-    // إذا كانت الإعدادات تحفظ رمز العملة ككود (مثل YER)، حوّله إلى الرمز المعتمد للعرض.
-    val displayCurrencySymbol = remember(currencySymbol) {
-        CurrencyConfig.getBySymbol(currencySymbol)?.symbol ?: currencySymbol
-    }
 
     val formattedOwedByThem = remember(totalOwedByThem) {
         HabayebMathHelper.formatSmart(totalOwedByThem)
@@ -80,7 +74,7 @@ fun HabayebFilterTabs(
         FilterTabChip(
             title = stringResource(id = R.string.habayeb_filter_owed_by),
             formattedAmount = formattedOwedByThem,
-            currencySymbol = displayCurrencySymbol,
+            currencySymbol = currencySymbol,
             isSelected = isOwedByThemSelected,
             isPrivacyMode = isPrivacyMode,
             headerColor = mizanColors.chipDebtText,
@@ -95,7 +89,7 @@ fun HabayebFilterTabs(
         FilterTabChip(
             title = stringResource(id = R.string.habayeb_filter_owed_to),
             formattedAmount = formattedOwedToThem,
-            currencySymbol = displayCurrencySymbol,
+            currencySymbol = currencySymbol,
             isSelected = isOwedToThemSelected,
             isPrivacyMode = isPrivacyMode,
             headerColor = mizanColors.chipCreditText,

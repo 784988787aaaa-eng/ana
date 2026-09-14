@@ -66,138 +66,243 @@ fun CommitmentItemCardClean(
     val haptic = LocalHapticFeedback.current
     val mizanColors = MaterialTheme.mizanColors
     val isCovered = remaining.compareTo(BigDecimal.ZERO) <= 0
-    val progressFraction = if (fc.targetAmount > BigDecimal.ZERO) {
+    val progressFraction = if (fc.targetAmount.compareTo(BigDecimal.ZERO) > 0) {
         allocated.divide(fc.targetAmount, 6, java.math.RoundingMode.HALF_UP)
-            .coerceIn(BigDecimal.ZERO, BigDecimal.ONE).toFloat()
+            .coerceIn(BigDecimal.ZERO, BigDecimal.ONE)
+            .toFloat()
     } else 0f
     val progressPercent = (progressFraction * 100).toInt()
     val isDark = MaterialTheme.isDark
+
     val primaryColor = MaterialTheme.colorScheme.primary
     val itemGradient = remember(mizanColors.credit, primaryColor) {
-        Brush.horizontalGradient(listOf(mizanColors.credit, primaryColor))
+        Brush.horizontalGradient(
+            colors = listOf(
+                mizanColors.credit,
+                primaryColor
+            )
+        )
     }
 
     Card(
         shape = RoundedCornerShape(13.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isCovered) mizanColors.creditContainer.copy(alpha = if (isDark) 0.10f else 0.04f)
-            else MaterialTheme.colorScheme.surface
+            containerColor = if (isCovered) mizanColors.creditContainer.copy(alpha = if (isDark) 0.10f else 0.04f) else MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             1.dp,
-            if (isCovered) mizanColors.creditBorder.copy(alpha = 0.28f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            if (isCovered) mizanColors.creditBorder.copy(alpha = 0.28f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 9.dp, vertical = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(MizanTouchTarget.minimum).clip(CircleShape).clickable {
-                        onCheckedChange(fc, !isCovered)
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    },
-                    contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.weight(1f, fill = true)
                 ) {
                     Box(
-                        modifier = Modifier.size(21.dp).clip(CircleShape)
-                            .background(if (isCovered) mizanColors.credit else Color.Transparent)
-                            .border(1.5.dp, if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .45f), CircleShape),
+                        modifier = Modifier
+                            .size(MizanTouchTarget.minimum)
+                            .clip(CircleShape)
+                            .clickable {
+                                onCheckedChange(fc, !isCovered)
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isCovered) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(13.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(CircleShape)
+                                .background(if (isCovered) mizanColors.credit else Color.Transparent)
+                                .border(
+                                    1.5.dp,
+                                    if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isCovered) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                        }
                     }
-                }
 
-                Text(
-                    text = fc.name.toWesternDigits(),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-                )
-
-                Surface(
-                    shape = RoundedCornerShape(7.dp),
-                    color = if (isCovered) mizanColors.creditContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = .5f)
-                ) {
                     Text(
-                        text = if (isCovered) "مكتمل" else "${progressPercent}%",
+                        text = fc.name.toWesternDigits(),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 10.5.sp,
-                        color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        fontSize = 14.sp,
+                        color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                 }
-                Spacer(Modifier.width(5.dp))
-                Text(
-                    text = formatCurrency(remaining.coerceAtLeast(BigDecimal.ZERO), currencySymbol).toWesternDigits(),
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    if (isCovered) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = mizanColors.creditContainer
+                        ) {
+                            Text(
+                                text = "مكتمل",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                color = mizanColors.credit,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                        ) {
+                            Text(
+                                text = "متبقي: ${formatCurrency(remaining, currencySymbol)}".toWesternDigits(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "$progressPercent%",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isCovered) mizanColors.credit else MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f).height(5.dp).clip(RoundedCornerShape(3.dp))) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .22f)))
-                    if (progressFraction > 0f) {
-                        Box(
-                            Modifier.fillMaxWidth(progressFraction).fillMaxHeight().clip(RoundedCornerShape(3.dp))
-                                .background(if (isCovered) Brush.horizontalGradient(listOf(mizanColors.credit, mizanColors.credit)) else itemGradient)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(2.5.dp))
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f))
+                )
+                if (progressFraction > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progressFraction)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(if (isCovered) Brush.horizontalGradient(listOf(mizanColors.credit, mizanColors.credit)) else itemGradient)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "المستهدف: ${formatCurrency(fc.targetAmount, currencySymbol)}".toWesternDigits(),
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    IconButton(
+                        onClick = { onEditCommitmentClick(fc) },
+                        modifier = Modifier.size(MizanTouchTarget.minimum)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(id = R.string.ledger_edit_commitment_title),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                            modifier = Modifier.size(MizanIconSizes.sm)
                         )
                     }
-                }
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = "${formatCurrency(fc.targetAmount, currencySymbol).toWesternDigits()}",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .8f),
-                    maxLines = 1
-                )
-                IconButton(onClick = { onEditCommitmentClick(fc) }, modifier = Modifier.size(MizanTouchTarget.minimum)) {
-                    Icon(Icons.Default.Edit, stringResource(R.string.ledger_edit_commitment_title), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f), modifier = Modifier.size(MizanIconSizes.sm))
-                }
-                IconButton(onClick = { onDeleteClick(fc); haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) }, modifier = Modifier.size(MizanTouchTarget.minimum)) {
-                    Icon(Icons.Default.Delete, stringResource(R.string.ledger_commitment_delete), tint = MaterialTheme.colorScheme.error.copy(alpha = .75f), modifier = Modifier.size(MizanIconSizes.sm))
-                }
-                var dragOffset by remember { mutableFloatStateOf(0f) }
-                Box(
-                    modifier = Modifier.size(MizanTouchTarget.minimum).clip(CircleShape)
-                        .clickable { onSetReorderTarget(fc) }
-                        .pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragStart = { dragOffset = 0f },
-                                onDrag = { _, dragAmount ->
-                                    dragOffset += dragAmount.y
-                                    if (dragOffset > 60f) {
-                                        dragOffset = 0f
-                                        val pos = index + 2
-                                        if (pos <= totalCommitmentsCount) {
-                                            onReorderCommitment(fc, pos)
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        }
-                                    } else if (dragOffset < -60f) {
-                                        dragOffset = 0f
-                                        val pos = index
-                                        if (pos >= 1) {
-                                            onReorderCommitment(fc, pos)
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        }
-                                    }
-                                },
-                                onDragEnd = { dragOffset = 0f }
-                            )
+
+                    IconButton(
+                        onClick = {
+                            onDeleteClick(fc)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Menu, stringResource(R.string.ledger_reorder_apply), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .65f), modifier = Modifier.size(MizanIconSizes.sm))
+                        modifier = Modifier.size(MizanTouchTarget.minimum)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(id = R.string.ledger_commitment_delete),
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                            modifier = Modifier.size(MizanIconSizes.sm)
+                        )
+                    }
+
+                    var dragOffset by remember { mutableFloatStateOf(0f) }
+                    Box(
+                        modifier = Modifier
+                            .size(MizanTouchTarget.minimum)
+                            .clip(CircleShape)
+                            .clickable {
+                                onSetReorderTarget(fc)
+                            }
+                            .pointerInput(Unit) {
+                                detectDragGestures(
+                                    onDragStart = { _ -> dragOffset = 0f },
+                                    onDrag = { _, dragAmount ->
+                                        dragOffset += dragAmount.y
+                                        if (dragOffset > 60f) {
+                                             dragOffset = 0f
+                                            val pos = index + 2
+                                            if (pos <= totalCommitmentsCount) {
+                                                onReorderCommitment(fc, pos)
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
+                                        } else if (dragOffset < -60f) {
+                                            dragOffset = 0f
+                                            val pos = index
+                                            if (pos >= 1) {
+                                                onReorderCommitment(fc, pos)
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = { dragOffset = 0f }
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(id = R.string.ledger_reorder_apply),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                            modifier = Modifier.size(MizanIconSizes.sm)
+                        )
+                    }
                 }
             }
         }

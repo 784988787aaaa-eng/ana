@@ -92,7 +92,6 @@ fun RecurringFrequencySelector(
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (selected) activeThemeColor else Color.Transparent)
                     .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onFrequencyChange(key)
                     },
                 contentAlignment = Alignment.Center

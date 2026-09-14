@@ -32,7 +32,6 @@ import com.smartledger.aldaftar.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.smartledger.aldaftar.ui.theme.mizanColors
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 
 import com.smartledger.aldaftar.domain.model.TransactionType
 
@@ -201,27 +200,61 @@ fun CustomerSummaryCard(
     selectedCurrencyFilter: String? = null,
     onCurrencyFilterSelected: (String?) -> Unit = {}
 ) {
-    // The dashboard/account summary is intentionally expressed in the app's
-    // configured local currency only. Foreign balances remain available in
-    // transaction details/reports and are never mixed into the primary card.
-    val localCurrency = remember(currencySymbol) {
-        CurrencyConfig.getBySymbol(currencySymbol)?.symbol ?: currencySymbol
+    val effectiveBDMap = remember(netDebtMap, netDebtBDMap) {
+        if (netDebtBDMap.isNotEmpty()) {
+            netDebtBDMap
+        } else {
+            netDebtMap
+        }
     }
-    val localAmount = remember(netDebtMap, netDebtBDMap, localCurrency) {
-        val source = if (netDebtBDMap.isNotEmpty()) netDebtBDMap else netDebtMap.mapValues { BigDecimal.valueOf(it.value.toDouble()) }
-        source[localCurrency] ?: source[currencySymbol] ?: BigDecimal.ZERO
+
+    val allCurrencies = remember(effectiveBDMap, currencySymbol) {
+        val foreignCurrencies = effectiveBDMap.keys.filter { it != currencySymbol }.sorted()
+        listOf(currencySymbol) + foreignCurrencies
     }
-    val selected = selectedCurrencyFilter == localCurrency || selectedCurrencyFilter == currencySymbol
-    BalanceCompactChip(
-        amount = localAmount,
-        currencyCode = localCurrency,
-        isSelected = selected,
-        onSelect = {
-            onCurrencyFilterSelected(if (selected) null else localCurrency)
-        },
-        initialType = initialType,
+
+    val isCompact = allCurrencies.size <= 3
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 2.dp)
-    )
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        val rowModifier = if (isCompact) {
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 1.dp)
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(vertical = 1.dp)
+        }
+
+        Row(
+            modifier = rowModifier,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            for (curr in allCurrencies) {
+                val netDebtVal = effectiveBDMap[curr] ?: BigDecimal.ZERO
+                val chipModifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(min = 100.dp)
+                BalanceCompactChip(
+                    amount = netDebtVal,
+                    currencyCode = curr,
+                    isSelected = selectedCurrencyFilter == curr,
+                    onSelect = {
+                        if (selectedCurrencyFilter == curr) {
+                            onCurrencyFilterSelected(null)
+                        } else {
+                            onCurrencyFilterSelected(curr)
+                        }
+                    },
+                    initialType = initialType,
+                    modifier = chipModifier
+                )
+            }
+        }
+    }
 }

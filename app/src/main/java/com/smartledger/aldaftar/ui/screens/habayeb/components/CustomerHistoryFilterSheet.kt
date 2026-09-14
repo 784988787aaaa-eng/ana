@@ -161,7 +161,7 @@ fun CustomerHistoryFilterSheet(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                            .background(MaterialTheme.colorScheme.outlineVariant)
                             .clickable {
                                 selectedRangeTab = RangeTab.START
                                 showRangePicker = true
@@ -171,7 +171,7 @@ fun CustomerHistoryFilterSheet(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(14.dp))
-                            Text("من: $startStr", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                            Text(startStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                     Text(stringResource(id = R.string.habayeb_to_text), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -179,7 +179,7 @@ fun CustomerHistoryFilterSheet(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                            .background(MaterialTheme.colorScheme.outlineVariant)
                             .clickable {
                                 selectedRangeTab = RangeTab.END
                                 showRangePicker = true
@@ -189,7 +189,7 @@ fun CustomerHistoryFilterSheet(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(14.dp))
-                            Text("إلى: $endStr", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                            Text(endStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

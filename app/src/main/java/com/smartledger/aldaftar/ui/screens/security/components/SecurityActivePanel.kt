@@ -23,7 +23,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -282,14 +281,19 @@ fun VerifyOldPinDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(modifier = Modifier.fillMaxWidth().height(44.dp)) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp).align(Alignment.CenterStart)) {
-                        Icon(Icons.Default.Close, stringResource(R.string.desc_close), modifier = Modifier.size(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.desc_close), modifier = Modifier.size(20.dp))
                     }
                     Text(
-                        text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(R.string.sec_verify_change_pin) else stringResource(R.string.sec_verify_disable_lock),
-                        fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.align(Alignment.Center)
+                        text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(id = R.string.sec_verify_change_pin) else stringResource(id = R.string.sec_verify_disable_lock),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -325,7 +329,12 @@ fun VerifyOldPinDialog(
                         visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            LocalFocusManager.current.clearFocus()
+                            if (onVerify(pinInput)) {
+                                onSuccess()
+                            } else {
+                                Toast.makeText(context, context.getString(R.string.sec_toast_incorrect_current_pin), Toast.LENGTH_SHORT).show()
+                                pinInput = ""
+                            }
                         }),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier

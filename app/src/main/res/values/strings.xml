@@ -7,7 +7,7 @@
     <string name="app_name">الدفتر الذكي</string>
     <string name="app_name_main">الدفتر الذكي</string>
     <string name="drawer_trash_label">سلة المحذوفات</string>
-    <string name="drawer_app_version">الإصدار %s</string>
+    <string name="drawer_app_version">الإصدار v%s</string>
     <string name="drawer_comprehensive_report_label">التقرير المالي الشامل</string>
     <string name="share_whatsapp">واتساب</string>
     <string name="share_sms">رسالة SMS</string>
@@ -581,7 +581,7 @@
     <string name="settings_discovered_backups_title">النسخ الاحتياطية المحلية:</string>
     <string name="settings_desc_restore">استعادة</string>
     <string name="settings_danger_desc">سيتم مسح كافة المعاملات والحسابات نهائياً من هذا الجهاز.</string>
-    <string name="settings_app_version">الإصدار %1$s</string>
+    <string name="settings_app_version">الإصدار v1.3</string>
     <string name="settings_developer_info">تصميم وتطوير م/ منصور قطينه للبرمجيات</string>
     <string name="settings_desc_call_support">اتصال هاتفي بالدعم</string>
     <string name="settings_desc_whatsapp">مراسلة واتساب مستعجلة</string>
@@ -868,8 +868,8 @@
     <string name="datetime_picker_filter_title">تحديد نطاق التاريخ</string>
     <string name="datetime_picker_from_date">تاريخ البداية (من)</string>
     <string name="datetime_picker_to_date">تاريخ النهاية (إلى)</string>
-    <string name="datetime_picker_range_tab_start">من:</string>
-    <string name="datetime_picker_range_tab_end">إلى:</string>
+    <string name="datetime_picker_range_tab_start">من (البداية)</string>
+    <string name="datetime_picker_range_tab_end">إلى (النهاية)</string>
     <string name="datetime_picker_date">التاريخ</string>
     <string name="datetime_picker_day">اليوم</string>
     <string name="datetime_picker_month">الشهر</string>

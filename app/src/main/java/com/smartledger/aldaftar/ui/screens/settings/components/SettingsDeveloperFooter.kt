@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -35,11 +34,8 @@ fun SettingsDeveloperFooter(
             .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val versionName = runCatching {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull().orEmpty().ifBlank { "1.0.0" }
         Text(
-            text = context.getString(R.string.settings_app_version, versionName),
+            text = stringResource(R.string.settings_app_version),
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

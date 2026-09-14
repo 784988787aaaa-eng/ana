@@ -133,7 +133,6 @@ object AddCustomerSaveHelper {
             throw e
         } catch (_: Exception) {
             onIsSavingChange(false)
-            Toast.makeText(context, context.getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
         }
     }
 }
