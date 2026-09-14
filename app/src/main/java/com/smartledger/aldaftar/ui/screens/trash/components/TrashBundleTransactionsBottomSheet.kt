@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.screens.trash.utils.ParsedBundleTransaction
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +37,7 @@ fun TrashBundleTransactionsBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        shape = RoundedCornerShape(topStart = MizanDialogTokens.sheetTopRadius, topEnd = MizanDialogTokens.sheetTopRadius),
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -95,7 +96,7 @@ fun CustomDateRangePickerContent(
     ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = MizanDialogTokens.shape,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 modifier = Modifier

@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun ExitConfirmDialog(
@@ -29,7 +30,7 @@ fun ExitConfirmDialog(
         onDismissRequest = onDismiss
     ) { dismissWithAnimation ->
         Card(
-            shape = RoundedCornerShape(20.dp),
+            shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
@@ -38,7 +39,7 @@ fun ExitConfirmDialog(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
+                    .padding(14.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -51,7 +52,7 @@ fun ExitConfirmDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = stringResource(id = R.string.dialog_exit_message),
@@ -61,7 +62,7 @@ fun ExitConfirmDialog(
                     lineHeight = 19.sp
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier
@@ -88,7 +89,7 @@ fun ExitConfirmDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

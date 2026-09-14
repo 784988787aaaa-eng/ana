@@ -7,6 +7,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RippleConfiguration
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -14,6 +15,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+
+private val MizanShapes = Shapes(
+    extraSmall = MizanRadii.shapeXs,
+    small = MizanRadii.shapeSm,
+    medium = MizanRadii.shapeMd,
+    large = MizanRadii.shapeLg,
+    extraLarge = MizanRadii.shapeXl
+)
 
 private val MizanLightColorScheme = lightColorScheme(
     primary = BrandPrimary,
@@ -108,6 +117,7 @@ fun MizanTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
+            shapes = MizanShapes,
             content = content
         )
     }

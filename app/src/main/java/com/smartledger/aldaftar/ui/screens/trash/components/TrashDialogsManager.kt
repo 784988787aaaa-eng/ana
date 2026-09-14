@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun TrashDialogsManager(
@@ -62,7 +63,7 @@ fun TrashDialogsManager(
                     lineHeight = 20.sp
                 )
             },
-            shape = RoundedCornerShape(16.dp),
+            shape = MizanDialogTokens.shape,
             containerColor = MaterialTheme.colorScheme.surface
         )
     }

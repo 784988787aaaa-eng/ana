@@ -2,10 +2,8 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +16,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun CategoryDeleteConfirmationDialog(
@@ -27,14 +26,14 @@ fun CategoryDeleteConfirmationDialog(
     onConfirmDelete: (deleteLinkedAccounts: Boolean) -> Unit
 ) {
     val errorColor = MaterialTheme.colorScheme.error
-    val buttonShape = remember { RoundedCornerShape(12.dp) }
+    val buttonShape = MizanDialogTokens.buttonShape
 
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(
-            shape = RoundedCornerShape(22.dp),
+            shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier
@@ -43,8 +42,8 @@ fun CategoryDeleteConfirmationDialog(
                 .padding(8.dp)
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(

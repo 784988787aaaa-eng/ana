@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.CustomDateRangePickerContent
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DateAndTimeSection
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DialogActionButtons
@@ -50,7 +51,7 @@ fun CustomDateTimePickerDialog(
     ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = MizanDialogTokens.shape,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 modifier = Modifier

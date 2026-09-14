@@ -59,7 +59,7 @@ fun AddTransactionFormFields(
 ) {
     val focusManager = LocalFocusManager.current
 
-    val fieldShape = remember { RoundedCornerShape(8.dp) }
+    val fieldShape = remember { RoundedCornerShape(10.dp) }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -77,17 +77,18 @@ fun AddTransactionFormFields(
             onValueChange = onAmountChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .height(50.dp)
                 .focusRequester(amountFocusRequester),
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_amount_required),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    fontSize = 13.sp,
+                    fontSize = 11.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { descFocusRequester.requestFocus() }),
             colors = fieldColors,
             singleLine = true,
@@ -141,7 +142,7 @@ fun AddTransactionFormFields(
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                fontSize = 13.sp
+                fontSize = 12.5.sp
             ),
             leadingIcon = {
                 Icon(
@@ -177,11 +178,10 @@ fun AddTransactionFormFields(
                 }
             },
             shape = fieldShape,
-            singleLine = false,
-            maxLines = 2,
+            singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 40.dp, max = 56.dp)
+                .height(48.dp)
                 .focusRequester(descFocusRequester),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })

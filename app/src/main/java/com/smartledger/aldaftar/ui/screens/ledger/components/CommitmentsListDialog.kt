@@ -28,6 +28,7 @@ import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.ui.theme.MizanIconSizes
 import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import java.math.BigDecimal
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun CommitmentsListDialog(
@@ -67,15 +68,15 @@ fun CommitmentsListDialog(
                 modifier = modifier
                     .fillMaxWidth(0.92f)
                     .widthIn(max = 420.dp)
-                    .heightIn(max = 640.dp)
-                    .padding(vertical = 12.dp)
+                    .heightIn(max = 620.dp)
+                    .padding(vertical = 4.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = MizanDialogTokens.compactPadding, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     CommitmentHeaderClean(
                         onCloseClick = onDismissRequest,
@@ -95,13 +96,13 @@ fun CommitmentsListDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 28.dp),
+                                .padding(vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 text = stringResource(id = R.string.ledger_commitments_empty_title),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -131,7 +132,7 @@ fun CommitmentsListDialog(
                         )
 
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
                                 .weight(1f, fill = false)
                                 .fillMaxWidth()
@@ -162,12 +163,12 @@ fun CommitmentsListDialog(
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(MizanTouchTarget.standardButtonHeight)
-                            .clip(RoundedCornerShape(14.dp))
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable {
                                 onAddCommitmentClick()
                             }
@@ -186,7 +187,7 @@ fun CommitmentsListDialog(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = stringResource(id = R.string.ledger_commitment_add_btn_label),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )

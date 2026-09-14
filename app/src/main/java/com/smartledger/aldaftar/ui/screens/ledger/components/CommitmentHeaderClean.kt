@@ -6,10 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,64 +17,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanIconSizes
-import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
-fun CommitmentHeaderClean(
-    onCloseClick: () -> Unit,
-    onShareClick: () -> Unit
-) {
+fun CommitmentHeaderClean(onCloseClick: () -> Unit, onShareClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        Modifier.fillMaxWidth().height(42.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = onCloseClick,
-            modifier = Modifier.size(MizanTouchTarget.iconButtonSize)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(id = R.string.report_btn_close),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(MizanIconSizes.sm)
-                )
+        IconButton(onClick = onCloseClick, modifier = Modifier.size(38.dp)) {
+            Box(Modifier.size(30.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha=.055f)),
+                contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Close, stringResource(R.string.report_btn_close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(17.dp))
             }
         }
-
-        Text(
-            text = stringResource(id = R.string.ledger_commitments_dialog_title),
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 16.sp
-        )
-
-        IconButton(
-            onClick = onShareClick,
-            modifier = Modifier.size(MizanTouchTarget.iconButtonSize)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = stringResource(id = R.string.ledger_whatsapp_whatsapp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(MizanIconSizes.sm)
-                )
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(stringResource(R.string.ledger_commitments_dialog_title), fontSize = 15.sp,
+                fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ledger_commitments_header_subtitle), fontSize = 9.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        IconButton(onClick = onShareClick, modifier = Modifier.size(38.dp)) {
+            Box(Modifier.size(30.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha=.055f)),
+                contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Share, stringResource(R.string.ledger_whatsapp_whatsapp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(17.dp))
             }
         }
     }

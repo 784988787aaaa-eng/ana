@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.mizanColors
@@ -262,7 +263,7 @@ fun VerifyOldPinDialog(
                 .heightIn(max = 580.dp)
                 .padding(8.dp)
                 .imePadding(),
-            shape = RoundedCornerShape(20.dp),
+            shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {

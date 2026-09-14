@@ -48,6 +48,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import kotlinx.coroutines.delay
 
@@ -92,7 +93,7 @@ fun MicroAddCategoryDialog(
         )
     ) {
         Card(
-            shape = RoundedCornerShape(20.dp),
+            shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier

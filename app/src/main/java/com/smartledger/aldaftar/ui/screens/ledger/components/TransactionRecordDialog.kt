@@ -35,6 +35,7 @@ import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.ui.screens.CalculatorDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.theme.mizanColors
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun TransactionRecordDialog(
@@ -114,7 +115,7 @@ fun TransactionRecordDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = MizanDialogTokens.shape,
             color = dialogBgColor,
             tonalElevation = 0.dp, // تعطيل الارتفاع اللوني. to prevent neutral gray overlays
             border = BorderStroke(1.dp, themeColor.copy(alpha = 0.7f)),
@@ -126,7 +127,7 @@ fun TransactionRecordDialog(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(14.dp)
+                    .padding(MizanDialogTokens.outerPadding)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -186,7 +187,7 @@ fun TransactionRecordDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequester),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = MizanDialogTokens.inputShape,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = textColor,
                             unfocusedTextColor = textColor,
@@ -220,7 +221,7 @@ fun TransactionRecordDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(descriptionFocusRequester),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = MizanDialogTokens.inputShape,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = textColor,
                             unfocusedTextColor = textColor,

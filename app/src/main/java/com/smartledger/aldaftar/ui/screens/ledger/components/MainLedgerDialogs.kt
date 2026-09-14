@@ -65,6 +65,7 @@ import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 private const val TAG = "MainLedgerDialogs"
 
@@ -81,6 +82,7 @@ fun DeleteDaysConfirmDialog(
 ) {
     if (showDeleteDaysDialog) {
         AlertDialog(
+            shape = MizanDialogTokens.shape,
             onDismissRequest = onDismiss,
             title = {
                 Text(
@@ -196,9 +198,9 @@ fun ReorderCommitmentDialog(
                             .navigationBarsPadding()
                             .imePadding()
                             .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                            .padding(horizontal = MizanDialogTokens.outerPadding, vertical = MizanDialogTokens.compactPadding),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(MizanDialogTokens.verticalGap)
                     ) {
                         Text(
                             text = stringResource(id = R.string.ledger_reorder_dialog_title),

@@ -75,6 +75,7 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import kotlinx.coroutines.android.awaitFrame
 import java.math.BigDecimal
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 private const val TAG = "CurrencySettingsDialog"
 
@@ -141,7 +142,7 @@ fun CurrencySettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = MizanDialogTokens.outerPadding, vertical = MizanDialogTokens.compactPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {

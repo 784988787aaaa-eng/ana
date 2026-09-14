@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.theme.StatusInfoBlue
 import com.smartledger.aldaftar.ui.theme.StatusWarningAmber
@@ -29,6 +30,7 @@ fun BackupPermissionExplanationDialog(
     onUseInternalStorage: () -> Unit
 ) {
     AlertDialog(
+        shape = MizanDialogTokens.shape,
         onDismissRequest = onDismiss,
         title = {
             Text(

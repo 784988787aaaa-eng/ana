@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.ui.helper.getInitialColor
 import com.smartledger.aldaftar.ui.screens.trash.utils.ParsedTrashData
@@ -82,7 +83,7 @@ fun TrashTransactionDetailBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = RoundedCornerShape(topStart = MizanDialogTokens.sheetTopRadius, topEnd = MizanDialogTokens.sheetTopRadius),
         dragHandle = {
             Box(
                 modifier = Modifier

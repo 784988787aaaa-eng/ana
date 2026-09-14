@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.helper.getInitialColor
@@ -327,6 +328,7 @@ fun TrashCustomerHistoryOverlay(
 
     if (showConfirmDeleteAccount) {
         AlertDialog(
+            shape = MizanDialogTokens.shape,
             onDismissRequest = { showConfirmDeleteAccount = false },
             title = {
                 Text(

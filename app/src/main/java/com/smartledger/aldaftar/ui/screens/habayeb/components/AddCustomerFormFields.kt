@@ -98,7 +98,7 @@ fun AddCustomerFormFields(
             textStyle = inputTextStyle,
             label = { Text(stringResource(id = R.string.hint_opening_balance), fontSize = 11.sp) },
             placeholder = { Text("0", fontSize = 11.sp) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { notesFocusRequester.requestFocus() }),
             singleLine = true,
             shape = fieldShape,

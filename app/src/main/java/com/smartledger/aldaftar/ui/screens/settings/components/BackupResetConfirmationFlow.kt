@@ -11,6 +11,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 
 @Composable
@@ -26,7 +27,7 @@ fun BackupResetConfirmationFlow(
         AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp),
+            shape = MizanDialogTokens.shape,
             title = {
                 Text(
                     text = stringResource(R.string.backup_reset1_title),
@@ -72,7 +73,7 @@ fun BackupResetConfirmationFlow(
         AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp),
+            shape = MizanDialogTokens.shape,
             title = {
                 Text(
                     text = stringResource(R.string.backup_reset2_title),

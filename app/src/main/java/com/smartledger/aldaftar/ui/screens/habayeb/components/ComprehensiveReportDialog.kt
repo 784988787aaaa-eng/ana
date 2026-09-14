@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.serialization.PdfReportGenerator
 import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.data.serialization.pdf.MasterBookletPdfEngine
@@ -423,12 +424,12 @@ fun ComprehensiveReportDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .wrapContentHeight(),
-                shape = RoundedCornerShape(20.dp),
+                shape = MizanDialogTokens.shape,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -472,12 +473,12 @@ fun ComprehensiveReportDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .wrapContentHeight(),
-                shape = RoundedCornerShape(20.dp),
+                shape = MizanDialogTokens.shape,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {

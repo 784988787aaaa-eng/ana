@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun DayCardDeleteDialog(
@@ -79,7 +80,7 @@ fun DayCardDeleteDialog(
                     )
                 }
             },
-            shape = RoundedCornerShape(24.dp),
+            shape = MizanDialogTokens.shape,
             containerColor = MaterialTheme.colorScheme.surface,
             properties = DialogProperties(usePlatformDefaultWidth = false),
             modifier = Modifier.fillMaxWidth(0.90f)

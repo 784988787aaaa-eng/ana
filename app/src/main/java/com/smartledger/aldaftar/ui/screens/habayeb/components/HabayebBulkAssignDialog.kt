@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 
 @Composable
@@ -30,6 +31,7 @@ fun HabayebBulkAssignDialog(
     onAssign: (String?) -> Unit
 ) {
     AlertDialog(
+        shape = MizanDialogTokens.shape,
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.habayeb_bulk_assign_category_title), fontSize = 14.sp, fontWeight = FontWeight.Bold) },
         text = {

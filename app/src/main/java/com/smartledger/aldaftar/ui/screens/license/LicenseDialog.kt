@@ -50,6 +50,7 @@ import com.smartledger.aldaftar.domain.license.LicenseType
 import com.smartledger.aldaftar.domain.license.RevocationReason
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 private const val SUPPORT_WHATSAPP = "967774004399"
 
@@ -127,7 +128,7 @@ fun LicenseDialog(
                     .widthIn(max = 420.dp)
                     .wrapContentHeight()
                     .heightIn(max = 640.dp),
-                shape = RoundedCornerShape(20.dp),
+                shape = MizanDialogTokens.shape,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
                     1.dp,
@@ -323,7 +324,7 @@ fun DeviceReplacedDialog(
                 Text("إغلاق", fontSize = 12.sp)
             }
         },
-        shape = RoundedCornerShape(16.dp)
+        shape = MizanDialogTokens.shape,
     )
 }
 

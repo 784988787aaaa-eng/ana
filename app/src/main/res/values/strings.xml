@@ -339,7 +339,7 @@
     <string name="ledger_reorder_position_error">لا يوجد التزام بهذا الرقم.</string>
     <string name="ledger_reorder_input_range_error">أدخل رقماً بين 1 و %1$d</string>
     <string name="ledger_commitments_dialog_title">الأهداف والالتزامات</string>
-    <string name="ledger_commitment_add_btn_label">+ إضافة التزام / هدف جديد</string>
+    <string name="ledger_commitment_add_btn_label">إضافة هدف أو التزام</string>
     <string name="ledger_commitments_empty_title">لا توجد أهداف أو التزامات مدونة حالياً</string>
     <string name="ledger_commitments_empty_desc">اضغط على الزر أدناه لإضافة هدفك المالي الأول</string>
     <string name="ledger_reorder_dialog_title">تغيير موضع الالتزام</string>
@@ -350,6 +350,10 @@
     <string name="ledger_commitment_dialog_title_edit">تعديل الهدف المالي</string>
     <string name="ledger_commitment_dialog_title_add">إضافة التزام مالي</string>
     <string name="ledger_commitment_dialog_save_edit">حفظ التعديل</string>
+    <string name="ledger_commitment_edit_hint">عدّل المبلغ أو المبلغ المتوفر ثم احفظ</string>
+    <string name="ledger_commitment_progress_exceeds_target">المبلغ المُنجز لا يمكن أن يتجاوز المبلغ المستهدف</string>
+    <string name="ledger_commitment_add_hint">ابدأ بالمبلغ ثم اكتب اسم الالتزام</string>
+    <string name="ledger_commitments_header_subtitle">الأهداف والالتزامات المالية</string>
     <string name="ledger_commitment_dialog_save_goal">حفظ الهدف</string>
     <string name="ledger_commitment_name_label">الاسم (مثال: إيجار، قسط، ادخار)</string>
     <string name="ledger_commitment_target_amount_label">المبلغ المستهدف</string>

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.domain.model.TransactionType
@@ -208,7 +209,7 @@ fun AddTransactionPopup(
     ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = MizanDialogTokens.shape,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier

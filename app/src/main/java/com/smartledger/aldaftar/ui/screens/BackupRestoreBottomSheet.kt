@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
@@ -294,6 +295,7 @@ fun BackupRestoreBottomSheet(
         // Reset Confirmation Dialog
         if (resetOpen) {
             AlertDialog(
+                shape = MizanDialogTokens.shape,
                 onDismissRequest = { resetOpen = false },
                 icon = {
                     Icon(
@@ -686,6 +688,7 @@ private fun DirectCloudRestoreDialog(
     }
 
     AlertDialog(
+        shape = MizanDialogTokens.shape,
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -1171,6 +1174,7 @@ private fun CloudArchiveBottomSheet(
 
     deleteItem?.let { item ->
         AlertDialog(
+            shape = MizanDialogTokens.shape,
             onDismissRequest = { deleteItem = null },
             title = {
                 Text(
@@ -1222,6 +1226,7 @@ private fun CloudArchiveBottomSheet(
 
     if (deleteMany) {
         AlertDialog(
+            shape = MizanDialogTokens.shape,
             onDismissRequest = { deleteMany = false },
             title = {
                 Text(

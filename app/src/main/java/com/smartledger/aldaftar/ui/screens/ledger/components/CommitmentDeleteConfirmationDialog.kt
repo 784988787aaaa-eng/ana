@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
@@ -80,7 +81,7 @@ fun CommitmentDeleteConfirmationDialog(
                 )
             }
         },
-        shape = RoundedCornerShape(22.dp),
+        shape = MizanDialogTokens.shape,
         containerColor = MaterialTheme.colorScheme.surface,
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
@@ -52,7 +53,7 @@ fun DeleteBulkTxConfirmDialog(
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(20.dp)
+            shape = MizanDialogTokens.shape,
         )
     }
 }
