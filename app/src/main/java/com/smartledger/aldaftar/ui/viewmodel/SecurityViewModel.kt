@@ -40,16 +40,16 @@ class SecurityViewModel(
         isPrivacyModeEnabled.value = !isPrivacyModeEnabled.value
     }
 
+    suspend fun saveSettingsSuspend(settings: AppSettings) {
+        securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
+        repository.saveSettings(settings)
+    }
+
     fun saveSettings(settings: AppSettings) {
         securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
         viewModelScope.launch {
             repository.saveSettings(settings)
         }
-    }
-
-    suspend fun saveSettingsSync(settings: AppSettings) {
-        securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
-        repository.saveSettings(settings)
     }
 
     fun verifyCredentials(input: String): Boolean {

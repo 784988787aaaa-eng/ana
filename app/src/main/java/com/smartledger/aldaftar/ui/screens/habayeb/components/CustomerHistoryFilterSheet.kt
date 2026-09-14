@@ -99,19 +99,20 @@ fun CustomerHistoryFilterSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(16.dp)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = stringResource(id = R.string.habayeb_smart_filter),
-                fontSize = 15.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = stringResource(id = R.string.habayeb_filter_date),
-                fontSize = 12.5.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -122,13 +123,12 @@ fun CustomerHistoryFilterSheet(
             ) {
                 dateModes.forEach { (mode, label) ->
                     val isSelected = dateFilterMode == mode
-                    val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
                     val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .defaultMinSize(minHeight = 36.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(chipBg)
                             .clickable {
                                 onDateFilterModeChange(mode)
@@ -137,7 +137,7 @@ fun CustomerHistoryFilterSheet(
                                     showRangePicker = true
                                 }
                             }
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)

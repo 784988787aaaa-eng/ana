@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -94,21 +94,22 @@ fun SearchLedgerDialog(
                 Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
             }
         }
+
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             modifier = Modifier
                 .widthIn(max = 360.dp)
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 520.dp)
+                .navigationBarsPadding()
+                .imePadding()
                 .padding(8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding()
                     .padding(14.dp),
                 horizontalAlignment = Alignment.End
             ) {
@@ -117,53 +118,70 @@ fun SearchLedgerDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(id = R.string.habayeb_close_search))
+                    IconButton(
+                        onClick = {
+                            keyboardController?.hide()
+                            onDismiss()
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(id = R.string.habayeb_close_search),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Text(
                         stringResource(id = R.string.ledger_search_title),
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 18.sp
+                        fontSize = 16.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 val subColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 OutlinedTextField(
                     value = query,
                     onValueChange = onQueryChange,
-                    placeholder = { Text(stringResource(id = R.string.ledger_search_subtitle), color = subColor) },
-                    modifier = Modifier.fillMaxWidth().focusRequester(searchFocusRequester),
-                    shape = RoundedCornerShape(16.dp),
+                    placeholder = { Text(stringResource(id = R.string.ledger_search_subtitle), color = subColor, fontSize = 13.sp) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(searchFocusRequester),
+                    shape = RoundedCornerShape(12.dp),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() }),
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = { onQueryChange("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = stringResource(id = R.string.habayeb_close_search), tint = subColor)
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(id = R.string.habayeb_close_search), tint = subColor, modifier = Modifier.size(18.dp))
                             }
                         } else {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = subColor)
+                            Icon(Icons.Default.Search, contentDescription = null, tint = subColor, modifier = Modifier.size(18.dp))
                         }
                     },
-                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Start),
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Start, fontSize = 13.sp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
                         focusedPlaceholderColor = subColor,
                         unfocusedPlaceholderColor = subColor
                     )
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 if (results.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             if (query.isBlank()) stringResource(id = R.string.ledger_search_empty_state) else stringResource(id = R.string.ledger_search_no_results),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -176,12 +194,14 @@ fun SearchLedgerDialog(
                         stringResource(id = R.string.ledger_search_results_count, results.size),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 6.dp)
                     )
 
                     LazyColumn(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         itemsIndexed(items = results, key = { _, tx -> tx.id }) { index, tx ->
                             SearchResultItem(

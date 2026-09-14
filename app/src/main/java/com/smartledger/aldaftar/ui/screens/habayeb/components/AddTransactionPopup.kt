@@ -122,9 +122,11 @@ fun AddTransactionPopup(
     val focusManager = LocalFocusManager.current
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.android.awaitFrame()
-        amountFocusRequester.requestFocus()
-        softwareKeyboardController?.show()
+        if (editingTransaction == null) {
+            kotlinx.coroutines.android.awaitFrame()
+            amountFocusRequester.requestFocus()
+            softwareKeyboardController?.show()
+        }
     }
 
     var dateMillis by rememberSaveable { mutableStateOf(editingTransaction?.timestamp?.let { it * 1000 } ?: System.currentTimeMillis()) }
@@ -151,7 +153,6 @@ fun AddTransactionPopup(
 
     val scope = rememberCoroutineScope()
     val executeSave = { finalActionType: String ->
-        focusManager.clearFocus()
         softwareKeyboardController?.hide()
         if (!isSaving) {
             isSaving = true
@@ -210,13 +211,12 @@ fun AddTransactionPopup(
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .widthIn(max = 360.dp)
                     .fillMaxWidth(0.92f)
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
             ) {
                 Crossfade(
                     targetState = showRateSetupOverlay,
@@ -252,27 +252,27 @@ fun AddTransactionPopup(
                     } else {
                         Column(
                             modifier = Modifier
-                                .padding(8.dp)
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                                    .padding(bottom = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
                                         text = if (editingTransaction != null) stringResource(id = R.string.add_transaction_title_edit) else stringResource(id = R.string.add_transaction_title_new),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
                                         color = activeThemeColor
                                     )
                                     Text(
-                                        text = stringResource(id = R.string.add_transaction_account_label, "${customer.name.take(15)}${if (customer.name.length > 15) ".." else ""}"),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        text = stringResource(id = R.string.add_transaction_account_label, "${customer.name.take(20)}${if (customer.name.length > 20) ".." else ""}"),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -281,20 +281,20 @@ fun AddTransactionPopup(
                                     onClick = onDismiss,
                                     modifier = Modifier
                                         .align(Alignment.CenterStart)
-                                        .size(24.dp)
+                                        .defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = stringResource(id = R.string.habayeb_go_back),
                                         tint = activeThemeColor,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
 
                             val dynamicThemeColor = if (isLendOperationSelected) debtRedColor else creditGreenColor
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             AddTransactionFormFields(
                                 amountTfv = amountTfv,
@@ -310,9 +310,9 @@ fun AddTransactionPopup(
                                 onOpenDatePicker = { showCustomDatePicker = true }
                             )
 
-                            Spacer(modifier = Modifier.height(4.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             TransactionCurrencySelector(
                                 selectedTransactionCurrency = selectedTransactionCurrency,
@@ -334,7 +334,7 @@ fun AddTransactionPopup(
                                 }
                             )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             val handleActionClick = { type: String ->
                                 val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
@@ -359,8 +359,8 @@ fun AddTransactionPopup(
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = mizanColors.onDebt),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1f).height(42.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f).height(44.dp)
                                 ) {
                                     Text(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
@@ -375,8 +375,8 @@ fun AddTransactionPopup(
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = mizanColors.onCredit),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1f).height(42.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.weight(1f).height(44.dp)
                                 ) {
                                     Text(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),

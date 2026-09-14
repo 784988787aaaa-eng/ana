@@ -75,8 +75,8 @@ fun AppLockScreen(
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
             shakeOffset.animateTo(10f, tween(50))
             shakeOffset.animateTo(-10f, tween(50))
-            shakeOffset.animateTo(5f, tween(50))
-            shakeOffset.animateTo(0f, tween(50))
+            shakeOffset.animateTo(6f, tween(45))
+            shakeOffset.animateTo(0f, tween(45))
         }
         Unit
     }

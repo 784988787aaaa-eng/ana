@@ -7,5 +7,4 @@ import kotlinx.coroutines.flow.Flow
  @Query("SELECT * FROM business_profile WHERE id=1") suspend fun get(): BusinessProfile?
  @Query("SELECT * FROM business_profile WHERE id=1") fun getDirect(): BusinessProfile?
  @Insert(onConflict=OnConflictStrategy.REPLACE) suspend fun save(profile: BusinessProfile)
- @Query("DELETE FROM business_profile WHERE id=1") suspend fun deleteProfile()
 }

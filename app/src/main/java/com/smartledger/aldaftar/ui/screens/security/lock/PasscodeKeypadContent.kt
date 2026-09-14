@@ -67,46 +67,46 @@ fun PasscodeKeypadContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.SpaceEvenly
     ) {
         val lockHeaderScale by animateFloatAsState(
-            targetValue = if (isCheckingPasscode) 1.15f else if (enteredPasscode.isNotEmpty()) 1.05f else 1.0f,
-            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy),
+            targetValue = if (isCheckingPasscode) 1.05f else 1.0f,
+            animationSpec = androidx.compose.animation.core.tween(durationMillis = 150),
             label = LOCK_HEADER_SCALE_LABEL
         )
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
+            modifier = Modifier.padding(top = 16.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(60.dp)
                     .scale(lockHeaderScale)
                     .clip(CircleShape)
-                    .background(BrandPrimary.copy(alpha = 0.25f)),
+                    .background(BrandPrimary.copy(alpha = 0.20f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = stringResource(id = R.string.lock_app_locked_desc),
                     tint = BrandPrimary,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = stringResource(id = R.string.lock_ledger_locked),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
                 color = LOCK_TEXT_COLOR
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = stringResource(id = R.string.lock_enter_pin_prompt),
@@ -115,7 +115,10 @@ fun PasscodeKeypadContent(
             )
         }
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 12.dp)
+        ) {
             PasscodeDotIndicators(
                 enteredLength = enteredPasscode.length,
                 shakeOffsetPx = shakeOffsetPx
@@ -125,8 +128,8 @@ fun PasscodeKeypadContent(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.padding(bottom = 20.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 KeypadRow(row = KEYPAD_ROW_1, onKeyClick = onKeyPress)
                 KeypadRow(row = KEYPAD_ROW_2, onKeyClick = onKeyPress)

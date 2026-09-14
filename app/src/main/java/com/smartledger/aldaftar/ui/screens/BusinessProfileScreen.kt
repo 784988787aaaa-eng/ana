@@ -335,7 +335,7 @@ private fun BusinessProfileForm(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp)
+                .height(50.dp)
                 .testTag("biz_save_button"),
             colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
             shape = RoundedCornerShape(12.dp)
@@ -344,39 +344,13 @@ private fun BusinessProfileForm(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                 Text(
                     text = stringResource(id = R.string.biz_btn_save),
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-        }
-
-        androidx.compose.material3.OutlinedButton(
-            onClick = {
-                coroutineScope.launch {
-                    viewModel.resetProfile()
-                    bizName = ""
-                    bizDesc = ""
-                    logoPath = ""
-                    phoneList.clear()
-                    logoBitmapState = null
-                    Toast.makeText(context, context.getString(R.string.biz_reset_success), Toast.LENGTH_SHORT).show()
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                text = stringResource(id = R.string.biz_btn_reset),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 
