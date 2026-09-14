@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class LicenseViewModel(
     application: Application,
@@ -94,7 +97,7 @@ class LicenseViewModel(
                 }
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: "تعذر تسجيل الدخول بحساب Google"
+                _message.value = userFacingError(e, "تعذر تسجيل الدخول بحساب Google")
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -144,7 +147,7 @@ class LicenseViewModel(
                     onDone(false)
                 }
             } catch (e: Exception) {
-                _message.value = e.message ?: "تعذر التحقق من الترخيص السحابي"
+                _message.value = userFacingError(e, "تعذر التحقق من الترخيص السحابي")
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -164,7 +167,7 @@ class LicenseViewModel(
                 _message.value = "تم تفعيل الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: "تعذر تفعيل الترخيص"
+                _message.value = userFacingError(e, "تعذر تفعيل الترخيص")
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -202,7 +205,7 @@ class LicenseViewModel(
                 _message.value = "تمت إعادة ربط الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: "تعذر إعادة ربط الترخيص"
+                _message.value = userFacingError(e, "تعذر إعادة ربط الترخيص")
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -222,7 +225,7 @@ class LicenseViewModel(
                 _message.value = "تم تفعيل حساب الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: "تعذر تفعيل الحساب"
+                _message.value = userFacingError(e, "تعذر تفعيل الحساب")
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -232,4 +235,12 @@ class LicenseViewModel(
 
     fun supportCodes() = repository.supportCodes()
     fun clearMessage() { _message.value = null }
+    private fun userFacingError(error: Throwable, fallback: String): String {
+        return when (error) {
+            is UnknownHostException, is SocketTimeoutException, is IOException ->
+                "تعذر على الحساب الوصول إلى خدمة الترخيص. يرجى المحاولة لاحقاً أو التواصل مع الدعم."
+            else -> error.message?.takeIf { it.isNotBlank() } ?: fallback
+        }
+    }
+
 }

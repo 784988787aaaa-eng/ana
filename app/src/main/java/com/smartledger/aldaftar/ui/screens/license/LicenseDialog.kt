@@ -53,6 +53,7 @@ import com.smartledger.aldaftar.domain.license.LicenseStatus
 import com.smartledger.aldaftar.domain.license.LicenseType
 import com.smartledger.aldaftar.domain.license.RevocationReason
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
@@ -339,61 +340,27 @@ private fun CompactLicenseHeader(
     active: Boolean,
     onDismiss: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
+        IconButton(onClick = onDismiss, modifier = Modifier.size(42.dp).align(Alignment.CenterStart)) {
+            Icon(Icons.Default.Close, stringResource(R.string.desc_close), modifier = Modifier.size(19.dp))
+        }
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                    ),
+                modifier = Modifier.size(30.dp).clip(CircleShape)
+                    .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (active) Icons.Default.VerifiedUser else Icons.Default.VpnKey,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    imageVector = if (active) Icons.Default.Verified else Icons.Default.VpnKey,
+                    contentDescription = null, modifier = Modifier.size(17.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Column {
-                Text(
-                    text = title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (active) "الترخيص نشط ومُعتمد" else "حماية السجلات والبيانات",
-                    fontSize = 12.sp,
-                    color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        IconButton(
-            onClick = onDismiss,
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-        ) {
-            Icon(
-                Icons.Default.Close,
-                contentDescription = stringResource(R.string.desc_close),
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(title, fontSize = MizanDialogTokens.titleSize, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -422,7 +389,7 @@ private fun CompactStateBanner(
             val days = snapshot.calculateRemainingDays() ?: 0
             "فترة تجريبية نشطة (متبقي $days يوماً)."
         }
-        else -> "المتبقي من التجربة المجانية: ${snapshot.trialLimit - snapshot.trialUsed} معاملة."
+        else -> "المتبقي من التجربة المجانية: ${WesternDigits.normalize((snapshot.trialLimit - snapshot.trialUsed).coerceAtLeast(0).toString())} معاملة."
     }
 
     Surface(

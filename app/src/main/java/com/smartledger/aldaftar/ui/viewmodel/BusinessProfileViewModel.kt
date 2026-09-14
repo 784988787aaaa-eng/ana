@@ -13,6 +13,6 @@ class BusinessProfileViewModel(private val repository: BusinessProfileRepository
     private val _profile = MutableStateFlow(BusinessProfile())
     val profile: StateFlow<BusinessProfile> = _profile.asStateFlow()
     init { viewModelScope.launch { _profile.value = repository.get() } }
-    fun save(profile: BusinessProfile) { viewModelScope.launch { repository.save(profile); _profile.value = profile } }
+    suspend fun save(profile: BusinessProfile) { repository.save(profile); _profile.value = profile }
     suspend fun resetProfile() { repository.clearProfile(); _profile.value = BusinessProfile() }
 }

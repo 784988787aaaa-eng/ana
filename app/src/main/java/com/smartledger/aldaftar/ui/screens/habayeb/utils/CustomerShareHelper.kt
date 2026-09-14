@@ -277,7 +277,8 @@ object CustomerShareHelper {
         try {
             val authority = "${context.packageName}.fileprovider"
             val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
-            val cleanPhone = customer.phone.replace("+", "").replace(" ", "").replace("-", "").trim()
+            val cleanPhone = normalizeWhatsAppNumber(customer.phone)
+            if (cleanPhone.isBlank()) return
             val jid = "$cleanPhone@s.whatsapp.net"
             
             val intent = Intent(Intent.ACTION_SEND).apply {
@@ -303,4 +304,20 @@ object CustomerShareHelper {
             android.widget.Toast.makeText(context, context.getString(R.string.toast_operation_failed), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
+    /**
+     * WhatsApp accepts an international JID. For the app's local Yemeni numbers,
+     * accept both 07xxxxxxxx / 7xxxxxxxx forms and normalize them to +967.
+     * Already-international numbers are kept intact.
+     */
+    private fun normalizeWhatsAppNumber(raw: String): String {
+        val digits = raw.filter { it.isDigit() }
+        if (digits.isBlank()) return ""
+        return when {
+            digits.startsWith("967") -> digits
+            digits.length == 10 && digits.startsWith("0") -> "967${digits.drop(1)}"
+            digits.length == 9 && digits.startsWith("7") -> "967$digits"
+            else -> digits
+        }
+    }
+
 }

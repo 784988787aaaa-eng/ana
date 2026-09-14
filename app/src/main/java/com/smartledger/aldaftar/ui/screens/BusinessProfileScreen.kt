@@ -147,54 +147,33 @@ fun BusinessProfileDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .widthIn(max = 340.dp)
+                .widthIn(max = 360.dp)
                 .padding(3.dp)
                 .imePadding(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(18.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                     .padding(horizontal = 12.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(40.dp)) {
                     IconButton(
                         onClick = dismissDialog,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(40.dp).align(Alignment.CenterStart)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.desc_close),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Icon(Icons.Default.Close, stringResource(R.string.desc_close), modifier = Modifier.size(18.dp))
                     }
-
                     Text(
-                        text = stringResource(id = R.string.biz_title),
+                        text = stringResource(R.string.biz_title),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Right
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                BusinessProfileForm(
-                    viewModel = viewModel,
-                    isDialog = true,
-                    onClose = onDismiss
-                )
+                BusinessProfileForm(viewModel = viewModel, isDialog = true, onClose = onDismiss)
             }
         }
     }
@@ -328,9 +307,14 @@ private fun BusinessProfileForm(
                 }
 
                 coroutineScope.launch {
-                    viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
-                    Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
-                    onClose()
+                    runCatching {
+                        viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
+                    }.onSuccess {
+                        Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
+                        onClose()
+                    }.onFailure {
+                        Toast.makeText(context, context.getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
             modifier = Modifier

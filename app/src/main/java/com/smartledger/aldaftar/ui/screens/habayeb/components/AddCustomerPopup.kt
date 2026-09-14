@@ -292,11 +292,8 @@ fun AddCustomerPopup(
                                 },
                                 onContactPickerClick = { launchContactPicker() },
                                 onDone = {
-                                    if (nameStr.isNotBlank() && initialType != null && initialAmountStr.isNotBlank() && !isSavingCustomer) {
-                                        performSave()
-                                    } else {
-                                        focusManager.clearFocus()
-                                    }
+                                    focusManager.clearFocus()
+                                    softwareKeyboardController?.hide()
                                 },
                                 focusRequester = focusRequester,
                                 initialAmountFocusRequester = initialAmountFocusRequester,

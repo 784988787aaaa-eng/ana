@@ -281,19 +281,14 @@ fun VerifyOldPinDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.desc_close), modifier = Modifier.size(20.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(44.dp)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp).align(Alignment.CenterStart)) {
+                        Icon(Icons.Default.Close, stringResource(R.string.desc_close), modifier = Modifier.size(20.dp))
                     }
                     Text(
-                        text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(id = R.string.sec_verify_change_pin) else stringResource(id = R.string.sec_verify_disable_lock),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(R.string.sec_verify_change_pin) else stringResource(R.string.sec_verify_disable_lock),
+                        fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
@@ -329,12 +324,7 @@ fun VerifyOldPinDialog(
                         visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            if (onVerify(pinInput)) {
-                                onSuccess()
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.sec_toast_incorrect_current_pin), Toast.LENGTH_SHORT).show()
-                                pinInput = ""
-                            }
+                            focusManager.clearFocus()
                         }),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier

@@ -360,7 +360,8 @@ fun AddTransactionPopup(
                                 onOpenCalculator = { showCalculator = true },
                                 onOpenDatePicker = { showCustomDatePicker = true },
                                 onDone = {
-                                    handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value)
+                                    focusManager.clearFocus()
+                                    softwareKeyboardController?.hide()
                                 }
                             )
 

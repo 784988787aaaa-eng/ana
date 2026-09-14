@@ -6,6 +6,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -35,7 +37,11 @@ suspend fun requestFocusAndShowKeyboard(
         runCatching { focusRequester.requestFocus() }
         runCatching { keyboardController?.show() }
         postToView?.invoke()
-
+        if (attempt == 0 || attempt == attempts - 1) {
+            // Compose's controller can race the dialog window during its first frame.
+            // Ask the platform IME controller as a second, idempotent path.
+            // The caller supplies postToView so this stays scoped to the focused field.
+        }
         if (attempt < attempts - 1) delay(delayMs)
     }
 }
@@ -70,7 +76,10 @@ fun RequestFocusAndShowKeyboard(
             attempts = 12,
             delayMs = 40L,
             postToView = {
-                view.post { runCatching { keyboardController?.show() } }
+                view.post {
+                    runCatching { keyboardController?.show() }
+                    runCatching { ViewCompat.getWindowInsetsController(view)?.show(WindowInsetsCompat.Type.ime()) }
+                }
             }
         )
     }

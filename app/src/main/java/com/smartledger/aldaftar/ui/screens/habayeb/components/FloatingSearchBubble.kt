@@ -194,6 +194,7 @@ fun FloatingSearchBubble(
                     .pointerInput(sizeLevel) {
                         detectTapGestures(
                             onTap = {
+                                VibrationHelper.triggerClickVibration(context)
                                 onSearchClick()
                             },
                             onDoubleTap = {

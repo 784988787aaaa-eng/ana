@@ -41,7 +41,8 @@ class LicenseRepository(private val context: Context) {
         val state = snapshot()
         if (state.status == LicenseStatus.REVOKED ||
             state.status == LicenseStatus.VERIFICATION_REQUIRED ||
-            state.status == LicenseStatus.TRIAL_EXPIRED
+            state.status == LicenseStatus.TRIAL_EXPIRED ||
+            state.status == LicenseStatus.NOT_ACTIVATED
         ) {
             return false
         }
@@ -81,7 +82,8 @@ class LicenseRepository(private val context: Context) {
                 revocationReason = revReason,
                 revocationMessage = store.revocationMessage,
                 activationRequired = store.activationRequired,
-                trialUsed = store.trialUsed
+                trialUsed = store.trialUsed,
+                trialLimit = TRIAL_LIMIT
             )
         }
 
@@ -103,7 +105,8 @@ class LicenseRepository(private val context: Context) {
                 accountCode = store.accountCode,
                 email = store.email,
                 deviceCode = device.deviceCode(),
-                trialUsed = store.trialUsed
+                trialUsed = store.trialUsed,
+                trialLimit = TRIAL_LIMIT
             )
         }
     }
@@ -149,7 +152,8 @@ class LicenseRepository(private val context: Context) {
         val state = snapshot()
         if (state.status == LicenseStatus.REVOKED ||
             state.status == LicenseStatus.VERIFICATION_REQUIRED ||
-            state.status == LicenseStatus.TRIAL_EXPIRED
+            state.status == LicenseStatus.TRIAL_EXPIRED ||
+            state.status == LicenseStatus.NOT_ACTIVATED
         ) {
             _onLicenseRequired.tryEmit(Unit)
             return@withLock null

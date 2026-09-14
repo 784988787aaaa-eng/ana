@@ -56,7 +56,9 @@ data class LicenseSnapshot(
                 (status == LicenseStatus.TRIAL && trialUsed >= trialLimit)
 
     val isPaid: Boolean
-        get() = (status == LicenseStatus.ACTIVE || (isTrialActive)) && active && status != LicenseStatus.REVOKED && status != LicenseStatus.TRIAL_EXPIRED
+        get() = (plan == LicensePlan.LIFETIME || type == LicenseType.LOCAL) &&
+                status == LicenseStatus.ACTIVE && active &&
+                status != LicenseStatus.REVOKED && status != LicenseStatus.TRIAL_EXPIRED
 
     val isDeviceReplaced: Boolean
         get() = revocationReason == RevocationReason.DEVICE_REPLACED
@@ -65,7 +67,7 @@ data class LicenseSnapshot(
         get() = activationRequired || (!isPaid && (isTrialExpired || status == LicenseStatus.VERIFICATION_REQUIRED || status == LicenseStatus.REVOKED || status == LicenseStatus.NOT_ACTIVATED))
 
     val canCreate: Boolean
-        get() = isPaid || (status == LicenseStatus.TRIAL && trialUsed < trialLimit && !isTrialExpired)
+        get() = isPaid || (isTrialPlan && status == LicenseStatus.ACTIVE && trialUsed < trialLimit && !isTrialExpired)
 
     fun calculateRemainingDays(): Int? {
         if (!isTrialPlan || trialEndsAt == null) return null

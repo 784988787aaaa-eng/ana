@@ -157,8 +157,8 @@ fun CommitmentEditDialog(
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
+                    Box(Modifier.fillMaxWidth().height(42.dp)) {
+                        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 if (editingCommitment != null) stringResource(R.string.ledger_commitment_dialog_title_edit)
                                 else stringResource(R.string.ledger_commitment_dialog_title_add),
@@ -168,11 +168,11 @@ fun CommitmentEditDialog(
                             Text(
                                 if (editingCommitment != null) stringResource(R.string.ledger_commitment_edit_hint)
                                 else stringResource(R.string.ledger_commitment_add_hint),
-                                fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        TextButton(onClick = dismiss, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                            Text(stringResource(R.string.common_cancel), fontSize = 12.sp)
+                        IconButton(onClick = dismiss, modifier = Modifier.size(40.dp).align(Alignment.CenterStart)) {
+                            Icon(Icons.Default.Close, stringResource(R.string.desc_close), modifier = Modifier.size(18.dp))
                         }
                     }
 
@@ -210,11 +210,7 @@ fun CommitmentEditDialog(
                         keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done,
                         focusRequester = progressFocus,
                         onNext = {
-                            if (valid) {
-                                executeSave()
-                            } else {
-                                focusManager.clearFocus()
-                            }
+                            focusManager.clearFocus()
                         },
                         textAlign = TextAlign.Center
                     )

@@ -5,6 +5,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 
 /** مسارات النسخ الاحتياطية الداخلية غير الظاهرة للمستخدم. */
 class BackupPathManager(context: Context) {
@@ -23,12 +24,12 @@ class BackupPathManager(context: Context) {
 
     fun automaticFile(date: Date = Date()): File {
         val dateName = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date)
-        return File(monthFolder(date), "$PREFIX$dateName$EXTENSION")
+        return File(monthFolder(date), "$PREFIX${WesternDigits.normalize(dateName)}$EXTENSION")
     }
 
     fun manualFile(date: Date = Date()): File {
         val stamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US).format(date)
-        return File(monthFolder(date), "$PREFIX$stamp$EXTENSION")
+        return File(monthFolder(date), "$PREFIX${WesternDigits.normalize(stamp)}$EXTENSION")
     }
 
     fun isSupported(file: File): Boolean =

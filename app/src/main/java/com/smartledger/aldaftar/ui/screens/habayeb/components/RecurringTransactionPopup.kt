@@ -331,9 +331,16 @@ private fun RecurringActionsRow(
                     equivalentAmount = transaction.equivalentAmount
                 )
 
-                scope.launch { viewModel.saveRecurring(newConfig) }
-                Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_schedule_success), Toast.LENGTH_LONG).show()
-                onDismiss()
+                scope.launch {
+                    runCatching { viewModel.saveRecurring(newConfig) }
+                        .onSuccess {
+                            Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_schedule_success), Toast.LENGTH_LONG).show()
+                            onDismiss()
+                        }
+                        .onFailure {
+                            Toast.makeText(context, context.getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
+                        }
+                }
             },
             modifier = Modifier
                 .weight(1.5f)

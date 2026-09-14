@@ -3,7 +3,7 @@ package com.smartledger.aldaftar.work
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.ListenableWorker.Result as WorkResult
+import androidx.work.ListenableWorker
 import com.smartledger.aldaftar.data.backup.AutomaticBackupCoordinator
 import com.smartledger.aldaftar.data.cloud.CloudOperationException
 import com.smartledger.aldaftar.platform.notifications.BackupNotificationManager
@@ -24,7 +24,7 @@ class DailyBackupWorker(
 
     private val notifications = BackupNotificationManager(appContext)
 
-    override suspend fun doWork(): WorkResult {
+    override suspend fun doWork(): ListenableWorker.Result {
         return try {
             when (val result = coordinator.runDaily()) {
                 is AutomaticBackupCoordinator.Result.LocalAndCloud -> {
@@ -32,7 +32,7 @@ class DailyBackupWorker(
                         "اكتملت النسخة الاحتياطية اليومية",
                         "تم حفظ نسخة آمنة محلياً ومزامنتها مع Google Drive."
                     )
-                    WorkResult.success()
+                    ListenableWorker.Result.success()
                 }
                 is AutomaticBackupCoordinator.Result.LocalOnly -> {
                     val error = result.cloudError
@@ -41,7 +41,7 @@ class DailyBackupWorker(
                             "تم حفظ النسخة محلياً",
                             "تعذر رفع النسخة إلى السحابة مؤقتاً؛ ستتم إعادة المحاولة تلقائياً."
                         )
-                        WorkResult.retry()
+                        ListenableWorker.Result.retry()
                     } else {
                         notifications.show(
                             "تم حفظ النسخة الاحتياطية",
@@ -51,10 +51,10 @@ class DailyBackupWorker(
                                 "تم حفظ نسخة اليوم محلياً، وتعذر إكمال المزامنة السحابية."
                             }
                         )
-                        WorkResult.success()
+                        ListenableWorker.Result.success()
                     }
                 }
-                AutomaticBackupCoordinator.Result.AlreadyRunning -> WorkResult.success()
+                AutomaticBackupCoordinator.Result.AlreadyRunning -> ListenableWorker.Result.success()
             }
         } catch (e: CancellationException) {
             throw e
@@ -63,7 +63,7 @@ class DailyBackupWorker(
                 "تعذر إكمال النسخ الاحتياطي",
                 "حدث خطأ أثناء إنشاء نسخة اليوم؛ سيحاول التطبيق مرة أخرى تلقائياً."
             )
-            if (runAttemptCount < 3) WorkResult.retry() else WorkResult.failure()
+            if (runAttemptCount < 3) ListenableWorker.Result.retry() else ListenableWorker.Result.failure()
         }
     }
 
