@@ -43,19 +43,6 @@ object MizanRadii {
     val shapePill = RoundedCornerShape(pill)
 }
 
-object MizanIconButtonTokens {
-    val compactSize: Dp = 40.dp
-    val standardSize: Dp = 48.dp
-    val largeSize: Dp = 56.dp
-}
-
-object MizanContentTokens {
-    val compactHorizontalPadding: Dp = 16.dp
-    val mediumHorizontalPadding: Dp = 24.dp
-    val expandedHorizontalPadding: Dp = 32.dp
-    val maxContentWidth: Dp = 1200.dp
-}
-
 object MizanTouchTarget {
     val minimum: Dp = 48.dp
     val standardButtonHeight: Dp = 48.dp

@@ -4,8 +4,7 @@ import androidx.compose.material3.MaterialTheme
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,9 +22,6 @@ import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
-import com.smartledger.aldaftar.ui.theme.MizanWindowSizeClass
-import com.smartledger.aldaftar.ui.theme.contentMaxWidth
-import com.smartledger.aldaftar.ui.theme.rememberMizanWindowSizeClass
 import com.smartledger.aldaftar.ui.screens.license.LicenseDialog
 import kotlinx.coroutines.launch
 
@@ -109,35 +105,70 @@ fun MainAppLayout(
         }
     }
 
-    val windowSizeClass = rememberMizanWindowSizeClass()
-    val isExpanded = windowSizeClass == MizanWindowSizeClass.Expanded
-
-    @Composable
-    fun MainShell(
-        drawerOpen: Boolean,
-        openDrawer: () -> Unit
-    ) {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                bottomBar = {
-                    if (!isExpanded) {
-                        MainBottomNavigation(
-                            currentScreen = currentScreen,
-                            isVisible = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER,
-                            onNavigate = { currentScreen = it }
-                        )
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER,
+        drawerContent = {
+            BackHandler(enabled = drawerState.isOpen) {
+                scope.launch { drawerState.close() }
+            }
+            AppNavigationDrawer(
+                currentScreen = currentScreen,
+                onScreenSelected = { screen ->
+                    currentScreen = screen
+                    scope.launch { drawerState.close() }
+                },
+                onBackupClick = {
+                    scope.launch { drawerState.close() }
+                    showBackupRestoreSheet = true
+                },
+                settings = settings,
+                securityViewModel = securityViewModel,
+                licenseViewModel = licenseViewModel,
+                onLicenseClick = { scope.launch { drawerState.close() }; forceLicenseDialog = false; showLicenseDialog = true },
+                businessProfileViewModel = businessProfileViewModel,
+                onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
+                    viewModel.saveSettings(updated)
+                    if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
+                        habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, java.math.BigDecimal.valueOf(newRate))
                     }
+                },
+                versionName = versionName,
+                onComprehensiveReportClick = {
+                    scope.launch { drawerState.close() }
+                    showComprehensiveReportDialog = true
+                },
+                onBusinessProfileClick = {
+                    scope.launch { drawerState.close() }
+                    showBusinessProfileDialog = true
+                },
+                onCurrencySettingsClick = {
+                    scope.launch { drawerState.close() }
+                    showCurrencySettingsDialog = true
+                },
+                onSecurityClick = {
+                    scope.launch { drawerState.close() }
+                    showSecurityDialog = true
+                }
+            )
+        }
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                bottomBar = {
+                    MainBottomNavigation(
+                        currentScreen = currentScreen,
+                        isVisible = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER,
+                        onNavigate = { currentScreen = it }
+                    )
                 }
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(
-                            if (windowSizeClass == MizanWindowSizeClass.Compact) Modifier
-                            else Modifier.widthIn(max = windowSizeClass.contentMaxWidth())
-                        )
-                        .align(Alignment.Center)
                 ) {
                     MainAppContent(
                         currentScreen = currentScreen,
@@ -149,10 +180,14 @@ fun MainAppLayout(
                         settings = settings,
                         contentPadding = innerPadding,
                         onNavigate = { currentScreen = it },
-                        onMenuClick = openDrawer,
-                        isDrawerOpen = drawerOpen,
+                        onMenuClick = { scope.launch { drawerState.open() } },
+                        isDrawerOpen = drawerState.isOpen,
                         onExit = {
-                            if (settings.doubleCheckExit) showExitConfirmDialog = true else onExit()
+                            if (settings.doubleCheckExit) {
+                                showExitConfirmDialog = true
+                            } else {
+                                onExit()
+                            }
                         },
                         onHeaderDoubleClick = { showComprehensiveReportDialog = true },
                         isFloatingSearchActive = isFloatingSearchActive,
@@ -172,96 +207,34 @@ fun MainAppLayout(
                 }
             }
 
-            if (currentScreen == Screen.HABAYEB) habayebFabOverlay?.invoke()
+            if (currentScreen == Screen.HABAYEB) {
+                habayebFabOverlay?.invoke()
+            }
 
             val hideBubble = if (currentScreen == Screen.HABAYEB) {
                 if (isHistoryOverlayActive) isHistorySearchActive else isSearchActive
-            } else isSearchActive
-            // Floating controls have a strict visual priority: modal/selection overlays win over search.
-            val floatingOverlayOwnsSurface = habayebFabOverlay != null
-            if (isFloatingSearchActive && !hideBubble && !floatingOverlayOwnsSurface && (currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER)) {
+            } else {
+                isSearchActive
+            }
+            if (isFloatingSearchActive && !hideBubble && (currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER)) {
                 com.smartledger.aldaftar.ui.screens.habayeb.components.FloatingSearchBubble(
                     activeThemeColor = if (currentScreen == Screen.LEDGER) com.smartledger.aldaftar.ui.theme.BrandPrimary else MaterialTheme.colorScheme.primary,
                     persisted = viewModel.floatingSearchState(),
                     onPersist = viewModel::saveFloatingSearchState,
                     onSearchClick = {
                         if (currentScreen == Screen.HABAYEB) {
-                            if (isHistoryOverlayActive) isHistorySearchActive = true else isSearchActive = true
-                        } else isSearchActive = true
+                            if (isHistoryOverlayActive) {
+                                isHistorySearchActive = true
+                            } else {
+                                isSearchActive = true
+                            }
+                        } else if (currentScreen == Screen.LEDGER) {
+                            isSearchActive = true
+                        }
                     }
                 )
             }
         }
-    }
-
-    @Composable
-    fun DrawerContent(closeAfter: Boolean) {
-        val close = { if (closeAfter) scope.launch { drawerState.close() } }
-        AppNavigationDrawerContent(
-            currentScreen = currentScreen,
-            onScreenSelected = { screen ->
-                currentScreen = screen
-                close()
-            },
-            onBackupClick = { close(); showBackupRestoreSheet = true },
-            settings = settings,
-            licenseViewModel = licenseViewModel,
-            onLicenseClick = { close(); forceLicenseDialog = false; showLicenseDialog = true },
-            onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
-                viewModel.saveSettings(updated)
-                if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
-                    habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, java.math.BigDecimal.valueOf(newRate))
-                }
-            },
-            versionName = versionName,
-            onComprehensiveReportClick = { close(); showComprehensiveReportDialog = true },
-            onBusinessProfileClick = { close(); showBusinessProfileDialog = true },
-            onCurrencySettingsClick = { close(); showCurrencySettingsDialog = true },
-            onSecurityClick = { close(); showSecurityDialog = true }
-        )
-    }
-
-    if (isExpanded) {
-        PermanentNavigationDrawer(
-            drawerContent = {
-                PermanentDrawerSheet(
-                    modifier = Modifier.widthIn(min = 280.dp, max = 320.dp),
-                    drawerContainerColor = MaterialTheme.colorScheme.surface,
-                    windowInsets = WindowInsets(0, 0, 0, 0)
-                ) { DrawerContent(closeAfter = false) }
-            }
-        ) {
-            MainShell(drawerOpen = true, openDrawer = {})
-        }
-    } else {
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            gesturesEnabled = currentScreen == Screen.HABAYEB || currentScreen == Screen.LEDGER,
-            drawerContent = {
-                BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
-                AppNavigationDrawer(
-                    currentScreen = currentScreen,
-                    onScreenSelected = { screen -> currentScreen = screen; scope.launch { drawerState.close() } },
-                    onBackupClick = { scope.launch { drawerState.close() }; showBackupRestoreSheet = true },
-                    settings = settings,
-                    securityViewModel = securityViewModel,
-                    licenseViewModel = licenseViewModel,
-                    onLicenseClick = { scope.launch { drawerState.close() }; forceLicenseDialog = false; showLicenseDialog = true },
-                    businessProfileViewModel = businessProfileViewModel,
-                    onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
-                        viewModel.saveSettings(updated)
-                        if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
-                            habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, java.math.BigDecimal.valueOf(newRate))
-                        }
-                    },
-                    versionName = versionName,
-                    onComprehensiveReportClick = { scope.launch { drawerState.close() }; showComprehensiveReportDialog = true },
-                    onBusinessProfileClick = { scope.launch { drawerState.close() }; showBusinessProfileDialog = true },
-                    onCurrencySettingsClick = { scope.launch { drawerState.close() }; showCurrencySettingsDialog = true },
-                    onSecurityClick = { scope.launch { drawerState.close() }; showSecurityDialog = true }
-                )
-            }
-        ) { MainShell(drawerOpen = drawerState.isOpen, openDrawer = { scope.launch { drawerState.open() } }) }
     }
 
     ExitConfirmDialog(

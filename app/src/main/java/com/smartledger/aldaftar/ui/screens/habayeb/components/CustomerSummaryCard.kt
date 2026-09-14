@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,14 +27,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.helper.AutoScaleText
 import com.smartledger.aldaftar.domain.model.TransactionType
-import com.smartledger.aldaftar.ui.theme.MizanRadii
-import com.smartledger.aldaftar.ui.theme.MizanSpacing
 
 @Composable
 fun AutoSizeText(
@@ -124,17 +124,17 @@ fun BalanceCompactChip(
     Column(
         modifier = modifier
             .defaultMinSize(minHeight = 52.dp)
-            .clip(MizanRadii.shapeSm)
+            .clip(RoundedCornerShape(10.dp))
             .background(targetBgColor)
-            .border(borderWidth, targetBorderColor, MizanRadii.shapeSm)
+            .border(borderWidth, targetBorderColor, RoundedCornerShape(10.dp))
             .clickable(onClick = onSelect)
-            .padding(horizontal = MizanSpacing.xs, vertical = MizanSpacing.xs),
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = stateLabel,
-            style = MaterialTheme.typography.labelMedium,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = targetHeaderTextColor,
             textAlign = TextAlign.Center,
@@ -199,28 +199,28 @@ fun CustomerSummaryCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = MizanSpacing.lg, vertical = MizanSpacing.xs),
+            .padding(horizontal = 16.dp, vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         val rowModifier = if (isCompact) {
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = MizanSpacing.xxs)
+                .padding(vertical = 1.dp)
         } else {
             Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(vertical = MizanSpacing.xxs)
+                .padding(vertical = 1.dp)
         }
 
         Row(
             modifier = rowModifier,
-            horizontalArrangement = Arrangement.spacedBy(MizanSpacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             for (curr in allCurrencies) {
                 val netDebtVal = effectiveBDMap[curr] ?: BigDecimal.ZERO
-                val chipModifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(min = 112.dp)
+                val chipModifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(min = 100.dp)
                 BalanceCompactChip(
                     amount = netDebtVal,
                     currencyCode = curr,
