@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import java.util.Locale
 
 @Composable
@@ -164,9 +165,7 @@ fun RollingDialPicker(
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
                 )
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
+                RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isEditing, key = isEditing)
             } else {
                 val formattedText = remember(value, format) {
                     String.format(Locale.US, format, value)

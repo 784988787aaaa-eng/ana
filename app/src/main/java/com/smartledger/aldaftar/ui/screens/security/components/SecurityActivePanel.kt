@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,6 +35,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.mizanColors
@@ -252,6 +254,9 @@ fun VerifyOldPinDialog(
     var showHint by remember { mutableStateOf(false) }
     var pinVisible by remember { mutableStateOf(false) }
 
+    val pinFocusRequester = remember { FocusRequester() }
+    val recoveryFocusRequester = remember { FocusRequester() }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
@@ -331,8 +336,12 @@ fun VerifyOldPinDialog(
                             }
                         }),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(pinFocusRequester)
                     )
+
+                    RequestFocusAndShowKeyboard(focusRequester = pinFocusRequester, enabled = !showRecoveryMode)
 
                     TextButton(
                         onClick = { showRecoveryMode = true },
@@ -353,8 +362,12 @@ fun VerifyOldPinDialog(
                         placeholder = { Text(stringResource(id = R.string.sec_recovery_phrase_placeholder), fontSize = 12.sp) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(recoveryFocusRequester)
                     )
+
+                    RequestFocusAndShowKeyboard(focusRequester = recoveryFocusRequester, enabled = showRecoveryMode)
 
                     if (!recoveryHint.isNullOrBlank()) {
                         Row(

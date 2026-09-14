@@ -15,7 +15,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -27,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 private const val MAX_BIZ_NAME_LENGTH = 40
 private const val MAX_BIZ_DESC_LENGTH = 45
@@ -41,6 +45,7 @@ fun BusinessProfileInfoSection(
     activeThemeColor: Color
 ) {
     val focusManager = LocalFocusManager.current
+    val dialogNameFocusRequester = remember { FocusRequester() }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -81,7 +86,8 @@ fun BusinessProfileInfoSection(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag("biz_name_input"),
+                    .testTag("biz_name_input")
+                    .focusRequester(dialogNameFocusRequester),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = activeThemeColor,
                     focusedLabelColor = activeThemeColor,
@@ -91,6 +97,10 @@ fun BusinessProfileInfoSection(
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
             )
+
+            if (isDialog) {
+                RequestFocusAndShowKeyboard(focusRequester = dialogNameFocusRequester)
+            }
 
             OutlinedTextField(
                 value = bizDesc,

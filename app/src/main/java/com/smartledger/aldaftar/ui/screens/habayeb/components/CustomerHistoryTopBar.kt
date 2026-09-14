@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @Composable
 fun CustomerHistoryTopBar(
@@ -59,14 +60,7 @@ fun CustomerHistoryTopBar(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     var isMenuExpanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isSearchActive) {
-        if (isSearchActive) {
-kotlinx.coroutines.android.awaitFrame()
-                focusRequester.requestFocus()
-                keyboardController?.show()
-        }
-    }
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isSearchActive, key = isSearchActive)
 
     Row(
         modifier = Modifier

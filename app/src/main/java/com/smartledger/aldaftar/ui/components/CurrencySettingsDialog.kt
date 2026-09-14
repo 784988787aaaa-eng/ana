@@ -76,6 +76,7 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import kotlinx.coroutines.android.awaitFrame
 import java.math.BigDecimal
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 private const val TAG = "CurrencySettingsDialog"
 
@@ -100,16 +101,10 @@ fun CurrencySettingsDialog(
 
     val rateFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(state.localDefaultCurrency, state.selectedTargetCurrency) {
-        try {
-            awaitFrame()
-            rateFocusRequester.requestFocus()
-            keyboardController?.show()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
-        }
-    }
+    RequestFocusAndShowKeyboard(
+        focusRequester = rateFocusRequester,
+        key = "${state.localDefaultCurrency}:${state.selectedTargetCurrency}"
+    )
 
     Dialog(
         onDismissRequest = onDismiss,

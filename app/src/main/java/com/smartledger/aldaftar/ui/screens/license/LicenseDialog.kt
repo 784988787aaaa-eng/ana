@@ -22,6 +22,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -53,6 +55,7 @@ import com.smartledger.aldaftar.domain.license.RevocationReason
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 private const val SUPPORT_WHATSAPP = "967774004399"
 
@@ -532,6 +535,8 @@ private fun UnifiedAccountLoginSection(
     onCheckCloudLicense: () -> Unit,
     onActivate: () -> Unit
 ) {
+    val activationFocusRequester = remember { FocusRequester() }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -671,12 +676,18 @@ private fun UnifiedAccountLoginSection(
                 onValueChange = onActivationChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(56.dp)
+                    .focusRequester(activationFocusRequester),
                 singleLine = true,
                 enabled = !busy,
                 label = { Text("رمز التفعيل (من المطور)", fontSize = 11.sp) },
                 placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 11.sp) },
                 shape = RoundedCornerShape(10.dp)
+            )
+
+            RequestFocusAndShowKeyboard(
+                focusRequester = activationFocusRequester,
+                enabled = session.isSignedIn && !busy
             )
 
             Button(
@@ -702,6 +713,8 @@ private fun SignedTokenCompactSection(
     onTokenChange: (String) -> Unit,
     onActivate: () -> Unit
 ) {
+    val tokenFocusRequester = remember { FocusRequester() }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(7.dp)
@@ -711,7 +724,8 @@ private fun SignedTokenCompactSection(
             onValueChange = onTokenChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(84.dp),
+                .height(84.dp)
+                .focusRequester(tokenFocusRequester),
             minLines = 2,
             maxLines = 3,
             enabled = !busy,
@@ -719,6 +733,8 @@ private fun SignedTokenCompactSection(
             placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 11.sp) },
             shape = RoundedCornerShape(10.dp)
         )
+
+        RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy)
 
         Button(
             onClick = onActivate,

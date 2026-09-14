@@ -71,6 +71,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @Composable
 fun ExchangeRateSetupContent(
@@ -105,12 +106,7 @@ fun ExchangeRateSetupContent(
         window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         onDispose {}
     }
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.android.awaitFrame()
-        focusRequester.requestFocus()
-        keyboardController?.show()
-    }
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester)
 
     val mizanColors = MaterialTheme.mizanColors
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,10 +86,7 @@ fun TrashTopBarSection(
             if (searching) {
                 val searchFocusRequester = remember { FocusRequester() }
                 val focusManager = LocalFocusManager.current
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.android.awaitFrame()
-                    searchFocusRequester.requestFocus()
-                }
+                RequestFocusAndShowKeyboard(focusRequester = searchFocusRequester)
 
                 Row(
                     modifier = Modifier

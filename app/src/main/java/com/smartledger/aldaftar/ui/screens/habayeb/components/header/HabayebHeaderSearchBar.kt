@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import kotlinx.coroutines.android.awaitFrame
 
 @Composable
@@ -111,9 +112,5 @@ fun HabayebHeaderSearchBar(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    LaunchedEffect(Unit) {
-awaitFrame()
-            focusRequester.requestFocus()
-            keyboardController?.show()
-    }
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester)
 }

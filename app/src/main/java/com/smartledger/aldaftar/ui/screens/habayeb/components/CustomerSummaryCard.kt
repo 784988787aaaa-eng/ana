@@ -32,7 +32,7 @@ import com.smartledger.aldaftar.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.smartledger.aldaftar.ui.theme.mizanColors
-import com.smartledger.aldaftar.ui.helper.AutoScaleText
+
 import com.smartledger.aldaftar.domain.model.TransactionType
 
 @Composable
@@ -45,14 +45,33 @@ fun AutoSizeText(
     modifier: Modifier = Modifier,
     maxLines: Int = 1
 ) {
-    AutoScaleText(
+    var fontSizeState by remember(text, fontSize) { mutableStateOf(fontSize) }
+    var readyToDraw by remember(text, fontSize) { mutableStateOf(false) }
+
+    Text(
         text = text,
-        baseFontSize = fontSize,
-        fontWeight = fontWeight ?: FontWeight.Normal,
-        color = color,
-        textAlign = textAlign ?: TextAlign.Center,
-        modifier = modifier,
-        maxLines = maxLines
+        style = TextStyle(fontSize = fontSizeState, fontWeight = fontWeight, color = color),
+        textAlign = textAlign,
+        maxLines = maxLines,
+        overflow = TextOverflow.Clip,
+        softWrap = false,
+        modifier = modifier.drawWithContent {
+            if (readyToDraw) {
+                drawContent()
+            }
+        },
+        onTextLayout = { textLayoutResult ->
+            if (textLayoutResult.hasVisualOverflow) {
+                val currentSize = fontSizeState.value
+                if (currentSize > 8f) {
+                    fontSizeState = (currentSize - 0.5f).sp
+                } else {
+                    readyToDraw = true
+                }
+            } else {
+                readyToDraw = true
+            }
+        }
     )
 }
 
@@ -128,7 +147,7 @@ fun BalanceCompactChip(
             .background(targetBgColor)
             .border(borderWidth, targetBorderColor, RoundedCornerShape(10.dp))
             .clickable(onClick = onSelect)
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -141,10 +160,10 @@ fun BalanceCompactChip(
             maxLines = 1,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(1.dp))
-        AutoScaleText(
+        Spacer(modifier = Modifier.height(2.dp))
+        AutoSizeText(
             text = formattedAmountStr,
-            baseFontSize = 14.5.sp,
+            fontSize = 14.5.sp,
             fontWeight = FontWeight.Black,
             color = targetChipColor,
             textAlign = TextAlign.Center,

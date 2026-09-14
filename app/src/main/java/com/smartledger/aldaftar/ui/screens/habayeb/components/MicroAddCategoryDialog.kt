@@ -49,6 +49,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 import kotlinx.coroutines.delay
 
@@ -78,12 +79,7 @@ fun MicroAddCategoryDialog(
         window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         onDispose { }
     }
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.android.awaitFrame()
-        focusRequester.requestFocus()
-        keyboardController?.show()
-    }
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester)
 
     Dialog(
         onDismissRequest = onDismiss,

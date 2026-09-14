@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.ui.helper.AutoScaleText
+import com.smartledger.aldaftar.ui.screens.habayeb.components.AutoSizeText
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
@@ -282,18 +282,17 @@ fun TransactionRowAmountSection(
                 modifier = Modifier.size(14.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
-            AutoScaleText(
+            AutoSizeText(
                 text = "${cached.formattedAmount} ${cached.displayCurrency}",
-                baseFontSize = 13.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Black,
                 color = cached.indicatorColor
             )
         }
         if (cached.equivalentAmountText != null) {
-            AutoScaleText(
+            AutoSizeText(
                 text = cached.equivalentAmountText,
-                baseFontSize = 9.sp,
-                fontWeight = FontWeight.Normal,
+                fontSize = 9.sp,
                 color = cached.indicatorColor.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
             )

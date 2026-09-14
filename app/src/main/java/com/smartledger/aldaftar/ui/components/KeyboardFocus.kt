@@ -1,31 +1,70 @@
 package com.smartledger.aldaftar.ui.components
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
+import android.view.WindowManager
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 
 /**
- * Reliable first-field focus for Compose dialogs.
+ * Reliable first-field focus + IME opening for Compose input surfaces.
  *
- * Some OEM keyboards ignore the first show() call while a Dialog is still
- * attaching its window. We intentionally retry for a short, bounded period.
- * This keeps the UX fast without introducing a permanent keyboard loop.
+ * Dialog windows can exist for a few frames before the IME is willing to
+ * honour a show() request. We therefore make the window IME-visible and
+ * retry focus/show for a short, bounded period. This is deliberately local
+ * to input surfaces so normal screens never pop the keyboard unexpectedly.
  */
 suspend fun requestFocusAndShowKeyboard(
     focusRequester: FocusRequester,
-    keyboardController: SoftwareKeyboardController?,
-    attempts: Int = 5,
-    delayMs: Long = 45L
+    keyboardController: androidx.compose.ui.platform.SoftwareKeyboardController?,
+    attempts: Int = 8,
+    delayMs: Long = 35L,
+    postToView: (() -> Unit)? = null
 ) {
     awaitFrame()
+    awaitFrame()
+
     repeat(attempts) { attempt ->
-        try {
-            focusRequester.requestFocus()
-            keyboardController?.show()
-        } catch (_: Exception) {
-            // The dialog may still be attaching; the next bounded attempt handles it.
-        }
+        runCatching { focusRequester.requestFocus() }
+        runCatching { keyboardController?.show() }
+        postToView?.invoke()
+
         if (attempt < attempts - 1) delay(delayMs)
+    }
+}
+
+/**
+ * Use on a dialog/bottom-sheet that has an obvious first editable field.
+ * It does not run on ordinary screens unless the caller places it there.
+ */
+@Composable
+fun RequestFocusAndShowKeyboard(
+    focusRequester: FocusRequester,
+    enabled: Boolean = true,
+    key: Any? = Unit
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val view = LocalView.current
+
+    LaunchedEffect(enabled, key) {
+        if (!enabled) return@LaunchedEffect
+
+        val window = (view.parent as? DialogWindowProvider)?.window
+        window?.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        )
+
+        requestFocusAndShowKeyboard(
+            focusRequester = focusRequester,
+            keyboardController = keyboardController,
+            postToView = {
+                view.post { runCatching { keyboardController?.show() } }
+            }
+        )
     }
 }

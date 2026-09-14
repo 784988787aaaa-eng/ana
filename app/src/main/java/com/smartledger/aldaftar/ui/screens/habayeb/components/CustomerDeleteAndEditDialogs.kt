@@ -37,6 +37,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
@@ -174,11 +175,7 @@ fun CustomerEditDialog(
         }
     }
 
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.android.awaitFrame()
-        editNameFocusRequester.requestFocus()
-        keyboardController?.show()
-    }
+    RequestFocusAndShowKeyboard(focusRequester = editNameFocusRequester)
 
     Dialog(
         onDismissRequest = onDismiss,

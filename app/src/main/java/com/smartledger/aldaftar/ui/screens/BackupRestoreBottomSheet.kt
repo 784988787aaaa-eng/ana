@@ -24,6 +24,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -1378,6 +1381,7 @@ private fun ArchiveSubBar(
 
 @Composable
 private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClose: () -> Unit) {
+    val searchFocusRequester = remember { FocusRequester() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1398,7 +1402,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
         BasicTextField(
             value = search,
             onValueChange = onSearchChange,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).focusRequester(searchFocusRequester),
             textStyle = TextStyle(
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Medium,
@@ -1416,6 +1420,8 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                 inner()
             }
         )
+        RequestFocusAndShowKeyboard(focusRequester = searchFocusRequester)
+
         if (search.isNotBlank()) {
             IconButton(onClick = { onSearchChange("") }, modifier = Modifier.size(40.dp)) {
                 Icon(

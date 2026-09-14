@@ -63,7 +63,7 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .defaultMinSize(minHeight = 52.dp)
+                .height(49.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -80,13 +80,13 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = stringResource(id = R.string.habayeb_filter_owed_by),
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = effectiveDebtColor,
                         textAlign = TextAlign.Center,
@@ -121,7 +121,7 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .defaultMinSize(minHeight = 52.dp)
+                .height(49.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -138,13 +138,13 @@ fun HabayebDualMetricCards(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = stringResource(id = R.string.habayeb_filter_owed_to),
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = effectiveCreditColor,
                         textAlign = TextAlign.Center,

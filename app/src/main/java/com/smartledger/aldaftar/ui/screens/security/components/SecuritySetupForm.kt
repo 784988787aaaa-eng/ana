@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 
@@ -71,16 +72,7 @@ fun SecuritySetupForm(
     val recoveryHintFocus = remember { FocusRequester() }
 
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(Unit) {
-        try {
-            kotlinx.coroutines.android.awaitFrame()
-            passcodeFocus.requestFocus()
-            keyboardController?.show()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to request focus or show keyboard: ${e.message}")
-        }
-    }
+    RequestFocusAndShowKeyboard(focusRequester = passcodeFocus)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
