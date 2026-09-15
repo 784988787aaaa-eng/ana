@@ -4,11 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.TypeConverters
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
-import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
@@ -19,7 +20,6 @@ import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 @Database(
     entities = [
         AppSettings::class,
-        FixedCommitment::class,
         TransactionDb::class,
         CustomCategory::class,
         DeletedItemEntity::class,
@@ -29,13 +29,12 @@ import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
         BusinessProfile::class,
         RecurringConfigEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(BigDecimalConverter::class, IntListConverter::class, StringListConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun settingsDao(): SettingsDao
-    abstract fun commitmentDao(): CommitmentDao
     abstract fun transactionDao(): TransactionDao
     abstract fun customCategoryDao(): CustomCategoryDao
     abstract fun trashDao(): TrashDao
@@ -45,6 +44,12 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "aldaftar_v1.db"
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("DROP TABLE IF EXISTS fixed_commitments")
+            }
+        }
 
         @Volatile
         private var instance: AppDatabase? = null
@@ -57,6 +62,7 @@ abstract class AppDatabase : RoomDatabase() {
                     DATABASE_NAME
                 )
                     .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                    .addMigrations(MIGRATION_1_2)
                     .build()
                     .also { instance = it }
             }

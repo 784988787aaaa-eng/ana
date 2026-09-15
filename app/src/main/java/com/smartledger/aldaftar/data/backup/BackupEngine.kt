@@ -39,7 +39,7 @@ class BackupEngine(
             .put("appId", APP_ID)
             .put("mimeType", MIME)
             .put("createdAt", System.currentTimeMillis())
-            .put("schemaVersion", 1)
+            .put("schemaVersion", 2)
             .put("appVersion", appVersion())
             .put("payloadSha256", hash)
             .put("encryptionVersion", 2)
@@ -89,7 +89,6 @@ class BackupEngine(
 
     private suspend fun snapshot(): JSONObject {
         val settings = database.settingsDao().getSettingsDirect() ?: AppSettings(isFirstLaunch = false)
-        val commitments = database.commitmentDao().allDirect()
         val transactions = database.transactionDao().allDirect()
         val categories = database.customCategoryDao().getAllCustomCategoriesDirect()
         val trash = database.trashDao().getAllDeletedItemsDirect()
@@ -100,7 +99,6 @@ class BackupEngine(
         val recurring = database.recurringConfigDao().all()
         return JSONObject().apply {
             put("settings", settingsJson(settings))
-            put("commitments", JSONArray(commitments.map(::commitmentJson)))
             put("transactions", JSONArray(transactions.map(::transactionJson)))
             put("categories", JSONArray(categories.map(::categoryJson)))
             put("trash", JSONArray(trash.map(::trashJson)))
@@ -122,7 +120,6 @@ class BackupEngine(
             recoveryPhraseHash = currentSettings.recoveryPhraseHash,
             recoveryHint = currentSettings.recoveryHint
         )
-        val commitments = root.array("commitments").map(::parseCommitment)
         val transactions = root.array("transactions").map(::parseTransaction)
         val categories = root.array("categories").map(::parseCategory)
         val trash = root.array("trash").map(::parseTrash)
@@ -138,11 +135,9 @@ class BackupEngine(
             database.habayebDao().clearAllCustomers()
             database.trashDao().clearAllDeletedItems()
             database.transactionDao().clearAllTransactions()
-            database.commitmentDao().clearAllCommitments()
             database.customCategoryDao().clearAllCustomCategories()
             database.settingsDao().insertOrUpdateSettings(settings.copy(id = 1))
             database.businessProfileDao().save(profile.copy(id = 1))
-            for (item in commitments) database.commitmentDao().insertCommitment(item)
             for (item in categories) database.customCategoryDao().insertCategory(item)
             for (item in transactions) database.transactionDao().insertTransaction(item)
             for (item in customers) database.habayebDao().insertCustomer(item)
@@ -155,7 +150,7 @@ class BackupEngine(
     }
 
     private fun validatePayload(root: JSONObject) {
-        val required = listOf("settings", "commitments", "transactions", "categories", "trash", "customers", "habayebTransactions", "pins", "businessProfile", "recurring")
+        val required = listOf("settings", "transactions", "categories", "trash", "customers", "habayebTransactions", "pins", "businessProfile", "recurring")
         required.forEach { require(root.has(it)) { "النسخة ناقصة: $it" } }
     }
 
@@ -177,7 +172,6 @@ class BackupEngine(
         put("trashAutoCleanupPeriod", v.trashAutoCleanupPeriod)
         put("exchangeRatesJson", v.exchangeRatesJson)
     }
-    private fun commitmentJson(v: FixedCommitment) = JSONObject().apply { put("name", v.name); put("targetAmount", v.targetAmount.toPlainString()); put("currentProgress", v.currentProgress.toPlainString()); put("orderIndex", v.orderIndex) }
     private fun transactionJson(v: TransactionDb) = JSONObject().apply { put("id", v.id); put("timestamp", v.timestamp); put("type", v.type); put("category", v.category); put("amount", v.amount.toPlainString()); put("description", v.description) }
     private fun categoryJson(v: CustomCategory) = JSONObject().apply { put("id", v.id); put("name", v.name); put("tabType", v.tabType); put("iconEmoji", v.iconEmoji); put("displayOrder", v.displayOrder); put("isSystemClosed", v.isSystemClosed) }
     private fun trashJson(v: DeletedItemEntity) = JSONObject().apply { put("id", v.id); put("sourceSystem", v.sourceSystem); put("originalTableName", v.originalTableName); put("jsonData", v.jsonData); put("deletedAt", v.deletedAt) }
@@ -188,7 +182,6 @@ class BackupEngine(
     private fun recurringJson(v: RecurringConfigEntity) = JSONObject().apply { put("id", v.id); put("originalTxId", v.originalTxId); put("customerId", v.customerId); put("customerName", v.customerName); put("amount", v.amount.toPlainString()); put("type", v.type); put("description", v.description); put("frequency", v.frequency); put("daysOfWeek", JSONArray(v.daysOfWeek)); put("daysOfMonth", JSONArray(v.daysOfMonth)); put("timeHour", v.timeHour); put("timeMinute", v.timeMinute); put("startDateMillis", v.startDateMillis); put("endDateMillis", v.endDateMillis); put("lastExecutedTimestamp", v.lastExecutedTimestamp); put("isActive", v.isActive); put("isForeign", v.isForeign); put("currencyCode", v.currencyCode); put("foreignAmount", v.foreignAmount.toPlainString()); put("exchangeRate", v.exchangeRate.toPlainString()); put("isRateCalculated", v.isRateCalculated); put("equivalentAmount", v.equivalentAmount.toPlainString()) }
 
     private fun parseSettings(o: JSONObject) = AppSettings(1, o.optString("currencySymbol", "ر.ي"), o.optBoolean("schoolExpensesEnabled", true), o.optInt("themeMode"), o.optBoolean("doubleCheckExit", true), o.optBoolean("isPasscodeEnabled"), o.optStringOrNull("passcodeHash"), o.optStringOrNull("recoveryPhraseHash"), o.optStringOrNull("recoveryHint"), o.optBoolean("isFirstLaunch", false), o.optBoolean("onboardingShown"), o.optString("trashAutoCleanupPeriod", "NEVER"), o.optString("exchangeRatesJson", "{}"))
-    private fun parseCommitment(o: JSONObject) = FixedCommitment(o.getString("name"), o.getString("targetAmount").toBigDecimal(), o.getString("currentProgress").toBigDecimal(), o.getInt("orderIndex"))
     private fun parseTransaction(o: JSONObject) = TransactionDb(o.getString("id"), o.getLong("timestamp"), o.getString("type"), o.getString("category"), o.getString("amount").toBigDecimal(), o.getString("description"))
     private fun parseCategory(o: JSONObject) = CustomCategory(o.getInt("id"), o.getString("name"), o.getString("tabType"), o.getString("iconEmoji"), o.getInt("displayOrder"), o.getBoolean("isSystemClosed"))
     private fun parseTrash(o: JSONObject) = DeletedItemEntity(o.getString("id"), o.getString("sourceSystem"), o.getString("originalTableName"), o.getString("jsonData"), o.getLong("deletedAt"))

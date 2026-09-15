@@ -80,7 +80,6 @@ fun HabayebScreen(
     onClose: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
     isDrawerOpen: Boolean = false,
-    onHeaderDoubleClick: () -> Unit = {},
     isFloatingSearchActive: Boolean = false,
     onFloatingSearchActiveChanged: (Boolean) -> Unit = {},
     isSearchActive: Boolean = false,
@@ -291,7 +290,6 @@ fun HabayebScreen(
                         isPrivacyMode = isPrivacyMode,
                         onTogglePrivacy = securityViewModel::togglePrivacyMode,
                         currencySymbol = currencySymbol,
-                        onHeaderDoubleClick = onHeaderDoubleClick,
                         isFloatingActive = isFloatingSearchActive,
                         onToggleFloatingClick = { onFloatingSearchActiveChanged(!isFloatingSearchActive) },
                         activeThemeColor = activeThemeColor

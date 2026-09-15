@@ -10,10 +10,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class DatabaseSchemaV2Test {
+class DatabaseSchemaV1Test {
 
     @Test
-    fun freshDatabaseUsesSchemaVersionTwoAndExpectedTables() {
+    fun freshDatabaseUsesSchemaVersionOneAndExpectedTables() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         val cursor = db.openHelper.readableDatabase.query(

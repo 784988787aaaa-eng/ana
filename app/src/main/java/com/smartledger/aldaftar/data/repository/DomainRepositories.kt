@@ -16,14 +16,6 @@ class SettingsRepository(private val dao: SettingsDao) {
     suspend fun getSettingsDirect() = dao.getSettingsDirect()
     suspend fun saveSettings(settings: AppSettings) = dao.insertOrUpdateSettings(settings)
 }
-class CommitmentRepository(private val dao: CommitmentDao) {
-    val commitmentsFlow = dao.getAllCommitmentsFlow()
-    private fun normalize(v: FixedCommitment)=v.copy(targetAmount=v.targetAmount.money(),currentProgress=v.currentProgress.money())
-    suspend fun saveCommitment(v: FixedCommitment)=dao.insertCommitment(normalize(v))
-    suspend fun updateCommitments(v: List<FixedCommitment>)=dao.updateCommitments(v.map(::normalize))
-    suspend fun deleteCommitment(name:String)=dao.deleteCommitment(name)
-    suspend fun clearCommitments()=dao.clearAllCommitments()
-}
 class TransactionRepository(private val dao: TransactionDao) {
     val transactionsFlow=dao.getAllTransactionsFlow()
     fun getTotalCashFlow():Flow<BigDecimal> = dao.getTotalCashFlow()
@@ -71,8 +63,7 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
 class TrashRepository(private val dao:TrashDao) {
     val deletedItemsFlow=dao.getAllDeletedItemsFlow(); suspend fun getAllDeletedItemsDirect()=dao.getAllDeletedItemsDirect(); suspend fun saveDeletedItem(v:DeletedItemEntity)=dao.insertDeletedItem(v); suspend fun removeDeletedItem(v:DeletedItemEntity)=dao.deleteItem(v); suspend fun removeDeletedItemById(id:String)=dao.deleteItemById(id); suspend fun clearDeletedItems()=dao.clearAllDeletedItems(); suspend fun restoreDeletedItem(v:DeletedItemEntity)=dao.restoreDeletedItem(v); suspend fun restoreSingleTransactionFromBundle(i:String,t:String)=dao.restoreSingleTransactionFromBundle(i,t)
     suspend fun removeExpiredBefore(threshold: Long): Int { val expired = dao.getAllDeletedItemsDirect().filter { it.deletedAt < threshold }; expired.forEach { dao.deleteItem(it) }; return expired.size }
-    suspend fun softDeleteCommitmentToTrash(v: FixedCommitment) = saveDeletedItem(DeletedItemEntity("fc_${v.name}", "الدار", "fixed_commitments", TrashJsonSerializer.serializeCommitment(v)))
-    suspend fun softDeleteTransactionToTrash(v: TransactionDb) = saveDeletedItem(DeletedItemEntity(v.id, "الدار", "transactions", TrashJsonSerializer.serializeTransaction(v)))
+        suspend fun softDeleteTransactionToTrash(v: TransactionDb) = saveDeletedItem(DeletedItemEntity(v.id, "الدار", "transactions", TrashJsonSerializer.serializeTransaction(v)))
     suspend fun softDeleteTransactionBundleToTrash(v: List<TransactionDb>, title: String) = saveDeletedItem(DeletedItemEntity("dar_bundle_${System.currentTimeMillis()}", "الدار", "dar_bundle", TrashJsonSerializer.serializeTransactionBundle(v,title)))
     suspend fun softDeleteHabayebCustomerToTrash(v:HabayebCustomer)=saveDeletedItem(DeletedItemEntity("cust_${v.id}", "الحبايب", "habayeb_customers", TrashJsonSerializer.serializeHabayebCustomer(v)))
     suspend fun softDeleteHabayebTransactionToTrash(v:HabayebTransaction)=saveDeletedItem(DeletedItemEntity(v.id, "الحبايب", "habayeb_transactions", TrashJsonSerializer.serializeHabayebTransaction(v)))
@@ -81,6 +72,6 @@ class TrashRepository(private val dao:TrashDao) {
     }
 
 }
-class DataMaintenanceRepository(private val database:AppDatabase, private val settings:SettingsDao, private val commitments:CommitmentDao, private val transactions:TransactionDao, private val categories:CustomCategoryDao, private val trash:TrashDao, private val habayeb:HabayebDao) {
-    suspend fun deleteAllData()=database.withTransaction { database.recurringConfigDao().clear();habayeb.clearAllTransactions();habayeb.clearAllPins();habayeb.clearAllCustomers();trash.clearAllDeletedItems();transactions.clearAllTransactions();commitments.clearAllCommitments();categories.clearAllCustomCategories();settings.insertOrUpdateSettings(AppSettings(isFirstLaunch=false)) }
+class DataMaintenanceRepository(private val database:AppDatabase, private val settings:SettingsDao, private val transactions:TransactionDao, private val categories:CustomCategoryDao, private val trash:TrashDao, private val habayeb:HabayebDao) {
+    suspend fun deleteAllData()=database.withTransaction { database.recurringConfigDao().clear();habayeb.clearAllTransactions();habayeb.clearAllPins();habayeb.clearAllCustomers();trash.clearAllDeletedItems();transactions.clearAllTransactions();categories.clearAllCustomCategories();settings.insertOrUpdateSettings(AppSettings(isFirstLaunch=false)) }
 }

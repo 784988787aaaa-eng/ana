@@ -1,6 +1,5 @@
 package com.smartledger.aldaftar.data.repository
 
-import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
@@ -11,14 +10,6 @@ import java.math.BigDecimal
 
 object TrashJsonSerializer {
 
-    fun serializeCommitment(fc: FixedCommitment): String {
-        return JSONObject().apply {
-            put("name", fc.name)
-            put("targetAmount", fc.targetAmount.toPlainString())
-            put("currentProgress", fc.currentProgress.toPlainString())
-            put("orderIndex", fc.orderIndex)
-        }.toString()
-    }
 
     fun serializeHabayebBundle(
         customer: HabayebCustomer,

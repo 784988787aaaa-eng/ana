@@ -124,13 +124,6 @@ class HabayebFinanceViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _linkHabayebDebtsState = MutableStateFlow(false)
-    val linkHabayebDebtsState = _linkHabayebDebtsState.asStateFlow()
-
-    fun toggleLinkHabayebDebts(enabled: Boolean) {
-        _linkHabayebDebtsState.value = enabled
-        
-    }
 
     val totalTransactionsCount: StateFlow<Int> = combine(
         transactionsRepository.getTransactionsCountFlow(), habayebRepository.getHabayebTransactionsCountFlow()
@@ -301,11 +294,6 @@ class HabayebFinanceViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val habayebOwedByThemTotalState: StateFlow<BigDecimal> = uiState
-        .map { it.totalOwedByThem }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BigDecimal.ZERO)
 
     val habayebOwedToThemTotalState: StateFlow<BigDecimal> = uiState
         .map { it.totalOwedToThem }
