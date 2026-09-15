@@ -1,9 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.business
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -22,13 +18,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -55,9 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
-import com.smartledger.aldaftar.ui.theme.arabicInputTextStyle
-import com.smartledger.aldaftar.ui.theme.universalTextFieldColors
 
 @Composable
 fun BusinessProfilePhonesSection(
@@ -72,11 +68,6 @@ fun BusinessProfilePhonesSection(
     val effectivePhones = remember(phoneList) { if (phoneList.isEmpty()) listOf("") else phoneList }
     var phonesExpanded by remember { mutableStateOf(false) }
     val focusRequesters = remember(effectivePhones.size) { List(effectivePhones.size) { FocusRequester() } }
-    val arrowRotation by animateFloatAsState(
-        targetValue = if (phonesExpanded) 180f else 0f,
-        animationSpec = tween(durationMillis = 200),
-        label = "arrow_rotation"
-    )
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -85,32 +76,26 @@ fun BusinessProfilePhonesSection(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp)
+                .animateContentSize()
                 .clickable { phonesExpanded = !phonesExpanded },
-            shape = RoundedCornerShape(12.dp),
-            color = activeThemeColor.copy(alpha = 0.05f),
-            border = BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.18f))
+            shape = RoundedCornerShape(14.dp),
+            color = activeThemeColor.copy(alpha = 0.055f),
+            border = BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.16f))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Phone, 
-                        contentDescription = null, 
-                        tint = activeThemeColor, 
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Default.Phone, null, tint = activeThemeColor, modifier = Modifier.size(18.dp))
                     Text(
                         text = stringResource(id = R.string.biz_phones_section),
-                        fontFamily = CairoFontFamily,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -120,33 +105,28 @@ fun BusinessProfilePhonesSection(
                     if (count > 0) {
                         Text(
                             text = count.toString(),
-                            fontFamily = CairoFontFamily,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF16A34A),
+                            color = activeThemeColor,
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(Color(0xFF22C55E).copy(alpha = 0.15f))
-                                .padding(horizontal = 7.dp, vertical = 1.5.dp)
+                                .background(activeThemeColor.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
                 Icon(
-                    imageVector = Icons.Default.ExpandMore,
+                    imageVector = if (phonesExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,
                     tint = activeThemeColor,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .rotate(arrowRotation)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
 
         if (phonesExpanded) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
@@ -164,7 +144,6 @@ fun BusinessProfilePhonesSection(
                             Spacer(modifier = Modifier.size(4.dp))
                             Text(
                                 text = stringResource(id = R.string.biz_btn_add_phone),
-                                fontFamily = CairoFontFamily,
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeThemeColor
@@ -190,27 +169,18 @@ fun BusinessProfilePhonesSection(
                         OutlinedTextField(
                             value = phone,
                             onValueChange = { newVal -> if (newVal.length <= 16) onPhoneChange(index, newVal) },
-                            label = { 
-                                Text(
-                                    text = phoneLabel, 
-                                    fontFamily = CairoFontFamily,
-                                    fontSize = 12.sp 
-                                ) 
-                            },
-                            placeholder = { 
-                                Text(
-                                    text = placeholderText, 
-                                    fontFamily = CairoFontFamily,
-                                    fontSize = 12.sp 
-                                ) 
-                            },
+                            label = { Text(text = phoneLabel, fontSize = 12.sp) },
+                            placeholder = { Text(text = placeholderText, fontSize = 12.sp) },
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
                                 .weight(1f)
-                                .defaultMinSize(minHeight = 56.dp)
                                 .focusRequester(focusRequester),
-                            colors = universalTextFieldColors(primary = activeThemeColor),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = activeThemeColor,
+                                focusedLabelColor = activeThemeColor,
+                                cursorColor = activeThemeColor
+                            ),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Phone,
                                 imeAction = if (isLastItem) ImeAction.Done else ImeAction.Next
@@ -219,24 +189,19 @@ fun BusinessProfilePhonesSection(
                                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
                                 onDone = { focusManager.clearFocus() }
                             ),
-                            textStyle = arabicInputTextStyle(
-                                textAlign = TextAlign.Start, 
-                                fontSize = 14.sp
-                            ).copy(fontFamily = CairoFontFamily)
+                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start, fontSize = 13.sp)
                         )
 
                         if (index > 0) {
                             IconButton(
                                 onClick = { onRemovePhone(index) },
-                                modifier = Modifier.size(44.dp),
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.80f)
-                                )
+                                modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp),
+                                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = stringResource(id = R.string.biz_desc_delete_phone),
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }

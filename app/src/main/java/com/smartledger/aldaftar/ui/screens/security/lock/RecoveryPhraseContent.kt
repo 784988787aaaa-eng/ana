@@ -58,6 +58,7 @@ fun RecoveryPhraseContent(
     modifier: Modifier = Modifier
 ) {
     val mizanColors = MaterialTheme.mizanColors
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     Column(
         modifier = modifier
@@ -125,9 +126,7 @@ fun RecoveryPhraseContent(
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
-                    if (recoveryPhraseInput.isNotBlank()) {
-                        onVerifyClick()
-                    }
+                    keyboardController?.hide()
                 }
             )
         )

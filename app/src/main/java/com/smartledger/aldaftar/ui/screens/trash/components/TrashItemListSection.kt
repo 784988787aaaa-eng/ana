@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,7 +40,6 @@ import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.ui.screens.TrashFilterType
 import com.smartledger.aldaftar.ui.screens.TrashSortType
 import com.smartledger.aldaftar.ui.screens.trash.utils.ParsedTrashData
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 data class TrashWrapper(
     val entity: DeletedItemEntity,
@@ -61,7 +62,7 @@ fun TrashEmptyView(
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(76.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center
@@ -73,21 +74,19 @@ fun TrashEmptyView(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = stringResource(id = R.string.trash_empty_message),
-                fontFamily = CairoFontFamily,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(id = R.string.trash_clean_empty_subtitle),
-                fontFamily = CairoFontFamily,
-                fontSize = 12.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center
             )
         }
@@ -174,8 +173,7 @@ fun TrashItemListSection(
                                     contentColor = MaterialTheme.colorScheme.primary
                                 ),
                                 shape = RoundedCornerShape(12.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                                modifier = Modifier.height(40.dp)
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ArrowDownward,
@@ -185,8 +183,7 @@ fun TrashItemListSection(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = stringResource(id = R.string.trash_show_more_remaining, totalFilteredCount - itemsLimit),
-                                    fontFamily = CairoFontFamily,
-                                    fontSize = 12.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }

@@ -27,15 +27,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
-import com.smartledger.aldaftar.ui.theme.UniversalDialogHeader
-import com.smartledger.aldaftar.ui.theme.UniversalDialogSurface
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -71,11 +66,16 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.helper.BusinessProfileImageHelper
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfileInfoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfileLogoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfilePhonesSection
 import com.smartledger.aldaftar.ui.screens.settings.components.LogoCropDialog
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,14 +101,18 @@ fun BusinessProfileScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = stringResource(id = R.string.biz_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Right
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(end = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.biz_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(
@@ -148,25 +152,27 @@ fun BusinessProfileDialog(
     viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onDismiss: () -> Unit
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
-            onDismissRequest = onDismiss
-        ) { dismissDialog ->
-            UniversalDialogSurface(
-                isExpanded = false
-            ) {
-                UniversalDialogHeader(
-                    title = stringResource(id = R.string.biz_title),
-                    icon = Icons.Default.Business,
-                    onDismiss = dismissDialog
-                )
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            MizanDialogHeader(
+                title = stringResource(id = R.string.biz_title),
+                subtitle = stringResource(id = R.string.biz_desc_header),
+                icon = Icons.Default.Store,
+                iconTint = MaterialTheme.colorScheme.primary,
+                isCentered = true,
+                onCloseClick = dismissDialog
+            )
 
-                BusinessProfileForm(
-                    viewModel = viewModel,
-                    isDialog = true,
-                    onClose = onDismiss
-                )
-            }
+            BusinessProfileForm(
+                viewModel = viewModel,
+                isDialog = true,
+                onClose = dismissDialog
+            )
         }
     }
 }
@@ -212,8 +218,6 @@ private fun BusinessProfileForm(
         }
     }
 
-
-
     var pendingImageUri by remember { mutableStateOf<Uri?>(null) }
     var dialogState by remember { mutableStateOf<BusinessProfileDialogState>(BusinessProfileDialogState.None) }
 
@@ -242,6 +246,30 @@ private fun BusinessProfileForm(
         }
     }
 
+    val handleSave = {
+        if (bizName.isBlank()) {
+            Toast.makeText(context, context.getString(R.string.biz_toast_err_empty_name), Toast.LENGTH_SHORT).show()
+        } else {
+            coroutineScope.launch {
+                viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
+                Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
+                onClose()
+            }
+        }
+    }
+
+    val handleReset = {
+        coroutineScope.launch {
+            viewModel.resetProfile()
+            bizName = ""
+            bizDesc = ""
+            logoPath = ""
+            phoneList.clear()
+            logoBitmapState = null
+            Toast.makeText(context, context.getString(R.string.biz_reset_success), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -258,7 +286,7 @@ private fun BusinessProfileForm(
                 }
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         BusinessProfileLogoSection(
             logoBitmapState = logoBitmapState,
@@ -289,69 +317,56 @@ private fun BusinessProfileForm(
             activeThemeColor = activeThemeColor
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        if (isDialog) {
+            MizanDialogActions(
+                confirmText = stringResource(id = R.string.biz_btn_save),
+                onConfirm = { handleSave() },
+                confirmIcon = Icons.Default.Check,
+                cancelText = stringResource(id = R.string.common_cancel),
+                onCancel = onClose,
+                extraActionText = stringResource(id = R.string.biz_btn_reset),
+                onExtraAction = { handleReset() }
+            )
+        } else {
+            Spacer(modifier = Modifier.height(4.dp))
 
-        Button(
-            onClick = {
-                if (bizName.isBlank()) {
-                    Toast.makeText(context, context.getString(R.string.biz_toast_err_empty_name), Toast.LENGTH_SHORT).show()
-                    return@Button
-                }
-
-                coroutineScope.launch {
-                    viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
-                    Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
-                    onClose()
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .testTag("biz_save_button"),
-            colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Button(
+                onClick = { handleSave() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+                    .testTag("biz_save_button"),
+                colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        text = stringResource(id = R.string.biz_btn_save),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            androidx.compose.material3.OutlinedButton(
+                onClick = { handleReset() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Text(
-                    text = stringResource(id = R.string.biz_btn_save),
-                    fontFamily = CairoFontFamily,
-                    fontSize = 14.sp,
+                    text = stringResource(id = R.string.biz_btn_reset),
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        androidx.compose.material3.OutlinedButton(
-            onClick = {
-                coroutineScope.launch {
-                    viewModel.resetProfile()
-                    bizName = ""
-                    bizDesc = ""
-                    logoPath = ""
-                    phoneList.clear()
-                    logoBitmapState = null
-                    Toast.makeText(context, context.getString(R.string.biz_reset_success), Toast.LENGTH_SHORT).show()
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(42.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                text = stringResource(id = R.string.biz_btn_reset),
-                fontFamily = CairoFontFamily,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 

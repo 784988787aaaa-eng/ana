@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens.trash.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,7 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.TrashFilterType
 import com.smartledger.aldaftar.ui.screens.TrashSortType
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 @Composable
 fun TrashFilterToolbar(
@@ -57,7 +59,7 @@ fun TrashFilterToolbar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp)
+            .padding(horizontal = 16.dp, vertical = 2.dp)
             .horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -76,16 +78,15 @@ fun TrashFilterToolbar(
                 },
                 shape = RoundedCornerShape(10.dp),
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                border = if (isSelected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                modifier = Modifier.height(32.dp)
+                border = if (isSelected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.height(30.dp)
             ) {
                 Box(
-                    modifier = Modifier.padding(horizontal = 11.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = label,
-                        fontFamily = CairoFontFamily,
                         fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -99,11 +100,11 @@ fun TrashFilterToolbar(
                 onClick = { showSortMenu = true },
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                modifier = Modifier.height(32.dp)
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.height(30.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 9.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -115,15 +116,9 @@ fun TrashFilterToolbar(
                     )
                     Text(
                         text = stringResource(id = R.string.trash_sort_btn_label),
-                        fontFamily = CairoFontFamily,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "▾",
-                        fontSize = 9.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -132,7 +127,6 @@ fun TrashFilterToolbar(
                 expanded = showSortMenu,
                 onDismissRequest = { showSortMenu = false },
                 modifier = Modifier
-                    .shadow(6.dp, RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
@@ -158,9 +152,8 @@ fun TrashFilterToolbar(
                             ) {
                                 Text(
                                     text = sortLabel,
-                                    fontFamily = CairoFontFamily,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 12.sp,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
                                 if (isSelected) {
@@ -197,11 +190,11 @@ fun TrashFilterToolbar(
                 onClick = { showCleanupMenu = true },
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                modifier = Modifier.height(32.dp)
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.height(30.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 9.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -213,7 +206,6 @@ fun TrashFilterToolbar(
                     )
                     Text(
                         text = stringResource(R.string.trash_auto_cleanup_label, selectedCleanupLabel),
-                        fontFamily = CairoFontFamily,
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -230,8 +222,7 @@ fun TrashFilterToolbar(
                 expanded = showCleanupMenu,
                 onDismissRequest = { showCleanupMenu = false },
                 modifier = Modifier
-                    .width(170.dp)
-                    .shadow(6.dp, RoundedCornerShape(12.dp))
+                    .width(160.dp)
                     .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
@@ -259,8 +250,7 @@ fun TrashFilterToolbar(
                             ) {
                                 Text(
                                     text = periodName,
-                                    fontFamily = CairoFontFamily,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )

@@ -278,18 +278,6 @@ fun TransactionRecordDialog(
                             onDone = {
                                 focusManager.clearFocus()
                                 softwareKeyboardController?.hide()
-                                if (isConfirmButtonEnabled && parsedAmount.compareTo(BigDecimal.ZERO) > 0) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    isSavingTx = true
-                                    onSave(
-                                        editingTransaction?.id,
-                                        txDialogType,
-                                        categoryName,
-                                        parsedAmount,
-                                        descriptionStr
-                                    )
-                                    onDismiss()
-                                }
                             }
                         )
                     )

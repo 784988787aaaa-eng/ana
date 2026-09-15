@@ -70,9 +70,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
@@ -102,7 +99,6 @@ fun ExchangeRateSetupContent(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val haptic = LocalHapticFeedback.current
 
     val view = androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view) {
@@ -151,12 +147,11 @@ fun ExchangeRateSetupContent(
             modifier = modifier
                 .padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = currencyLabel,
-                fontFamily = CairoFontFamily,
-                fontSize = 12.5.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = activeThemeColor,
                 textAlign = TextAlign.Center,
@@ -166,10 +161,10 @@ fun ExchangeRateSetupContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
-                    .border(1.dp, inputBorderColor, RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                    .defaultMinSize(minHeight = 36.dp)
+                    .border(1.dp, inputBorderColor, RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
                 BasicTextField(
@@ -188,10 +183,8 @@ fun ExchangeRateSetupContent(
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(activeThemeColor),
                     textStyle = TextStyle(
                         textAlign = TextAlign.Center,
-                        fontFamily = CairoFontFamily,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum",
                         color = activeThemeColor
                     ),
                     keyboardOptions = KeyboardOptions(
@@ -212,8 +205,7 @@ fun ExchangeRateSetupContent(
                             if (rateStr.isEmpty()) {
                                 Text(
                                     text = stringResource(id = R.string.habayeb_exchange_rate_placeholder),
-                                    fontFamily = CairoFontFamily,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                     textAlign = TextAlign.Center
                                 )
@@ -227,40 +219,28 @@ fun ExchangeRateSetupContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (isChecked) mizanColors.creditContainer.copy(alpha = 0.45f)
-                        else Color.Transparent
-                    )
-                    .border(
-                        1.dp,
-                        if (isChecked) mizanColors.credit.copy(alpha = 0.5f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                        RoundedCornerShape(8.dp)
-                    )
+                    .clip(RoundedCornerShape(4.dp))
                     .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         isChecked = !isChecked
                         if (isChecked) {
                             showUncheckedError = false
                         }
                     }
-                    .padding(horizontal = 8.dp),
+                    .padding(vertical = 4.dp, horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
                 Box(
                     modifier = Modifier
-                        .size(18.dp)
+                        .size(16.dp)
                         .border(
-                            width = 1.5.dp,
+                            width = 1.dp,
                             color = statusColor,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(3.dp)
                         )
                         .background(
                             color = if (isChecked) statusColor else Color.Transparent,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(3.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -269,17 +249,16 @@ fun ExchangeRateSetupContent(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(10.dp)
                         )
                     }
                 }
                 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 
                 Text(
                     text = stringResource(id = R.string.habayeb_confirm_exchange_rate_question),
-                    fontFamily = CairoFontFamily,
-                    fontSize = 11.5.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = statusColor,
                     textAlign = TextAlign.Start
@@ -288,19 +267,18 @@ fun ExchangeRateSetupContent(
 
             Text(
                 text = stringResource(id = R.string.habayeb_exchange_rate_hint_text),
-                fontFamily = CairoFontFamily,
-                fontSize = 9.sp,
+                fontSize = 8.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                lineHeight = 12.sp
+                lineHeight = 10.sp
             )
 
             Spacer(modifier = Modifier.height(2.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 OutlinedButton(
                     onClick = onDismiss,
@@ -316,8 +294,7 @@ fun ExchangeRateSetupContent(
                 ) {
                     Text(
                         stringResource(id = R.string.habayeb_cancel),
-                        fontFamily = CairoFontFamily,
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
                     )
@@ -347,8 +324,7 @@ fun ExchangeRateSetupContent(
                 ) {
                     Text(
                         stringResource(id = R.string.habayeb_save),
-                        fontFamily = CairoFontFamily,
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
                     )

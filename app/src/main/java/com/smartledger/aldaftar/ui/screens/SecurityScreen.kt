@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,13 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import com.smartledger.aldaftar.ui.theme.UniversalDialogHeader
-import com.smartledger.aldaftar.ui.theme.UniversalDialogSurface
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -50,8 +46,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.HashUtils
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.screens.security.components.SecurityActivePanel
 import com.smartledger.aldaftar.ui.screens.security.components.SecuritySetupForm
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,11 +101,17 @@ fun SecurityScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = stringResource(id = R.string.sec_title),
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(end = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.sec_title),
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -232,84 +238,84 @@ fun SecurityDialog(
     var checkAcknowledged by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-        ) { dismissDialog ->
-            UniversalDialogSurface(
-                isExpanded = false
-            ) {
-                UniversalDialogHeader(
-                    title = stringResource(id = R.string.sec_title),
-                    icon = Icons.Default.Security,
-                    onDismiss = dismissDialog
-                )
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            MizanDialogHeader(
+                title = stringResource(id = R.string.sec_title),
+                subtitle = if (isAlreadyPasscodeEnabled && !isEditingPasscodeInDialog) "حماية التطبيق مُفعلة" else "إعداد قفل الأمان وكلمة المرور",
+                icon = Icons.Default.Security,
+                iconTint = MaterialTheme.colorScheme.primary,
+                isCentered = true,
+                onCloseClick = dismissDialog
+            )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (!isAlreadyPasscodeEnabled || isEditingPasscodeInDialog) {
-                        SecuritySetupForm(
-                            passcode = passcode,
-                            onPasscodeChange = { passcode = it },
-                            confirmPasscode = confirmPasscode,
-                            onConfirmPasscodeChange = { confirmPasscode = it },
-                            recoveryPhrase = recoveryPhrase,
-                            onRecoveryPhraseChange = { recoveryPhrase = it },
-                            recoveryHint = recoveryHint,
-                            onRecoveryHintChange = { recoveryHint = it },
-                            checkAcknowledged = checkAcknowledged,
-                            onCheckAcknowledgedChange = { checkAcknowledged = it },
-                            isSaving = isSaving,
-                            onSave = {
-                                val isValid = passcode.length == 4 &&
-                                        confirmPasscode == passcode &&
-                                        recoveryPhrase.isNotBlank() &&
-                                        checkAcknowledged &&
-                                        !isSaving
-                                if (isValid) {
-                                    isSaving = true
-                                    coroutineScope.launch {
-                                        val updated = withContext(Dispatchers.Default) {
-                                            buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
-                                        }
-                                        viewModel.saveSettings(updated)
-                                        isSaving = false
-                                        isEditingPasscodeInDialog = false
-                                        Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                        onDismiss()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (!isAlreadyPasscodeEnabled || isEditingPasscodeInDialog) {
+                    SecuritySetupForm(
+                        passcode = passcode,
+                        onPasscodeChange = { passcode = it },
+                        confirmPasscode = confirmPasscode,
+                        onConfirmPasscodeChange = { confirmPasscode = it },
+                        recoveryPhrase = recoveryPhrase,
+                        onRecoveryPhraseChange = { recoveryPhrase = it },
+                        recoveryHint = recoveryHint,
+                        onRecoveryHintChange = { recoveryHint = it },
+                        checkAcknowledged = checkAcknowledged,
+                        onCheckAcknowledgedChange = { checkAcknowledged = it },
+                        isSaving = isSaving,
+                        onSave = {
+                            val isValid = passcode.length == 4 &&
+                                    confirmPasscode == passcode &&
+                                    recoveryPhrase.isNotBlank() &&
+                                    checkAcknowledged &&
+                                    !isSaving
+                            if (isValid) {
+                                isSaving = true
+                                coroutineScope.launch {
+                                    val updated = withContext(Dispatchers.Default) {
+                                        buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                     }
+                                    viewModel.saveSettings(updated)
+                                    isSaving = false
+                                    isEditingPasscodeInDialog = false
+                                    Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
+                                    onDismiss()
                                 }
                             }
-                        )
-                    } else {
-                        SecurityActivePanel(
-                            currentSettings = currentSettings,
-                            viewModel = viewModel,
-                            onChangePasscode = {
-                                passcode = ""
-                                confirmPasscode = ""
-                                isEditingPasscodeInDialog = true
-                            },
-                            onDeactivateSecurity = {
-                                val updated = currentSettings.copy(
-                                    isPasscodeEnabled = false,
-                                    passcodeHash = null,
-                                    recoveryPhraseHash = null,
-                                    recoveryHint = null
-                                )
-                                viewModel.saveSettings(updated)
-                                isEditingPasscodeInDialog = false
-                                Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                    }
+                        }
+                    )
+                } else {
+                    SecurityActivePanel(
+                        currentSettings = currentSettings,
+                        viewModel = viewModel,
+                        onChangePasscode = {
+                            passcode = ""
+                            confirmPasscode = ""
+                            isEditingPasscodeInDialog = true
+                        },
+                        onDeactivateSecurity = {
+                            val updated = currentSettings.copy(
+                                isPasscodeEnabled = false,
+                                passcodeHash = null,
+                                recoveryPhraseHash = null,
+                                recoveryHint = null
+                            )
+                            viewModel.saveSettings(updated)
+                            isEditingPasscodeInDialog = false
+                            Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 }
             }
         }

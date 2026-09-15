@@ -2,14 +2,10 @@ package com.smartledger.aldaftar.ui.screens.security.components
 
 import android.widget.Toast
 import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +35,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -61,14 +61,12 @@ fun SecurityActivePanel(
 ) {
     val context = LocalContext.current
     val mizanColors = MaterialTheme.mizanColors
-    val haptic = LocalHapticFeedback.current
     var pendingAction by remember { mutableStateOf<SecurityActiveAction?>(null) }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
@@ -85,7 +83,7 @@ fun SecurityActivePanel(
 
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(48.dp)
                     .background(shieldBg, CircleShape)
                     .border(width = 1.dp, color = shieldBorder, shape = CircleShape),
                 contentAlignment = Alignment.Center
@@ -94,13 +92,12 @@ fun SecurityActivePanel(
                     imageVector = Icons.Default.VerifiedUser,
                     contentDescription = null,
                     tint = shieldTint,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             Text(
                 text = stringResource(id = R.string.sec_toast_active_success),
-                fontFamily = CairoFontFamily,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = activeText
@@ -108,7 +105,6 @@ fun SecurityActivePanel(
 
             Text(
                 text = stringResource(id = R.string.sec_card_desc_warning),
-                fontFamily = CairoFontFamily,
                 fontSize = 11.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 16.sp,
@@ -146,14 +142,12 @@ fun SecurityActivePanel(
                             Column {
                                 Text(
                                     text = stringResource(id = R.string.sec_biometric_title),
-                                    fontFamily = CairoFontFamily,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = stringResource(id = R.string.sec_biometric_desc),
-                                    fontFamily = CairoFontFamily,
                                     fontSize = 10.5.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -174,10 +168,7 @@ fun SecurityActivePanel(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
 
             OutlinedButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    pendingAction = SecurityActiveAction.CHANGE_PIN
-                },
+                onClick = { pendingAction = SecurityActiveAction.CHANGE_PIN },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -195,7 +186,6 @@ fun SecurityActivePanel(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.sec_btn_change_pin),
-                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -203,12 +193,9 @@ fun SecurityActivePanel(
             }
 
             OutlinedButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    pendingAction = SecurityActiveAction.DEACTIVATE
-                },
+                onClick = { pendingAction = SecurityActiveAction.DEACTIVATE },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = deactivateContent),
-                border = BorderStroke(1.dp, deactivateBorder),
+                border = androidx.compose.foundation.BorderStroke(1.dp, deactivateBorder),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -226,7 +213,6 @@ fun SecurityActivePanel(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.sec_deactivate_btn),
-                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -276,54 +262,31 @@ fun VerifyOldPinDialog(
     val pinFocusRequester = remember { FocusRequester() }
     val recoveryFocusRequester = remember { FocusRequester() }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .widthIn(max = 340.dp)
-                .heightIn(max = 580.dp)
-                .padding(8.dp)
-                .imePadding(),
-            shape = MizanDialogTokens.shape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
         ) {
+            MizanDialogHeader(
+                title = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(id = com.smartledger.aldaftar.R.string.sec_verify_change_pin) else stringResource(id = com.smartledger.aldaftar.R.string.sec_verify_disable_lock),
+                subtitle = if (!showRecoveryMode) stringResource(id = com.smartledger.aldaftar.R.string.sec_verify_pin_prompt) else stringResource(id = com.smartledger.aldaftar.R.string.sec_verify_recovery_prompt),
+                icon = Icons.Default.Lock,
+                iconTint = MaterialTheme.colorScheme.primary,
+                isCentered = true,
+                onCloseClick = dismissDialog
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(18.dp),
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.desc_close), modifier = Modifier.size(20.dp))
-                    }
-                    Text(
-                        text = if (action == SecurityActiveAction.CHANGE_PIN) stringResource(id = R.string.sec_verify_change_pin) else stringResource(id = R.string.sec_verify_disable_lock),
-                        fontFamily = CairoFontFamily,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Text(
-                    text = if (!showRecoveryMode) stringResource(id = R.string.sec_verify_pin_prompt) else stringResource(id = R.string.sec_verify_recovery_prompt),
-                    fontFamily = CairoFontFamily,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-
                 if (!showRecoveryMode) {
                     OutlinedTextField(
                         value = pinInput,
@@ -333,14 +296,11 @@ fun VerifyOldPinDialog(
                                 pinInput = clean
                             }
                         },
-                        label = { Text(stringResource(id = R.string.sec_current_pin_label), fontFamily = CairoFontFamily, fontSize = 12.sp) },
-                        placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                        label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_current_pin_label), fontSize = 12.sp) },
+                        placeholder = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_placeholder_code), fontSize = 12.sp) },
                         singleLine = true,
                         trailingIcon = {
-                            IconButton(
-                                onClick = { pinVisible = !pinVisible },
-                                modifier = Modifier.size(44.dp)
-                            ) {
+                            IconButton(onClick = { pinVisible = !pinVisible }) {
                                 Icon(
                                     imageVector = if (pinVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = null,
@@ -348,21 +308,15 @@ fun VerifyOldPinDialog(
                                 )
                             }
                         },
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontFamily = CairoFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Bold),
                         visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            if (onVerify(pinInput)) {
-                                onSuccess()
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.sec_toast_incorrect_current_pin), Toast.LENGTH_SHORT).show()
-                                pinInput = ""
-                            }
+                            focusManager.clearFocus()
                         }),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MizanDialogTokens.inputShape,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
                             .focusRequester(pinFocusRequester)
                     )
 
@@ -373,8 +327,7 @@ fun VerifyOldPinDialog(
                         modifier = Modifier.padding(top = 2.dp)
                     ) {
                         Text(
-                            text = stringResource(id = R.string.sec_forgot_pin_recovery_link),
-                            fontFamily = CairoFontFamily,
+                            text = stringResource(id = com.smartledger.aldaftar.R.string.sec_forgot_pin_recovery_link),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -384,13 +337,16 @@ fun VerifyOldPinDialog(
                     OutlinedTextField(
                         value = recoveryInput,
                         onValueChange = { recoveryInput = it.toEnglishDigits() },
-                        label = { Text(stringResource(id = R.string.sec_recovery_phrase_label), fontFamily = CairoFontFamily, fontSize = 12.sp) },
-                        placeholder = { Text(stringResource(id = R.string.sec_recovery_phrase_placeholder), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                        label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_recovery_phrase_label), fontSize = 12.sp) },
+                        placeholder = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_recovery_phrase_placeholder), fontSize = 12.sp) },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MizanDialogTokens.inputShape,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                        }),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
                             .focusRequester(recoveryFocusRequester)
                     )
 
@@ -406,8 +362,7 @@ fun VerifyOldPinDialog(
                             Icon(imageVector = Icons.Default.Lightbulb, contentDescription = null, tint = mizanColors.warning, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (showHint) stringResource(id = R.string.sec_hint_display_pattern, recoveryHint) else stringResource(id = R.string.sec_hint_toggle_show),
-                                fontFamily = CairoFontFamily,
+                                text = if (showHint) stringResource(id = com.smartledger.aldaftar.R.string.sec_hint_display_pattern, recoveryHint) else stringResource(id = com.smartledger.aldaftar.R.string.sec_hint_toggle_show),
                                 fontSize = 12.sp,
                                 color = mizanColors.warning,
                                 fontWeight = FontWeight.Medium
@@ -416,44 +371,28 @@ fun VerifyOldPinDialog(
                     }
 
                     TextButton(onClick = { showRecoveryMode = false }) {
-                        Text(stringResource(id = R.string.sec_back_to_passcode_btn), fontFamily = CairoFontFamily, fontSize = 12.sp)
+                        Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_back_to_passcode_btn), fontSize = 12.sp)
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(stringResource(id = R.string.sec_btn_cancel), fontFamily = CairoFontFamily, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    }
+                Spacer(modifier = Modifier.height(2.dp))
 
-                    Button(
-                        onClick = {
-                            val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
-                            if (targetInput.isNotBlank() && onVerify(targetInput)) {
-                                onSuccess()
-                            } else {
-                                val msg = if (!showRecoveryMode) context.getString(R.string.sec_toast_incorrect_current_pin) else context.getString(R.string.sec_toast_incorrect_recovery)
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
-                            }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text(stringResource(id = R.string.sec_btn_confirm), fontFamily = CairoFontFamily, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
+                MizanDialogActions(
+                    confirmText = stringResource(id = com.smartledger.aldaftar.R.string.sec_btn_confirm),
+                    onConfirm = {
+                        val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
+                        if (targetInput.isNotBlank() && onVerify(targetInput)) {
+                            onSuccess()
+                        } else {
+                            val msg = if (!showRecoveryMode) context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_current_pin) else context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_recovery)
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
+                        }
+                    },
+                    confirmEnabled = if (!showRecoveryMode) pinInput.length == 4 else recoveryInput.isNotBlank(),
+                    cancelText = stringResource(id = com.smartledger.aldaftar.R.string.sec_btn_cancel),
+                    onCancel = dismissDialog
+                )
             }
         }
     }

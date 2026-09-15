@@ -1,41 +1,45 @@
 package com.smartledger.aldaftar.ui.screens.ledger.components
 
 import android.util.Log
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
-import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
-import java.math.BigDecimal
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import java.math.BigDecimal
 
 private const val TAG = "CommitmentEditDialog"
 
@@ -114,7 +118,7 @@ fun CommitmentEditDialog(
             progressValue >= BigDecimal.ZERO &&
             progressValue <= targetValue
 
-    val view = androidx.compose.ui.platform.LocalView.current
+    val view = LocalView.current
     DisposableEffect(Unit) {
         val window = (view.parent as? DialogWindowProvider)?.window
         window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -123,14 +127,14 @@ fun CommitmentEditDialog(
 
     LaunchedEffect(editingCommitment) {
         try {
-            com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard(
+            requestFocusAndShowKeyboard(
                 focusRequester = amountFocus,
                 keyboardController = keyboardController
             )
         } catch (e: Exception) { Log.w(TAG, "Focus failed: ${e.message}") }
     }
 
-    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+    MizanAnimatedDialog(
         onDismissRequest = onDismissRequest
     ) { dismiss ->
         val executeSave = {
@@ -143,124 +147,91 @@ fun CommitmentEditDialog(
             }
         }
 
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Surface(
-                modifier = modifier.fillMaxWidth(0.90f).widthIn(max = 340.dp).clip(MizanDialogTokens.shape),
-                shape = MizanDialogTokens.shape,
-                shadowElevation = 10.dp,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            MizanDialogHeader(
+                title = if (editingCommitment != null) stringResource(R.string.ledger_commitment_dialog_title_edit)
+                else stringResource(R.string.ledger_commitment_dialog_title_add),
+                subtitle = if (editingCommitment != null) stringResource(R.string.ledger_commitment_edit_hint)
+                else stringResource(R.string.ledger_commitment_add_hint),
+                icon = if (editingCommitment != null) Icons.Default.EditNote else Icons.Default.Assignment,
+                iconTint = MaterialTheme.colorScheme.primary,
+                onCloseClick = dismiss
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                if (editingCommitment != null) stringResource(R.string.ledger_commitment_dialog_title_edit)
-                                else stringResource(R.string.ledger_commitment_dialog_title_add),
-                                fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                if (editingCommitment != null) stringResource(R.string.ledger_commitment_edit_hint)
-                                else stringResource(R.string.ledger_commitment_add_hint),
-                                fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        TextButton(onClick = dismiss, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                            Text(stringResource(R.string.common_cancel), fontSize = 12.sp)
-                        }
-                    }
+                CompactCommitmentField(
+                    value = target,
+                    onValueChange = { sanitizeAmount(it) { target = it } },
+                    placeholder = stringResource(R.string.ledger_commitment_target_amount_label),
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                    focusRequester = amountFocus,
+                    onNext = {
+                        if (editingCommitment == null) nameFocus.requestFocus()
+                        else progressFocus.requestFocus()
+                    },
+                    textAlign = TextAlign.Center
+                )
 
-                    CompactCommitmentField(
-                        value = target, onValueChange = { sanitizeAmount(it) { target = it } },
-                        placeholder = stringResource(R.string.ledger_commitment_target_amount_label),
-                        keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next,
-                        focusRequester = amountFocus,
-                        onNext = {
-                            if (editingCommitment == null) nameFocus.requestFocus()
-                            else progressFocus.requestFocus()
-                        },
-                        textAlign = TextAlign.Center
+                CompactCommitmentField(
+                    value = name,
+                    onValueChange = { if (editingCommitment == null) name = it },
+                    placeholder = stringResource(R.string.ledger_commitment_name_label),
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
+                    focusRequester = nameFocus,
+                    enabled = editingCommitment == null,
+                    onNext = { progressFocus.requestFocus() }
+                )
+                if (editingCommitment == null && name.text.isBlank() && targetValue > BigDecimal.ZERO) {
+                    Text(
+                        text = stringResource(R.string.ledger_commitment_name_label) + " *",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 4.dp)
                     )
-
-                    CompactCommitmentField(
-                        value = name, onValueChange = { if (editingCommitment == null) name = it },
-                        placeholder = stringResource(R.string.ledger_commitment_name_label),
-                        keyboardType = KeyboardType.Text, imeAction = ImeAction.Next,
-                        focusRequester = nameFocus, enabled = editingCommitment == null,
-                        onNext = { progressFocus.requestFocus() }
-                    )
-                    if (editingCommitment == null && name.text.isBlank() && targetValue > BigDecimal.ZERO) {
-                        Text(
-                            text = stringResource(R.string.ledger_commitment_name_label) + " *",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
-                    }
-
-                    CompactCommitmentField(
-                        value = progress, onValueChange = { sanitizeAmount(it) { progress = it } },
-                        placeholder = stringResource(R.string.ledger_commitment_current_progress_label),
-                        keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done,
-                        focusRequester = progressFocus,
-                        onNext = {
-                            if (valid) {
-                                executeSave()
-                            } else {
-                                focusManager.clearFocus()
-                            }
-                        },
-                        textAlign = TextAlign.Center
-                    )
-
-                    if (progressValue > targetValue && targetValue > BigDecimal.ZERO) {
-                        Text(stringResource(R.string.ledger_commitment_progress_exceeds_target), fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.error, modifier = Modifier.fillMaxWidth())
-                    }
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(
-                            onClick = dismiss,
-                            shape = MizanDialogTokens.buttonShape,
-                            modifier = Modifier.weight(1f).height(MizanDialogTokens.buttonHeight),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(
-                                stringResource(R.string.common_cancel),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
-                            )
-                        }
-
-                        Button(
-                            onClick = { executeSave() },
-                            enabled = valid,
-                            shape = MizanDialogTokens.buttonShape,
-                            modifier = Modifier.weight(1.35f).height(MizanDialogTokens.buttonHeight),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(
-                                if (editingCommitment != null) stringResource(R.string.ledger_commitment_dialog_save_edit)
-                                else stringResource(R.string.ledger_commitment_dialog_save_goal),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                        }
-                    }
-
                 }
+
+                CompactCommitmentField(
+                    value = progress,
+                    onValueChange = { sanitizeAmount(it) { progress = it } },
+                    placeholder = stringResource(R.string.ledger_commitment_current_progress_label),
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done,
+                    focusRequester = progressFocus,
+                    onNext = {
+                        focusManager.clearFocus()
+                    },
+                    textAlign = TextAlign.Center
+                )
+
+                if (progressValue > targetValue && targetValue > BigDecimal.ZERO) {
+                    Text(
+                        text = stringResource(R.string.ledger_commitment_progress_exceeds_target),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                MizanDialogActions(
+                    confirmText = if (editingCommitment != null) stringResource(R.string.ledger_commitment_dialog_save_edit)
+                    else stringResource(R.string.ledger_commitment_dialog_save_goal),
+                    onConfirm = { executeSave() },
+                    confirmEnabled = valid,
+                    cancelText = stringResource(R.string.common_cancel),
+                    onCancel = dismiss
+                )
             }
         }
     }
@@ -285,7 +256,10 @@ private fun CompactCommitmentField(
         singleLine = true,
         placeholder = { Text(placeholder, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .68f)) },
         shape = MizanDialogTokens.buttonShape,
-        modifier = Modifier.fillMaxWidth().height(46.dp).focusRequester(focusRequester),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onNext() }),
         textStyle = TextStyle(fontSize = 12.5.sp, fontWeight = FontWeight.Medium, textAlign = textAlign),

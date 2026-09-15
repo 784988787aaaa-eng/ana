@@ -14,7 +14,7 @@ object FinanceConstants {
     const val EXTRA_NAVIGATE_TO = "navigate_to"
     const val DEST_BACKUP_SETTINGS = "backup_settings"
 
-    const val DEFAULT_FALLBACK_VERSION = "1.2"
+    const val DEFAULT_FALLBACK_VERSION = "1.0.0"
     
     const val DEFAULT_CURRENCY_CODE = "DEFAULT"
     const val FALLBACK_CURRENCY_SYMBOL = "ر.ي"

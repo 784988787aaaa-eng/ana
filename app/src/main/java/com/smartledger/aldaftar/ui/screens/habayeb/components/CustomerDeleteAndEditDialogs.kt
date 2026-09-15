@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -17,31 +18,31 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.platform.contacts.StringUtils
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
-import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 @Composable
@@ -57,68 +58,55 @@ fun CustomerDeleteConfirmationDialog(
     val mizanColors = MaterialTheme.mizanColors
     val debtRed = mizanColors.debt
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (isSingle) {
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismiss ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            MizanDialogHeader(
+                title = if (isSingle) {
                     stringResource(id = R.string.habayeb_delete_account_title)
                 } else {
                     stringResource(id = R.string.habayeb_bulk_delete_title)
                 },
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                icon = Icons.Default.Delete,
+                iconTint = debtRed,
+                onCloseClick = dismiss
             )
-        },
-        text = {
-            Text(
-                text = if (isSingle) {
-                    stringResource(id = R.string.habayeb_delete_account_confirm, singleCustomerName)
-                } else {
-                    stringResource(id = R.string.habayeb_bulk_delete_confirm, selectedCustomerIds.size)
-                },
-                fontSize = 13.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = debtRed,
-                    contentColor = mizanColors.onDebt
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = stringResource(id = R.string.habayeb_delete_yes),
-                    color = mizanColors.onDebt,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.5.sp
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.habayeb_cancel),
+                    text = if (isSingle) {
+                        stringResource(id = R.string.habayeb_delete_account_confirm, singleCustomerName)
+                    } else {
+                        stringResource(id = R.string.habayeb_bulk_delete_confirm, selectedCustomerIds.size)
+                    },
+                    fontSize = 13.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.5.sp
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                MizanDialogActions(
+                    confirmText = stringResource(id = R.string.habayeb_delete_yes),
+                    onConfirm = {
+                        onConfirm()
+                        dismiss()
+                    },
+                    confirmContainerColor = debtRed,
+                    confirmContentColor = mizanColors.onDebt,
+                    cancelText = stringResource(id = R.string.habayeb_cancel),
+                    onCancel = dismiss
                 )
             }
-        },
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = MizanDialogTokens.shape,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier
-            .fillMaxWidth(0.92f)
-            .widthIn(max = 360.dp)
-    )
+        }
+    }
 }
 
 @Composable
@@ -157,11 +145,11 @@ fun CustomerEditDialog(
 
     val editNameFocusRequester = remember { FocusRequester() }
     val editPhoneFocusRequester = remember { FocusRequester() }
-    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
-    val view = androidx.compose.ui.platform.LocalView.current
+    val view = LocalView.current
     DisposableEffect(view) {
-        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        val window = (view.parent as? DialogWindowProvider)?.window
         window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         onDispose {}
     }
@@ -177,218 +165,153 @@ fun CustomerEditDialog(
 
     RequestFocusAndShowKeyboard(focusRequester = editNameFocusRequester)
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = true
-        )
-    ) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Card(
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismiss ->
+        val handleSave = {
+            if (editedNameStr.trim().isNotBlank()) {
+                if (isDuplicateName) {
+                    Toast.makeText(context, context.getString(R.string.habayeb_error_duplicate_name), Toast.LENGTH_SHORT).show()
+                } else {
+                    isSaving = true
+                    keyboardController?.hide()
+                    onConfirm(editedNameStr.trim(), editedPhoneStr.trim())
+                    dismiss()
+                }
+            }
+        }
+
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            MizanDialogHeader(
+                title = stringResource(id = R.string.habayeb_edit_name_title),
+                icon = Icons.Default.Edit,
+                iconTint = activeThemeColor,
+                onCloseClick = dismiss
+            )
+
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(max = 360.dp)
-                    .navigationBarsPadding()
-                    .imePadding(),
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(activeThemeColor.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
+                Column {
+                    OutlinedTextField(
+                        value = editedNameTfv,
+                        onValueChange = { editedNameTfv = it },
+                        label = { Text(stringResource(id = R.string.habayeb_account_name), fontSize = 12.sp) },
+                        singleLine = true,
+                        isError = isDuplicateName && editedNameStr.isNotBlank(),
+                        shape = MizanDialogTokens.buttonShape,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { editPhoneFocusRequester.requestFocus() }),
+                        textStyle = LocalTextStyle.current.copy(
+                            fontSize = 13.5.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                        ),
+                        leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Edit,
+                                imageVector = Icons.Default.Person,
                                 contentDescription = null,
-                                tint = activeThemeColor,
+                                tint = activeThemeColor.copy(alpha = 0.8f),
                                 modifier = Modifier.size(20.dp)
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(editNameFocusRequester),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = activeThemeColor,
+                            focusedLabelColor = activeThemeColor,
+                            cursorColor = activeThemeColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            errorBorderColor = MaterialTheme.colorScheme.error
+                        )
+                    )
+                    if (isDuplicateName && editedNameStr.isNotBlank()) {
                         Text(
-                            text = stringResource(id = R.string.habayeb_edit_name_title),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = stringResource(id = R.string.habayeb_error_duplicate_name),
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(start = 8.dp, top = 2.dp)
                         )
-                    }
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Column {
-                            OutlinedTextField(
-                                value = editedNameTfv,
-                                onValueChange = { editedNameTfv = it },
-                                label = { Text(stringResource(id = R.string.habayeb_account_name)) },
-                                singleLine = true,
-                                isError = isDuplicateName && editedNameStr.isNotBlank(),
-                                shape = RoundedCornerShape(12.dp),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                keyboardActions = KeyboardActions(onNext = { editPhoneFocusRequester.requestFocus() }),
-                                textStyle = LocalTextStyle.current.copy(
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Start
-                                ),
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = null,
-                                        tint = activeThemeColor.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(editNameFocusRequester),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    focusedBorderColor = activeThemeColor,
-                                    focusedLabelColor = activeThemeColor,
-                                    cursorColor = activeThemeColor,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                                    errorBorderColor = MaterialTheme.colorScheme.error
-                                )
-                            )
-                            if (isDuplicateName && editedNameStr.isNotBlank()) {
-                                Text(
-                                    text = stringResource(id = R.string.habayeb_error_duplicate_name),
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontSize = 11.5.sp,
-                                    modifier = Modifier.padding(start = 8.dp, top = 4.dp)
-                                )
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = editedPhoneTfv,
-                            onValueChange = { editedPhoneTfv = it },
-                            label = { Text(stringResource(id = R.string.habayeb_phone_label)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Phone,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = { keyboardController?.hide() }
-                            ),
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Start
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = null,
-                                    tint = activeThemeColor.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { launchContactPicker() },
-                                    modifier = Modifier
-                                        .padding(4.dp)
-                                        .size(36.dp)
-                                        .background(
-                                            color = activeThemeColor.copy(alpha = 0.1f),
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Contacts,
-                                        contentDescription = stringResource(id = R.string.habayeb_contact_picker),
-                                        tint = activeThemeColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(editPhoneFocusRequester),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                focusedBorderColor = activeThemeColor,
-                                focusedLabelColor = activeThemeColor,
-                                cursorColor = activeThemeColor,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = onDismiss,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .padding(end = 6.dp)
-                                .height(MizanTouchTarget.standardButtonHeight)
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.habayeb_cancel),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 13.5.sp
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                if (editedNameStr.trim().isBlank()) return@Button
-                                if (isDuplicateName) {
-                                    Toast.makeText(context, context.getString(R.string.habayeb_error_duplicate_name), Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                                isSaving = true
-                                onConfirm(editedNameStr.trim(), editedPhoneStr.trim())
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = activeThemeColor,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 22.dp, vertical = 0.dp),
-                            modifier = Modifier.height(MizanTouchTarget.standardButtonHeight)
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.habayeb_save_edit),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontSize = 13.5.sp
-                            )
-                        }
                     }
                 }
+
+                OutlinedTextField(
+                    value = editedPhoneTfv,
+                    onValueChange = { editedPhoneTfv = it },
+                    label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 12.sp) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                        }
+                    ),
+                    textStyle = LocalTextStyle.current.copy(
+                        fontSize = 13.5.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                    ),
+                    shape = MizanDialogTokens.buttonShape,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = null,
+                            tint = activeThemeColor.copy(alpha = 0.8f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { launchContactPicker() },
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(34.dp)
+                                .background(
+                                    color = activeThemeColor.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Contacts,
+                                contentDescription = stringResource(id = R.string.habayeb_contact_picker),
+                                tint = activeThemeColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(editPhoneFocusRequester),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = activeThemeColor,
+                        focusedLabelColor = activeThemeColor,
+                        cursorColor = activeThemeColor,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                MizanDialogActions(
+                    confirmText = stringResource(id = R.string.habayeb_save_edit),
+                    onConfirm = handleSave,
+                    confirmEnabled = editedNameStr.trim().isNotBlank(),
+                    confirmContainerColor = activeThemeColor,
+                    cancelText = stringResource(id = R.string.habayeb_cancel),
+                    onCancel = dismiss
+                )
             }
         }
     }

@@ -4,35 +4,25 @@ import android.view.WindowManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -40,18 +30,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
-import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
-import kotlinx.coroutines.delay
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun MicroAddCategoryDialog(
@@ -63,16 +52,6 @@ fun MicroAddCategoryDialog(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val handleSave = remember(categoryName, onSave, onDismiss) {
-        {
-            val trimmed = categoryName.trim()
-            if (trimmed.isNotBlank()) {
-                onSave(trimmed)
-                onDismiss()
-            }
-        }
-    }
-
     val view = LocalView.current
     DisposableEffect(view) {
         val window = (view.parent as? DialogWindowProvider)?.window
@@ -81,44 +60,40 @@ fun MicroAddCategoryDialog(
     }
     RequestFocusAndShowKeyboard(focusRequester = focusRequester)
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = true
-        )
-    ) {
-        Card(
-            shape = MizanDialogTokens.shape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .widthIn(max = 360.dp)
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(vertical = 12.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.habayeb_category_add_title),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismiss ->
+        val handleSave = {
+            val trimmed = categoryName.trim()
+            if (trimmed.isNotBlank()) {
+                keyboardController?.hide()
+                onSave(trimmed)
+                dismiss()
+            }
+        }
 
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            MizanDialogHeader(
+                title = stringResource(R.string.habayeb_category_add_title),
+                icon = Icons.Default.Category,
+                iconTint = activeThemeColor,
+                onCloseClick = dismiss
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
                     placeholder = { Text(stringResource(R.string.habayeb_category_add_placeholder), fontSize = 13.5.sp) },
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
-                        fontSize = 14.5.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Start
                     ),
@@ -130,49 +105,24 @@ fun MicroAddCategoryDialog(
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { handleSave() }),
+                    keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        onClick = onDismiss,
-                        shape = MizanDialogTokens.buttonShape,
-                        modifier = Modifier.height(MizanDialogTokens.buttonHeight)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.habayeb_category_cancel),
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1
-                        )
-                    }
-                    Button(
-                        enabled = categoryName.trim().isNotBlank(),
-                        onClick = handleSave,
-                        colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-                        shape = MizanDialogTokens.buttonShape,
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        modifier = Modifier.height(MizanDialogTokens.buttonHeight)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.habayeb_category_save),
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            maxLines = 1
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(2.dp))
+
+                MizanDialogActions(
+                    confirmText = stringResource(R.string.habayeb_category_save),
+                    onConfirm = handleSave,
+                    confirmEnabled = categoryName.trim().isNotBlank(),
+                    cancelText = stringResource(R.string.habayeb_category_cancel),
+                    onCancel = dismiss
+                )
             }
         }
     }
 }
+
 

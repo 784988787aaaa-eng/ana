@@ -160,8 +160,8 @@ class BackupEngine(
     }
 
     private fun appVersion(): String = try {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
-    } catch (_: PackageManager.NameNotFoundException) { "1.0" }
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+    } catch (_: PackageManager.NameNotFoundException) { "1.0.0" }
 
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
     private fun JSONObject.array(name: String) = getJSONArray(name).let { array -> (0 until array.length()).map { array.getJSONObject(it) } }

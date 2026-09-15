@@ -23,7 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -32,9 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,30 +43,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.FixedCommitment
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.ledger.MonthLedger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
 
 private const val TAG = "MainLedgerDialogs"
 
@@ -82,77 +81,60 @@ fun DeleteDaysConfirmDialog(
     onSuccess: () -> Unit
 ) {
     if (showDeleteDaysDialog) {
-        AlertDialog(
-            shape = MizanDialogTokens.shape,
-            onDismissRequest = onDismiss,
-            modifier = Modifier
-                .fillMaxWidth(0.90f)
-                .widthIn(max = MizanDialogTokens.compactMaxWidth),
-            title = {
-                Text(
-                    text = stringResource(id = R.string.ledger_bulk_delete_days_title),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Right,
-                    modifier = Modifier.fillMaxWidth()
+        MizanAnimatedDialog(
+            onDismissRequest = onDismiss
+        ) { dismiss ->
+            MizanDialogCard(
+                maxWidth = MizanDialogTokens.compactMaxWidth,
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+            ) {
+                MizanDialogHeader(
+                    title = stringResource(id = R.string.ledger_bulk_delete_days_title),
+                    icon = Icons.Default.Delete,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    onCloseClick = dismiss
                 )
-            },
-            text = {
-                Text(
-                    text = stringResource(id = R.string.ledger_bulk_delete_days_msg),
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Right,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onDismiss()
-                        scope.launch {
-                            val txsToDelete = mutableListOf<String>()
-                            monthlyLedger.forEach { ml ->
-                                ml.days.forEach { day ->
-                                    val dayKey = "${ml.monthKey}_${day.dayNumber}"
-                                    if (selectedDayKeys.contains(dayKey)) {
-                                        day.transactions.forEach { tx ->
-                                            txsToDelete.add(tx.id)
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.ledger_bulk_delete_days_msg),
+                        fontSize = 12.5.sp,
+                        lineHeight = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    MizanDialogActions(
+                        confirmText = stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn),
+                        onConfirm = {
+                            dismiss()
+                            scope.launch {
+                                val txsToDelete = mutableListOf<String>()
+                                monthlyLedger.forEach { ml ->
+                                    ml.days.forEach { day ->
+                                        val dayKey = "${ml.monthKey}_${day.dayNumber}"
+                                        if (selectedDayKeys.contains(dayKey)) {
+                                            day.transactions.forEach { tx ->
+                                                txsToDelete.add(tx.id)
+                                            }
                                         }
                                     }
                                 }
+                                viewModel.deleteTransactionsBulk(txsToDelete, context.getString(R.string.ledger_bulk_delete_days_desc))
+                                onSuccess()
                             }
-                            viewModel.deleteTransactionsBulk(txsToDelete, context.getString(R.string.ledger_bulk_delete_days_desc))
-                            onSuccess()
-                        }
-                    },
-                    shape = MizanDialogTokens.buttonShape,
-                    modifier = Modifier.height(MizanDialogTokens.buttonHeight),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.ledger_bulk_delete_days_confirm_btn),
-                        color = MaterialTheme.colorScheme.onError,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.5.sp,
-                        maxLines = 1
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = onDismiss,
-                    shape = MizanDialogTokens.buttonShape,
-                    modifier = Modifier.height(MizanDialogTokens.buttonHeight)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.common_cancel),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.5.sp,
-                        maxLines = 1
+                        },
+                        confirmColor = MaterialTheme.colorScheme.error,
+                        cancelText = stringResource(id = R.string.common_cancel),
+                        onCancel = dismiss
                     )
                 }
             }
-        )
+        }
     }
 }
 
@@ -197,143 +179,89 @@ fun ReorderCommitmentDialog(
             }
         }
 
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = true
-            )
-        ) {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                Surface(
-                    modifier = Modifier
-                        .widthIn(max = MizanDialogTokens.compactMaxWidth)
-                        .fillMaxWidth(0.90f)
-                        .clip(MizanDialogTokens.shape),
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        MizanAnimatedDialog(
+            onDismissRequest = onDismiss
+        ) { dismiss ->
+            MizanDialogCard(
+                maxWidth = MizanDialogTokens.compactMaxWidth,
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+            ) {
+                MizanDialogHeader(
+                    title = stringResource(id = R.string.ledger_reorder_dialog_title),
+                    icon = Icons.Default.FormatListNumbered,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    onCloseClick = dismiss
+                )
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column(
+                    Text(
+                        text = stringResource(id = R.string.ledger_reorder_dialog_prompt, reorderCommitmentTarget.name),
+                        fontSize = 12.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+
+                    OutlinedTextField(
+                        value = targetPositionStr,
+                        onValueChange = {
+                            targetPositionStr = it
+                            errorMsg = ""
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
+                        singleLine = true,
+                        shape = MizanDialogTokens.inputShape,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .imePadding()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = MizanDialogTokens.outerPadding, vertical = MizanDialogTokens.compactPadding),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(MizanDialogTokens.verticalGap)
-                    ) {
+                            .width(88.dp)
+                            .height(MizanDialogTokens.inputHeight)
+                            .focusRequester(focusRequester),
+                        textStyle = TextStyle(
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        isError = errorMsg.isNotEmpty()
+                    )
+
+                    if (errorMsg.isNotEmpty()) {
                         Text(
-                            text = stringResource(id = R.string.ledger_reorder_dialog_title),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp,
+                            text = errorMsg,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
                             textAlign = TextAlign.Center
                         )
-
+                    } else {
                         Text(
-                            text = stringResource(id = R.string.ledger_reorder_dialog_prompt, reorderCommitmentTarget.name),
-                            fontSize = 12.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = "(من 1 إلى $commitmentsSize)",
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                             textAlign = TextAlign.Center
                         )
-
-                        OutlinedTextField(
-                            value = targetPositionStr,
-                            onValueChange = {
-                                targetPositionStr = it
-                                errorMsg = ""
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(onDone = { applyAction() }),
-                            singleLine = true,
-                            shape = MizanDialogTokens.inputShape,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent
-                            ),
-                            modifier = Modifier
-                                .width(88.dp)
-                                .height(MizanDialogTokens.inputHeight)
-                                .focusRequester(focusRequester),
-                            textStyle = TextStyle(
-                                textAlign = TextAlign.Center,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            isError = errorMsg.isNotEmpty()
-                        )
-
-                        if (errorMsg.isNotEmpty()) {
-                            Text(
-                                text = errorMsg,
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center
-                            )
-                        } else {
-                            Text(
-                                text = "(من 1 إلى $commitmentsSize)",
-                                fontSize = 11.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            OutlinedButton(
-                                onClick = onDismiss,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                                shape = MizanDialogTokens.buttonShape,
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(MizanDialogTokens.buttonHeight),
-                                contentPadding = PaddingValues(vertical = 0.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.common_cancel),
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1
-                                )
-                            }
-
-                            Button(
-                                onClick = { applyAction() },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = MizanDialogTokens.buttonShape,
-                                modifier = Modifier
-                                    .weight(1.2f)
-                                    .height(MizanDialogTokens.buttonHeight),
-                                contentPadding = PaddingValues(vertical = 0.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.ledger_reorder_apply),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
-                                )
-                            }
-                        }
                     }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    MizanDialogActions(
+                        confirmText = stringResource(id = R.string.ledger_reorder_apply),
+                        onConfirm = { applyAction() },
+                        cancelText = stringResource(id = R.string.common_cancel),
+                        onCancel = dismiss
+                    )
                 }
             }
         }

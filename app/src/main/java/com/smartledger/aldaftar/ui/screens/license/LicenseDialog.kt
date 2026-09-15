@@ -52,7 +52,9 @@ import com.smartledger.aldaftar.domain.license.LicenseSnapshot
 import com.smartledger.aldaftar.domain.license.LicenseStatus
 import com.smartledger.aldaftar.domain.license.LicenseType
 import com.smartledger.aldaftar.domain.license.RevocationReason
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
@@ -117,164 +119,144 @@ fun LicenseDialog(
         else -> "تفعيل الترخيص"
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
-    ) {
-        CompositionLocalProvider(
-            LocalLayoutDirection provides LayoutDirection.Rtl
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismiss ->
+        MizanDialogCard(
+            maxWidth = 420.dp,
+            maxHeight = 640.dp,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(max = 420.dp)
-                    .wrapContentHeight()
-                    .heightIn(max = 640.dp),
-                shape = MizanDialogTokens.shape,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(
-                    1.dp,
-                    if (state.isPaid) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-                ),
-                tonalElevation = 4.dp
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    // 1. Header
-                    CompactLicenseHeader(
-                        title = title,
-                        active = state.isPaid,
-                        onDismiss = onDismiss
+                // 1. Header
+                CompactLicenseHeader(
+                    title = title,
+                    active = state.isPaid,
+                    onDismiss = dismiss
+                )
+
+                if (state.isPaid) {
+                    // 2. Active License Card (Lifetime or active Trial)
+                    ActiveLicenseCompactCard(
+                        snapshot = state,
+                        session = session,
+                        onSignOut = { viewModel.signOutUnified() }
+                    )
+                } else {
+                    // 3. State Banner (Trial count or Alert)
+                    CompactStateBanner(
+                        snapshot = state,
+                        isExpired = state.isTrialExpired,
+                        isRevoked = state.status == LicenseStatus.REVOKED,
+                        isVerification = state.status == LicenseStatus.VERIFICATION_REQUIRED
                     )
 
-                    if (state.isPaid) {
-                        // 2. Active License Card (Lifetime or active Trial)
-                        ActiveLicenseCompactCard(
-                            snapshot = state,
+                    // 4. Mode Selector Tabs
+                    CompactModeTabs(
+                        selected = selectedMode,
+                        onSelected = {
+                            selectedMode = it
+                            viewModel.clearMessage()
+                        }
+                    )
+
+                    // 5. Mode Content
+                    if (selectedMode == 0) {
+                        UnifiedAccountLoginSection(
                             session = session,
-                            onSignOut = { viewModel.signOutUnified() }
-                        )
-                    } else {
-                        // 3. State Banner (Trial count or Alert)
-                        CompactStateBanner(
                             snapshot = state,
-                            isExpired = state.isTrialExpired,
-                            isRevoked = state.status == LicenseStatus.REVOKED,
-                            isVerification = state.status == LicenseStatus.VERIFICATION_REQUIRED
-                        )
-
-                        // 4. Mode Selector Tabs
-                        CompactModeTabs(
-                            selected = selectedMode,
-                            onSelected = {
-                                selectedMode = it
-                                viewModel.clearMessage()
+                            activationCode = activationCode,
+                            busy = busy,
+                            onActivationChange = { activationCode = it },
+                            onSignInGoogle = {
+                                googleSignInLauncher.launch(googleClient.signInIntent)
+                            },
+                            onSignOutGoogle = {
+                                viewModel.signOutUnified()
+                            },
+                            onCheckCloudLicense = {
+                                viewModel.checkCloudLicense()
+                            },
+                            onActivate = {
+                                viewModel.activateWithCode(activationCode)
                             }
                         )
-
-                        // 5. Mode Content
-                        if (selectedMode == 0) {
-                            UnifiedAccountLoginSection(
-                                session = session,
-                                snapshot = state,
-                                activationCode = activationCode,
-                                busy = busy,
-                                onActivationChange = { activationCode = it },
-                                onSignInGoogle = {
-                                    googleSignInLauncher.launch(googleClient.signInIntent)
-                                },
-                                onSignOutGoogle = {
-                                    viewModel.signOutUnified()
-                                },
-                                onCheckCloudLicense = {
-                                    viewModel.checkCloudLicense()
-                                },
-                                onActivate = {
-                                    viewModel.activateWithCode(activationCode)
-                                }
-                            )
-                        } else {
-                            SignedTokenCompactSection(
-                                token = signedToken,
-                                busy = busy,
-                                onTokenChange = { signedToken = it },
-                                onActivate = {
-                                    viewModel.applyToken(signedToken)
-                                }
-                            )
-                        }
-
-                        // 6. Compact Device Code Row
-                        CompactDeviceCodeRow(
-                            deviceCode = viewModel.deviceCode(),
-                            onCopy = {
-                                clipboard.setText(AnnotatedString(viewModel.deviceCode()))
-                                Toast.makeText(context, "تم نسخ رمز الجهاز", Toast.LENGTH_SHORT).show()
-                            }
-                        )
-
-                        // 7. WhatsApp Support Button
-                        CompactWhatsAppButton(
-                            context = context,
-                            email = session.email,
-                            accountCode = session.accountCode ?: state.accountCode,
-                            deviceCode = viewModel.deviceCode()
-                        )
-                    }
-
-                    // 8. Progress Bar
-                    if (busy) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .clip(RoundedCornerShape(2.dp)),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    // 9. Message / Error Banner
-                    if (!message.isNullOrBlank()) {
-                        CompactMessageBanner(
-                            message = message!!,
-                            isError = !state.isPaid
-                        )
-                    }
-
-                    // 10. Bottom Action Button
-                    if (state.isPaid) {
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(44.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Check, null, Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("إغلاق", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
                     } else {
-                        OutlinedButton(
-                            onClick = onDismiss,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(44.dp),
-                            shape = RoundedCornerShape(11.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        ) {
-                            Text("المتابعة لاحقًا", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        SignedTokenCompactSection(
+                            token = signedToken,
+                            busy = busy,
+                            onTokenChange = { signedToken = it },
+                            onActivate = {
+                                viewModel.applyToken(signedToken)
+                            }
+                        )
+                    }
+
+                    // 6. Compact Device Code Row
+                    CompactDeviceCodeRow(
+                        deviceCode = viewModel.deviceCode(),
+                        onCopy = {
+                            clipboard.setText(AnnotatedString(viewModel.deviceCode()))
+                            Toast.makeText(context, "تم نسخ رمز الجهاز", Toast.LENGTH_SHORT).show()
                         }
+                    )
+
+                    // 7. WhatsApp Support Button
+                    CompactWhatsAppButton(
+                        context = context,
+                        email = session.email,
+                        accountCode = session.accountCode ?: state.accountCode,
+                        deviceCode = viewModel.deviceCode()
+                    )
+                }
+
+                // 8. Progress Bar
+                if (busy) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // 9. Message / Error Banner
+                if (!message.isNullOrBlank()) {
+                    CompactMessageBanner(
+                        message = message!!,
+                        isError = !state.isPaid
+                    )
+                }
+
+                // 10. Bottom Action Button
+                if (state.isPaid) {
+                    Button(
+                        onClick = dismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(MizanDialogTokens.buttonHeight),
+                        shape = MizanDialogTokens.buttonShape
+                    ) {
+                        Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("إغلاق", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = dismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(MizanDialogTokens.buttonHeight),
+                        shape = MizanDialogTokens.buttonShape,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    ) {
+                        Text("المتابعة لاحقًا", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -666,50 +648,24 @@ private fun UnifiedAccountLoginSection(
             }
 
             // Manual Activation code field (Only shown for unlicensed accounts)
-            val clipboardManager = LocalClipboardManager.current
             Text(
                 text = if (snapshot.activationRequired) "أدخل كود التفعيل لتفعيل حسابك لأول مرة:" else "أو أدخل كود التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
-                fontFamily = CairoFontFamily,
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             OutlinedTextField(
                 value = activationCode,
-                onValueChange = { onActivationChange(it.uppercase()) },
+                onValueChange = onActivationChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .focusRequester(activationFocusRequester),
                 singleLine = true,
                 enabled = !busy,
-                textStyle = androidx.compose.ui.text.TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 1.5.sp,
-                    fontSize = 13.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                ),
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            val clipText = clipboardManager.getText()?.text
-                            if (!clipText.isNullOrBlank()) {
-                                onActivationChange(clipText.trim().uppercase())
-                            }
-                        },
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentPaste,
-                            contentDescription = "لصق كود التفعيل",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                },
-                label = { Text("رمز التفعيل (من المطور)", fontFamily = CairoFontFamily, fontSize = 11.sp) },
-                placeholder = { Text("أدخل رمز التفعيل هنا...", fontFamily = FontFamily.Monospace, fontSize = 11.sp) },
-                shape = RoundedCornerShape(12.dp)
+                label = { Text("رمز التفعيل (من المطور)", fontSize = 11.sp) },
+                placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 11.sp) },
+                shape = RoundedCornerShape(10.dp)
             )
 
             RequestFocusAndShowKeyboard(
@@ -722,21 +678,12 @@ private fun UnifiedAccountLoginSection(
                 enabled = !busy && activationCode.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                if (busy) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Icon(Icons.Default.LockOpen, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("تفعيل الترخيص للحساب", fontFamily = CairoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                }
+                Icon(Icons.Default.LockOpen, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("تفعيل الترخيص للحساب", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -750,7 +697,6 @@ private fun SignedTokenCompactSection(
     onActivate: () -> Unit
 ) {
     val tokenFocusRequester = remember { FocusRequester() }
-    val clipboardManager = LocalClipboardManager.current
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -766,31 +712,9 @@ private fun SignedTokenCompactSection(
             minLines = 2,
             maxLines = 3,
             enabled = !busy,
-            trailingIcon = {
-                IconButton(
-                    onClick = {
-                        val clipText = clipboardManager.getText()?.text
-                        if (!clipText.isNullOrBlank()) {
-                            onTokenChange(clipText.trim())
-                        }
-                    },
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentPaste,
-                        contentDescription = "لصق رمز الترخيص",
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            },
-            textStyle = androidx.compose.ui.text.TextStyle(
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 1.sp,
-                fontSize = 12.sp
-            ),
-            label = { Text("رمز الترخيص المحلي", fontFamily = CairoFontFamily, fontSize = 11.sp) },
-            placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontFamily = CairoFontFamily, fontSize = 11.sp) },
-            shape = RoundedCornerShape(12.dp)
+            label = { Text("رمز الترخيص المحلي", fontSize = 11.sp) },
+            placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 11.sp) },
+            shape = RoundedCornerShape(10.dp)
         )
 
         RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy)
@@ -800,21 +724,12 @@ private fun SignedTokenCompactSection(
             enabled = !busy && token.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                .height(44.dp),
+            shape = RoundedCornerShape(10.dp)
         ) {
-            if (busy) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Icon(Icons.Default.VpnKey, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("تفعيل برمز الترخيص", fontFamily = CairoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
+            Icon(Icons.Default.VpnKey, null, Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("تفعيل برمز الترخيص", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

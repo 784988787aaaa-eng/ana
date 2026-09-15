@@ -2,7 +2,6 @@ package com.smartledger.aldaftar.ui.screens.business
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,10 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
-
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
-import com.smartledger.aldaftar.ui.theme.arabicInputTextStyle
-import com.smartledger.aldaftar.ui.theme.universalTextFieldColors
 
 private const val MAX_BIZ_NAME_LENGTH = 40
 private const val MAX_BIZ_DESC_LENGTH = 45
@@ -67,48 +62,31 @@ fun BusinessProfileInfoSection(
             OutlinedTextField(
                 value = bizName,
                 onValueChange = { if (it.length <= MAX_BIZ_NAME_LENGTH) onBizNameChange(it) },
-                label = { 
-                    Text(
-                        text = stringResource(id = R.string.biz_label_name), 
-                        fontFamily = CairoFontFamily,
-                        fontSize = 13.sp 
-                    ) 
-                },
-                placeholder = { 
-                    Text(
-                        text = stringResource(id = R.string.biz_placeholder_name), 
-                        fontFamily = CairoFontFamily,
-                        fontSize = 13.sp 
-                    ) 
-                },
+                label = { Text(text = stringResource(id = R.string.biz_label_name), fontSize = 13.sp) },
+                placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_name), fontSize = 13.sp) },
                 supportingText = {
                     Text(
                         text = "${bizName.length}/$MAX_BIZ_NAME_LENGTH",
-                        fontFamily = CairoFontFamily,
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Start
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = 56.dp)
                     .testTag("biz_name_input")
                     .focusRequester(dialogNameFocusRequester),
-                colors = universalTextFieldColors(primary = activeThemeColor),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = activeThemeColor,
+                    focusedLabelColor = activeThemeColor,
+                    cursorColor = activeThemeColor
+                ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                textStyle = arabicInputTextStyle(
-                    textAlign = TextAlign.Start, 
-                    fontSize = 14.sp
-                ).copy(
-                    fontFamily = CairoFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 22.sp
-                )
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
             )
 
             if (isDialog) {
@@ -118,48 +96,31 @@ fun BusinessProfileInfoSection(
             OutlinedTextField(
                 value = bizDesc,
                 onValueChange = { if (it.length <= MAX_BIZ_DESC_LENGTH) onBizDescChange(it) },
-                label = { 
-                    Text(
-                        text = stringResource(id = R.string.biz_label_desc), 
-                        fontFamily = CairoFontFamily,
-                        fontSize = 13.sp 
-                    ) 
-                },
-                placeholder = { 
-                    Text(
-                        text = stringResource(id = R.string.biz_placeholder_desc), 
-                        fontFamily = CairoFontFamily,
-                        fontSize = 13.sp 
-                    ) 
-                },
+                label = { Text(text = stringResource(id = R.string.biz_label_desc), fontSize = 13.sp) },
+                placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_desc), fontSize = 13.sp) },
                 supportingText = {
                     Text(
                         text = "${bizDesc.length}/$MAX_BIZ_DESC_LENGTH",
-                        fontFamily = CairoFontFamily,
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Start
                     )
                 },
                 singleLine = true,
                 maxLines = 1,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = 56.dp)
                     .testTag("biz_desc_input"),
-                colors = universalTextFieldColors(primary = activeThemeColor),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = activeThemeColor,
+                    focusedLabelColor = activeThemeColor,
+                    cursorColor = activeThemeColor
+                ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                textStyle = arabicInputTextStyle(
-                    textAlign = TextAlign.Start, 
-                    fontSize = 14.sp
-                ).copy(
-                    fontFamily = CairoFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 22.sp
-                )
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
             )
         }
     }

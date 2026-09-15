@@ -37,12 +37,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.UniversalDialogSurface
-
 @Composable
 fun CurrencyRevalueConfirmDialog(
     targetCurrency: String,
@@ -51,63 +45,76 @@ fun CurrencyRevalueConfirmDialog(
     onConfirmFutureOnly: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .width(280.dp)
+                .padding(6.dp)
+                .animateContentSize(animationSpec = tween(200)),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            UniversalDialogSurface(isExpanded = false) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = stringResource(id = R.string.currency_update_rate_title),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f), thickness = 0.5.dp)
-                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.8.dp)
 
                 Text(
                     text = stringResource(id = R.string.currency_update_rate_confirm_msg, targetCurrency),
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp,
+                    fontSize = 10.5.sp,
+                    lineHeight = 15.sp,
                     textAlign = TextAlign.Start,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Button(
                         onClick = onConfirmHistoricalAndFuture,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = MizanDialogTokens.buttonShape,
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier
                             .weight(1.1f)
-                            .height(MizanDialogTokens.buttonHeight),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
+                            .height(28.dp),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.currency_update_past_future),
                             color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 11.5.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -118,15 +125,15 @@ fun CurrencyRevalueConfirmDialog(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         ),
-                        shape = MizanDialogTokens.buttonShape,
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier
                             .weight(1f)
-                            .height(MizanDialogTokens.buttonHeight),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
+                            .height(28.dp),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.currency_update_future_only),
-                            fontSize = 11.5.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }

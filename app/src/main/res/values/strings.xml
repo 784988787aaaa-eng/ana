@@ -6,7 +6,7 @@
 
     <string name="app_name">الدفتر الذكي</string>
     <string name="app_name_main">الدفتر الذكي</string>
-    <string name="drawer_app_subtitle">الإدارة المالية السحابية</string>
+    <string name="drawer_app_subtitle">الإدارة المالية الكاملة</string>
     <string name="drawer_trash_label">سلة المحذوفات</string>
     <string name="drawer_app_version">الإصدار v%s</string>
     <string name="drawer_comprehensive_report_label">التقرير المالي الشامل</string>
@@ -106,10 +106,6 @@
     <string name="sec_toast_incorrect_recovery">عبارة الأمان غير متطابقة</string>
     <string name="sec_btn_confirm">تأكيد</string>
     <string name="sec_btn_cancel">إلغاء</string>
-    <string name="sec_strength_label">قوة الرمز:</string>
-    <string name="sec_strength_weak">ضعيف</string>
-    <string name="sec_strength_medium">متوسط</string>
-    <string name="sec_strength_strong">قوي</string>
     <string name="desc_security">الأمن والحماية</string>
 
     <!-- ============================================================================== -->
@@ -586,7 +582,7 @@
     <string name="settings_discovered_backups_title">النسخ الاحتياطية المحلية:</string>
     <string name="settings_desc_restore">استعادة</string>
     <string name="settings_danger_desc">سيتم مسح كافة المعاملات والحسابات نهائياً من هذا الجهاز.</string>
-    <string name="settings_app_version">الإصدار v1.3</string>
+    <string name="settings_app_version">الإصدار v1.0.0</string>
     <string name="settings_developer_info">تصميم وتطوير م/ منصور قطينه للبرمجيات</string>
     <string name="settings_desc_call_support">اتصال هاتفي بالدعم</string>
     <string name="settings_desc_whatsapp">مراسلة واتساب مستعجلة</string>
@@ -700,6 +696,7 @@
     <string name="backup_restore_confirm_btn">استعادة واستبدال</string>
     <string name="backup_schema_mismatch">تعذر إكمال الاستعادة بسبب عدم تطابق بنية ملف النسخة الاحتياطية.</string>
     <string name="biz_title">بيانات النشاط التجاري</string>
+    <string name="biz_desc_header">تخصيص هوية المحل والفواتير والتقارير</string>
     <string name="biz_back">رجوع</string>
     <string name="biz_logo_title">شعار النشاط التجاري</string>
     <string name="biz_logo_desc">شعار النشاط</string>
@@ -754,7 +751,7 @@
     <string name="trash_delete_selected_permanently">حذف المحددة نهائياً</string>
     <string name="trash_search">بحث</string>
     <string name="trash_empty_bin">إفراغ السلة</string>
-    <string name="trash_empty_message">سلة المحذوفات فارغة</string>
+    <string name="trash_empty_message">لا توجد محذوفات</string>
     <string name="trash_confirm_empty_title">تأكيد إفراغ السلة نهائياً 🧹</string>
     <string name="trash_confirm_empty_desc">هل أنت متأكد من رغبتك في حذف كافة العناصر في السلة نهائياً وبشكل قطعي؟ لا يمكن التراجع.</string>
     <string name="trash_empty_confirm_btn">إفراغ الآن</string>
@@ -782,7 +779,7 @@
     <string name="trash_restore_single_tx_desc">استعادة المعاملة الفردية</string>
     <string name="trash_bundle_transactions_label">المعاملات المحذوفة بالحزمة:</string>
     <string name="trash_exchange_rate_label">صرف:</string>
-    <string name="trash_clean_empty_subtitle">لا توجد أي سجلات أو حسابات محذوفة حالياً</string>
+    <string name="trash_clean_empty_subtitle">ًلا توجد محذوفات</string>
     <string name="trash_filter_all_label">الكل</string>
     <string name="trash_filter_transactions">العمليات</string>
     <string name="trash_filter_customers">الحسابات والعملاء</string>

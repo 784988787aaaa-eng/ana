@@ -19,84 +19,61 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
 fun DrawerItem(
     selected: Boolean,
     icon: ImageVector,
     label: String,
-    badge: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val accentColor = MaterialTheme.colorScheme.secondary
-    val containerColor = if (selected) primaryColor.copy(alpha = 0.12f) else Color.Transparent
+    val containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent
     val textPrimary = MaterialTheme.colorScheme.onSurface
     val fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
     Surface(
         onClick = onClick,
         color = containerColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(MizanTouchTarget.standardButtonHeight)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.CenterStart
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(primaryColor.copy(alpha = if (selected) 0.16f else 0.08f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = primaryColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = primaryColor,
+                    modifier = Modifier.size(24.dp)
+                )
                 Spacer(modifier = Modifier.width(12.dp))
-
                 Text(
                     text = label,
-                    fontFamily = CairoFontFamily,
-                    fontSize = 13.5.sp,
+                    fontSize = 14.sp,
                     fontWeight = fontWeight,
                     color = textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false)
+                    maxLines = 1
                 )
-
-                if (badge != null) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    badge()
-                }
             }
 
             if (selected) {
                 Box(
                     modifier = Modifier
-                        .width(3.5.dp)
-                        .fillMaxHeight(0.60f)
-                        .align(Alignment.CenterStart)
+                        .width(4.dp)
+                        .fillMaxHeight(0.55f)
+                        .align(Alignment.CenterEnd)
                         .background(
                             color = accentColor,
                             shape = RoundedCornerShape(2.dp)
@@ -111,35 +88,35 @@ fun DrawerItem(
 fun ContactIcon(
     icon: ImageVector,
     onClick: () -> Unit,
-    contentDescription: String? = null,
-    containerColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-    iconTint: Color = MaterialTheme.colorScheme.primary
+    contentDescription: String? = null
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundLight = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(MizanTouchTarget.minimum)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = false, radius = 22.dp),
+                indication = ripple(bounded = true, radius = 22.dp),
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(38.dp)
                 .clip(CircleShape)
-                .background(containerColor),
+                .background(backgroundLight),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                tint = iconTint,
-                modifier = Modifier.size(18.dp)
+                tint = primaryColor,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
 }
-
 
