@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
+import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.repository.TrashJsonSerializer
+import java.math.BigDecimal
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -19,6 +21,8 @@ class TrashRestorePersistenceTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
         try {
+            val customer = HabayebCustomer(id = "c1", name = "عميل", phone = "", notes = "", createdAt = 1L, initialType = "OWED_BY_THEM")
+            db.habayebDao().insertCustomer(customer)
             val original = HabayebTransaction(
                 id = "t1", customerId = "c1", type = "OWED_BY_THEM", amount = BigDecimal("12.50"),
                 timestamp = 123L, description = "وصف", linkedMainTxId = "main", isForeign = true,

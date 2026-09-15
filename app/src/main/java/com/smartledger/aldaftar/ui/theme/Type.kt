@@ -21,7 +21,8 @@ val CairoFontFamily = FontFamily(
     Font(googleFont = CairoFont, fontProvider = provider, weight = FontWeight.Normal),
     Font(googleFont = CairoFont, fontProvider = provider, weight = FontWeight.Medium),
     Font(googleFont = CairoFont, fontProvider = provider, weight = FontWeight.SemiBold),
-    Font(googleFont = CairoFont, fontProvider = provider, weight = FontWeight.Bold)
+    Font(googleFont = CairoFont, fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = CairoFont, fontProvider = provider, weight = FontWeight.ExtraBold)
 )
 
 val Typography = Typography(

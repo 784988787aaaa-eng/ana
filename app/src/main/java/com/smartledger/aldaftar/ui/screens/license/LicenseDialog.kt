@@ -52,6 +52,7 @@ import com.smartledger.aldaftar.domain.license.LicenseSnapshot
 import com.smartledger.aldaftar.domain.license.LicenseStatus
 import com.smartledger.aldaftar.domain.license.LicenseType
 import com.smartledger.aldaftar.domain.license.RevocationReason
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
@@ -665,24 +666,50 @@ private fun UnifiedAccountLoginSection(
             }
 
             // Manual Activation code field (Only shown for unlicensed accounts)
+            val clipboardManager = LocalClipboardManager.current
             Text(
                 text = if (snapshot.activationRequired) "أدخل كود التفعيل لتفعيل حسابك لأول مرة:" else "أو أدخل كود التفعيل الممنوح لك لربط الترخيص بهذا الحساب:",
+                fontFamily = CairoFontFamily,
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             OutlinedTextField(
                 value = activationCode,
-                onValueChange = onActivationChange,
+                onValueChange = { onActivationChange(it.uppercase()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .focusRequester(activationFocusRequester),
                 singleLine = true,
                 enabled = !busy,
-                label = { Text("رمز التفعيل (من المطور)", fontSize = 11.sp) },
-                placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 11.sp) },
-                shape = RoundedCornerShape(10.dp)
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 1.5.sp,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                ),
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            val clipText = clipboardManager.getText()?.text
+                            if (!clipText.isNullOrBlank()) {
+                                onActivationChange(clipText.trim().uppercase())
+                            }
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentPaste,
+                            contentDescription = "لصق كود التفعيل",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                label = { Text("رمز التفعيل (من المطور)", fontFamily = CairoFontFamily, fontSize = 11.sp) },
+                placeholder = { Text("أدخل رمز التفعيل هنا...", fontFamily = FontFamily.Monospace, fontSize = 11.sp) },
+                shape = RoundedCornerShape(12.dp)
             )
 
             RequestFocusAndShowKeyboard(
@@ -695,12 +722,21 @@ private fun UnifiedAccountLoginSection(
                 enabled = !busy && activationCode.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp),
-                shape = RoundedCornerShape(10.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Icon(Icons.Default.LockOpen, null, Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("تفعيل الترخيص للحساب", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                if (busy) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Default.LockOpen, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("تفعيل الترخيص للحساب", fontFamily = CairoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -714,6 +750,7 @@ private fun SignedTokenCompactSection(
     onActivate: () -> Unit
 ) {
     val tokenFocusRequester = remember { FocusRequester() }
+    val clipboardManager = LocalClipboardManager.current
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -729,9 +766,31 @@ private fun SignedTokenCompactSection(
             minLines = 2,
             maxLines = 3,
             enabled = !busy,
-            label = { Text("رمز الترخيص المحلي", fontSize = 11.sp) },
-            placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 11.sp) },
-            shape = RoundedCornerShape(10.dp)
+            trailingIcon = {
+                IconButton(
+                    onClick = {
+                        val clipText = clipboardManager.getText()?.text
+                        if (!clipText.isNullOrBlank()) {
+                            onTokenChange(clipText.trim())
+                        }
+                    },
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentPaste,
+                        contentDescription = "لصق رمز الترخيص",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            },
+            textStyle = androidx.compose.ui.text.TextStyle(
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 1.sp,
+                fontSize = 12.sp
+            ),
+            label = { Text("رمز الترخيص المحلي", fontFamily = CairoFontFamily, fontSize = 11.sp) },
+            placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontFamily = CairoFontFamily, fontSize = 11.sp) },
+            shape = RoundedCornerShape(12.dp)
         )
 
         RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy)
@@ -741,12 +800,21 @@ private fun SignedTokenCompactSection(
             enabled = !busy && token.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
-            shape = RoundedCornerShape(10.dp)
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Icon(Icons.Default.VpnKey, null, Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("تفعيل برمز الترخيص", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+            if (busy) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(Icons.Default.VpnKey, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("تفعيل برمز الترخيص", fontFamily = CairoFontFamily, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

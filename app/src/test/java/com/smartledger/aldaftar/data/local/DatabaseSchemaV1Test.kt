@@ -17,7 +17,7 @@ class DatabaseSchemaV1Test {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         val cursor = db.openHelper.readableDatabase.query(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'room_%' ORDER BY name"
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'room_%' AND name NOT LIKE 'android_%' AND name != 'sqlite_sequence' ORDER BY name"
         )
         val tables = buildList {
             cursor.use {

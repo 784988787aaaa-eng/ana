@@ -7,6 +7,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.UniversalDialogHeader
+import com.smartledger.aldaftar.ui.theme.UniversalDialogSurface
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -50,19 +57,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.ui.helper.BusinessProfileImageHelper
@@ -142,59 +148,18 @@ fun BusinessProfileDialog(
     viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     onDismiss: () -> Unit
 ) {
-    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
-        onDismissRequest = onDismiss
-    ) { dismissDialog ->
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .widthIn(max = 350.dp)
-                .imePadding(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+            onDismissRequest = onDismiss
+        ) { dismissDialog ->
+            UniversalDialogSurface(
+                isExpanded = false
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.biz_title),
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Absolute.Right,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = dismissDialog,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(id = R.string.desc_close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(2.dp))
+                UniversalDialogHeader(
+                    title = stringResource(id = R.string.biz_title),
+                    icon = Icons.Default.Business,
+                    onDismiss = dismissDialog
+                )
 
                 BusinessProfileForm(
                     viewModel = viewModel,
@@ -215,11 +180,6 @@ private fun BusinessProfileForm(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val activeThemeColor = MaterialTheme.colorScheme.primary
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val initialPhoneFocusRequester = remember { FocusRequester() }
-    val savedProfile by viewModel.profile.collectAsState()
-    var pendingSave by remember { mutableStateOf<BusinessProfile?>(null) }
 
     var bizName by remember { mutableStateOf("") }
     var bizDesc by remember { mutableStateOf("") }
@@ -282,15 +242,6 @@ private fun BusinessProfileForm(
         }
     }
 
-    LaunchedEffect(pendingSave, savedProfile) {
-        val requestedProfile = pendingSave ?: return@LaunchedEffect
-        if (savedProfile == requestedProfile) {
-            pendingSave = null
-            Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
-            onClose()
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -326,11 +277,7 @@ private fun BusinessProfileForm(
             bizDesc = bizDesc,
             onBizDescChange = { bizDesc = it },
             isDialog = isDialog,
-            activeThemeColor = activeThemeColor,
-            onDescriptionNext = {
-                focusManager.clearFocus()
-                keyboardController?.hide()
-            }
+            activeThemeColor = activeThemeColor
         )
 
         BusinessProfilePhonesSection(
@@ -339,8 +286,7 @@ private fun BusinessProfileForm(
             onRemovePhone = { index -> phoneList.removeAt(index) },
             onAddPhone = { phoneList.add("") },
             isDialog = isDialog,
-            activeThemeColor = activeThemeColor,
-            initialPhoneFocusRequester = initialPhoneFocusRequester
+            activeThemeColor = activeThemeColor
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -352,18 +298,15 @@ private fun BusinessProfileForm(
                     return@Button
                 }
 
-                val profileToSave = BusinessProfile(
-                    name = bizName.trim(),
-                    description = bizDesc.trim(),
-                    logoPath = logoPath,
-                    phones = phoneList.toList()
-                )
-                pendingSave = profileToSave
-                viewModel.save(profileToSave)
+                coroutineScope.launch {
+                    viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
+                    Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
+                    onClose()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp)
+                .height(48.dp)
                 .testTag("biz_save_button"),
             colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
             shape = RoundedCornerShape(12.dp)
@@ -375,11 +318,14 @@ private fun BusinessProfileForm(
                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(
                     text = stringResource(id = R.string.biz_btn_save),
+                    fontFamily = CairoFontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         androidx.compose.material3.OutlinedButton(
             onClick = {
@@ -390,19 +336,19 @@ private fun BusinessProfileForm(
                     logoPath = ""
                     phoneList.clear()
                     logoBitmapState = null
-                    pendingSave = null
                     Toast.makeText(context, context.getString(R.string.biz_reset_success), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                .height(42.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text(
                 text = stringResource(id = R.string.biz_btn_reset),
+                fontFamily = CairoFontFamily,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold
             )

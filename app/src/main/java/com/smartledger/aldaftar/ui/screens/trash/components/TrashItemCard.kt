@@ -31,9 +31,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,20 +42,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
+import com.smartledger.aldaftar.ui.helper.VibrationHelper
 import com.smartledger.aldaftar.ui.helper.getInitialColor
 import com.smartledger.aldaftar.ui.screens.trash.utils.ParsedTrashData
-import com.smartledger.aldaftar.ui.theme.CreditGreen
-import com.smartledger.aldaftar.ui.theme.DebtRed
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.financialCreditColor
 import com.smartledger.aldaftar.ui.theme.financialDebtColor
 import com.smartledger.aldaftar.ui.theme.isDark
@@ -75,6 +76,8 @@ fun TrashItemCard(
     onOpenTransactionDetail: () -> Unit = {}
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -114,7 +117,7 @@ fun TrashItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .combinedClickable(
                 onClick = {
                     if (isSelectionMode) {
@@ -131,28 +134,28 @@ fun TrashItemCard(
                 },
                 onLongClick = onLongClick
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                primaryColor.copy(alpha = if (isDark) 0.2f else 0.1f)
+                primaryColor.copy(alpha = if (isDark) 0.15f else 0.08f)
             } else {
                 MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 0.dp else 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 0.dp else 0.5.dp),
         border = cardBorder
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (isSelected) {
                     Box(
@@ -176,11 +179,12 @@ fun TrashItemCard(
                             .size(38.dp)
                             .clip(CircleShape)
                             .background(avatarColor.copy(alpha = 0.12f))
-                            .border(1.dp, avatarColor.copy(alpha = 0.6f), CircleShape),
+                            .border(1.dp, avatarColor.copy(alpha = 0.5f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = firstLetter,
+                            fontFamily = CairoFontFamily,
                             color = avatarColor,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
@@ -199,7 +203,8 @@ fun TrashItemCard(
                     ) {
                         Text(
                             text = parsedData.titleText,
-                            fontSize = 14.sp,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
@@ -208,11 +213,12 @@ fun TrashItemCard(
                         )
 
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(5.dp),
                             color = primaryColor.copy(alpha = 0.1f)
                         ) {
                             Text(
                                 text = typeLabel,
+                                fontFamily = CairoFontFamily,
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = primaryColor,
@@ -224,7 +230,8 @@ fun TrashItemCard(
                     if (parsedData.subText.isNotEmpty()) {
                         Text(
                             text = parsedData.subText,
-                            fontSize = 11.5.sp,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                             maxLines = 1,
@@ -238,6 +245,7 @@ fun TrashItemCard(
                     ) {
                         Text(
                             text = parsedData.parsedDate,
+                            fontFamily = CairoFontFamily,
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             maxLines = 1
@@ -258,6 +266,7 @@ fun TrashItemCard(
                             ) {
                                 Text(
                                     text = badgeText,
+                                    fontFamily = CairoFontFamily,
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = badgeColor,
@@ -273,7 +282,7 @@ fun TrashItemCard(
 
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 if (parsedData.amountText.isNotEmpty()) {
                     val amountColor = if (parsedData.isExpense) debtColor else creditColor
@@ -284,7 +293,8 @@ fun TrashItemCard(
                     ) {
                         Text(
                             text = parsedData.amountText,
-                            fontSize = 13.5.sp,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Black,
                             color = amountColor
                         )
@@ -316,31 +326,49 @@ fun TrashItemCard(
                     }
                 } else if (!isSelectionMode) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
                             onClick = onRestore,
-                            modifier = Modifier.size(38.dp)
+                            modifier = Modifier.size(44.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.RestoreFromTrash,
-                                contentDescription = stringResource(id = R.string.trash_action_restore_btn),
-                                tint = creditColor,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .background(creditColor.copy(alpha = 0.10f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.RestoreFromTrash,
+                                    contentDescription = stringResource(id = R.string.trash_action_restore_btn),
+                                    tint = creditColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
 
                         IconButton(
-                            onClick = { showDeleteConfirm = true },
-                            modifier = Modifier.size(38.dp)
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                VibrationHelper.triggerDeleteVibration(context)
+                                showDeleteConfirm = true
+                            },
+                            modifier = Modifier.size(44.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DeleteForever,
-                                contentDescription = stringResource(id = R.string.trash_delete_permanently),
-                                tint = debtColor,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .background(debtColor.copy(alpha = 0.10f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteForever,
+                                    contentDescription = stringResource(id = R.string.trash_delete_permanently),
+                                    tint = debtColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -354,45 +382,58 @@ fun TrashItemCard(
             confirmButton = {
                 Button(
                     onClick = {
+                        VibrationHelper.triggerDeleteVibration(context)
                         onPermanentDelete()
                         showDeleteConfirm = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = errorColor),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.height(44.dp)
                 ) {
                     Text(
                         text = stringResource(id = R.string.trash_delete_permanently),
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onError,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
+                OutlinedButton(
+                    onClick = { showDeleteConfirm = false },
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.height(44.dp)
+                ) {
                     Text(
                         text = stringResource(id = R.string.trash_cancel),
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 13.sp
                     )
                 }
             },
             title = {
                 Text(
                     text = stringResource(id = R.string.trash_delete_warning_title),
+                    fontFamily = CairoFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.error
                 )
             },
             text = {
                 Text(
                     text = stringResource(id = R.string.trash_delete_warning_desc),
-                    fontSize = 12.sp,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 12.5.sp,
+                    lineHeight = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = MizanDialogTokens.shape,
+            shape = MizanDialogTokens.shape
         )
     }
 }

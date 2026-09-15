@@ -14,8 +14,8 @@ object TrashJsonSerializer {
     fun serializeCommitment(fc: FixedCommitment): String {
         return JSONObject().apply {
             put("name", fc.name)
-            put("targetAmount", fc.targetAmount)
-            put("currentProgress", fc.currentProgress)
+            put("targetAmount", fc.targetAmount.toPlainString())
+            put("currentProgress", fc.currentProgress.toPlainString())
             put("orderIndex", fc.orderIndex)
         }.toString()
     }
@@ -68,7 +68,7 @@ object TrashJsonSerializer {
             val totalNet = transactions.fold(BigDecimal.ZERO) { acc, tx ->
                 if (tx.type == TransactionType.INCOME.value) acc.add(tx.amount) else acc.subtract(tx.amount)
             }
-            put("totalNet", totalNet)
+            put("totalNet", totalNet.toPlainString())
             put("name", title)
         }.toString()
     }
@@ -83,7 +83,7 @@ object TrashJsonSerializer {
             put("timestamp", tx.timestamp)
             put("type", tx.type)
             put("category", tx.category)
-            put("amount", tx.amount)
+            put("amount", tx.amount.toPlainString())
             put("description", tx.description)
         }
     }
@@ -93,16 +93,16 @@ object TrashJsonSerializer {
             put("id", tx.id)
             put("customerId", tx.customerId)
             put("type", tx.type)
-            put("amount", tx.amount)
+            put("amount", tx.amount.toPlainString())
             put("timestamp", tx.timestamp)
             put("description", tx.description)
             put("linkedMainTxId", tx.linkedMainTxId ?: JSONObject.NULL)
             put("is_foreign", tx.isForeign)
             put("currency_code", tx.currencyCode)
-            put("foreign_amount", tx.foreignAmount)
-            put("exchange_rate", tx.exchangeRate)
+            put("foreign_amount", tx.foreignAmount.toPlainString())
+            put("exchange_rate", tx.exchangeRate.toPlainString())
             put("is_rate_calculated", tx.isRateCalculated)
-            put("equivalent_amount", tx.equivalentAmount)
+            put("equivalent_amount", tx.equivalentAmount.toPlainString())
             put("base_currency_code", tx.baseCurrencyCode)
         }
     }

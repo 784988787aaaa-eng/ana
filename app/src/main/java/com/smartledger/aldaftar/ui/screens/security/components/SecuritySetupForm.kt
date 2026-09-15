@@ -1,44 +1,19 @@
 package com.smartledger.aldaftar.ui.screens.security.components
 
+import android.util.Log
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,11 +33,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.arabicInputTextStyle
+import com.smartledger.aldaftar.ui.theme.universalTextFieldColors
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 
 private const val TAG = "SecuritySetupForm"
+private const val CD_TOGGLE_VISIBILITY = "Toggle Visibility"
 private const val TEST_TAG_PIN_CODE_INPUT = "pin_code_input"
 private const val TEST_TAG_PIN_CODE_CONFIRM_INPUT = "pin_code_confirm_input"
 private const val TEST_TAG_RECOVERY_PHRASE_INPUT = "recovery_phrase_input"
@@ -98,13 +81,32 @@ fun SecuritySetupForm(
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     RequestFocusAndShowKeyboard(focusRequester = passcodeFocus)
 
+    val passcodeStrength = remember(passcode) {
+        when {
+            passcode.isEmpty() -> 0f to Color.Gray.copy(alpha = 0.3f)
+            passcode.length < 3 -> 0.33f to Color(0xFFE57373)
+            passcode.length == 3 -> 0.66f to Color(0xFFFFA726)
+            passcode in listOf("0000", "1111", "1234", "2222", "1212", "4321") -> 0.66f to Color(0xFFFFA726)
+            else -> 1f to Color(0xFF4CAF50)
+        }
+    }
+    val animatedProgress by animateFloatAsState(
+        targetValue = passcodeStrength.first,
+        animationSpec = tween(durationMillis = 300),
+        label = "strengthProgress"
+    )
+    val animatedStrengthColor by animateColorAsState(
+        targetValue = passcodeStrength.second,
+        animationSpec = tween(durationMillis = 300),
+        label = "strengthColor"
+    )
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
-            .imePadding()
             .border(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
@@ -113,11 +115,12 @@ fun SecuritySetupForm(
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp) // تقارب الحقول بمسافات دقيقة واحترافية تمنع التشتت
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = stringResource(id = R.string.sec_setup_title),
-                fontSize = 12.sp,
+                fontFamily = CairoFontFamily,
+                fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -136,20 +139,23 @@ fun SecuritySetupForm(
                         }
                     }
                 },
-                label = { Text(stringResource(id = R.string.sec_label_code), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontSize = 12.sp) },
+                label = { Text(stringResource(id = R.string.sec_label_code), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 trailingIcon = {
-                    IconButton(onClick = { passcodeVisible = !passcodeVisible }) {
+                    IconButton(
+                        onClick = { passcodeVisible = !passcodeVisible },
+                        modifier = Modifier.size(44.dp)
+                    ) {
                         Icon(
                             imageVector = if (passcodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = stringResource(id = if (passcodeVisible) R.string.sec_hide_pin else R.string.sec_show_pin),
+                            contentDescription = CD_TOGGLE_VISIBILITY,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 },
-                textStyle = LocalTextStyle.current.copy(
+                textStyle = arabicInputTextStyle(
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -157,19 +163,62 @@ fun SecuritySetupForm(
                 visualTransformation = if (passcodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { confirmPasscodeFocus.requestFocus() }),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                ),
+                shape = RoundedCornerShape(12.dp),
+                colors = universalTextFieldColors(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .defaultMinSize(minHeight = 50.dp)
                     .focusRequester(passcodeFocus)
                     .testTag(TEST_TAG_PIN_CODE_INPUT)
             )
+
+            if (passcode.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.sec_strength_label),
+                            fontFamily = CairoFontFamily,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = when {
+                                passcodeStrength.first >= 1f -> stringResource(R.string.sec_strength_strong)
+                                passcodeStrength.first >= 0.6f -> stringResource(R.string.sec_strength_medium)
+                                else -> stringResource(R.string.sec_strength_weak)
+                            },
+                            fontFamily = CairoFontFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = animatedStrengthColor
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(animatedProgress)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(animatedStrengthColor)
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = confirmPasscode,
@@ -182,20 +231,23 @@ fun SecuritySetupForm(
                         }
                     }
                 },
-                label = { Text(stringResource(id = R.string.sec_label_confirm), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontSize = 12.sp) },
+                label = { Text(stringResource(id = R.string.sec_label_confirm), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 trailingIcon = {
-                    IconButton(onClick = { confirmPasscodeVisible = !confirmPasscodeVisible }) {
+                    IconButton(
+                        onClick = { confirmPasscodeVisible = !confirmPasscodeVisible },
+                        modifier = Modifier.size(44.dp)
+                    ) {
                         Icon(
                             imageVector = if (confirmPasscodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = stringResource(id = if (confirmPasscodeVisible) R.string.sec_hide_pin else R.string.sec_show_pin),
+                            contentDescription = CD_TOGGLE_VISIBILITY,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 },
-                textStyle = LocalTextStyle.current.copy(
+                textStyle = arabicInputTextStyle(
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -203,16 +255,11 @@ fun SecuritySetupForm(
                 visualTransformation = if (confirmPasscodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryPhraseFocus.requestFocus() }),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                ),
+                shape = RoundedCornerShape(12.dp),
+                colors = universalTextFieldColors(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .defaultMinSize(minHeight = 50.dp)
                     .focusRequester(confirmPasscodeFocus)
                     .testTag(TEST_TAG_PIN_CODE_CONFIRM_INPUT)
             )
@@ -225,6 +272,7 @@ fun SecuritySetupForm(
 
             Text(
                 text = stringResource(id = R.string.sec_recovery_title),
+                fontFamily = CairoFontFamily,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -234,8 +282,8 @@ fun SecuritySetupForm(
             OutlinedTextField(
                 value = recoveryPhrase,
                 onValueChange = onRecoveryPhraseChange,
-                label = { Text(stringResource(id = R.string.sec_label_recovery), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_recovery), fontSize = 12.sp) },
+                label = { Text(stringResource(id = R.string.sec_label_recovery), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_recovery), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(
@@ -245,22 +293,17 @@ fun SecuritySetupForm(
                         modifier = Modifier.size(20.dp)
                     )
                 },
-                textStyle = LocalTextStyle.current.copy(
+                textStyle = arabicInputTextStyle(
                     textAlign = TextAlign.Start,
                     fontSize = 14.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryHintFocus.requestFocus() }),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                ),
+                shape = RoundedCornerShape(12.dp),
+                colors = universalTextFieldColors(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .defaultMinSize(minHeight = 50.dp)
                     .focusRequester(recoveryPhraseFocus)
                     .testTag(TEST_TAG_RECOVERY_PHRASE_INPUT)
             )
@@ -268,8 +311,8 @@ fun SecuritySetupForm(
             OutlinedTextField(
                 value = recoveryHint,
                 onValueChange = onRecoveryHintChange,
-                label = { Text(stringResource(id = R.string.sec_label_hint), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_hint), fontSize = 12.sp) },
+                label = { Text(stringResource(id = R.string.sec_label_hint), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_hint), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(
@@ -279,25 +322,17 @@ fun SecuritySetupForm(
                         modifier = Modifier.size(20.dp)
                     )
                 },
-                textStyle = LocalTextStyle.current.copy(
+                textStyle = arabicInputTextStyle(
                     textAlign = TextAlign.Start,
                     fontSize = 14.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                }),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                ),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                shape = RoundedCornerShape(12.dp),
+                colors = universalTextFieldColors(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .defaultMinSize(minHeight = 50.dp)
                     .focusRequester(recoveryHintFocus)
                     .testTag(TEST_TAG_RECOVERY_HINT_INPUT)
             )
@@ -318,6 +353,7 @@ fun SecuritySetupForm(
             ) {
                 Text(
                     text = stringResource(id = R.string.sec_checkbox_ack),
+                    fontFamily = CairoFontFamily,
                     fontSize = 11.sp,
                     color = ackText,
                     textAlign = TextAlign.Start,
@@ -350,22 +386,23 @@ fun SecuritySetupForm(
                     disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 ),
                 enabled = isValid,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .padding(top = 4.dp) // تباعد دقيق ليعطي الزر متنفساً حركياً ملحوظاً
+                    .padding(top = 4.dp)
                     .testTag(TEST_TAG_SECURITY_SAVE_BUTTON)
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.onPrimary, 
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
                         text = stringResource(id = R.string.sec_btn_activate),
+                        fontFamily = CairoFontFamily,
                         color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp

@@ -5,11 +5,30 @@ import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -18,17 +37,60 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.BackupTable
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FolderShared
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -42,13 +104,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
-import com.smartledger.aldaftar.ui.helper.VibrationHelper
 import com.smartledger.aldaftar.presentation.formatters.WesternDigits
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.helper.VibrationHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.CreditGreen
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -169,10 +233,10 @@ fun BackupRestoreBottomSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 10.dp)
+                    .padding(horizontal = 14.dp)
+                    .padding(bottom = 12.dp)
                     .imePadding(),
-                verticalArrangement = Arrangement.spacedBy(7.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Header with Title and Connection Pill Badge
                 BackupMainHeader(connected = connected)
@@ -232,7 +296,7 @@ fun BackupRestoreBottomSheet(
                     }
                 )
 
-                // 3. Clear All Data & Reset Button (Danger)
+                // 3. Clear All Data & Reset Button (Danger Zone)
                 ResetAllDataButton(
                     busy = busy,
                     onClick = {
@@ -249,8 +313,11 @@ fun BackupRestoreBottomSheet(
                 error?.takeIf(String::isNotBlank)?.let {
                     Text(
                         text = it,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                        fontSize = 11.sp,
+                        fontFamily = CairoFontFamily,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
                     )
@@ -303,16 +370,25 @@ fun BackupRestoreBottomSheet(
                 shape = MizanDialogTokens.shape,
                 onDismissRequest = { resetOpen = false },
                 icon = {
-                    Icon(
-                        imageVector = Icons.Default.DeleteForever,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteForever,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 },
                 title = {
                     Text(
                         text = stringResource(R.string.dialog_wipe_title),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.error
@@ -321,8 +397,9 @@ fun BackupRestoreBottomSheet(
                 text = {
                     Text(
                         text = stringResource(R.string.dialog_wipe_desc),
+                        fontFamily = CairoFontFamily,
                         fontSize = 12.5.sp,
-                        lineHeight = 18.sp,
+                        lineHeight = 19.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
@@ -342,6 +419,7 @@ fun BackupRestoreBottomSheet(
                     ) {
                         Text(
                             text = stringResource(R.string.dialog_btn_confirm_wipe),
+                            fontFamily = CairoFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
@@ -355,6 +433,7 @@ fun BackupRestoreBottomSheet(
                     ) {
                         Text(
                             text = stringResource(R.string.common_cancel),
+                            fontFamily = CairoFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
@@ -367,10 +446,21 @@ fun BackupRestoreBottomSheet(
 
 @Composable
 private fun BackupMainHeader(connected: Boolean) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 0.dp),
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -382,13 +472,14 @@ private fun BackupMainHeader(connected: Boolean) {
             Icon(
                 imageVector = Icons.Default.CloudQueue,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = stringResource(R.string.backup_screen_title),
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
+                fontFamily = CairoFontFamily,
+                fontSize = 15.sp,
+                lineHeight = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -398,33 +489,44 @@ private fun BackupMainHeader(connected: Boolean) {
         Surface(
             shape = RoundedCornerShape(50),
             color = if (connected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                CreditGreen.copy(alpha = 0.12f)
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
             },
             border = BorderStroke(
                 0.8.dp,
-                if (connected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                if (connected) CreditGreen.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
             )
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                Box(contentAlignment = Alignment.Center) {
+                    if (connected) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(CreditGreen.copy(alpha = pulseAlpha * 0.4f))
                         )
-                )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (connected) CreditGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                    )
+                }
                 Text(
                     text = stringResource(if (connected) R.string.backup_status_connected else R.string.backup_status_disconnected),
+                    fontFamily = CairoFontFamily,
                     fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.Bold,
+                    color = if (connected) CreditGreen else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -449,11 +551,11 @@ private fun CloudSyncCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Card Title Row
             Row(
@@ -463,8 +565,9 @@ private fun CloudSyncCard(
             ) {
                 Text(
                     text = stringResource(R.string.backup_cloud_title),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Icon(
@@ -482,7 +585,7 @@ private fun CloudSyncCard(
                     enabled = !busy,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(42.dp),
+                        .height(44.dp),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -491,8 +594,9 @@ private fun CloudSyncCard(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.backup_btn_connect_google),
+                        fontFamily = CairoFontFamily,
                         fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
@@ -505,7 +609,8 @@ private fun CloudSyncCard(
                 ) {
                     Text(
                         text = stringResource(if (manualOptions) R.string.backup_manual_toggle_hide else R.string.backup_manual_toggle_show),
-                        fontSize = 11.5.sp,
+                        fontFamily = CairoFontFamily,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -519,7 +624,7 @@ private fun CloudSyncCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
                     border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
                 ) {
                     Row(
@@ -527,28 +632,57 @@ private fun CloudSyncCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = email ?: stringResource(R.string.backup_cloud_title),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.weight(1f)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = email ?: stringResource(R.string.backup_cloud_title),
+                                fontFamily = CairoFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        // Logout text button
+                        TextButton(
+                            onClick = onDisconnect,
+                            enabled = !busy,
+                            modifier = Modifier.height(30.dp),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.backup_btn_disconnect),
+                                fontFamily = CairoFontFamily,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
 
                 // Subtitle Info
                 Text(
                     text = stringResource(R.string.backup_cloud_desc),
+                    fontFamily = CairoFontFamily,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Normal,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -567,7 +701,7 @@ private fun CloudSyncCard(
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
-                            .height(42.dp),
+                            .height(44.dp),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -580,8 +714,9 @@ private fun CloudSyncCard(
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = stringResource(R.string.backup_btn_cloud_upload),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = CairoFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -594,7 +729,7 @@ private fun CloudSyncCard(
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
-                            .height(42.dp),
+                            .height(44.dp),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                     ) {
@@ -610,8 +745,9 @@ private fun CloudSyncCard(
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = stringResource(R.string.backup_btn_restore_latest),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = CairoFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -625,10 +761,10 @@ private fun CloudSyncCard(
                     enabled = !busy,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(40.dp),
+                        .height(42.dp),
                     shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
                 ) {
                     Icon(
                         imageVector = Icons.Default.FolderShared,
@@ -639,33 +775,10 @@ private fun CloudSyncCard(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.backup_btn_view_history),
+                        fontFamily = CairoFontFamily,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                // Disconnect Link Button
-                TextButton(
-                    onClick = onDisconnect,
-                    enabled = !busy,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(36.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.backup_btn_disconnect),
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -698,6 +811,7 @@ private fun DirectCloudRestoreDialog(
         title = {
             Text(
                 text = stringResource(R.string.dialog_restore_title),
+                fontFamily = CairoFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface
@@ -708,23 +822,25 @@ private fun DirectCloudRestoreDialog(
                 // Details Box
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
                     border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = formattedDateTime,
+                            fontFamily = CairoFontFamily,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = sizeText,
+                            fontFamily = CairoFontFamily,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -734,6 +850,7 @@ private fun DirectCloudRestoreDialog(
 
                 Text(
                     text = stringResource(R.string.dialog_restore_desc),
+                    fontFamily = CairoFontFamily,
                     fontSize = 12.5.sp,
                     lineHeight = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -749,18 +866,21 @@ private fun DirectCloudRestoreDialog(
             ) {
                 Text(
                     text = stringResource(R.string.dialog_btn_restore),
+                    fontFamily = CairoFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
             }
         },
         dismissButton = {
-            TextButton(
+            OutlinedButton(
                 onClick = onDismiss,
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.height(44.dp)
             ) {
                 Text(
                     text = stringResource(R.string.common_cancel),
+                    fontFamily = CairoFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
@@ -779,11 +899,11 @@ private fun LocalBackupCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Card Title Row
             Row(
@@ -793,8 +913,9 @@ private fun LocalBackupCard(
             ) {
                 Text(
                     text = stringResource(R.string.backup_local_title),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Icon(
@@ -808,6 +929,7 @@ private fun LocalBackupCard(
             // Subtitle
             Text(
                 text = stringResource(R.string.backup_local_desc),
+                fontFamily = CairoFontFamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -836,8 +958,9 @@ private fun LocalBackupCard(
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = stringResource(R.string.backup_btn_local_export),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -868,8 +991,9 @@ private fun LocalBackupCard(
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = stringResource(R.string.backup_btn_local_import),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -889,7 +1013,7 @@ private fun ResetAllDataButton(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+        color = MaterialTheme.colorScheme.error.copy(alpha = 0.06f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f))
     ) {
         Row(
@@ -906,12 +1030,13 @@ private fun ResetAllDataButton(
                 Icon(
                     imageVector = Icons.Default.DeleteForever,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.error
                 )
                 Text(
                     text = stringResource(R.string.backup_btn_wipe_data),
-                    fontSize = 12.sp,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -920,15 +1045,16 @@ private fun ResetAllDataButton(
             OutlinedButton(
                 onClick = onClick,
                 enabled = !busy,
-                modifier = Modifier.height(34.dp),
+                modifier = Modifier.height(36.dp),
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
             ) {
                 Text(
                     text = stringResource(R.string.backup_btn_wipe_data),
-                    fontSize = 11.sp,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -955,6 +1081,7 @@ private fun OperationStatusBanner(text: String) {
             )
             Text(
                 text = text,
+                fontFamily = CairoFontFamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -975,18 +1102,21 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = stringResource(R.string.backup_manual_steps_title),
-                fontSize = 11.sp,
+                fontFamily = CairoFontFamily,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = stringResource(R.string.backup_manual_step_1),
-                fontSize = 10.sp,
+                fontFamily = CairoFontFamily,
+                fontSize = 10.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = stringResource(R.string.backup_manual_step_2),
-                fontSize = 10.sp,
+                fontFamily = CairoFontFamily,
+                fontSize = 10.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedButton(
@@ -994,12 +1124,13 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
                 enabled = !busy,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(36.dp),
+                    .height(38.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = stringResource(R.string.backup_manual_btn),
-                    fontSize = 10.5.sp,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -1016,7 +1147,6 @@ private fun CloudArchiveBottomSheet(
     onConnect: () -> Unit
 ) {
     val connected by vm.cloudConnected.collectAsStateWithLifecycle()
-    val email by vm.cloudEmail.collectAsStateWithLifecycle()
     val items by vm.cloudBackups.collectAsStateWithLifecycle()
     val busy by vm.isBusy.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -1045,9 +1175,7 @@ private fun CloudArchiveBottomSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (!searchActive) {
-                ArchiveHeader(
-                    onDismiss = onDismiss
-                )
+                ArchiveHeader(onDismiss = onDismiss)
             } else {
                 SearchHeader(
                     search = search,
@@ -1077,7 +1205,7 @@ private fun CloudArchiveBottomSheet(
                 }
             )
 
-            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            HorizontalDivider(thickness = 0.8.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             if (!connected) {
                 EmptyCloudState(onConnect)
@@ -1126,8 +1254,9 @@ private fun CloudArchiveBottomSheet(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.backup_delete_selected_btn, selected.size),
+                        fontFamily = CairoFontFamily,
                         fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             } else {
@@ -1150,8 +1279,9 @@ private fun CloudArchiveBottomSheet(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.history_btn_create_new),
+                        fontFamily = CairoFontFamily,
                         fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -1184,6 +1314,7 @@ private fun CloudArchiveBottomSheet(
             title = {
                 Text(
                     text = stringResource(R.string.backup_delete_title),
+                    fontFamily = CairoFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.error
@@ -1192,8 +1323,10 @@ private fun CloudArchiveBottomSheet(
             text = {
                 Text(
                     text = stringResource(R.string.backup_delete_single_confirm, item.name),
+                    fontFamily = CairoFontFamily,
                     fontSize = 12.5.sp,
-                    lineHeight = 18.sp
+                    lineHeight = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
@@ -1208,6 +1341,7 @@ private fun CloudArchiveBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.backup_btn_delete_confirm),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -1221,6 +1355,7 @@ private fun CloudArchiveBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.common_cancel),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -1236,6 +1371,7 @@ private fun CloudArchiveBottomSheet(
             title = {
                 Text(
                     text = stringResource(R.string.backup_delete_title),
+                    fontFamily = CairoFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.error
@@ -1244,8 +1380,10 @@ private fun CloudArchiveBottomSheet(
             text = {
                 Text(
                     text = stringResource(R.string.history_delete_selected_confirm),
+                    fontFamily = CairoFontFamily,
                     fontSize = 12.5.sp,
-                    lineHeight = 18.sp
+                    lineHeight = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
@@ -1264,6 +1402,7 @@ private fun CloudArchiveBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.backup_btn_delete_confirm),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -1277,6 +1416,7 @@ private fun CloudArchiveBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.common_cancel),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -1302,6 +1442,7 @@ private fun ArchiveHeader(
             Icon(Icons.Default.CloudSync, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             Text(
                 text = stringResource(R.string.history_sheet_title),
+                fontFamily = CairoFontFamily,
                 fontSize = 14.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -1341,9 +1482,10 @@ private fun ArchiveSubBar(
         ) {
             Text(
                 text = WesternDigits.normalize(stringResource(R.string.history_items_count, count)),
+                fontFamily = CairoFontFamily,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -1396,7 +1538,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
     ) {
         IconButton(onClick = onClose, modifier = Modifier.size(40.dp)) {
             Icon(
-                imageVector = Icons.Default.ArrowForward,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(R.string.backup_search_close),
                 modifier = Modifier.size(18.dp)
             )
@@ -1404,8 +1546,11 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
         BasicTextField(
             value = search,
             onValueChange = onSearchChange,
-            modifier = Modifier.weight(1f).focusRequester(searchFocusRequester),
+            modifier = Modifier
+                .weight(1f)
+                .focusRequester(searchFocusRequester),
             textStyle = TextStyle(
+                fontFamily = CairoFontFamily,
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
@@ -1415,6 +1560,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                 if (search.isBlank()) {
                     Text(
                         text = stringResource(R.string.backup_search_hint),
+                        fontFamily = CairoFontFamily,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1462,7 +1608,7 @@ private fun CloudBackupRow(
             .fillMaxWidth()
             .border(
                 if (checked) 1.5.dp else 0.8.dp,
-                if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 RoundedCornerShape(12.dp)
             ),
         colors = CardDefaults.cardColors(
@@ -1482,19 +1628,27 @@ private fun CloudBackupRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(horizontalAlignment = Alignment.Start) {
+            Column(horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = formattedDateTime,
+                    fontFamily = CairoFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = sizeText,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = sizeText,
+                        fontFamily = CairoFontFamily,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                    )
+                }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1503,7 +1657,7 @@ private fun CloudBackupRow(
                 if (selection) {
                     IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
                         Icon(
-                            imageVector = Icons.Default.CheckCircle,
+                            imageVector = if (checked) Icons.Default.CheckCircle else Icons.Default.Check,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                             tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
@@ -1512,11 +1666,11 @@ private fun CloudBackupRow(
                 } else {
                     Surface(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(34.dp)
                             .clip(CircleShape)
                             .clickable(onClick = onDelete),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -1550,12 +1704,14 @@ private fun EmptyCloudState(onConnect: () -> Unit) {
         )
         Text(
             text = stringResource(R.string.backup_empty_cloud_title),
+            fontFamily = CairoFontFamily,
             fontSize = 14.5.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = stringResource(R.string.backup_empty_cloud_desc),
+            fontFamily = CairoFontFamily,
             fontSize = 11.5.sp,
             lineHeight = 18.sp,
             textAlign = TextAlign.Center,
@@ -1571,8 +1727,9 @@ private fun EmptyCloudState(onConnect: () -> Unit) {
             Spacer(Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.backup_btn_connect_google),
+                fontFamily = CairoFontFamily,
                 fontSize = 12.5.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -1590,6 +1747,7 @@ private fun LoadingCloudState() {
         CircularProgressIndicator(Modifier.size(28.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.5.dp)
         Text(
             text = stringResource(R.string.backup_loading_cloud),
+            fontFamily = CairoFontFamily,
             fontSize = 11.5.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1613,12 +1771,14 @@ private fun EmptyListState() {
         )
         Text(
             text = stringResource(R.string.backup_empty_list_title),
+            fontFamily = CairoFontFamily,
             fontSize = 13.5.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = stringResource(R.string.backup_empty_list_desc),
+            fontFamily = CairoFontFamily,
             fontSize = 11.5.sp,
             lineHeight = 17.sp,
             textAlign = TextAlign.Center,
