@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,12 +78,6 @@ fun WelcomeOnboardingDialog(
     )
 
     val cardBg = MaterialTheme.colorScheme.surface
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
-    val isShortScreen = screenHeightDp in 1..640
-    val logoTitleGap = if (isShortScreen) 10.dp else 12.dp
-    val brandSloganGap = if (isShortScreen) 14.dp else 18.dp
-    val featuresButtonGap = if (isShortScreen) 12.dp else 20.dp
-    val buttonHeight = maxOf(48.dp, if (isShortScreen) 50.dp else 54.dp)
     val itemBg = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
     val itemBorder = MaterialTheme.colorScheme.outlineVariant
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -161,7 +154,7 @@ fun WelcomeOnboardingDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(logoTitleGap))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -193,7 +186,7 @@ fun WelcomeOnboardingDialog(
                     lineHeight = 17.sp
                 )
 
-                Spacer(modifier = Modifier.height(brandSloganGap))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Column(
                     modifier = Modifier
@@ -230,7 +223,7 @@ fun WelcomeOnboardingDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(featuresButtonGap))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
                     onClick = onDismiss,
@@ -241,7 +234,7 @@ fun WelcomeOnboardingDialog(
                     shape = RoundedCornerShape(18.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(buttonHeight)
+                        .height(54.dp)
                         .graphicsLayer {
                             scaleX = buttonScale
                             scaleY = buttonScale

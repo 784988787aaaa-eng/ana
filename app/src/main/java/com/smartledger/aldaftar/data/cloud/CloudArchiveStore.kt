@@ -95,12 +95,10 @@ class CloudArchiveStore(context: Context) {
             queryParts.add("trashed = false")
 
             if (folderId != null) {
-                queryParts.add("'$folderId' in parents")
+                queryParts.add("('$folderId' in parents or name contains '.sna' or name contains '.slb')")
+            } else {
+                queryParts.add("(name contains '.sna' or name contains '.slb')")
             }
-            // SNA is the only current backup contract. SLB remains queryable only
-            // for legacy import/migration, and exact filename validation below
-            // prevents arbitrary cloud files from being presented as backups.
-            queryParts.add("(name contains '.sna' or name contains '.slb')")
 
             if (search.isNotBlank()) {
                 val cleanSearch = search.trim().replace("'", "\\'")
@@ -120,14 +118,7 @@ class CloudArchiveStore(context: Context) {
                 if (mime == "application/vnd.google-apps.folder") continue
 
                 val id = fileObj.getString("id")
-                val name = fileObj.optString("name", "")
-                val isCurrent = name.matches(
-                    Regex("^SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna$", RegexOption.IGNORE_CASE)
-                )
-                val isLegacy = name.matches(
-                    Regex("^SMN_\\d{4}-\\d{2}(?:-\\d{2}(?:_\\d{4})?)?\\.slb$", RegexOption.IGNORE_CASE)
-                )
-                if (!isCurrent && !isLegacy) continue
+                val name = fileObj.optString("name", "smartledger_backup.sna")
                 val size = fileObj.optLong("size", 0L)
                 val modifiedTimeStr = fileObj.optString("modifiedTime", fileObj.optString("createdTime", ""))
                 val modifiedTime = parseIsoTime(modifiedTimeStr)

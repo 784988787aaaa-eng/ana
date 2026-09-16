@@ -161,7 +161,7 @@ fun ExchangeRateSetupContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = MizanDialogTokens.inputHeight)
+                    .defaultMinSize(minHeight = 36.dp)
                     .border(1.dp, inputBorderColor, MizanDialogTokens.inputShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant, MizanDialogTokens.inputShape)
                     .padding(horizontal = 6.dp, vertical = 2.dp),

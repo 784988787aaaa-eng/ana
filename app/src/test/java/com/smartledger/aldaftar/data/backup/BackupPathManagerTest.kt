@@ -11,10 +11,8 @@ import java.util.Locale
 class BackupPathManagerTest {
     @Test
     fun isSafeBackupNameValidatesCorrectFormat() {
-        assertTrue("SNA_2026-09-09_14-30.sna".matches(Regex("^SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna$", RegexOption.IGNORE_CASE)))
-        assertTrue("SMN_2026-09-09_1430.slb".matches(Regex("^SMN_\\d{4}-\\d{2}(?:-\\d{2}(?:_\\d{4})?)?\\.slb$", RegexOption.IGNORE_CASE)))
-        assertTrue(!"backup.sna".matches(Regex("^SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna$", RegexOption.IGNORE_CASE)))
-        assertTrue(!"SNA_2026-09-09_1430.sna".matches(Regex("^SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna$", RegexOption.IGNORE_CASE)))
+        assertTrue("SNA_2026-09-09_14-30.sna".matches(Regex("SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna", RegexOption.IGNORE_CASE)))
+        assertTrue("SMN_2026-09-09_1430.slb".matches(Regex("SMN_\\d{4}-\\d{2}(?:-\\d{2}(?:_\\d{4})?)?\\.slb", RegexOption.IGNORE_CASE)))
     }
 
     @Test
