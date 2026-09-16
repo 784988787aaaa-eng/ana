@@ -95,6 +95,45 @@ fun RecurringTransactionPopup(
         )
     }
 
+    val nextOcc = remember(frequency, selectedDaysOfWeek, selectedDaysOfMonth, hour, minute, startDateMillis, endDateMillis) {
+        val now = System.currentTimeMillis()
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = maxOf(now, startDateMillis)
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        if (calendar.timeInMillis <= now) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        var found: Long? = null
+        for (i in 0..366) {
+            if (calendar.timeInMillis > endDateMillis) break
+            val matches = when (frequency) {
+                "DAILY" -> true
+                "WEEKLY" -> calendar.get(Calendar.DAY_OF_WEEK) in selectedDaysOfWeek
+                "MONTHLY" -> calendar.get(Calendar.DAY_OF_MONTH) in selectedDaysOfMonth
+                else -> false
+            }
+            if (matches && calendar.timeInMillis >= startDateMillis && calendar.timeInMillis <= endDateMillis) {
+                found = calendar.timeInMillis
+                break
+            }
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        found
+    }
+
+    val nextOccFormatted = remember(nextOcc) {
+        if (nextOcc != null) {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd  hh:mm a", java.util.Locale.getDefault())
+            sdf.format(java.util.Date(nextOcc))
+        } else {
+            null
+        }
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -106,7 +145,7 @@ fun RecurringTransactionPopup(
                     .widthIn(max = MizanDialogTokens.compactMaxWidth)
                     .heightIn(max = 540.dp)
                     .imePadding(),
-                shape = RoundedCornerShape(18.dp),
+                shape = MizanDialogTokens.shape,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -203,6 +242,38 @@ fun RecurringTransactionPopup(
                             activeThemeColor = activeThemeColor
                         )
 
+                        nextOccFormatted?.let { formattedDate ->
+                            androidx.compose.material3.Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MizanDialogTokens.buttonShape,
+                                colors = androidx.compose.material3.CardDefaults.cardColors(
+                                    containerColor = activeThemeColor.copy(alpha = 0.08f)
+                                ),
+                                border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.15f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.habayeb_recurring_next_occurrence_label),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = activeThemeColor
+                                    )
+                                    Text(
+                                        text = formattedDate,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(4.dp))
 
                         RecurringActionsRow(
@@ -255,8 +326,8 @@ private fun RecurringActionsRow(
             onClick = onDismiss,
             modifier = Modifier
                 .weight(1f)
-                .height(40.dp),
-            shape = RoundedCornerShape(10.dp),
+                .height(MizanDialogTokens.buttonHeight),
+            shape = MizanDialogTokens.buttonShape,
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
         ) {
@@ -276,8 +347,8 @@ private fun RecurringActionsRow(
                 },
                 modifier = Modifier
                     .weight(1.2f)
-                    .height(40.dp),
-                shape = RoundedCornerShape(10.dp),
+                    .height(MizanDialogTokens.buttonHeight),
+                shape = MizanDialogTokens.buttonShape,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
@@ -337,9 +408,9 @@ private fun RecurringActionsRow(
             },
             modifier = Modifier
                 .weight(1.5f)
-                .height(40.dp),
+                .height(MizanDialogTokens.buttonHeight),
             colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-            shape = RoundedCornerShape(10.dp),
+            shape = MizanDialogTokens.buttonShape,
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
         ) {
             Text(

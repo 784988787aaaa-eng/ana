@@ -166,7 +166,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             if (nextValue) {
                                 val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
                                 val currentRateVal = ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-                                if (!hasStoredRate || currentRateVal == 1.0) {
+                                if (!hasStoredRate || currentRateVal.compareTo(java.math.BigDecimal.ONE) == 0) {
                                     onRequestRateSetup("")
                                 }
                             }
@@ -203,7 +203,7 @@ fun AddCustomerTypeAndCurrencySelector(
                         val has = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
                         val rate = ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
                         val formatted = try {
-                            BigDecimal.valueOf(rate).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                            rate.setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
                         } catch (e: Exception) {
                             rate.toString()
                         }

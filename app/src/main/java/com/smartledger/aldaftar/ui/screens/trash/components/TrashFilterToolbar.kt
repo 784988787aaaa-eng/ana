@@ -206,13 +206,13 @@ fun TrashFilterToolbar(
                     )
                     Text(
                         text = stringResource(R.string.trash_auto_cleanup_label, selectedCleanupLabel),
-                        fontSize = 10.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "▾",
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }

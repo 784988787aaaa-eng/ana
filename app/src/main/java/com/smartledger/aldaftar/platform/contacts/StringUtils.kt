@@ -156,12 +156,6 @@ object FormatUtils {
     }
 
     @JvmStatic
-    fun formatDoubleCurrency(amount: Double, symbol: String = "", context: Context? = null): String {
-        val finalSymbol = symbol.ifEmpty { context?.getString(com.smartledger.aldaftar.R.string.currency_yer) ?: DatabaseDefaults.DEFAULT_CURRENCY_SYMBOL }
-        return formatDouble(amount, finalSymbol)
-    }
-
-    @JvmStatic
     fun formatDouble(value: Double, symbol: String = ""): String {
         return runCatching {
             formatBigDecimal(BigDecimal.valueOf(value), symbol)

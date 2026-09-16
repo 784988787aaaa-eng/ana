@@ -51,10 +51,10 @@ class TrashRepository(private val dao:TrashDao) {
     val deletedItemsFlow=dao.getAllDeletedItemsFlow(); suspend fun getAllDeletedItemsDirect()=dao.getAllDeletedItemsDirect(); suspend fun saveDeletedItem(v:DeletedItemEntity)=dao.insertDeletedItem(v); suspend fun removeDeletedItem(v:DeletedItemEntity)=dao.deleteItem(v); suspend fun removeDeletedItemById(id:String)=dao.deleteItemById(id); suspend fun clearDeletedItems()=dao.clearAllDeletedItems(); suspend fun restoreDeletedItem(v:DeletedItemEntity)=dao.restoreDeletedItem(v); suspend fun restoreSingleTransactionFromBundle(i:String,t:String)=dao.restoreSingleTransactionFromBundle(i,t)
     fun getPagedTrashItems(query: String, tableFilter: String) = dao.getDeletedItemsPagingSource(query, tableFilter)
     suspend fun removeExpiredBefore(threshold: Long): Int { return dao.removeExpiredBefore(threshold) }
-    suspend fun softDeleteHabayebCustomerToTrash(v:HabayebCustomer)=saveDeletedItem(DeletedItemEntity("cust_${v.id}", "الحبايب", "habayeb_customers", TrashJsonSerializer.serializeHabayebCustomer(v), searchableText = "${v.name} ${v.phone} ${v.notes}", displayName = v.name, amount = 0.0))
-    suspend fun softDeleteHabayebTransactionToTrash(v:HabayebTransaction)=saveDeletedItem(DeletedItemEntity(v.id, "الحبايب", "habayeb_transactions", TrashJsonSerializer.serializeHabayebTransaction(v), searchableText = v.description, displayName = v.description, amount = v.amount.toDouble()))
+    suspend fun softDeleteHabayebCustomerToTrash(v:HabayebCustomer)=saveDeletedItem(DeletedItemEntity("cust_${v.id}", "الحبايب", "habayeb_customers", TrashJsonSerializer.serializeHabayebCustomer(v), searchableText = "${v.name} ${v.phone} ${v.notes}", displayName = v.name, amount = java.math.BigDecimal.ZERO))
+    suspend fun softDeleteHabayebTransactionToTrash(v:HabayebTransaction)=saveDeletedItem(DeletedItemEntity(v.id, "الحبايب", "habayeb_transactions", TrashJsonSerializer.serializeHabayebTransaction(v), searchableText = v.description, displayName = v.description, amount = v.amount))
     suspend fun softDeleteHabayebBundleToTrash(c:HabayebCustomer, tx:List<HabayebTransaction>) {
-        saveDeletedItem(DeletedItemEntity("bundle_${c.id}","الحبايب","habayeb_bundle",TrashJsonSerializer.serializeHabayebBundle(c,tx,null,emptySet<Int>()), searchableText = "${c.name} ${c.phone} ${c.notes}", displayName = c.name, amount = 0.0))
+        saveDeletedItem(DeletedItemEntity("bundle_${c.id}","الحبايب","habayeb_bundle",TrashJsonSerializer.serializeHabayebBundle(c,tx,null,emptySet<Int>()), searchableText = "${c.name} ${c.phone} ${c.notes}", displayName = c.name, amount = java.math.BigDecimal.ZERO))
     }
 
 }

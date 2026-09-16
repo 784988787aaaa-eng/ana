@@ -63,9 +63,9 @@ fun SettingsDialogHost(
                     currencySymbol,
                     targetCurrency
                 )
-                val oldRateBD = java.math.BigDecimal.valueOf(existingRate)
+                val oldRateBD = existingRate
                 val newRateBD = newRate
-                val rateChanged = existingRate > 0.0 && oldRateBD.compareTo(newRateBD) != 0
+                val rateChanged = existingRate.compareTo(java.math.BigDecimal.ZERO) > 0 && oldRateBD.compareTo(newRateBD) != 0
 
                 if (alreadyHasRate && rateChanged) {
                     onStateChange(SettingsDialogState.RevalueConfirm(targetCurrency, newRateBD))

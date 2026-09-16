@@ -63,11 +63,12 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(49.dp)
+                .heightIn(min = 49.dp)
+                .wrapContentHeight()
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(color = effectiveDebtColor)
@@ -121,11 +122,12 @@ fun HabayebDualMetricCards(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(49.dp)
+                .heightIn(min = 49.dp)
+                .wrapContentHeight()
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(color = effectiveCreditColor)

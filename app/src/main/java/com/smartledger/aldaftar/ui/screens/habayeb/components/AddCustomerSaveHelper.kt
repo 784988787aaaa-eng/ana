@@ -22,7 +22,7 @@ data class AddCustomerFormData(
     val currencySymbol: String,
     val applyExchangeRate: Boolean,
     val selectedCalendar: Calendar,
-    val settingsRate: Double,
+    val settingsRate: BigDecimal,
     val isDuplicateName: Boolean
 )
 
@@ -76,7 +76,7 @@ object AddCustomerSaveHelper {
             val settings = viewModel.settingsState.value
             val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
             val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-            if (!hasStoredRate || currentRateVal == 1.0) {
+            if (!hasStoredRate || currentRateVal.compareTo(BigDecimal.ONE) == 0) {
                 onShowRateSetup("")
                 return
             }
@@ -96,7 +96,7 @@ object AddCustomerSaveHelper {
                         initialType = currentType
                     )
                     val exchangeRateBd = if (isForeignSelected && applyExchangeRate) {
-                        BigDecimal.valueOf(settingsRate)
+                        settingsRate
                     } else {
                         BigDecimal.ONE
                     }

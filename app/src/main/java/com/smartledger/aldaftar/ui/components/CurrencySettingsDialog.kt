@@ -83,7 +83,7 @@ private const val TAG = "CurrencySettingsDialog"
 @Composable
 fun CurrencySettingsDialog(
     settings: AppSettings,
-    onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
+    onSaveSettings: (AppSettings, String, BigDecimal, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -119,16 +119,11 @@ fun CurrencySettingsDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .widthIn(max = 340.dp)
+                .widthIn(max = MizanDialogTokens.compactMaxWidth)
                 .padding(4.dp)
                 .imePadding()
                 .animateContentSize(animationSpec = tween(200)),
-            shape = RoundedCornerShape(
-                topStart = 24.dp,
-                bottomEnd = 24.dp,
-                topEnd = 8.dp,
-                bottomStart = 8.dp
-            ),
+            shape = MizanDialogTokens.shape,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
@@ -439,10 +434,10 @@ private fun CurrencyActionButtons(
                 onSave()
             },
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            shape = RoundedCornerShape(10.dp),
+            shape = MizanDialogTokens.buttonShape,
             modifier = Modifier
                 .weight(1.3f)
-                .height(40.dp),
+                .height(MizanDialogTokens.buttonHeight),
             contentPadding = PaddingValues(0.dp)
         ) {
             Text(
@@ -455,10 +450,10 @@ private fun CurrencyActionButtons(
 
         OutlinedButton(
             onClick = onDismiss,
-            shape = RoundedCornerShape(10.dp),
+            shape = MizanDialogTokens.buttonShape,
             modifier = Modifier
                 .weight(1f)
-                .height(40.dp),
+                .height(MizanDialogTokens.buttonHeight),
             contentPadding = PaddingValues(0.dp)
         ) {
             Text(

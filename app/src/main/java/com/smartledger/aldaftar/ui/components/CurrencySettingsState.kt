@@ -27,11 +27,11 @@ class CurrencySettingsState(
         if (localDefaultCurrency == currencyYer) currencyUsd else currencyYer
     )
 
-    val currentRateValue: Double
+    val currentRateValue: BigDecimal
         get() = ExchangeRateHelper.getRate(localExchangeRatesJson, localDefaultCurrency, selectedTargetCurrency)
 
     var rateInputStr by mutableStateOf(
-        if (currentRateValue > 0.0 && currentRateValue != 1.0) HabayebMathHelper.formatRate(currentRateValue) else ""
+        if (currentRateValue.compareTo(BigDecimal.ZERO) > 0 && currentRateValue.compareTo(BigDecimal.ONE) != 0) HabayebMathHelper.formatRate(currentRateValue) else ""
     )
 
     var activeDialogState by mutableStateOf<CurrencyDialogState>(CurrencyDialogState.None)
@@ -58,7 +58,7 @@ class CurrencySettingsState(
     fun onRateInputChange(newInput: String) {
         val cleaned = CurrencyConfig.normalizeDigits(newInput)
         rateInputStr = cleaned
-        val parsed = cleaned.toDoubleOrNull() ?: 1.0
+        val parsed = cleaned.toBigDecimalOrNull() ?: BigDecimal.ONE
         localExchangeRatesJson = ExchangeRateHelper.setRate(
             localExchangeRatesJson,
             localDefaultCurrency,
@@ -69,16 +69,16 @@ class CurrencySettingsState(
 
     private fun refreshRateInput() {
         val rate = currentRateValue
-        rateInputStr = if (rate > 0.0 && rate != 1.0) HabayebMathHelper.formatRate(rate) else ""
+        rateInputStr = if (rate.compareTo(BigDecimal.ZERO) > 0 && rate.compareTo(BigDecimal.ONE) != 0) HabayebMathHelper.formatRate(rate) else ""
     }
 
     fun handleSave(
         settings: AppSettings,
-        onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
+        onSaveSettings: (AppSettings, String, BigDecimal, Boolean) -> Unit,
         onDismiss: () -> Unit
     ) {
-        val finalRate = rateInputStr.trim().toDoubleOrNull() ?: currentRateValue
-        if (finalRate > 0.0) {
+        val finalRate = rateInputStr.trim().toBigDecimalOrNull() ?: currentRateValue
+        if (finalRate.compareTo(BigDecimal.ZERO) > 0) {
             val migratedOriginalJson = ExchangeRateHelper.migrateRates(
                 settings.exchangeRatesJson,
                 settings.currencySymbol,
@@ -94,12 +94,10 @@ class CurrencySettingsState(
                 localDefaultCurrency,
                 selectedTargetCurrency
             )
-            val oldRateBD = BigDecimal.valueOf(existingRate)
-            val newRateBD = BigDecimal.valueOf(finalRate)
-            val rateChanged = existingRate > 0.0 && oldRateBD.compareTo(newRateBD) != 0
+            val rateChanged = existingRate.compareTo(BigDecimal.ZERO) > 0 && existingRate.compareTo(finalRate) != 0
 
             if (alreadyHasRate && rateChanged) {
-                activeDialogState = CurrencyDialogState.RevalueConfirm(selectedTargetCurrency, newRateBD)
+                activeDialogState = CurrencyDialogState.RevalueConfirm(selectedTargetCurrency, finalRate)
             } else {
                 val updatedExchangeRatesJson = ExchangeRateHelper.setRate(
                     localExchangeRatesJson,
@@ -119,7 +117,7 @@ class CurrencySettingsState(
                 currencySymbol = localDefaultCurrency,
                 exchangeRatesJson = localExchangeRatesJson
             )
-            onSaveSettings(updatedSettings, "", 0.0, false)
+            onSaveSettings(updatedSettings, "", BigDecimal.ZERO, false)
             onDismiss()
         }
     }
@@ -128,7 +126,7 @@ class CurrencySettingsState(
         settings: AppSettings,
         targetCurrency: String,
         newRate: BigDecimal,
-        onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
+        onSaveSettings: (AppSettings, String, BigDecimal, Boolean) -> Unit,
         onDismiss: () -> Unit
     ) {
         val updatedSettings = settings.copy(
@@ -140,7 +138,7 @@ class CurrencySettingsState(
                 newRate
             )
         )
-        onSaveSettings(updatedSettings, targetCurrency, newRate.toDouble(), true)
+        onSaveSettings(updatedSettings, targetCurrency, newRate, true)
         activeDialogState = CurrencyDialogState.None
         onDismiss()
     }
@@ -149,7 +147,7 @@ class CurrencySettingsState(
         settings: AppSettings,
         targetCurrency: String,
         newRate: BigDecimal,
-        onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
+        onSaveSettings: (AppSettings, String, BigDecimal, Boolean) -> Unit,
         onDismiss: () -> Unit
     ) {
         val updatedSettings = settings.copy(
@@ -161,7 +159,7 @@ class CurrencySettingsState(
                 newRate
             )
         )
-        onSaveSettings(updatedSettings, targetCurrency, newRate.toDouble(), false)
+        onSaveSettings(updatedSettings, targetCurrency, newRate, false)
         activeDialogState = CurrencyDialogState.None
         onDismiss()
     }

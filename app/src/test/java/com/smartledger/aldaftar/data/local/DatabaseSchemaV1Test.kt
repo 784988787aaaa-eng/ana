@@ -24,12 +24,13 @@ class DatabaseSchemaV1Test {
                 while (it.moveToNext()) add(it.getString(0))
             }
         }
-        assertEquals(2, db.openHelper.readableDatabase.version)
+        assertEquals(3, db.openHelper.readableDatabase.version)
         assertEquals(
             listOf(
                 "app_settings",
                 "business_profile",
                 "custom_categories",
+                "customer_balances",
                 "deleted_items",
                 "habayeb_customers",
                 "habayeb_transactions",

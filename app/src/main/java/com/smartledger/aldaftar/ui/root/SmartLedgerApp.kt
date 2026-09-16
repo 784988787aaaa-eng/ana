@@ -90,7 +90,6 @@ fun SmartLedgerApp(
     }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1200)
         habayebViewModel.processRecurringTransactions { count ->
             if (count > 0) {
                 Toast.makeText(

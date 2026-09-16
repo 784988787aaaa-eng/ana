@@ -89,7 +89,7 @@ fun CurrencyRevalueConfirmDialog(
 
                 Text(
                     text = stringResource(id = R.string.currency_update_rate_confirm_msg, targetCurrency),
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     lineHeight = 15.sp,
                     textAlign = TextAlign.Start,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -114,7 +114,7 @@ fun CurrencyRevalueConfirmDialog(
                         Text(
                             text = stringResource(id = R.string.currency_update_past_future),
                             color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -133,7 +133,7 @@ fun CurrencyRevalueConfirmDialog(
                     ) {
                         Text(
                             text = stringResource(id = R.string.currency_update_future_only),
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }

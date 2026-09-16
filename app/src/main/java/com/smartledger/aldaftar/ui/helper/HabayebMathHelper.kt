@@ -10,18 +10,6 @@ object HabayebMathHelper {
         NumberFormat.getNumberInstance(Locale.US)
     }
 
-    fun toBigDecimal(value: Double): BigDecimal {
-        return if (value.isNaN() || value.isInfinite()) {
-            BigDecimal.ZERO
-        } else {
-            try {
-                BigDecimal.valueOf(value)
-            } catch (e: Exception) {
-                BigDecimal.ZERO
-            }
-        }
-    }
-
     fun toBigDecimal(value: String): BigDecimal {
         return try {
             val clean = value.trim()
@@ -52,18 +40,6 @@ object HabayebMathHelper {
             formatter.maximumFractionDigits = 2
         }
         return formatter.format(stripped)
-    }
-
-    fun formatRate(value: Double): String {
-        if (value <= 0.0) return "0"
-        return try {
-            val bd = BigDecimal(value.toString())
-                .setScale(2, RoundingMode.HALF_EVEN)
-                .stripTrailingZeros()
-            bd.toPlainString()
-        } catch (e: Exception) {
-            value.toString()
-        }
     }
 
     fun formatRate(value: BigDecimal): String {

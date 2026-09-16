@@ -44,5 +44,13 @@ class ExchangeRateHelperTest {
         assertEquals(originalJson, updatedJsonZero)
         assertEquals(originalJson, updatedJsonNeg)
     }
+
+    @Test
+    fun testReverseRateIsReciprocal() {
+        val json = ExchangeRateHelper.setRate("{}", "ر.ي", "ر.س", BigDecimal("140"))
+        val reverse = ExchangeRateHelper.getRateBigDecimal(json, "ر.س", "ر.ي")
+        assertEquals(BigDecimal("0.0071"), reverse)
+    }
+
 }
 

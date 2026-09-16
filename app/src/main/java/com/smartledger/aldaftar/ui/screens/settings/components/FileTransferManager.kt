@@ -80,7 +80,7 @@ fun FileTransferManager(
                 ) {
                     Text(
                         text = stringResource(R.string.settings_export_backup),
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
@@ -98,7 +98,7 @@ fun FileTransferManager(
                 ) {
                     Text(
                         text = stringResource(R.string.settings_import_backup),
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.Bold
                     )

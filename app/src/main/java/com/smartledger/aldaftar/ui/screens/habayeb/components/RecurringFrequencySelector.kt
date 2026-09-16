@@ -250,7 +250,7 @@ private fun MonthlyDayGrid(
                     Text(
                         text = dayNum.toString(),
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

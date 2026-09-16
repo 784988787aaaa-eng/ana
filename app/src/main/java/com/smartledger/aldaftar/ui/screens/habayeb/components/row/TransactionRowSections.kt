@@ -74,7 +74,7 @@ fun TransactionRowDateSection(
             }
             Text(
                 text = "#$txSeqNo",
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = activeThemeColor,
                 modifier = Modifier
@@ -292,7 +292,7 @@ fun TransactionRowAmountSection(
         if (cached.equivalentAmountText != null) {
             AutoSizeText(
                 text = cached.equivalentAmountText,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 color = cached.indicatorColor.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
             )

@@ -173,25 +173,6 @@ fun BalanceCompactChip(
 }
 
 @Composable
-fun BalanceCompactChip(
-    amount: Double,
-    currencyCode: String,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    initialType: String = TransactionType.OWED_BY_THEM.value,
-    modifier: Modifier = Modifier
-) {
-    BalanceCompactChip(
-        amount = BigDecimal.valueOf(amount),
-        currencyCode = currencyCode,
-        isSelected = isSelected,
-        onSelect = onSelect,
-        initialType = initialType,
-        modifier = modifier
-    )
-}
-
-@Composable
 fun CustomerSummaryCard(
     currencySymbol: String,
     netDebtMap: Map<String, BigDecimal> = emptyMap(),

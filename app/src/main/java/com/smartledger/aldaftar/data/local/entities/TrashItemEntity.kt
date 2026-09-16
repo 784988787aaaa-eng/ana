@@ -12,7 +12,7 @@ data class DeletedItemEntity(
     @ColumnInfo(name = "jsonData") val jsonData: String,
     @ColumnInfo(name = "deletedAt") val deletedAt: Long = System.currentTimeMillis(),
     @ColumnInfo(name = "searchableText") val searchableText: String = "",
-    @ColumnInfo(name = "amount") val amount: Double = 0.0,
+    @ColumnInfo(name = "amount") val amount: java.math.BigDecimal = java.math.BigDecimal.ZERO,
     @ColumnInfo(name = "displayName") val displayName: String = ""
 )
 

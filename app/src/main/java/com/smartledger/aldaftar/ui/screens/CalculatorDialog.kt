@@ -359,7 +359,8 @@ fun CalcButton(
 
     Card(
         modifier = modifier
-            .height(52.dp)
+            .heightIn(min = 52.dp)
+            .wrapContentHeight()
             .then(clickableModifier),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(

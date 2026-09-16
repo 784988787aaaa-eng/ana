@@ -208,7 +208,7 @@ fun CustomerItemRow(
                                 ) {
                                     Text(
                                         text = stringResource(id = R.string.currency_foreign_cash),
-                                        fontSize = 10.5.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = badgeTextColor,
                                         maxLines = 1,
@@ -237,7 +237,7 @@ fun CustomerItemRow(
                 ) {
                     Text(
                         text = "📌",
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         modifier = Modifier.graphicsLayer {
                             rotationZ = -15f
                         }

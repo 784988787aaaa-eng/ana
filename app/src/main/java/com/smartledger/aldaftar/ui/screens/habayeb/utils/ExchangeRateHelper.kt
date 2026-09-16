@@ -56,8 +56,8 @@ object ExchangeRateHelper {
         }
     }
 
-    fun getRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Double {
-        return getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol).toDouble()
+    fun getRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): BigDecimal {
+        return getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
     }
 
     fun hasRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Boolean {
@@ -119,82 +119,84 @@ object ExchangeRateHelper {
         return completeMatrix(updatedJson)
     }
 
-    fun setRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String, rate: Double): String {
-        if (rate <= 0.0) return jsonStr
-        return setRate(jsonStr, baseCurrencySymbol, foreignCurrencySymbol, BigDecimal.valueOf(rate))
-    }
-
     fun completeMatrix(jsonStr: String): String {
-        try {
+        return try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
-            
-            val symbolsSet = mutableSetOf("ر.ي", "ر.س", "$")
+            val symbolsSet = linkedSetOf("ر.ي", "ر.س", "$")
             val keys = root.keys()
             while (keys.hasNext()) {
-                val key = keys.next() as String
+                val key = keys.next()
                 symbolsSet.add(key)
-                if (root.get(key) is JSONObject) {
-                    val inner = root.getJSONObject(key)
+                root.optJSONObject(key)?.let { inner ->
                     val innerKeys = inner.keys()
-                    while (innerKeys.hasNext()) {
-                        symbolsSet.add(innerKeys.next() as String)
-                    }
+                    while (innerKeys.hasNext()) symbolsSet.add(innerKeys.next())
                 }
             }
             val symbols = symbolsSet.toList()
-            
-            val rates = mutableMapOf<String, MutableMap<String, BigDecimal>>()
-            for (src in symbols) {
-                val map = rates.getOrPut(src) { mutableMapOf() }
-                map[src] = BigDecimal.ONE
+
+            fun readRate(src: String, dst: String): BigDecimal? {
+                val value = root.optJSONObject(src)?.opt(dst) ?: return null
+                val rate = when (value) {
+                    is Number -> value.toString().toBigDecimalOrNull()
+                    is String -> value.trim().toBigDecimalOrNull()
+                    else -> null
+                } ?: return null
+                return rate.takeIf { it > BigDecimal.ZERO }
             }
-            
-            for (src in symbols) {
-                if (root.has(src) && root.get(src) is JSONObject) {
-                    val obj = root.getJSONObject(src)
-                    for (dst in symbols) {
-                        if (obj.has(dst)) {
-                            val rawVal = obj.opt(dst)
-                            val r = when (rawVal) {
-                                is Number -> BigDecimal(rawVal.toString())
-                                is String -> if (rawVal.isNotBlank()) BigDecimal(rawVal.trim()) else BigDecimal.ZERO
-                                else -> BigDecimal.ZERO
-                            }
-                            if (r.compareTo(BigDecimal.ZERO) > 0) {
-                                rates.getOrPut(src) { mutableMapOf() }[dst] = r.setScale(4, RoundingMode.HALF_EVEN)
-                            }
-                        }
-                    }
+
+            fun canonicalBase(a: String, b: String): String {
+                val rankA = CurrencyConfig.getCurrencyRank(a)
+                val rankB = CurrencyConfig.getCurrencyRank(b)
+                return when {
+                    rankA != rankB -> if (rankA < rankB) a else b
+                    else -> minOf(a, b)
                 }
             }
-            
-            for (src in symbols) {
-                for (dst in symbols) {
-                    if (src != dst) {
-                        val direct = rates[src]?.get(dst)
-                        val inverse = rates[dst]?.get(src)
-                        if (direct != null && direct.compareTo(BigDecimal.ZERO) > 0 && (inverse == null || inverse.compareTo(BigDecimal.ZERO) <= 0)) {
-                            rates.getOrPut(dst) { mutableMapOf() }[src] = direct
-                        } else if (inverse != null && inverse.compareTo(BigDecimal.ZERO) > 0 && (direct == null || direct.compareTo(BigDecimal.ZERO) <= 0)) {
-                            rates.getOrPut(src) { mutableMapOf() }[dst] = inverse
-                        }
+
+            // A stored pair is defined as: one unit of the canonical base currency
+            // equals `rate` units of the target currency. The reverse direction is
+            // therefore the exact reciprocal, never the same rate.
+            for (i in symbols.indices) {
+                for (j in i + 1 until symbols.size) {
+                    val a = symbols[i]
+                    val b = symbols[j]
+                    val base = canonicalBase(a, b)
+                    val target = if (base == a) b else a
+
+                    val direct = readRate(base, target)
+                    val reverse = readRate(target, base)
+                    val canonicalRate = when {
+                        direct != null -> direct
+                        reverse != null -> BigDecimal.ONE.divide(reverse, 12, RoundingMode.HALF_EVEN)
+                        else -> null
+                    } ?: continue
+
+                    if (canonicalRate <= BigDecimal.ZERO) continue
+                    val normalized = canonicalRate.setScale(4, RoundingMode.HALF_EVEN)
+                    root.optJSONObject(base)?.apply {
+                        put(target, normalized.toPlainString())
+                    } ?: JSONObject().also {
+                        it.put(target, normalized.toPlainString())
+                        root.put(base, it)
+                    }
+
+                    val inverse = BigDecimal.ONE.divide(normalized, 12, RoundingMode.HALF_EVEN)
+                        .setScale(4, RoundingMode.HALF_EVEN)
+                    root.optJSONObject(target)?.apply {
+                        put(base, inverse.toPlainString())
+                    } ?: JSONObject().also {
+                        it.put(base, inverse.toPlainString())
+                        root.put(target, it)
                     }
                 }
             }
 
-            for (src in symbols) {
-                val obj = if (root.has(src) && root.get(src) is JSONObject) root.getJSONObject(src) else JSONObject()
-                val srcRates = rates[src] ?: continue
-                for ((dst, r) in srcRates) {
-                    if (src != dst && r.compareTo(BigDecimal.ZERO) > 0) {
-                        obj.put(dst, r.toPlainString())
-                    }
-                }
-                root.put(src, obj)
+            for (symbol in symbols) {
+                if (!root.has(symbol)) root.put(symbol, JSONObject())
             }
-            return root.toString()
+            root.toString()
         } catch (_: Exception) {
-            return jsonStr
+            jsonStr
         }
     }
 

@@ -129,8 +129,8 @@ fun MainAppLayout(
                 businessProfileViewModel = businessProfileViewModel,
                 onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
                     viewModel.saveSettings(updated)
-                    if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
-                        habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, java.math.BigDecimal.valueOf(newRate))
+                    if (revalueHistorical && targetCurrency.isNotEmpty() && newRate.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                        habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, newRate)
                     }
                 },
                 versionName = versionName,
@@ -267,8 +267,8 @@ fun MainAppLayout(
             settings = settings,
             onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
                 viewModel.saveSettings(updated)
-                if (revalueHistorical && targetCurrency.isNotEmpty() && newRate > 0.0) {
-                    habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, java.math.BigDecimal.valueOf(newRate))
+                if (revalueHistorical && targetCurrency.isNotEmpty() && newRate.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, newRate)
                 }
             },
             onDismiss = { showCurrencySettingsDialog = false }

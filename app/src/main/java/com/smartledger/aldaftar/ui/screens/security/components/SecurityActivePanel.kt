@@ -148,7 +148,7 @@ fun SecurityActivePanel(
                                 )
                                 Text(
                                     text = stringResource(id = R.string.sec_biometric_desc),
-                                    fontSize = 10.5.sp,
+                                    fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }

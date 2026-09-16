@@ -68,7 +68,7 @@ fun ExchangeRateModifyDialog(
     onConfirmRateSetup: (String, BigDecimal) -> Unit,
     onDeactivateExchange: () -> Unit,
     hasStoredRateForCurrency: (String) -> Boolean,
-    getStoredRateForCurrency: (String) -> Double
+    getStoredRateForCurrency: (String) -> BigDecimal
 ) {
     if (!show || tx == null) return
 
@@ -135,8 +135,8 @@ fun ExchangeRateModifyDialog(
                                     Button(
                                         onClick = {
                                             val storedRate = getStoredRateForCurrency(txCurrency)
-                                            if (hasStoredRateForCurrency(txCurrency) && storedRate != 1.0) {
-                                                onConfirmRateSetup(txCurrency, BigDecimal.valueOf(storedRate))
+                                            if (hasStoredRateForCurrency(txCurrency) && storedRate.compareTo(BigDecimal.ONE) != 0) {
+                                                onConfirmRateSetup(txCurrency, storedRate)
                                             } else {
                                                 setupOverlayCurrency = txCurrency
                                                 setupOverlayInitialRate = ""

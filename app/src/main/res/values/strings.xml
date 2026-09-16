@@ -790,6 +790,7 @@
     <!-- 09. النوافذ الحوارية ورسائل التأكيد (Dialogs, Overlays & Alert Messages)           -->
     <!-- ============================================================================== -->
 
+    <string name="habayeb_recurring_next_occurrence_label">القيد القادم:</string>
     <string name="toast_recurring_txs_success">تم تسجيل %1$d معاملة تلقائياً</string>
     <string name="toast_backup_export_success">تم تصدير النسخة الاحتياطية بنجاح</string>
     <string name="toast_backup_export_failed">فشل حفظ النسخة الاحتياطية</string>

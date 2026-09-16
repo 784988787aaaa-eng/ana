@@ -162,8 +162,8 @@ fun ExchangeRateSetupContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 36.dp)
-                    .border(1.dp, inputBorderColor, RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                    .border(1.dp, inputBorderColor, MizanDialogTokens.inputShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, MizanDialogTokens.inputShape)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -219,7 +219,7 @@ fun ExchangeRateSetupContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MizanDialogTokens.inputShape)
                     .clickable {
                         isChecked = !isChecked
                         if (isChecked) {

@@ -359,12 +359,12 @@ fun ActionCircleItem(
         }
         Text(
             text = title,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            lineHeight = 11.sp
+            lineHeight = 13.sp
         )
     }
 }

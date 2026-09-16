@@ -36,7 +36,7 @@ fun AutoScaleText(
     color: Color,
     fontWeight: FontWeight,
     modifier: Modifier = Modifier,
-    minFontSize: TextUnit = 9.sp,
+    minFontSize: TextUnit = 11.sp,
     textAlign: TextAlign = TextAlign.Center,
     maxLines: Int = 1
 ) {

@@ -13,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import android.util.Base64
+import java.math.BigDecimal
 
 class BackupEngine(
     private val context: Context,
@@ -168,7 +169,7 @@ class BackupEngine(
         put("exchangeRatesJson", v.exchangeRatesJson)
     }
     private fun categoryJson(v: CustomCategory) = JSONObject().apply { put("id", v.id); put("name", v.name); put("tabType", v.tabType); put("iconEmoji", v.iconEmoji); put("displayOrder", v.displayOrder); put("isSystemClosed", v.isSystemClosed) }
-    private fun trashJson(v: DeletedItemEntity) = JSONObject().apply { put("id", v.id); put("sourceSystem", v.sourceSystem); put("originalTableName", v.originalTableName); put("jsonData", v.jsonData); put("deletedAt", v.deletedAt); put("searchableText", v.searchableText); put("amount", v.amount); put("displayName", v.displayName) }
+    private fun trashJson(v: DeletedItemEntity) = JSONObject().apply { put("id", v.id); put("sourceSystem", v.sourceSystem); put("originalTableName", v.originalTableName); put("jsonData", v.jsonData); put("deletedAt", v.deletedAt); put("searchableText", v.searchableText); put("amount", v.amount.toPlainString()); put("displayName", v.displayName) }
     private fun customerJson(v: HabayebCustomer) = JSONObject().apply { put("id", v.id); put("name", v.name); put("phone", v.phone); put("notes", v.notes); put("createdAt", v.createdAt); put("initialType", v.initialType); put("categoryId", v.categoryId) }
     private fun habayebTransactionJson(v: HabayebTransaction) = JSONObject().apply { put("id", v.id); put("customerId", v.customerId); put("type", v.type); put("amount", v.amount.toPlainString()); put("timestamp", v.timestamp); put("description", v.description); put("linkedMainTxId", v.linkedMainTxId); put("isForeign", v.isForeign); put("currencyCode", v.currencyCode); put("foreignAmount", v.foreignAmount.toPlainString()); put("exchangeRate", v.exchangeRate.toPlainString()); put("isRateCalculated", v.isRateCalculated); put("equivalentAmount", v.equivalentAmount.toPlainString()); put("baseCurrencyCode", v.baseCurrencyCode) }
     private fun pinJson(v: PinnedCustomer) = JSONObject().apply { put("scopeCategoryId", v.scopeCategoryId); put("customerId", v.customerId) }
@@ -177,7 +178,7 @@ class BackupEngine(
 
     private fun parseSettings(o: JSONObject) = AppSettings(1, o.optString("currencySymbol", "ر.ي"), o.optBoolean("schoolExpensesEnabled", true), o.optInt("themeMode"), o.optBoolean("doubleCheckExit", true), o.optBoolean("isPasscodeEnabled"), o.optStringOrNull("passcodeHash"), o.optStringOrNull("recoveryPhraseHash"), o.optStringOrNull("recoveryHint"), o.optBoolean("isFirstLaunch", false), o.optBoolean("onboardingShown"), o.optString("trashAutoCleanupPeriod", "NEVER"), o.optString("exchangeRatesJson", "{}"))
     private fun parseCategory(o: JSONObject) = CustomCategory(o.getInt("id"), o.getString("name"), o.getString("tabType"), o.getString("iconEmoji"), o.getInt("displayOrder"), o.getBoolean("isSystemClosed"))
-    private fun parseTrash(o: JSONObject) = DeletedItemEntity(o.getString("id"), o.getString("sourceSystem"), o.getString("originalTableName"), o.getString("jsonData"), o.getLong("deletedAt"), o.optString("searchableText", ""), o.optDouble("amount", 0.0), o.optString("displayName", ""))
+    private fun parseTrash(o: JSONObject) = DeletedItemEntity(o.getString("id"), o.getString("sourceSystem"), o.getString("originalTableName"), o.getString("jsonData"), o.getLong("deletedAt"), o.optString("searchableText", ""), o.optString("amount", "0").toBigDecimalOrNull() ?: BigDecimal.ZERO, o.optString("displayName", ""))
     private fun parseCustomer(o: JSONObject) = HabayebCustomer(o.getString("id"), o.getString("name"), o.getString("phone"), o.getString("notes"), o.getLong("createdAt"), o.optString("initialType", "OWED_BY_THEM"), if (o.isNull("categoryId")) null else o.getInt("categoryId"))
     private fun parseHabayebTransaction(o: JSONObject) = HabayebTransaction(o.getString("id"), o.getString("customerId"), o.getString("type"), o.getString("amount").toBigDecimal(), o.getLong("timestamp"), o.getString("description"), o.optStringOrNull("linkedMainTxId"), o.optBoolean("isForeign"), o.optString("currencyCode", "DEFAULT"), o.getString("foreignAmount").toBigDecimal(), o.getString("exchangeRate").toBigDecimal(), o.optBoolean("isRateCalculated"), o.getString("equivalentAmount").toBigDecimal(), o.optString("baseCurrencyCode", "DEFAULT"))
     private fun parsePin(o: JSONObject) = PinnedCustomer(o.getInt("scopeCategoryId"), o.getString("customerId"))

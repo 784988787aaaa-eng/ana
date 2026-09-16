@@ -86,13 +86,13 @@ fun AddTransactionPopup(
     var applyExchangeRate by rememberSaveable { mutableStateOf(editingTransaction?.isRateCalculated ?: false) }
 
     val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-    val settingsRate = if (currentRateVal <= 0.0) 1.0 else currentRateVal
+    val settingsRate = if (currentRateVal.compareTo(java.math.BigDecimal.ZERO) <= 0) java.math.BigDecimal.ONE else currentRateVal
 
     val effectiveRateBd = remember(editingTransaction, selectedTransactionCurrency, settingsRate) {
         if (editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
             editingTransaction.exchangeRate
         } else {
-            BigDecimal.valueOf(settingsRate)
+            settingsRate
         }
     }
 
@@ -198,7 +198,7 @@ fun AddTransactionPopup(
             val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
             val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
 
-            if (isForeignSelected && applyExchangeRate && (!hasStoredRate || currentRateVal == 1.0)) {
+            if (isForeignSelected && applyExchangeRate && (!hasStoredRate || currentRateVal.compareTo(BigDecimal.ONE) == 0)) {
                 tempRateStr = INITIAL_EMPTY_TEXT
                 showRateSetupOverlay = true
                 isSaving = false
@@ -269,7 +269,7 @@ fun AddTransactionPopup(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier
-                    .widthIn(max = 360.dp)
+                    .widthIn(max = MizanDialogTokens.compactMaxWidth)
                     .fillMaxWidth(0.92f)
                     .navigationBarsPadding()
                     .imePadding()
@@ -406,8 +406,8 @@ fun AddTransactionPopup(
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = mizanColors.onDebt),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1f).height(42.dp)
+                                    shape = MizanDialogTokens.buttonShape,
+                                    modifier = Modifier.weight(1f).height(MizanDialogTokens.buttonHeight)
                                 ) {
                                     Text(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
@@ -422,8 +422,8 @@ fun AddTransactionPopup(
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.PAYMENT_BY_THEM.value else TransactionType.PAYMENT_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = creditGreenColor, contentColor = mizanColors.onCredit),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1f).height(42.dp)
+                                    shape = MizanDialogTokens.buttonShape,
+                                    modifier = Modifier.weight(1f).height(MizanDialogTokens.buttonHeight)
                                 ) {
                                     Text(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),

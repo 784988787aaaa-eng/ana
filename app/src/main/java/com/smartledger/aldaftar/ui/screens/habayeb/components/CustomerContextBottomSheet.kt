@@ -113,7 +113,7 @@ fun CustomerContextBottomSheet(
                                         onDismiss()
                                         onDelete()
                                     },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(44.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
@@ -128,7 +128,7 @@ fun CustomerContextBottomSheet(
                                         onDismiss()
                                         onEditClick()
                                     },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(44.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Edit,
@@ -172,7 +172,7 @@ fun CustomerContextBottomSheet(
 
                         Column(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(1.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             ContextMenuItem(
                                 icon = Icons.Default.Star,

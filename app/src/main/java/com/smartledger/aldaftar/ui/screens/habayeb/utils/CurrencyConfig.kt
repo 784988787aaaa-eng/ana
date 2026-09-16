@@ -179,17 +179,6 @@ object CurrencyConfig {
         }
     }
 
-    fun convertAmount(
-        amount: Double,
-        baseCurrencySymbol: String,
-        foreignCurrencySymbol: String,
-        rate: Double
-    ): Double {
-        val amountBD = BigDecimal.valueOf(amount)
-        val rateBD = BigDecimal.valueOf(rate)
-        return convertAmountBigDecimal(amountBD, baseCurrencySymbol, foreignCurrencySymbol, rateBD).toDouble()
-    }
-
     fun getTransactionCurrencyAndAmountBigDecimal(
         tx: HabayebTransaction,
         defaultCurrencySymbol: String,

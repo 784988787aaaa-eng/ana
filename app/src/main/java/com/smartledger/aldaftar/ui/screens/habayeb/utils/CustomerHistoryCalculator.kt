@@ -31,9 +31,6 @@ data class CustomerHistoryCalculationResult(
     val owedToThemBDMap: Map<String, BigDecimal> = emptyMap(),
     val paymentToThemBDMap: Map<String, BigDecimal> = emptyMap()
 ) {
-    val runningBalancesDouble: Map<String, Double> by lazy {
-        runningBalances.mapValues { it.value.toDouble() }
-    }
 }
 
 object CustomerHistoryCalculator {

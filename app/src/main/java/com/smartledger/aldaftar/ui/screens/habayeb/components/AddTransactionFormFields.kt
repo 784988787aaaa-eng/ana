@@ -157,7 +157,7 @@ fun AddTransactionFormFields(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = formattedSelectedDate,
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )

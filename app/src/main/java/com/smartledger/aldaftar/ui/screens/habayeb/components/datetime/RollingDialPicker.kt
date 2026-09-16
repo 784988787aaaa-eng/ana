@@ -73,7 +73,7 @@ fun RollingDialPicker(
     ) {
         Text(
             text = label,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             fontWeight = FontWeight.Bold
         )

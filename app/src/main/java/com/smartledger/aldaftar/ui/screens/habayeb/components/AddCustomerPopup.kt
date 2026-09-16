@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
@@ -81,7 +82,7 @@ fun AddCustomerPopup(
 
     val settingsRate = remember(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
         val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-        if (currentRateVal > 0.0) currentRateVal else 1.0
+        if (currentRateVal.compareTo(java.math.BigDecimal.ZERO) > 0) currentRateVal else java.math.BigDecimal.ONE
     }
 
     var showCalculator by rememberSaveable { mutableStateOf(false) }
@@ -169,10 +170,10 @@ fun AddCustomerPopup(
     ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
-                shape = RoundedCornerShape(12.dp),
+                shape = MizanDialogTokens.shape,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
-                    .widthIn(max = 350.dp)
+                    .widthIn(max = MizanDialogTokens.compactMaxWidth)
                     .fillMaxWidth(0.94f)
                     .imePadding()
                     .padding(2.dp)

@@ -428,7 +428,7 @@ private fun CompactStateBanner(
             )
             Text(
                 text = description,
-                fontSize = 10.5.sp,
+                fontSize = 11.sp,
                 lineHeight = 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = textColor
@@ -497,7 +497,7 @@ private fun CompactTabItem(
             Spacer(Modifier.width(5.dp))
             Text(
                 text = label,
-                fontSize = 10.5.sp,
+                fontSize = 11.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -540,7 +540,7 @@ private fun UnifiedAccountLoginSection(
                 ) {
                     Text(
                         text = "سجّل الدخول بحساب Google ليتم تفعيل التطبيق تلقائياً بمجرد ترخيص حسابك.",
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 15.sp
@@ -551,8 +551,8 @@ private fun UnifiedAccountLoginSection(
                         enabled = !busy,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(42.dp),
-                        shape = RoundedCornerShape(10.dp),
+                            .height(MizanDialogTokens.buttonHeight),
+                        shape = MizanDialogTokens.buttonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
@@ -860,7 +860,7 @@ private fun ActiveLicenseCompactCard(
                             val remaining = snapshot.calculateRemainingDays() ?: snapshot.remainingDays ?: 0
                             Text(
                                 text = "متبقي $remaining يوماً",
-                                fontSize = 10.5.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -901,7 +901,7 @@ private fun ActiveLicenseCompactCard(
                 ) {
                     Text(
                         text = "كود الحساب: ${snapshot.accountCode}",
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -953,7 +953,7 @@ private fun CompactMessageBanner(
             )
             Text(
                 text = message,
-                fontSize = 10.5.sp,
+                fontSize = 11.sp,
                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium
             )

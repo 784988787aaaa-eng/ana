@@ -9,8 +9,8 @@ import java.util.Locale
 /** مسارات النسخ الاحتياطية الداخلية غير الظاهرة للمستخدم. */
 class BackupPathManager(context: Context) {
     companion object {
-        const val EXTENSION = ".slb"
-        const val PREFIX = "SMN_"
+        const val EXTENSION = ".sna"
+        const val PREFIX = "SNA_"
         const val ROOT_FOLDER = "backups"
     }
 
@@ -22,12 +22,12 @@ class BackupPathManager(context: Context) {
     }
 
     fun automaticFile(date: Date = Date()): File {
-        val dateName = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date)
-        return File(monthFolder(date), "$PREFIX$dateName$EXTENSION")
+        val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US).format(date)
+        return File(monthFolder(date), "$PREFIX$stamp$EXTENSION")
     }
 
     fun manualFile(date: Date = Date()): File {
-        val stamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US).format(date)
+        val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US).format(date)
         return File(monthFolder(date), "$PREFIX$stamp$EXTENSION")
     }
 
@@ -35,5 +35,6 @@ class BackupPathManager(context: Context) {
         file.isFile && isSafeBackupName(file.name)
 
     fun isSafeBackupName(name: String): Boolean =
+        name.matches(Regex("SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna", RegexOption.IGNORE_CASE)) ||
         name.matches(Regex("SMN_\\d{4}-\\d{2}(?:-\\d{2}(?:_\\d{4})?)?\\.slb", RegexOption.IGNORE_CASE))
 }

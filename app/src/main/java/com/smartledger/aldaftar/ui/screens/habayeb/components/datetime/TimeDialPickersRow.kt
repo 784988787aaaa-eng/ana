@@ -48,7 +48,7 @@ fun TimeDialPickersRow(
         ) {
             Text(
                 text = stringResource(id = R.string.datetime_picker_period),
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 fontWeight = FontWeight.Bold
             )

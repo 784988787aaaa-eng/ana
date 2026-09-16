@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.components
 
+import java.math.BigDecimal
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -49,7 +50,7 @@ fun AppNavigationDrawer(
     licenseViewModel: LicenseViewModel,
     onLicenseClick: () -> Unit,
     businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
-    onSaveSettings: (AppSettings, String, Double, Boolean) -> Unit,
+    onSaveSettings: (AppSettings, String, BigDecimal, Boolean) -> Unit,
     versionName: String,
     onComprehensiveReportClick: () -> Unit,
     onBusinessProfileClick: () -> Unit,
@@ -85,7 +86,7 @@ fun AppNavigationDrawer(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         val newMode = if (isDark) 1 else 2
-                        onSaveSettings(settings.copy(themeMode = newMode), "", 0.0, false)
+                        onSaveSettings(settings.copy(themeMode = newMode), "", BigDecimal.ZERO, false)
                     },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -149,7 +150,7 @@ fun AppNavigationDrawer(
                         text = stringResource(id = R.string.drawer_app_subtitle),
                         fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         color = Color.White.copy(alpha = 0.75f),
                         textAlign = TextAlign.Center
                     )

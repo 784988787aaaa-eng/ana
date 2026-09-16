@@ -409,7 +409,7 @@ private fun BackupMainHeader(connected: Boolean) {
                 )
                 Text(
                     text = stringResource(if (connected) R.string.backup_status_connected else R.string.backup_status_disconnected),
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -897,7 +897,7 @@ private fun ResetAllDataButton(
             OutlinedButton(
                 onClick = onClick,
                 enabled = !busy,
-                modifier = Modifier.height(34.dp),
+                modifier = Modifier.heightIn(min = 34.dp).wrapContentHeight(),
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -976,7 +976,7 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
             ) {
                 Text(
                     text = stringResource(R.string.backup_manual_btn),
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
