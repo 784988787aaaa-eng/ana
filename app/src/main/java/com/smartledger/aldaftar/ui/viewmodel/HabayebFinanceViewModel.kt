@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.ui.viewmodel
 
 import android.app.Application
 import com.smartledger.aldaftar.data.license.LicenseRepository
+import com.smartledger.aldaftar.ui.helper.VibrationHelper
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -346,7 +347,7 @@ class HabayebFinanceViewModel(
             licenseRepository.triggerLicenseRequired()
             return@withContext false
         }
-        com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+        VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customer.id)
         true
     }
@@ -365,7 +366,7 @@ class HabayebFinanceViewModel(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
                 foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
             )
-            com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+            VibrationHelper.triggerSuccessVibration(getApplication())
             emitScrollToAccount(customerId)
             return@withContext true
         }
@@ -380,7 +381,7 @@ class HabayebFinanceViewModel(
             licenseRepository.triggerLicenseRequired()
             return@withContext false
         }
-        com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+        VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customerId)
         true
     }
@@ -398,27 +399,27 @@ class HabayebFinanceViewModel(
     fun deleteHabayebCustomer(customerId: String) {
         viewModelScope.launch {
             transactionUseCase.deleteCustomer(customerId)
-            com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+            VibrationHelper.triggerDeleteVibration(getApplication())
         }
     }
     fun deleteMultipleHabayebCustomers(customerIds: List<String>) {
         viewModelScope.launch {
             transactionUseCase.deleteMultipleCustomers(customerIds)
-            com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+            VibrationHelper.triggerDeleteVibration(getApplication())
         }
     }
     fun deleteHabayebTransaction(txId: String, isEdit: Boolean = false) {
         viewModelScope.launch {
             transactionUseCase.deleteTransaction(txId, isEdit)
             if (!isEdit) {
-                com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+                VibrationHelper.triggerDeleteVibration(getApplication())
             }
         }
     }
     fun deleteMultipleHabayebTransactions(txIds: List<String>) {
         viewModelScope.launch {
             transactionUseCase.deleteMultipleTransactions(txIds)
-            com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerDeleteVibration(getApplication())
+            VibrationHelper.triggerDeleteVibration(getApplication())
         }
     }
     fun saveSettings(settings: AppSettings) { viewModelScope.launch(Dispatchers.IO) { settingsRepository.saveSettings(settings) } }
