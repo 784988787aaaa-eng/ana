@@ -7,10 +7,11 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
+import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.data.repository.TrashItemParser
+import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
 import kotlinx.coroutines.flow.Flow
 import org.json.JSONArray
 import org.json.JSONObject
@@ -21,6 +22,7 @@ abstract class TrashDao {
     companion object {
         const val TABLE_TRANSACTIONS = "transactions"
         const val TABLE_HABAYEB_TRANSACTIONS = "habayeb_transactions"
+        const val TABLE_FIXED_COMMITMENTS = "fixed_commitments"
         const val TABLE_HABAYEB_CUSTOMERS = "habayeb_customers"
         const val BUNDLE_HABAYEB = "habayeb_bundle"
         const val BUNDLE_DAR = "dar_bundle"
@@ -54,6 +56,9 @@ abstract class TrashDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertHabayebTransaction(tx: HabayebTransaction)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertFixedCommitment(commitment: FixedCommitment)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertHabayebCustomer(customer: HabayebCustomer)
@@ -122,6 +127,10 @@ abstract class TrashDao {
                 val tx = TrashItemParser.parseHabayebTransaction(root)
                 insertHabayebTransaction(tx)
             }
+            TABLE_FIXED_COMMITMENTS -> {
+                val fc = TrashItemParser.parseFixedCommitment(root)
+                insertFixedCommitment(fc)
+            }
             TABLE_HABAYEB_CUSTOMERS -> {
                 val customer = TrashItemParser.parseHabayebCustomer(root)
                 insertHabayebCustomer(customer)
@@ -149,6 +158,15 @@ abstract class TrashDao {
                 }
             }
             BUNDLE_DAR -> {
+                if (root.has("commitments")) {
+                    val fcsArray = root.getJSONArray("commitments")
+                    for (i in 0 until fcsArray.length()) {
+                        val fcObj = fcsArray.getJSONObject(i)
+                        val fc = TrashItemParser.parseFixedCommitment(fcObj)
+                        insertFixedCommitment(fc)
+                    }
+                }
+                
                 if (root.has("transactions")) {
                     val txsArray = root.getJSONArray("transactions")
                     for (i in 0 until txsArray.length()) {

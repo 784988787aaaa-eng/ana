@@ -12,9 +12,10 @@ class AppViewModelFactory(
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
-        FinanceViewModel::class.java -> FinanceViewModel(application, container.settings, container.floatingUi) as T
+        FinanceViewModel::class.java -> FinanceViewModel(application, container.license, container.settings, container.commitments, container.transactions, container.categories, container.habayeb, container.trash, container.maintenance, container.floatingUi) as T
         HabayebFinanceViewModel::class.java -> HabayebFinanceViewModel(application, container.license, container.categoryUseCase, container.habayeb, container.transactions, container.categories, container.settings, container.recurring, container.mutation, container.floatingUi) as T
         SecurityViewModel::class.java -> SecurityViewModel(application, container.settings) as T
+        BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance, container.backupEngine, container.unifiedAccount, container.cloudArchiveStore) as T
         BusinessProfileViewModel::class.java -> BusinessProfileViewModel(container.businessProfile) as T
         LicenseViewModel::class.java -> LicenseViewModel(application, container.license, container.unifiedAccount) as T
         else -> throw IllegalArgumentException("Unsupported ViewModel: ${modelClass.name}")

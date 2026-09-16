@@ -15,11 +15,12 @@ class AppContainer(context: Context) {
     private val database by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AppDatabase.getDatabase(context) }
     val categories by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CategoryRepository(database.customCategoryDao()) }
     val settings by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SettingsRepository(database.settingsDao()) }
+    val commitments by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CommitmentRepository(database.commitmentDao()) }
     val transactions by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { TransactionRepository(database.transactionDao()) }
     val categoryUseCase by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebCategoryUseCase(categories, HabayebCategoryDataRepository(database, categories)) }
     val habayeb by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebRepository(database, database.habayebDao()) }
     val trash by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { TrashRepository(database.trashDao()) }
-    val maintenance by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DataMaintenanceRepository(database, database.settingsDao(), database.transactionDao(), database.customCategoryDao(), database.trashDao(), database.habayebDao()) }
+    val maintenance by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DataMaintenanceRepository(database, database.settingsDao(), database.commitmentDao(), database.transactionDao(), database.customCategoryDao(), database.trashDao(), database.habayebDao()) }
     val businessProfile by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BusinessProfileRepository(database.businessProfileDao()) }
     val recurring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RecurringRepository(database, database.recurringConfigDao()) }
     val floatingUi by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { FloatingUiPreferencesRepository(context.applicationContext) }

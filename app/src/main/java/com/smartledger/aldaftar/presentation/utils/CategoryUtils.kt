@@ -83,9 +83,9 @@ fun getAuditLogGroupDate(timestampMs: Long, context: Context? = null): String {
     val dayDiff = if (isSameYear) currentDayOfYear - logDayOfYear else -1
 
     return when {
-        isSameYear && dayDiff == 0 -> context?.getString(R.string.date_day_today).orEmpty()
-        isSameYear && dayDiff == 1 -> context?.getString(R.string.date_day_yesterday).orEmpty()
-        isSameYear && dayDiff == 2 -> context?.getString(R.string.date_day_before_yesterday).orEmpty()
+        isSameYear && dayDiff == 0 -> context?.getString(R.string.common_day_today).orEmpty()
+        isSameYear && dayDiff == 1 -> context?.getString(R.string.common_day_yesterday).orEmpty()
+        isSameYear && dayDiff == 2 -> context?.getString(R.string.common_day_before_yesterday).orEmpty()
         else -> {
             val date = Date(timestampMs)
             val dayName = DAY_NAME_FORMATTER.get()?.format(date).orEmpty()

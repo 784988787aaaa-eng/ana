@@ -86,7 +86,7 @@ fun AppLockScreen(
         if (activity != null && isBiometricSupported) {
             BiometricAuthHelper.authenticate(
                 activity = activity,
-                title = context.getString(R.string.lock_app_locked),
+                title = context.getString(R.string.lock_ledger_locked),
                 subtitle = context.getString(R.string.lock_enter_pin_prompt),
                 negativeButtonText = context.getString(R.string.lock_cancel_btn),
                 onSuccess = {

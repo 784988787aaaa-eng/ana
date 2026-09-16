@@ -1,32 +1,48 @@
 package com.smartledger.aldaftar.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
+import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.navigation.Screen
-import com.smartledger.aldaftar.ui.screens.HabayebScreen
+import com.smartledger.aldaftar.ui.screens.*
+import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
-import com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel
+import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 
-/**
- * The application's only normal content surface: the Habayeb customer/debt workspace.
- * Navigation to former ledger/settings/trash screens intentionally no longer exists.
- */
 @Composable
 fun MainAppContent(
     currentScreen: Screen,
+    viewModel: FinanceViewModel,
     habayebViewModel: HabayebFinanceViewModel,
     securityViewModel: SecurityViewModel,
-    businessProfileViewModel: BusinessProfileViewModel,
+    backupSyncViewModel: BackupSyncViewModel,
+    businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
+    settings: AppSettings,
     contentPadding: PaddingValues = PaddingValues(),
+    onNavigate: (Screen) -> Unit,
     onMenuClick: () -> Unit,
     onExit: () -> Unit,
     isDrawerOpen: Boolean = false,
+    onHeaderDoubleClick: () -> Unit = {},
     isFloatingSearchActive: Boolean = false,
     onFloatingSearchActiveChanged: (Boolean) -> Unit = {},
     isSearchActive: Boolean = false,
@@ -38,29 +54,116 @@ fun MainAppContent(
     onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val drawerStateHolder = rememberMainAppContentState(
+        isDrawerOpen = isDrawerOpen,
+        onMenuClick = onMenuClick
+    )
     val businessProfile by businessProfileViewModel.profile.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Keep the guard explicit so a stale navigation value can never resurrect a removed screen.
-        if (currentScreen == Screen.HABAYEB) {
-            HabayebScreen(
-                viewModel = habayebViewModel,
-                securityViewModel = securityViewModel,
-                businessProfile = businessProfile,
-                onMenuClick = onMenuClick,
-                onClose = onExit,
-                contentPadding = contentPadding,
-                isDrawerOpen = isDrawerOpen,
-                isFloatingSearchActive = isFloatingSearchActive,
-                onFloatingSearchActiveChanged = onFloatingSearchActiveChanged,
-                isSearchActive = isSearchActive,
-                onSearchActiveChanged = onSearchActiveChanged,
-                isHistoryOverlayActive = isHistoryOverlayActive,
-                onHistoryOverlayActiveChanged = onHistoryOverlayActiveChanged,
-                isHistorySearchActive = isHistorySearchActive,
-                onHistorySearchActiveChanged = onHistorySearchActiveChanged,
-                onFabOverlayChanged = onFabOverlayChanged
+        val navFadeSpec = remember {
+            com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.tweenStandard<Float>(
+                duration = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.DURATION_STANDARD
             )
+        }
+        val navOffsetSpec = remember {
+            com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.tweenStandard<IntOffset>(
+                duration = com.smartledger.aldaftar.ui.theme.MizanAnimationTokens.DURATION_STANDARD
+            )
+        }
+
+        AnimatedContent(
+            targetState = currentScreen,
+            transitionSpec = {
+                val isInitialSub = initialState == Screen.SETTINGS || initialState == Screen.TRASH || initialState == Screen.BUSINESS_PROFILE || initialState == Screen.SECURITY
+                val isTargetSub = targetState == Screen.SETTINGS || targetState == Screen.TRASH || targetState == Screen.BUSINESS_PROFILE || targetState == Screen.SECURITY
+
+                if (isTargetSub && !isInitialSub) {
+                    val slideIn = slideInVertically(animationSpec = navOffsetSpec) { (it * 0.08f).toInt() } +
+                            fadeIn(animationSpec = navFadeSpec)
+                    val slideOut = fadeOut(animationSpec = navFadeSpec)
+                    slideIn togetherWith slideOut
+                } else if (isInitialSub && !isTargetSub) {
+                    val slideIn = fadeIn(animationSpec = navFadeSpec)
+                    val slideOut = slideOutVertically(animationSpec = navOffsetSpec) { (it * 0.08f).toInt() } +
+                            fadeOut(animationSpec = navFadeSpec)
+                    slideIn togetherWith slideOut
+                } else {
+                    val isForward = targetState.ordinal > initialState.ordinal
+                    val slideIn = if (isForward) {
+                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.10f).toInt() } +
+                        fadeIn(animationSpec = navFadeSpec)
+                    } else {
+                        slideInHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.10f).toInt() } +
+                        fadeIn(animationSpec = navFadeSpec)
+                    }
+                    val slideOut = if (isForward) {
+                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (-width * 0.10f).toInt() } +
+                        fadeOut(animationSpec = navFadeSpec)
+                    } else {
+                        slideOutHorizontally(animationSpec = navOffsetSpec) { width -> (width * 0.10f).toInt() } +
+                        fadeOut(animationSpec = navFadeSpec)
+                    }
+                    slideIn togetherWith slideOut
+                }
+            },
+            label = "ScreenSwitch"
+        ) { screen ->
+            when (screen) {
+                Screen.HABAYEB -> {
+                    HabayebScreen(
+                        viewModel = habayebViewModel,
+                        securityViewModel = securityViewModel,
+                        businessProfile = businessProfile,
+                        onMenuClick = { drawerStateHolder.handleMenuClick() },
+                        onClose = onExit,
+                        contentPadding = contentPadding,
+                        isDrawerOpen = drawerStateHolder.isDrawerOpen,
+                        onHeaderDoubleClick = onHeaderDoubleClick,
+                        isFloatingSearchActive = isFloatingSearchActive,
+                        onFloatingSearchActiveChanged = onFloatingSearchActiveChanged,
+                        isSearchActive = isSearchActive,
+                        onSearchActiveChanged = onSearchActiveChanged,
+                        isHistoryOverlayActive = isHistoryOverlayActive,
+                        onHistoryOverlayActiveChanged = onHistoryOverlayActiveChanged,
+                        isHistorySearchActive = isHistorySearchActive,
+                        onHistorySearchActiveChanged = onHistorySearchActiveChanged,
+                        onFabOverlayChanged = onFabOverlayChanged
+                    )
+                }
+                Screen.SETTINGS -> {
+                    SettingsView(
+                        viewModel = viewModel,
+                        habayebViewModel = habayebViewModel,
+                        settings = settings,
+                        onNavigateToSecurity = { onNavigate(Screen.SECURITY) },
+                        contentPadding = contentPadding
+                    )
+                }
+                Screen.TRASH -> {
+                    TrashScreen(
+                        viewModel = viewModel,
+                        habayebViewModel = habayebViewModel,
+                        onBack = { onNavigate(Screen.HABAYEB) },
+                        contentPadding = contentPadding
+                    )
+                }
+                Screen.BUSINESS_PROFILE -> {
+                    BusinessProfileScreen(
+                        viewModel = businessProfileViewModel,
+                        onBack = { onNavigate(Screen.HABAYEB) },
+                        contentPadding = contentPadding
+                    )
+                }
+                Screen.SECURITY -> {
+                    SecurityScreen(
+                        settings = settings,
+                        viewModel = securityViewModel,
+                        onBack = { onNavigate(Screen.HABAYEB) },
+                        contentPadding = contentPadding
+                    )
+                }
+            }
         }
     }
 }

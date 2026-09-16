@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +60,7 @@ fun HabayebFinanceHeader(
     isPrivacyMode: Boolean,
     onTogglePrivacy: () -> Unit,
     currencySymbol: String,
+    onHeaderDoubleClick: () -> Unit = {},
     isFloatingActive: Boolean = false,
     onToggleFloatingClick: () -> Unit = {},
     activeThemeColor: Color,
@@ -132,7 +135,7 @@ fun HabayebFinanceHeader(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Menu,
-                            contentDescription = stringResource(id = R.string.habayeb_nav_menu_desc),
+                            contentDescription = stringResource(id = R.string.common_nav_menu_desc),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(19.dp)
                         )
@@ -144,6 +147,18 @@ fun HabayebFinanceHeader(
                         modifier = Modifier
                             .weight(1f)
                             .padding(horizontal = 8.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onHeaderDoubleClick()
+                                    },
+                                    onLongPress = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onHeaderDoubleClick()
+                                    }
+                                )
+                            }
                     ) {
                         Text(
                             text = dynamicTitle,
@@ -165,7 +180,7 @@ fun HabayebFinanceHeader(
                             ) {
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = stringResource(id = R.string.habayeb_visibility_desc),
+                                    contentDescription = stringResource(id = R.string.common_visibility_desc),
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(18.dp)
                                 )

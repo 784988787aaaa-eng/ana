@@ -100,7 +100,7 @@ fun PasscodeKeypadContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = stringResource(id = R.string.lock_app_locked),
+                text = stringResource(id = R.string.lock_ledger_locked),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = LOCK_TEXT_COLOR

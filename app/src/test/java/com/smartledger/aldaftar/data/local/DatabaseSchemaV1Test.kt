@@ -10,10 +10,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class DatabaseSchemaV2Test {
+class DatabaseSchemaV1Test {
 
     @Test
-    fun freshDatabaseUsesSchemaVersionTwoAndExpectedTables() {
+    fun freshDatabaseUsesSchemaVersionOneAndExpectedTables() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         val cursor = db.openHelper.readableDatabase.query(
@@ -24,13 +24,14 @@ class DatabaseSchemaV2Test {
                 while (it.moveToNext()) add(it.getString(0))
             }
         }
-        assertEquals(2, db.openHelper.readableDatabase.version)
+        assertEquals(1, db.openHelper.readableDatabase.version)
         assertEquals(
             listOf(
                 "app_settings",
                 "business_profile",
                 "custom_categories",
                 "deleted_items",
+                "fixed_commitments",
                 "habayeb_customers",
                 "habayeb_transactions",
                 "pinned_habayeb_customers",

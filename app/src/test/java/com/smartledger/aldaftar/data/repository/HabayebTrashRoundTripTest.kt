@@ -2,7 +2,7 @@ package com.smartledger.aldaftar.data.repository
 
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.data.repository.TrashItemParser
+import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
