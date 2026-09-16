@@ -1,76 +1,70 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
-import com.smartledger.aldaftar.data.license.LicenseRepository
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.license.LicenseRepository
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
+import com.smartledger.aldaftar.data.repository.*
+import com.smartledger.aldaftar.ui.screens.TrashFilterType
+import com.smartledger.aldaftar.ui.screens.trash.components.TrashWrapper
+import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
+import com.smartledger.aldaftar.ui.screens.trash.utils.TrashStrings
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
 
+
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 class FinanceViewModel(
     application: Application,
     private val licenseRepository: LicenseRepository,
-    private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
-    private val categoriesRepository: com.smartledger.aldaftar.data.repository.CategoryRepository,
-    private val habayebRepository: com.smartledger.aldaftar.data.repository.HabayebRepository,
-    private val trashRepository: com.smartledger.aldaftar.data.repository.TrashRepository,
+    private val settingsRepository: SettingsRepository,
+    private val categoriesRepository: CategoryRepository,
+    private val habayebRepository: HabayebRepository,
+    private val trashRepository: TrashRepository,
     private val maintenanceRepository: com.smartledger.aldaftar.data.repository.DataMaintenanceRepository,
     private val floatingUiRepository: com.smartledger.aldaftar.data.repository.FloatingUiPreferencesRepository
 ) : AndroidViewModel(application) {
 
-    companion object {
-        private const val CLEANUP_PERIOD_NEVER = "never"
-        private const val PREFIX_HABAYEB = "habayeb_"
-    }
-
-    private val app = application
-
-    fun floatingSearchState() = floatingUiRepository.search()
-    fun saveFloatingSearchState(state: com.smartledger.aldaftar.data.repository.FloatingSearchState) = floatingUiRepository.saveSearch(state)
-    fun floatingAddState() = floatingUiRepository.add()
-    fun saveFloatingAddState(state: com.smartledger.aldaftar.data.repository.FloatingAddState) = floatingUiRepository.saveAdd(state)
-    fun isFloatingSearchActive() = floatingUiRepository.floatingSearchActive()
-    fun setFloatingSearchActive(active: Boolean) = floatingUiRepository.setFloatingSearchActive(active)
-
-    private val _autoCleanupPeriod = MutableStateFlow(CLEANUP_PERIOD_NEVER)
-    val autoCleanupPeriod: StateFlow<String> = _autoCleanupPeriod.asStateFlow()
-
-    private val _uiEventChannel = Channel<UiEvent>(Channel.BUFFERED)
+    private val _uiEventChannel = Channel<UiEvent>()
     val uiEventFlow = _uiEventChannel.receiveAsFlow()
 
-    private fun sendUiEvent(event: UiEvent) {
-        _uiEventChannel.trySend(event)
-    }
+    val settingsState: StateFlow<AppSettings> = settingsRepository.settingsFlow
+        .map { it ?: AppSettings() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
     private val _themeModeState = MutableStateFlow(0)
     val themeModeState: StateFlow<Int> = _themeModeState.asStateFlow()
 
-    val isSettingsLoaded = MutableStateFlow(false)
+    private val _isSettingsLoaded = MutableStateFlow(false)
+    val isSettingsLoaded: StateFlow<Boolean> = _isSettingsLoaded.asStateFlow()
 
-    val settingsState: StateFlow<AppSettings> = settingsRepository.settingsFlow
-        .onEach {
-            isSettingsLoaded.value = true
-            if (it != null && _themeModeState.value != it.themeMode) {
-                _themeModeState.value = it.themeMode
-            }
-        }
-        .map { it ?: AppSettings() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
+    private val _isPasscodeEnabled = MutableStateFlow(false)
+    val isPasscodeEnabled: StateFlow<Boolean> = _isPasscodeEnabled.asStateFlow()
+
+    private val _isFirstLaunch = MutableStateFlow(false)
+    val isFirstLaunch: StateFlow<Boolean> = _isFirstLaunch.asStateFlow()
+    
+    val autoCleanupPeriod: StateFlow<String> = settingsState.map { it.trashAutoCleanupPeriod }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NEVER")
 
     val customCategoriesState: StateFlow<List<CustomCategory>> = categoriesRepository.customCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -79,6 +73,30 @@ class FinanceViewModel(
 
     val totalTransactionsCount: StateFlow<Int> = habayebRepository.getHabayebTransactionsCountFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+
+    fun isFloatingSearchActive(): Boolean = floatingUiRepository.floatingSearchActive()
+    
+    fun setFloatingSearchActive(active: Boolean) {
+        floatingUiRepository.setFloatingSearchActive(active)
+    }
+
+    fun floatingSearchState(): com.smartledger.aldaftar.data.repository.FloatingSearchState = floatingUiRepository.search()
+    
+    fun saveFloatingSearchState(state: com.smartledger.aldaftar.data.repository.FloatingSearchState) {
+        floatingUiRepository.saveSearch(state)
+    }
+
+    init {
+        viewModelScope.launch {
+            settingsState.collect { settings ->
+                _themeModeState.value = settings.themeMode
+                _isSettingsLoaded.value = true
+                _isPasscodeEnabled.value = settings.isPasscodeEnabled
+                _isFirstLaunch.value = settings.isFirstLaunch
+            }
+        }
+    }
 
     fun hasShownOnboarding(): Boolean = settingsState.value.onboardingShown
 
@@ -97,174 +115,106 @@ class FinanceViewModel(
 
     fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate()
     fun triggerLicensePrompt() = licenseRepository.triggerLicenseRequired()
-
-    fun permanentlyDeleteDeletedItem(item: DeletedItemEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                trashRepository.removeDeletedItem(item)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-            }
+    
+    fun getPagedTrashItems(query: String, filter: TrashFilterType): Flow<PagingData<TrashWrapper>> {
+        val tableFilter = when(filter) {
+            TrashFilterType.ALL -> ""
+            TrashFilterType.TRANSACTIONS -> "habayeb_transactions"
+            TrashFilterType.CUSTOMERS -> "habayeb_customers"
         }
-    }
-
-    fun permanentlyDeleteMultipleItems(items: List<DeletedItemEntity>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                items.forEach { trashRepository.removeDeletedItem(it) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
+        return Pager(PagingConfig(pageSize = 50)) {
+            trashRepository.getPagedTrashItems(query, tableFilter)
+        }.flow.map { pagingData ->
+            pagingData.map { entity ->
+                TrashWrapper(
+                    entity = entity,
+                    parsed = TrashItemParser.parse(
+                        item = entity,
+                        customersList = emptyList(),
+                        currencySymbol = "ر.ي",
+                        strings = TrashStrings("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                        primaryColor = Color.Black,
+                        secondaryColor = Color.Gray,
+                        errorColor = Color.Red,
+                        outlineColor = Color.LightGray
+                    )
+                )
             }
-        }
-    }
-
-    fun restoreMultipleItems(items: List<DeletedItemEntity>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                items.forEach { trashRepository.restoreDeletedItem(it) }
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
-            }
-        }
-    }
-
-    fun restoreDeletedItem(item: DeletedItemEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                trashRepository.restoreDeletedItem(item)
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
-            }
-        }
-    }
-
-    fun restoreSingleTransactionFromBundle(itemId: String, txId: String, item: DeletedItemEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                trashRepository.restoreSingleTransactionFromBundle(itemId, txId)
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_restore_success))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_operation_failed))
-            }
-        }
-    }
-
-    fun updateAutoCleanupPeriod(period: String) {
-        _autoCleanupPeriod.value = period
-        viewModelScope.launch(Dispatchers.IO) {
-            val context = app
-            settingsRepository.saveSettings(settingsState.value.copy(trashAutoCleanupPeriod = period))
-
-            com.smartledger.aldaftar.TrashCleanupWorker.schedulePeriodicCleanup(context, period)
-
-            if (period != CLEANUP_PERIOD_NEVER) {
-                try {
-                    val ageInMillis = com.smartledger.aldaftar.TrashCleanupWorker.getPeriodDurationMillis(period)
-                    if (ageInMillis > 0L) {
-                        val thresholdTime = System.currentTimeMillis() - ageInMillis
-                        val items = trashRepository.getAllDeletedItemsDirect()
-                        val expiredItems = items.filter { it.deletedAt < thresholdTime }
-                        expiredItems.forEach { item ->
-                            trashRepository.removeDeletedItem(item)
-                        }
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-                }
-            }
-        }
+        }.cachedIn(viewModelScope)
     }
 
     fun cleanLedgerTrashItems() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val systemHabayeb = app.getString(R.string.source_system_habayeb)
-                val allItems = trashRepository.getAllDeletedItemsDirect()
-                val nonHabayebItems = allItems.filter {
-                    it.sourceSystem != systemHabayeb && !it.originalTableName.startsWith(PREFIX_HABAYEB)
-                }
-                nonHabayebItems.forEach {
-                    trashRepository.removeDeletedItem(it)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
+                viewModelScope.launch(Dispatchers.IO) {
+            val period = settingsState.value.trashAutoCleanupPeriod
+            val threshold = when (period) {
+                "1_DAY" -> System.currentTimeMillis() - 86400000L
+                "7_DAYS" -> System.currentTimeMillis() - 86400000L * 7
+                "30_DAYS" -> System.currentTimeMillis() - 86400000L * 30
+                else -> return@launch
             }
+            trashRepository.removeExpiredBefore(threshold)
+        }
+    }
+    
+    fun updateAutoCleanupPeriod(period: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.saveSettings(settingsState.value.copy(trashAutoCleanupPeriod = period))
         }
     }
 
     fun emptyTrash() {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val systemHabayeb = app.getString(R.string.source_system_habayeb)
-                val allItems = trashRepository.getAllDeletedItemsDirect()
-                val habayebItems = allItems.filter {
-                    it.sourceSystem == systemHabayeb || it.originalTableName.startsWith(PREFIX_HABAYEB)
-                }
-                habayebItems.forEach {
-                    trashRepository.removeDeletedItem(it)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-            }
+            trashRepository.clearDeletedItems()
+            _uiEventChannel.send(UiEvent.ShowToast(R.string.toast_trash_emptied))
         }
     }
 
-    fun saveCustomCategory(name: String, tabType: String, emoji: String) {
+    fun restoreDeletedItem(entity: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                categoriesRepository.saveCustomCategory(CustomCategory(name = name, tabType = tabType, iconEmoji = emoji))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_save_failed))
-            }
+            trashRepository.restoreDeletedItem(entity)
+            _uiEventChannel.send(UiEvent.ShowToast(R.string.toast_item_restored))
         }
     }
 
-    fun deleteCustomCategory(customCategory: CustomCategory) {
+    fun permanentlyDeleteDeletedItem(entity: DeletedItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                categoriesRepository.deleteCustomCategory(customCategory)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-                sendUiEvent(UiEvent.ShowToast(R.string.toast_delete_failed))
-            }
+            trashRepository.removeDeletedItem(entity)
+            _uiEventChannel.send(UiEvent.ShowToast(R.string.toast_item_permanently_deleted))
         }
     }
+
+    fun restoreMultipleItems(items: List<DeletedItemEntity>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            items.forEach { trashRepository.restoreDeletedItem(it) }
+            _uiEventChannel.send(UiEvent.ShowToast(R.string.toast_items_restored))
+        }
+    }
+
+    fun permanentlyDeleteMultipleItems(items: List<DeletedItemEntity>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            items.forEach { trashRepository.removeDeletedItem(it) }
+            _uiEventChannel.send(UiEvent.ShowToast(R.string.toast_items_permanently_deleted))
+        }
+    }
+    
+    fun restoreSingleTransactionFromBundle(bundleId: String, txId: String, entity: DeletedItemEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            trashRepository.restoreSingleTransactionFromBundle(bundleId, txId)
+            _uiEventChannel.send(UiEvent.ShowToast(R.string.toast_item_restored))
+        }
+    }
+
+    
+
+    
 
     fun deleteAllData() {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                maintenanceRepository.deleteAllData()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("FinanceViewModel", "تعذر إكمال العملية")
-            }
+            maintenanceRepository.deleteAllData()
         }
+    }
+    
+    companion object {
+        const val TEST = 1
     }
 }

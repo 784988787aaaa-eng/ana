@@ -200,7 +200,7 @@ class BackupSyncViewModel(
         launchBusy({ pair -> onComplete(pair?.first, pair?.second) }) {
             val file = engine.createManual()
             if (!_cloudConnected.value && !cloud.connected()) return@launchBusy null to file
-            val remote = cloud.upload(file.readBytes(), file.name)
+            val remote = cloud.upload(file, file.name)
             refreshCloud()
             remote to file
         }

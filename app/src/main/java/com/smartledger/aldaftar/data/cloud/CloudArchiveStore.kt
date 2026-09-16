@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.data.cloud
 
 import android.accounts.Account
 import android.content.Context
+import android.os.Build
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -130,7 +131,7 @@ class CloudArchiveStore(context: Context) {
         }
     }
 
-    suspend fun upload(bytes: ByteArray, name: String): CloudBackupFile = withContext(Dispatchers.IO) {
+    suspend fun upload(file: java.io.File, name: String): CloudBackupFile = withContext(Dispatchers.IO) {
         executeWithTokenRetry { token ->
             val folderId = getOrCreateBackupFolder(token)
             // النسخة اليومية تستخدم اسماً ثابتاً لليوم نفسه؛ عند إعادة المحاولة نحدّث الملف
@@ -153,17 +154,13 @@ class CloudArchiveStore(context: Context) {
                 }
             }
 
-            val bodyStream = ByteArrayOutputStream()
             val header1 = "--$BOUNDARY\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadataJson}\r\n"
             val header2 = "--$BOUNDARY\r\nContent-Type: application/octet-stream\r\n\r\n"
             val footer = "\r\n--$BOUNDARY--\r\n"
 
-            bodyStream.write(header1.toByteArray(Charsets.UTF_8))
-            bodyStream.write(header2.toByteArray(Charsets.UTF_8))
-            bodyStream.write(bytes)
-            bodyStream.write(footer.toByteArray(Charsets.UTF_8))
-
-            val payloadBytes = bodyStream.toByteArray()
+            val headerBytes = (header1 + header2).toByteArray(Charsets.UTF_8)
+            val footerBytes = footer.toByteArray(Charsets.UTF_8)
+            val contentLength = headerBytes.size.toLong() + file.length() + footerBytes.size.toLong()
 
             val conn = (URL(uploadUrlStr).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
@@ -172,12 +169,23 @@ class CloudArchiveStore(context: Context) {
                 readTimeout = 90_000
                 setRequestProperty("Authorization", "Bearer $token")
                 setRequestProperty("Content-Type", "multipart/related; boundary=$BOUNDARY")
-                setRequestProperty("Content-Length", payloadBytes.size.toString())
+                if (contentLength > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    setFixedLengthStreamingMode(contentLength)
+                } else {
+                    setChunkedStreamingMode(0)
+                }
                 setRequestProperty("Accept", "application/json")
             }
 
             try {
-                conn.outputStream.use { it.write(payloadBytes) }
+                conn.outputStream.use { out ->
+                    out.write(headerBytes)
+                    java.io.FileInputStream(file).use { fis ->
+                        fis.copyTo(out)
+                    }
+                    out.write(footerBytes)
+                    out.flush()
+                }
                 val code = conn.responseCode
                 val stream = if (code in 200..299) conn.inputStream else conn.errorStream
                 val responseText = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
@@ -189,7 +197,7 @@ class CloudArchiveStore(context: Context) {
                 val item = JSONObject(responseText)
                 val id = item.getString("id")
                 val fileName = item.optString("name", name)
-                val size = item.optLong("size", bytes.size.toLong())
+                val size = item.optLong("size", file.length())
                 val modifiedTimeStr = item.optString("modifiedTime", item.optString("createdTime", ""))
                 val modifiedTime = parseIsoTime(modifiedTimeStr)
                 val month = SimpleDateFormat("yyyy-MM", Locale.US).format(modifiedTime)

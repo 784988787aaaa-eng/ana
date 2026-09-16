@@ -37,6 +37,13 @@ class LicenseRepository(private val context: Context) {
         _onLicenseRequired.tryEmit(Unit)
     }
 
+    fun syncTrialUsedWithCount(dbCount: Int) {
+        val effective = store.trialUsed.coerceAtLeast(dbCount)
+        if (effective != store.trialUsed) {
+            store.trialUsed = effective
+        }
+    }
+
     fun isEligibleToCreate(): Boolean {
         val state = snapshot()
         if (state.status == LicenseStatus.REVOKED ||

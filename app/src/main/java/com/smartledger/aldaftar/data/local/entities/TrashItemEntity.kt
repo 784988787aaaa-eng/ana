@@ -10,6 +10,9 @@ data class DeletedItemEntity(
     @ColumnInfo(name = "sourceSystem") val sourceSystem: String,
     @ColumnInfo(name = "originalTableName") val originalTableName: String,
     @ColumnInfo(name = "jsonData") val jsonData: String,
-    @ColumnInfo(name = "deletedAt") val deletedAt: Long = System.currentTimeMillis()
+    @ColumnInfo(name = "deletedAt") val deletedAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "searchableText") val searchableText: String = "",
+    @ColumnInfo(name = "amount") val amount: Double = 0.0,
+    @ColumnInfo(name = "displayName") val displayName: String = ""
 )
 

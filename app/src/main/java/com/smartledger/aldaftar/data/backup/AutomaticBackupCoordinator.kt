@@ -17,7 +17,7 @@ class AutomaticBackupCoordinator(
             val local = engine.createAutomatic()
             if (!cloud.connected()) return Result.LocalOnly(local)
 
-            runCatching { cloud.upload(local.readBytes(), local.name) }
+            runCatching { cloud.upload(local, local.name) }
                 .fold(
                     onSuccess = { Result.LocalAndCloud(local) },
                     onFailure = { Result.LocalOnly(local, it) }

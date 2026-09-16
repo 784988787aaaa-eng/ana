@@ -24,6 +24,9 @@ abstract class TrashDao {
     }
 
 
+    @Query("SELECT * FROM deleted_items WHERE (:query = '' OR searchableText LIKE '%' || :query || '%') AND (:tableFilter = '' OR originalTableName = :tableFilter OR (:tableFilter = 'habayeb_transactions' AND originalTableName = 'habayeb_bundle')) ORDER BY deletedAt DESC")
+    abstract fun getDeletedItemsPagingSource(query: String, tableFilter: String): androidx.paging.PagingSource<Int, DeletedItemEntity>
+
     @Query("SELECT * FROM deleted_items ORDER BY deletedAt DESC")
     abstract fun getAllDeletedItemsFlow(): Flow<List<DeletedItemEntity>>
 
@@ -41,6 +44,9 @@ abstract class TrashDao {
 
     @Query("DELETE FROM deleted_items WHERE id = :id")
     abstract suspend fun deleteItemById(id: String)
+
+    @Query("DELETE FROM deleted_items WHERE deletedAt < :threshold")
+    abstract suspend fun removeExpiredBefore(threshold: Long): Int
 
     @Query("DELETE FROM deleted_items")
     abstract suspend fun clearAllDeletedItems()

@@ -86,6 +86,21 @@ interface HabayebDao {
     @Query("SELECT * FROM habayeb_transactions ORDER BY timestamp DESC")
     fun getAllTransactionsFlow(): Flow<List<HabayebTransaction>>
 
+    @Query("""
+        SELECT 
+            customerId,
+            currency_code AS currencyCode,
+            SUM(CASE WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN amount ELSE 0 END) -
+            SUM(CASE WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN amount ELSE 0 END) AS netAmount,
+            SUM(CASE WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN equivalent_amount ELSE 0 END) -
+            SUM(CASE WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN equivalent_amount ELSE 0 END) AS netEquivalentAmount,
+            MAX(timestamp) AS lastTimestamp,
+            COUNT(*) AS txCount
+        FROM habayeb_transactions
+        GROUP BY customerId, currency_code
+    """)
+    fun getAllCustomerBalancesFlow(): Flow<List<CustomerCurrencyBalance>>
+
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>>
 
@@ -165,12 +180,8 @@ interface HabayebDao {
         }
     }
 
-    @Transaction
-    suspend fun insertTransactionsBatch(transactions: List<HabayebTransaction>) {
-        for (tx in transactions) {
-            insertTransaction(tx)
-        }
-    }
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransactionsBatch(transactions: List<HabayebTransaction>)
 
     @Transaction
     suspend fun deleteCustomerAndTransactions(customerId: String) {

@@ -38,12 +38,13 @@ object PdfReportCalculator {
 
     fun calculateSingleCustomerReport(
         transactions: List<HabayebTransaction>,
-        currencySymbol: String
+        currencySymbol: String,
+        exchangeRatesJson: String? = null
     ): SingleCustomerPdfSummary {
         val calcResult = com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator.calculate(
             transactions,
             currencySymbol,
-            exchangeRatesJson = null
+            exchangeRatesJson = exchangeRatesJson
         )
 
         val normDefaultSymbol = CurrencyConfig.getBySymbol(currencySymbol)?.symbol ?: currencySymbol
@@ -65,7 +66,7 @@ object PdfReportCalculator {
                               tx.isRateCalculated
 
             val isPureBase = (tx.currencyCode == FinanceConstants.DEFAULT_CURRENCY_CODE || tx.currencyCode.isBlank() || tx.currencyCode == normDefaultSymbol) && !tx.isRateCalculated
-            val pureBaseAmount = if (isPureBase) tx.foreignAmount else BigDecimal.ZERO
+            val pureBaseAmount = if (isPureBase) tx.amount else BigDecimal.ZERO
 
             val txType = TransactionType.fromValue(tx.type)
             if (affectsReportPrimaryCurrency) {

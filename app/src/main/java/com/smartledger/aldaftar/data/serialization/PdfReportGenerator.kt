@@ -48,9 +48,10 @@ object PdfReportGenerator {
         transactions: List<HabayebTransaction>,
         businessProfile: BusinessProfile,
         currencySymbol: String,
-        primaryColorHex: String = PdfColors.PRIMARY_EMERALD
+        primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
+        exchangeRatesJson: String? = null
     ): File? {
-        val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol)
+        val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol, exchangeRatesJson)
         val customerUiState = CustomerUiState(
             id = customer.id.toString(),
             name = customer.name,
@@ -316,11 +317,12 @@ object PdfReportGenerator {
         currencySymbol: String,
         action: PdfAction,
         primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
+        exchangeRatesJson: String? = null,
         onFinished: () -> Unit = {}
     ) {
         scope.launch(Dispatchers.IO) {
             try {
-                val file = generatePdfFileInternal(context, customer, transactions, businessProfile, currencySymbol, primaryColorHex)
+                val file = generatePdfFileInternal(context, customer, transactions, businessProfile, currencySymbol, primaryColorHex, exchangeRatesJson)
                 withContext(Dispatchers.Main) {
                     if (action == PdfAction.SAVE_LOCAL) {
                         if (file != null) {

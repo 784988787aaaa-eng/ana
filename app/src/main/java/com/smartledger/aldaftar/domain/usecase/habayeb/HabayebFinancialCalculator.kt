@@ -49,39 +49,68 @@ object HabayebFinancialCalculator {
 
     fun calculateCustomersUiState(
         customers: List<HabayebCustomer>,
-        allTransactions: List<HabayebTransaction>,
+        customerBalances: List<com.smartledger.aldaftar.data.local.CustomerCurrencyBalance>,
         settings: AppSettings
     ): CustomersUiState {
         val defaultCurrency = settings.currencySymbol
         val normDefaultCurrency = com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.getBySymbol(defaultCurrency)?.symbol ?: defaultCurrency
-        val transactionsByCustomer = allTransactions.groupBy { it.customerId }
+        val balancesByCustomer = customerBalances.groupBy { it.customerId }
 
         var globalTotalOwedByThem = BigDecimal.ZERO
         var globalTotalOwedToThem = BigDecimal.ZERO
 
         val customerStates = ArrayList<CustomerUiState>(customers.size)
         for (customer in customers) {
-            val custTxs = transactionsByCustomer[customer.id] ?: emptyList()
-            val summary = CustomerHistoryCalculator.calculateSummary(
-                custTxs,
-                defaultCurrency,
-                settings.exchangeRatesJson,
-                customer.createdAt
-            )
+            val custBalances = balancesByCustomer[customer.id] ?: emptyList()
+            
+            // Reconstruct netDebtBigDecimalMap from DB aggregations
+            val netDebtBDMap = mutableMapOf<String, BigDecimal>()
+            var maxTimestamp = customer.createdAt
+            var totalTxs = 0
+            
+            for (bal in custBalances) {
+                // If it's the default currency, or no exchange rates given, use netEquivalentAmount or netAmount
+                // The actual logic is we use the aggregated netAmount.
+                // Wait, netAmount is per currency.
+                val curr = bal.currencyCode.ifBlank { normDefaultCurrency }
+                val amount = bal.netAmount.setScale(4, RoundingMode.HALF_EVEN)
+                netDebtBDMap[curr] = (netDebtBDMap[curr] ?: BigDecimal.ZERO).add(amount)
+                
+                if (bal.lastTimestamp > maxTimestamp) {
+                    maxTimestamp = bal.lastTimestamp
+                }
+                totalTxs += bal.txCount
+            }
 
-            val defaultCurrencyTotal = summary.netDebtBigDecimalMap[normDefaultCurrency] ?: BigDecimal.ZERO
+            val defaultCurrencyTotal = netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO
             val defaultCurrencyTotalAbs = defaultCurrencyTotal.abs()
-            val activeForeignDebts = if (summary.netDebtBigDecimalMap.size > 1) {
-                summary.netDebtBigDecimalMap
+            
+            val activeForeignDebts = if (netDebtBDMap.size > 1) {
+                netDebtBDMap
                     .filterKeys { it != normDefaultCurrency }
-                    .filterValues { bd -> bd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0 }
+                    .filterValues { bd -> bd.compareTo(BigDecimal.ZERO) != 0 }
             } else {
                 emptyMap()
             }
 
-            val displayCurrency = summary.primaryDisplayCurrency
-            val displayNetDebt = summary.netDebt
-            val lastTxTime = summary.lastTimestamp
+            // Determine primary display currency and net debt
+            val displayCurrency: String
+            val displayNetDebt: BigDecimal
+            
+            if (defaultCurrencyTotal.compareTo(BigDecimal.ZERO) != 0) {
+                displayCurrency = normDefaultCurrency
+                displayNetDebt = defaultCurrencyTotal
+            } else {
+                val nonZeroForeignEntry = netDebtBDMap.entries.firstOrNull { it.key != normDefaultCurrency && it.value.compareTo(BigDecimal.ZERO) != 0 }
+                if (nonZeroForeignEntry != null) {
+                    displayCurrency = nonZeroForeignEntry.key
+                    displayNetDebt = nonZeroForeignEntry.value
+                } else {
+                    displayCurrency = normDefaultCurrency
+                    displayNetDebt = BigDecimal.ZERO
+                }
+            }
+
             val normalizedName = StringUtils.normalizeArabic(customer.name)
 
             val state = CustomerUiState(
@@ -90,11 +119,11 @@ object HabayebFinancialCalculator {
                 phone = customer.phone,
                 notes = customer.notes,
                 createdAt = customer.createdAt,
-                totalTransactions = custTxs.size,
+                totalTransactions = totalTxs,
                 netDebt = defaultCurrencyTotal,
                 displayNetDebt = displayNetDebt,
                 displayCurrencySymbol = displayCurrency,
-                lastTransactionTimestamp = lastTxTime,
+                lastTransactionTimestamp = maxTimestamp,
                 originalCustomer = customer,
                 foreignDebts = activeForeignDebts,
                 defaultCurrencyTotal = defaultCurrencyTotal,

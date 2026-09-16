@@ -112,6 +112,7 @@ fun CustomerHistoryOverlay(
             businessProfile = businessProfile,
             currencySymbol = currencySymbol,
             action = action,
+            exchangeRatesJson = settings.exchangeRatesJson,
             onFinished = { isPdfExporting = false }
         )
     }

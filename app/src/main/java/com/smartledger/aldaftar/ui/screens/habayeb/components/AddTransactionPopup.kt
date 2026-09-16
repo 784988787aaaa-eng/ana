@@ -1,6 +1,7 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
@@ -218,24 +219,29 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                onTransactionSaved()
-                onDismiss()
-
-                viewModel.addHabayebTransaction(
-                    customerId = customer.id,
-                    type = finalActionType,
-                    amount = saveAmountBd,
-                    desc = saveDescStr,
-                    timestamp = saveTimestamp,
-                    editingTxId = saveEditingTxId,
-                    isForeign = isForeignSelected,
-                    currencyCode = selectedTransactionCurrency,
-                    foreignAmount = amountBd,
-                    exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
-                    isRateCalculated = isForeignSelected && applyExchangeRate,
-                    equivalentAmount = finalEquivalentAmountBd
-                )
+                scope.launch {
+                    val saved = viewModel.addHabayebTransaction(
+                        customerId = customer.id,
+                        type = finalActionType,
+                        amount = saveAmountBd,
+                        desc = saveDescStr,
+                        timestamp = saveTimestamp,
+                        editingTxId = saveEditingTxId,
+                        isForeign = isForeignSelected,
+                        currencyCode = selectedTransactionCurrency,
+                        foreignAmount = amountBd,
+                        exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
+                        isRateCalculated = isForeignSelected && applyExchangeRate,
+                        equivalentAmount = finalEquivalentAmountBd
+                    )
+                    if (saved) {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onTransactionSaved()
+                        onDismiss()
+                    } else {
+                        isSaving = false
+                    }
+                }
             }
         }
     }

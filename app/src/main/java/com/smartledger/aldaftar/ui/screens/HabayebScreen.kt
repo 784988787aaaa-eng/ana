@@ -354,7 +354,13 @@ fun HabayebScreen(
                 haptic = haptic,
                 isMultiSelectActive = isMultiSelectActive,
                 isHistoryTxMultiSelectActive = isHistoryTxMultiSelectActive,
-                onAddCustomerClick = { activeDialogState = HabayebDialogState.AddCustomer },
+                onAddCustomerClick = {
+                    if (!viewModel.isEligibleToCreate()) {
+                        viewModel.triggerLicensePrompt()
+                    } else {
+                        activeDialogState = HabayebDialogState.AddCustomer
+                    }
+                },
                 onAddTransactionForCustomer = { c ->
                     if (!viewModel.isEligibleToCreate()) {
                         viewModel.triggerLicensePrompt()

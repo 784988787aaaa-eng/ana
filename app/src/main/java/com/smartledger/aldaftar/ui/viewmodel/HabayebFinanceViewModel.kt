@@ -135,6 +135,14 @@ class HabayebFinanceViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    init {
+        viewModelScope.launch {
+            totalTransactionsCount.collect { count ->
+                licenseRepository.syncTrialUsedWithCount(count)
+            }
+        }
+    }
+
 
 
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>> =
@@ -230,8 +238,8 @@ class HabayebFinanceViewModel(
     fun reorderCategories(newList: List<String>) { viewModelScope.launch { val all = categoriesRepository.getAllCustomCategoriesDirect(); val ids = newList.mapNotNull { name -> all.firstOrNull { it.name == name }?.id }; categoryUseCase.reorderCategories(ids) } }
 
     val customersUiState: StateFlow<CustomersUiState> = combine(
-        habayebRepository.customersFlow, habayebRepository.transactionsFlow, settingsState
-    ) { customers, transactions, settings -> HabayebFinancialCalculator.calculateCustomersUiState(customers, transactions, settings) }
+        habayebRepository.customersFlow, habayebRepository.customerBalancesFlow, settingsState
+    ) { customers, customerBalances, settings -> HabayebFinancialCalculator.calculateCustomersUiState(customers, customerBalances, settings) }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CustomersUiState())
 
@@ -347,36 +355,35 @@ class HabayebFinanceViewModel(
         true
     }
 
-    fun addHabayebTransaction(
+    suspend fun addHabayebTransaction(
         customerId: String, type: String, amount: BigDecimal, desc: String,
         timestamp: Long = System.currentTimeMillis() / 1000, editingTxId: String? = null, linkedMainTxId: String? = null,
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
         exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
-    ) {
-        viewModelScope.launch {
-            resetFiltersToDefault(resetCategory = true)
+    ): Boolean = withContext(Dispatchers.IO) {
+        resetFiltersToDefault(resetCategory = true)
 
-            val consumesTrial = editingTxId == null
-            if (!consumesTrial) {
-                transactionUseCase.addHabayebTransaction(
-                    customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                    foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
-                )
-                com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
-                emitScrollToAccount(customerId)
-                return@launch
-            }
-            val created = licenseRepository.runAuthorizedCreation {
-                transactionUseCase.addHabayebTransaction(
-                    customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                    foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
-                )
-                true
-            }
-            if (created != true) return@launch
+        val consumesTrial = editingTxId == null
+        if (!consumesTrial) {
+            transactionUseCase.addHabayebTransaction(
+                customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
+            )
             com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
             emitScrollToAccount(customerId)
+            return@withContext true
         }
+        val created = licenseRepository.runAuthorizedCreation {
+            transactionUseCase.addHabayebTransaction(
+                customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
+            )
+            true
+        }
+        if (created != true) return@withContext false
+        com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
+        emitScrollToAccount(customerId)
+        true
     }
 
     fun updateTransactionExchangeRate(txId: String, newRate: BigDecimal, calculateRate: Boolean) {

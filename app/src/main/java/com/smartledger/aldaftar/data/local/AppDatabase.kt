@@ -21,11 +21,12 @@ import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
         DeletedItemEntity::class,
         HabayebCustomer::class,
         HabayebTransaction::class,
+        com.smartledger.aldaftar.data.local.entities.CustomerBalance::class,
         PinnedCustomer::class,
         BusinessProfile::class,
         RecurringConfigEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(BigDecimalConverter::class, IntListConverter::class, StringListConverter::class)
@@ -36,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habayebDao(): HabayebDao
     abstract fun businessProfileDao(): BusinessProfileDao
     abstract fun recurringConfigDao(): RecurringConfigDao
+    abstract fun customerBalanceDao(): CustomerBalanceDao
 
     companion object {
         const val DATABASE_NAME = "aldaftar_v1.db"
