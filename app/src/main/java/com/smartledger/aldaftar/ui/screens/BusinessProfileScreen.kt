@@ -21,20 +21,18 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Business
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,7 +51,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -62,8 +59,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
@@ -162,7 +157,7 @@ fun BusinessProfileDialog(
             MizanDialogHeader(
                 title = stringResource(id = R.string.biz_title),
                 subtitle = stringResource(id = R.string.biz_desc_header),
-                icon = Icons.Default.Store,
+                icon = null,
                 iconTint = MaterialTheme.colorScheme.primary,
                 isCentered = true,
                 onCloseClick = dismissDialog
@@ -328,44 +323,73 @@ private fun BusinessProfileForm(
                 onExtraAction = { handleReset() }
             )
         } else {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = { handleSave() },
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp)
-                    .testTag("biz_save_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-                shape = RoundedCornerShape(12.dp)
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { handleReset() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("biz_reset_button"),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(
-                        text = stringResource(id = R.string.biz_btn_save),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CleaningServices,
+                            contentDescription = null,
+                            modifier = Modifier.size(17.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(id = R.string.biz_btn_reset),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-            }
 
-            androidx.compose.material3.OutlinedButton(
-                onClick = { handleReset() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.biz_btn_reset),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Button(
+                    onClick = { handleSave() },
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .height(48.dp)
+                        .testTag("biz_save_button"),
+                    colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(id = R.string.biz_btn_save),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         }
     }

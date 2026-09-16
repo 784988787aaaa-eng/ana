@@ -7,7 +7,6 @@ import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 /** عمليات حذف الحبايب الذرية. */
 class HabayebMutationRepository(private val database: AppDatabase) {
     private val habayeb = database.habayebDao()
-    private val ledger = database.transactionDao()
     private val trash = database.trashDao()
     private val recurring = database.recurringConfigDao()
 
@@ -26,7 +25,6 @@ class HabayebMutationRepository(private val database: AppDatabase) {
         val tx = habayeb.getTransactionById(transactionId) ?: return@withTransaction
         if (saveToTrash) trash.insertDeletedItem(DeletedItemEntity(tx.id, "الحبايب", "habayeb_transactions", TrashJsonSerializer.serializeHabayebTransaction(tx)))
         recurring.deleteForTransaction(transactionId)
-        tx.linkedMainTxId?.let { ledger.deleteTransactionById(it) }
         habayeb.deleteTransactionById(transactionId)
     }
 }

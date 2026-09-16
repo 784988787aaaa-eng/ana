@@ -47,7 +47,6 @@ class HabayebFinanceViewModel(
     private val licenseRepository: LicenseRepository,
     private val categoryUseCase: HabayebCategoryUseCase,
     private val habayebRepository: com.smartledger.aldaftar.data.repository.HabayebRepository,
-    private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
     private val categoriesRepository: com.smartledger.aldaftar.data.repository.CategoryRepository,
     private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
     private val recurringRepository: com.smartledger.aldaftar.data.repository.RecurringRepository,
@@ -61,7 +60,7 @@ class HabayebFinanceViewModel(
     fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate()
     fun triggerLicensePrompt() = licenseRepository.triggerLicenseRequired()
 
-    private val transactionUseCase = HabayebTransactionUseCase(habayebRepository, transactionsRepository, mutationRepository)
+    private val transactionUseCase = HabayebTransactionUseCase(habayebRepository, mutationRepository)
 
     private val _uiEventChannel = Channel<HabayebUiEvent>(Channel.BUFFERED)
     val uiEventFlow: Flow<HabayebUiEvent> = _uiEventChannel.receiveAsFlow()
@@ -132,9 +131,7 @@ class HabayebFinanceViewModel(
         
     }
 
-    val totalTransactionsCount: StateFlow<Int> = combine(
-        transactionsRepository.getTransactionsCountFlow(), habayebRepository.getHabayebTransactionsCountFlow()
-    ) { m, h -> m + h }
+    val totalTransactionsCount: StateFlow<Int> = habayebRepository.getHabayebTransactionsCountFlow()
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 

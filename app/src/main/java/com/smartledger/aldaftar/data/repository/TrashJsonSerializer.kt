@@ -1,24 +1,11 @@
 package com.smartledger.aldaftar.data.repository
 
-import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.data.local.entities.TransactionDb
-import com.smartledger.aldaftar.domain.model.TransactionType
 import org.json.JSONArray
 import org.json.JSONObject
-import java.math.BigDecimal
 
 object TrashJsonSerializer {
-
-    fun serializeCommitment(fc: FixedCommitment): String {
-        return JSONObject().apply {
-            put("name", fc.name)
-            put("targetAmount", fc.targetAmount.toPlainString())
-            put("currentProgress", fc.currentProgress.toPlainString())
-            put("orderIndex", fc.orderIndex)
-        }.toString()
-    }
 
     fun serializeHabayebBundle(
         customer: HabayebCustomer,
@@ -53,39 +40,8 @@ object TrashJsonSerializer {
         }.toString()
     }
 
-    fun serializeTransaction(tx: TransactionDb): String {
-        return serializeTransactionJsonObject(tx).toString()
-    }
-
-    fun serializeTransactionBundle(transactions: List<TransactionDb>, title: String): String {
-        return JSONObject().apply {
-            val txsArray = JSONArray()
-            transactions.forEach { tx ->
-                txsArray.put(serializeTransactionJsonObject(tx))
-            }
-            put("transactions", txsArray)
-            put("totalTransactions", transactions.size)
-            val totalNet = transactions.fold(BigDecimal.ZERO) { acc, tx ->
-                if (tx.type == TransactionType.INCOME.value) acc.add(tx.amount) else acc.subtract(tx.amount)
-            }
-            put("totalNet", totalNet.toPlainString())
-            put("name", title)
-        }.toString()
-    }
-
     fun serializeHabayebTransaction(tx: HabayebTransaction): String {
         return serializeHabayebTransactionJsonObject(tx).toString()
-    }
-
-    private fun serializeTransactionJsonObject(tx: TransactionDb): JSONObject {
-        return JSONObject().apply {
-            put("id", tx.id)
-            put("timestamp", tx.timestamp)
-            put("type", tx.type)
-            put("category", tx.category)
-            put("amount", tx.amount.toPlainString())
-            put("description", tx.description)
-        }
     }
 
     private fun serializeHabayebTransactionJsonObject(tx: HabayebTransaction): JSONObject {

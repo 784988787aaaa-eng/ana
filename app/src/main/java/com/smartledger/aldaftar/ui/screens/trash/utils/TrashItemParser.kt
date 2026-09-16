@@ -4,10 +4,8 @@ import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
-import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
@@ -136,26 +134,6 @@ object TrashItemParser {
             isRateCalculated = txObj.optBoolean("is_rate_calculated", false),
             equivalentAmount = parseBigDecimal(txObj, "equivalent_amount"),
             baseCurrencyCode = txObj.optString("base_currency_code", FinanceConstants.DEFAULT_CURRENCY_CODE)
-        )
-    }
-
-    fun parseFixedCommitment(fcObj: JSONObject): FixedCommitment {
-        return FixedCommitment(
-            name = fcObj.getString("name"),
-            targetAmount = parseBigDecimal(fcObj, "targetAmount"),
-            currentProgress = parseBigDecimal(fcObj, "currentProgress"),
-            orderIndex = fcObj.optInt("orderIndex", 0)
-        )
-    }
-
-    fun parseTransactionDb(txObj: JSONObject): TransactionDb {
-        return TransactionDb(
-            id = txObj.getString("id"),
-            timestamp = txObj.optLong("timestamp", System.currentTimeMillis() / 1000),
-            type = txObj.getString("type"),
-            category = txObj.optString("category", ""),
-            amount = parseBigDecimal(txObj, "amount"),
-            description = txObj.optString("description", "")
         )
     }
 

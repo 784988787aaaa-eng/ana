@@ -8,10 +8,8 @@ import androidx.room.TypeConverters
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
-import com.smartledger.aldaftar.data.local.entities.FixedCommitment
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.data.local.entities.TransactionDb
 import com.smartledger.aldaftar.data.local.entities.PinnedCustomer
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
@@ -19,8 +17,6 @@ import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 @Database(
     entities = [
         AppSettings::class,
-        FixedCommitment::class,
-        TransactionDb::class,
         CustomCategory::class,
         DeletedItemEntity::class,
         HabayebCustomer::class,
@@ -29,14 +25,12 @@ import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
         BusinessProfile::class,
         RecurringConfigEntity::class
     ],
-    version = 1,
-    exportSchema = true
+    version = 2,
+    exportSchema = false
 )
 @TypeConverters(BigDecimalConverter::class, IntListConverter::class, StringListConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun settingsDao(): SettingsDao
-    abstract fun commitmentDao(): CommitmentDao
-    abstract fun transactionDao(): TransactionDao
     abstract fun customCategoryDao(): CustomCategoryDao
     abstract fun trashDao(): TrashDao
     abstract fun habayebDao(): HabayebDao
@@ -56,6 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DATABASE_NAME
                 )
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                     .build()
                     .also { instance = it }

@@ -4,7 +4,6 @@ import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.repository.HabayebRepository
-import com.smartledger.aldaftar.data.repository.TransactionRepository
 import com.smartledger.aldaftar.data.repository.HabayebMutationRepository
 import com.smartledger.aldaftar.domain.model.CurrencyPair
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
@@ -14,7 +13,6 @@ import java.util.UUID
 /** قواعد معاملات الحبايب دون تأثيرات واجهة. */
 class HabayebTransactionUseCase(
     private val habayeb: HabayebRepository,
-    private val transactions: TransactionRepository,
     private val mutations: HabayebMutationRepository
 ) {
     private fun id() = "dtx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
@@ -37,14 +35,12 @@ class HabayebTransactionUseCase(
         val pair=CurrencyPair(defaultCurrency,target,if(newRate.compareTo(BigDecimal.ZERO)<=0) BigDecimal.ONE else newRate)
         val source=if(tx.foreignAmount.compareTo(BigDecimal.ZERO)>0) tx.foreignAmount else tx.amount
         val enabled=calculateRate&&!pair.isSelfPair; val equivalent=convert(source,pair)
-        if(tx.linkedMainTxId!=null) transactions.getTransactionById(tx.linkedMainTxId)?.let { transactions.saveTransaction(it.copy(amount=if(enabled) equivalent else BigDecimal.ZERO)) }
         habayeb.insertHabayebTransaction(tx.copy(currencyCode=target,baseCurrencyCode=defaultCurrency,isForeign=!pair.isSelfPair,exchangeRate=if(pair.isSelfPair) BigDecimal.ONE else pair.safeRate,isRateCalculated=enabled,equivalentAmount=if(enabled) equivalent else BigDecimal.ZERO,amount=if(enabled) equivalent else source,foreignAmount=source))
     }
     suspend fun revalueHistoricalTransactions(baseCurrencyCode:String,targetCurrencyCode:String,newRate:BigDecimal) {
         val rate=if(newRate.compareTo(BigDecimal.ZERO)<=0) BigDecimal.ONE else newRate
         habayeb.getAllTransactionsDirect().filter{it.currencyCode==targetCurrencyCode&&it.baseCurrencyCode==baseCurrencyCode&&it.isRateCalculated}.forEach { tx ->
             val source=if(tx.foreignAmount.compareTo(BigDecimal.ZERO)>0) tx.foreignAmount else tx.amount; val equivalent=FinancialPolicy.normalize(source.multiply(rate))
-            tx.linkedMainTxId?.let{transactions.getTransactionById(it)?.let{m->transactions.saveTransaction(m.copy(amount=equivalent))}}
             habayeb.insertHabayebTransaction(tx.copy(foreignAmount=source,exchangeRate=rate,equivalentAmount=equivalent,amount=equivalent))
         }
     }

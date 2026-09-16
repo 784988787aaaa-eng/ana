@@ -286,13 +286,14 @@ fun MizanDialogActions(
                 border = BorderStroke(1.dp, extraActionColor.copy(alpha = 0.4f)),
                 modifier = Modifier
                     .height(MizanDialogTokens.buttonHeight)
-                    .weight(0.9f),
+                    .weight(1f),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
             ) {
                 Text(
                     text = extraActionText,
-                    fontSize = 12.sp,
+                    fontSize = 12.5.sp,
                     fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -313,6 +314,7 @@ fun MizanDialogActions(
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                     maxLines = 1
                 )
             }
@@ -329,7 +331,7 @@ fun MizanDialogActions(
             ),
             modifier = Modifier
                 .height(MizanDialogTokens.buttonHeight)
-                .weight(if (onCancel != null || extraActionText != null) 1.25f else 1f),
+                .weight(if (onCancel != null && extraActionText != null) 1.2f else if (onCancel != null || extraActionText != null) 1.25f else 1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
         ) {
             if (isConfirmLoading) {
@@ -341,7 +343,7 @@ fun MizanDialogActions(
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     if (confirmIcon != null) {
                         Icon(
@@ -349,11 +351,13 @@ fun MizanDialogActions(
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
+                        Spacer(modifier = Modifier.width(6.dp))
                     }
                     Text(
                         text = confirmText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
                         maxLines = 1
                     )
                 }

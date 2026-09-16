@@ -26,8 +26,6 @@ class FinanceViewModel(
     application: Application,
     private val licenseRepository: LicenseRepository,
     private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
-    private val commitmentsRepository: com.smartledger.aldaftar.data.repository.CommitmentRepository,
-    private val transactionsRepository: com.smartledger.aldaftar.data.repository.TransactionRepository,
     private val categoriesRepository: com.smartledger.aldaftar.data.repository.CategoryRepository,
     private val habayebRepository: com.smartledger.aldaftar.data.repository.HabayebRepository,
     private val trashRepository: com.smartledger.aldaftar.data.repository.TrashRepository,
