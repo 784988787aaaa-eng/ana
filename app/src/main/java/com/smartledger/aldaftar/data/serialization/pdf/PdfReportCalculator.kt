@@ -65,8 +65,10 @@ object PdfReportCalculator {
                                tx.currencyCode != normDefaultSymbol) || 
                               tx.isRateCalculated
 
-            val isPureBase = (tx.currencyCode == FinanceConstants.DEFAULT_CURRENCY_CODE || tx.currencyCode.isBlank() || tx.currencyCode == normDefaultSymbol) && !tx.isRateCalculated
-            val pureBaseAmount = if (isPureBase) tx.amount else BigDecimal.ZERO
+            // The resolved amount is the single source of truth for reporting:
+            // local transactions use amount; foreign transactions use foreignAmount;
+            // rate-calculated transactions use equivalentAmount in the base currency.
+            val pureBaseAmount = if (affectsReportPrimaryCurrency) resolvedAmount else BigDecimal.ZERO
 
             val txType = TransactionType.fromValue(tx.type)
             if (affectsReportPrimaryCurrency) {

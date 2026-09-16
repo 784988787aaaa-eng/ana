@@ -31,6 +31,7 @@ import com.smartledger.aldaftar.domain.evaluateSimpleExpression
 
 import java.math.BigDecimal
 import com.smartledger.aldaftar.ui.theme.mizanColors
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun CalculatorDialog(
@@ -351,8 +352,12 @@ fun CalcButton(
         else -> MaterialTheme.colorScheme.outlineVariant
     }
 
+    val haptic = LocalHapticFeedback.current
     val clickableModifier = if (enabled) {
-        Modifier.clickable(onClick = onClick)
+        Modifier.clickable {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        }
     } else {
         Modifier
     }
@@ -362,7 +367,7 @@ fun CalcButton(
             .heightIn(min = 52.dp)
             .wrapContentHeight()
             .then(clickableModifier),
-        shape = RoundedCornerShape(10.dp),
+        shape = MizanDialogTokens.buttonShape,
         colors = CardDefaults.cardColors(
             containerColor = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f)
         ),

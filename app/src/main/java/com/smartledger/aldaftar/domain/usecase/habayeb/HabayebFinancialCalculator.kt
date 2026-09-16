@@ -72,7 +72,8 @@ object HabayebFinancialCalculator {
                 // If it's the default currency, or no exchange rates given, use netEquivalentAmount or netAmount
                 // The actual logic is we use the aggregated netAmount.
                 // Wait, netAmount is per currency.
-                val curr = bal.currencyCode.ifBlank { normDefaultCurrency }
+                val rawCurr = bal.currencyCode.ifBlank { normDefaultCurrency }
+                val curr = CurrencyConfig.getBySymbol(rawCurr)?.symbol ?: rawCurr
                 val amount = bal.netAmount.setScale(4, RoundingMode.HALF_EVEN)
                 netDebtBDMap[curr] = (netDebtBDMap[curr] ?: BigDecimal.ZERO).add(amount)
                 

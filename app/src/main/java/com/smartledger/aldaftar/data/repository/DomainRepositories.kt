@@ -29,7 +29,7 @@ class CategoryRepository(private val dao: CustomCategoryDao) {
     }
 }
 class HabayebRepository(private val database:AppDatabase, private val dao:HabayebDao) {
-    val customersFlow=dao.getAllCustomersFlow(); val transactionsFlow=dao.getAllTransactionsFlow(); val customerBalancesFlow = dao.getAllCustomerBalancesFlow()
+    val customersFlow=dao.getAllCustomersFlow(); fun customerBalancesFlow(defaultCurrencySymbol: String) = dao.getAllCustomerBalancesFlow(defaultCurrencySymbol)
     fun getTransactionsForCustomerFlow(id: String) = dao.getTransactionsForCustomerFlow(id)
     fun getTransactionsPagingSourceForCustomer(id: String): PagingSource<Int, HabayebTransaction> {
         return dao.getTransactionsPagingSourceForCustomer(id)

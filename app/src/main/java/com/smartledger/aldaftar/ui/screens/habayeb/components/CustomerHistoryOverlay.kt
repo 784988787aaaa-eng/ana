@@ -68,13 +68,9 @@ fun CustomerHistoryOverlay(
     val customers by viewModel.habayebCustomersState.collectAsStateWithLifecycle()
     val activeCustomer = customers.find { it.id == customer.id } ?: customer
 
-    val initialTxs = remember(activeCustomer.id) {
-        viewModel.getInitialTransactionsForCustomer(activeCustomer.id)
-    }
-
     val transactions by remember(activeCustomer.id) {
         viewModel.getTransactionsForCustomerFlow(activeCustomer.id)
-    }.collectAsStateWithLifecycle(initialValue = initialTxs)
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val context = LocalContext.current

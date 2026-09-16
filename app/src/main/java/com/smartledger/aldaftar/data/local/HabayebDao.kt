@@ -83,23 +83,54 @@ interface HabayebDao {
     @Query("DELETE FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope")
     suspend fun deletePinsForScope(scope: Int)
 
-    @Query("SELECT * FROM habayeb_transactions ORDER BY timestamp DESC")
-    fun getAllTransactionsFlow(): Flow<List<HabayebTransaction>>
-
     @Query("""
-        SELECT 
+        SELECT
             customerId,
-            currency_code AS currencyCode,
-            SUM(CASE WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN amount ELSE 0 END) -
-            SUM(CASE WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN amount ELSE 0 END) AS netAmount,
-            SUM(CASE WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN equivalent_amount ELSE 0 END) -
-            SUM(CASE WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN equivalent_amount ELSE 0 END) AS netEquivalentAmount,
+            CASE
+                WHEN is_rate_calculated = 1 THEN
+                    CASE
+                        WHEN base_currency_code IS NULL OR base_currency_code = '' OR base_currency_code = 'DEFAULT'
+                            THEN :defaultCurrencySymbol
+                        ELSE base_currency_code
+                    END
+                WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
+                    THEN :defaultCurrencySymbol
+                ELSE currency_code
+            END AS currencyCode,
+            SUM(
+                CASE
+                    WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN
+                        CASE
+                            WHEN is_rate_calculated = 1 THEN equivalent_amount
+                            WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
+                                THEN amount
+                            WHEN foreign_amount > 0 THEN foreign_amount
+                            ELSE amount
+                        END
+                    WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN
+                        -CASE
+                            WHEN is_rate_calculated = 1 THEN equivalent_amount
+                            WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
+                                THEN amount
+                            WHEN foreign_amount > 0 THEN foreign_amount
+                            ELSE amount
+                        END
+                    ELSE 0
+                END
+            ) AS netAmount,
+            SUM(
+                CASE
+                    WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN equivalent_amount
+                    WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN -equivalent_amount
+                    ELSE 0
+                END
+            ) AS netEquivalentAmount,
             MAX(timestamp) AS lastTimestamp,
             COUNT(*) AS txCount
         FROM habayeb_transactions
-        GROUP BY customerId, currency_code
+        GROUP BY customerId, currencyCode
     """)
-    fun getAllCustomerBalancesFlow(): Flow<List<CustomerCurrencyBalance>>
+    fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>>
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>>

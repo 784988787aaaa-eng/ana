@@ -119,9 +119,6 @@ class HabayebFinanceViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val habayebTransactionsState: StateFlow<List<HabayebTransaction>> = habayebRepository.transactionsFlow
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _linkHabayebDebtsState = MutableStateFlow(false)
     val linkHabayebDebtsState = _linkHabayebDebtsState.asStateFlow()
@@ -148,11 +145,6 @@ class HabayebFinanceViewModel(
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>> =
         habayebRepository.getTransactionsForCustomerFlow(customerId)
 
-    fun getInitialTransactionsForCustomer(customerId: String): List<HabayebTransaction> {
-        val all = habayebTransactionsState.value
-        if (all.isEmpty()) return emptyList()
-        return all.filter { it.customerId == customerId }
-    }
 
     fun getTransactionsForCustomerWithLimitFlow(customerId: String, limit: Int): Flow<List<HabayebTransaction>> =
         habayebRepository.getTransactionsForCustomerWithLimitFlow(customerId, limit)
@@ -238,8 +230,19 @@ class HabayebFinanceViewModel(
     fun reorderCategories(newList: List<String>) { viewModelScope.launch { val all = categoriesRepository.getAllCustomCategoriesDirect(); val ids = newList.mapNotNull { name -> all.firstOrNull { it.name == name }?.id }; categoryUseCase.reorderCategories(ids) } }
 
     val customersUiState: StateFlow<CustomersUiState> = combine(
-        habayebRepository.customersFlow, habayebRepository.customerBalancesFlow, settingsState
-    ) { customers, customerBalances, settings -> HabayebFinancialCalculator.calculateCustomersUiState(customers, customerBalances, settings) }
+        habayebRepository.customersFlow,
+        settingsState
+    ) { customers, settings -> customers to settings }
+        .flatMapLatest { (customers, settings) ->
+            habayebRepository.customerBalancesFlow(settings.currencySymbol)
+                .map { customerBalances ->
+                    HabayebFinancialCalculator.calculateCustomersUiState(
+                        customers = customers,
+                        customerBalances = customerBalances,
+                        settings = settings
+                    )
+                }
+        }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CustomersUiState())
 
