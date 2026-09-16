@@ -12,6 +12,10 @@ class BackupPathManager(context: Context) {
         const val EXTENSION = ".sna"
         const val PREFIX = "SNA_"
         const val ROOT_FOLDER = "backups"
+        private val CURRENT_NAME_REGEX =
+            Regex("^SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna$", RegexOption.IGNORE_CASE)
+        private val LEGACY_NAME_REGEX =
+            Regex("^SMN_\\d{4}-\\d{2}(?:-\\d{2}(?:_\\d{4})?)?\\.slb$", RegexOption.IGNORE_CASE)
     }
 
     private val root = File(context.applicationContext.filesDir, ROOT_FOLDER)
@@ -34,7 +38,7 @@ class BackupPathManager(context: Context) {
     fun isSupported(file: File): Boolean =
         file.isFile && isSafeBackupName(file.name)
 
+    /** صيغة SNA هي صيغة التوليد الحالية؛ صيغة SLB القديمة مقبولة للاستيراد/الترحيل فقط. */
     fun isSafeBackupName(name: String): Boolean =
-        name.matches(Regex("SNA_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}\\.sna", RegexOption.IGNORE_CASE)) ||
-        name.matches(Regex("SMN_\\d{4}-\\d{2}(?:-\\d{2}(?:_\\d{4})?)?\\.slb", RegexOption.IGNORE_CASE))
+        CURRENT_NAME_REGEX.matches(name) || LEGACY_NAME_REGEX.matches(name)
 }

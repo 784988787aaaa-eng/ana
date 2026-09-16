@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
 
 @Composable
 fun ContextMenuItem(
@@ -38,7 +39,7 @@ fun ContextMenuItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 44.dp)
+            .defaultMinSize(minHeight = MizanTouchTarget.standardButtonHeight)
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 10.dp),

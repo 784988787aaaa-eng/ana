@@ -335,16 +335,6 @@ class HabayebFinanceViewModel(
     ): Boolean = withContext(Dispatchers.IO) {
         resetFiltersToDefault(resetCategory = true)
 
-        val consumesTrial = initialAmount.compareTo(BigDecimal.ZERO) > 0
-        if (!consumesTrial) {
-            transactionUseCase.saveHabayebCustomer(
-                customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
-            )
-            com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
-            emitScrollToAccount(customer.id)
-            return@withContext true
-        }
         val created = licenseRepository.runAuthorizedCreation {
             transactionUseCase.saveHabayebCustomer(
                 customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
@@ -352,7 +342,10 @@ class HabayebFinanceViewModel(
             )
             true
         }
-        if (created != true) return@withContext false
+        if (created != true) {
+            licenseRepository.triggerLicenseRequired()
+            return@withContext false
+        }
         com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customer.id)
         true
@@ -366,8 +359,8 @@ class HabayebFinanceViewModel(
     ): Boolean = withContext(Dispatchers.IO) {
         resetFiltersToDefault(resetCategory = true)
 
-        val consumesTrial = editingTxId == null
-        if (!consumesTrial) {
+        val isEditing = editingTxId != null
+        if (isEditing) {
             transactionUseCase.addHabayebTransaction(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
                 foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
@@ -383,7 +376,10 @@ class HabayebFinanceViewModel(
             )
             true
         }
-        if (created != true) return@withContext false
+        if (created != true) {
+            licenseRepository.triggerLicenseRequired()
+            return@withContext false
+        }
         com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customerId)
         true

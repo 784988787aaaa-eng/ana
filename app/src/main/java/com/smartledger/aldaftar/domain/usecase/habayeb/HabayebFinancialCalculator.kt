@@ -5,6 +5,7 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.state.CustomersUiState
 import java.math.BigDecimal

@@ -38,9 +38,8 @@ class LicenseRepository(private val context: Context) {
     }
 
     fun syncTrialUsedWithCount(dbCount: Int) {
-        val effective = store.trialUsed.coerceAtLeast(dbCount)
-        if (effective != store.trialUsed) {
-            store.trialUsed = effective
+        if (store.trialUsed != dbCount) {
+            store.trialUsed = dbCount
         }
     }
 

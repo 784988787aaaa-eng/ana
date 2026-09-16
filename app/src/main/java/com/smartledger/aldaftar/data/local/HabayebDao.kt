@@ -168,6 +168,12 @@ interface HabayebDao {
     @Query("SELECT COUNT(*) FROM habayeb_transactions")
     suspend fun getHabayebTransactionsCountDirect(): Int
 
+    @Query("SELECT COUNT(*) FROM habayeb_customers")
+    fun getHabayebCustomersCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM habayeb_customers")
+    suspend fun getHabayebCustomersCountDirect(): Int
+
 
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")

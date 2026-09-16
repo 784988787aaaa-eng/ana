@@ -35,7 +35,31 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
         return dao.getTransactionsPagingSourceForCustomer(id)
     }
     fun getForeignTransactionsFlow() = dao.getForeignTransactionsFlow(); fun getTransactionsForCustomerWithLimitFlow(id:String,l:Int)=dao.getTransactionsForCustomerWithLimitFlow(id,l)
-    fun getHabayebTransactionsCountFlow()=dao.getHabayebTransactionsCountFlow()
+    fun getHabayebTransactionsCountFlow(): kotlinx.coroutines.flow.Flow<Int> {
+        return kotlinx.coroutines.flow.combine(
+            dao.getHabayebCustomersCountFlow(),
+            dao.getHabayebTransactionsCountFlow(),
+            database.trashDao().getAllDeletedItemsFlow()
+        ) { customersCount, txsCount, deletedItems ->
+            var count = customersCount + txsCount
+            for (item in deletedItems) {
+                when (item.originalTableName) {
+                    "habayeb_customers" -> count += 1
+                    "habayeb_transactions" -> count += 1
+                    "habayeb_bundle" -> {
+                        try {
+                            val json = org.json.JSONObject(item.jsonData)
+                            val txCount = json.optInt("totalTransactions", json.optJSONArray("transactions")?.length() ?: 0)
+                            count += 1 + txCount
+                        } catch (e: Exception) {
+                            count += 1
+                        }
+                    }
+                }
+            }
+            count
+        }
+    }
     suspend fun insertCustomer(v:HabayebCustomer)=dao.insertCustomer(v)
     suspend fun updateCustomer(v:HabayebCustomer)=database.withTransaction { val old=dao.getCustomerByIdDirect(v.id); dao.updateCustomer(v); if(old!=null&&old.initialType!=v.initialType) when(v.initialType){TransactionType.OWED_BY_THEM.value->dao.adaptTransactionsToOwedByThem(v.id);TransactionType.OWED_TO_THEM.value->dao.adaptTransactionsToOwedToThem(v.id)} }
     suspend fun insertCustomerWithOpeningTransaction(c:HabayebCustomer,t:HabayebTransaction?)=dao.insertCustomerWithOpeningTransaction(c,t?.let{it.copy(amount=it.amount.money(),foreignAmount=it.foreignAmount.money(),exchangeRate=it.exchangeRate.money(),equivalentAmount=it.equivalentAmount.money())})
@@ -45,7 +69,29 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
     suspend fun deleteHabayebTransaction(v:HabayebTransaction)=dao.deleteTransaction(v); suspend fun deleteHabayebTransactionById(id:String)=dao.deleteTransactionById(id)
     suspend fun getHabayebTransactionById(id:String)=dao.getTransactionById(id); suspend fun getCustomerByIdDirect(id:String)=dao.getCustomerByIdDirect(id)
     suspend fun getAllCustomersDirect()=dao.getAllCustomersDirect(); suspend fun getAllTransactionsDirect()=dao.getAllTransactionsDirect(); suspend fun getTransactionsForCustomerDirect(id:String)=dao.getTransactionsForCustomerDirect(id)
-    suspend fun clearAllCustomers()=database.withTransaction { database.recurringConfigDao().clear(); dao.clearAllTransactions(); dao.clearAllPins(); dao.clearAllCustomers() }; suspend fun clearAllTransactions()=dao.clearAllTransactions(); suspend fun getTransactionsForCustomerPaged(id:String,l:Int,o:Int)=dao.getTransactionsForCustomerPaged(id,l,o); suspend fun getHabayebTransactionsCountDirect()=dao.getHabayebTransactionsCountDirect()
+    suspend fun clearAllCustomers()=database.withTransaction { database.recurringConfigDao().clear(); dao.clearAllTransactions(); dao.clearAllPins(); dao.clearAllCustomers() }; suspend fun clearAllTransactions()=dao.clearAllTransactions(); suspend fun getTransactionsForCustomerPaged(id:String,l:Int,o:Int)=dao.getTransactionsForCustomerPaged(id,l,o)
+    suspend fun getHabayebTransactionsCountDirect(): Int {
+        val customersCount = dao.getHabayebCustomersCountDirect()
+        val txsCount = dao.getHabayebTransactionsCountDirect()
+        val deletedItems = database.trashDao().getAllDeletedItemsDirect()
+        var count = customersCount + txsCount
+        for (item in deletedItems) {
+            when (item.originalTableName) {
+                "habayeb_customers" -> count += 1
+                "habayeb_transactions" -> count += 1
+                "habayeb_bundle" -> {
+                    try {
+                        val json = org.json.JSONObject(item.jsonData)
+                        val txCount = json.optInt("totalTransactions", json.optJSONArray("transactions")?.length() ?: 0)
+                        count += 1 + txCount
+                    } catch (e: Exception) {
+                        count += 1
+                    }
+                }
+            }
+        }
+        return count
+    }
 }
 class TrashRepository(private val dao:TrashDao) {
     val deletedItemsFlow=dao.getAllDeletedItemsFlow(); suspend fun getAllDeletedItemsDirect()=dao.getAllDeletedItemsDirect(); suspend fun saveDeletedItem(v:DeletedItemEntity)=dao.insertDeletedItem(v); suspend fun removeDeletedItem(v:DeletedItemEntity)=dao.deleteItem(v); suspend fun removeDeletedItemById(id:String)=dao.deleteItemById(id); suspend fun clearDeletedItems()=dao.clearAllDeletedItems(); suspend fun restoreDeletedItem(v:DeletedItemEntity)=dao.restoreDeletedItem(v); suspend fun restoreSingleTransactionFromBundle(i:String,t:String)=dao.restoreSingleTransactionFromBundle(i,t)
