@@ -247,11 +247,11 @@ fun SecurityDialog(
         ) {
             MizanDialogHeader(
                 title = stringResource(id = R.string.sec_title),
-                subtitle = if (isAlreadyPasscodeEnabled && !isEditingPasscodeInDialog) "حماية التطبيق مُفعلة" else "إعداد قفل الأمان وكلمة المرور",
-                icon = Icons.Default.Security,
-                iconTint = MaterialTheme.colorScheme.primary,
+                subtitle = null,
+                icon = null,
                 isCentered = true,
-                onCloseClick = dismissDialog
+                onCloseClick = dismissDialog,
+                closeButtonAlignment = Alignment.TopStart
             )
 
             Column(

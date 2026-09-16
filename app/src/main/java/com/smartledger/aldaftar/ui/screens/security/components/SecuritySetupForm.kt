@@ -115,6 +115,14 @@ fun SecuritySetupForm(
                 label = { Text(stringResource(id = R.string.sec_label_code), fontSize = 12.sp) },
                 placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontSize = 12.sp) },
                 singleLine = true,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
                 trailingIcon = {
                     IconButton(onClick = { passcodeVisible = !passcodeVisible }) {
                         Icon(
@@ -126,19 +134,19 @@ fun SecuritySetupForm(
                     }
                 },
                 textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    textAlign = TextAlign.Start,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
                 visualTransformation = if (passcodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { confirmPasscodeFocus.requestFocus() }),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,6 +168,14 @@ fun SecuritySetupForm(
                 label = { Text(stringResource(id = R.string.sec_label_confirm), fontSize = 12.sp) },
                 placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontSize = 12.sp) },
                 singleLine = true,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.LockReset,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
                 trailingIcon = {
                     IconButton(onClick = { confirmPasscodeVisible = !confirmPasscodeVisible }) {
                         Icon(
@@ -171,19 +187,19 @@ fun SecuritySetupForm(
                     }
                 },
                 textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    textAlign = TextAlign.Start,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
                 visualTransformation = if (confirmPasscodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryPhraseFocus.requestFocus() }),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -228,12 +244,12 @@ fun SecuritySetupForm(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryHintFocus.requestFocus() }),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -261,12 +277,12 @@ fun SecuritySetupForm(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()

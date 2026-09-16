@@ -93,6 +93,7 @@ fun MizanDialogHeader(
     iconTint: Color = MaterialTheme.colorScheme.primary,
     isCentered: Boolean = false,
     onCloseClick: (() -> Unit)? = null,
+    closeButtonAlignment: Alignment = Alignment.TopEnd,
     endAction: (@Composable () -> Unit)? = null
 ) {
     if (isCentered) {
@@ -158,7 +159,7 @@ fun MizanDialogHeader(
                 IconButton(
                     onClick = onCloseClick,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(closeButtonAlignment)
                         .size(34.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
