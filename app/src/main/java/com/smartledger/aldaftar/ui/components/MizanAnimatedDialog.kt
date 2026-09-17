@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,6 +18,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.ui.theme.MizanAnimationTokens
@@ -42,8 +45,11 @@ fun MizanAnimatedDialog(
     var isVisible by remember { mutableStateOf(false) }
     var isDismissing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val dismissWithAnimation: () -> Unit = {
+        hideKeyboardAndClearFocus(focusManager, keyboardController)
         if (!isDismissing) {
             isDismissing = true
             isVisible = false
@@ -56,6 +62,12 @@ fun MizanAnimatedDialog(
 
     LaunchedEffect(Unit) {
         isVisible = true
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            hideKeyboardAndClearFocus(focusManager, keyboardController)
+        }
     }
 
     Dialog(

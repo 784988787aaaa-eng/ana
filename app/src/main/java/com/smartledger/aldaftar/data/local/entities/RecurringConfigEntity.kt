@@ -26,7 +26,10 @@ data class RecurringConfigEntity(
     val isForeign: Boolean = false,
     val currencyCode: String = "DEFAULT",
     val foreignAmount: BigDecimal = BigDecimal.ZERO,
-    val exchangeRate: BigDecimal = BigDecimal.ONE,
+    val exchangeRate: BigDecimal = BigDecimal.ZERO,
     val isRateCalculated: Boolean = false,
-    val equivalentAmount: BigDecimal = BigDecimal.ZERO
+    val equivalentAmount: BigDecimal = BigDecimal.ZERO,
+    val baseCurrencyCode: String = "DEFAULT",
+    val snapshotVersion: Int = 1,
+    val rateContext: String = "FIXED_SNAPSHOT"
 )

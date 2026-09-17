@@ -6,17 +6,15 @@ import java.math.RoundingMode
 data class CurrencyPair(
     val baseCurrency: String,
     val targetCurrency: String,
-    val rate: BigDecimal = BigDecimal.ONE
+    val rate: BigDecimal = BigDecimal.ZERO
 ) {
     val isValid: Boolean
         get() = rate.compareTo(BigDecimal.ZERO) > 0
 
     val safeRate: BigDecimal
-        get() = if (rate.compareTo(BigDecimal.ZERO) > 0) {
-            rate.setScale(4, RoundingMode.HALF_EVEN)
-        } else {
-            BigDecimal.ONE.setScale(4, RoundingMode.HALF_EVEN)
-        }
+        get() = rate.takeIf { it > BigDecimal.ZERO }
+            ?.setScale(FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+            ?: throw IllegalArgumentException("سعر الصرف غير موجود أو غير صالح")
 
     val isSelfPair: Boolean
         get() = baseCurrency.trim().equals(targetCurrency.trim(), ignoreCase = true)

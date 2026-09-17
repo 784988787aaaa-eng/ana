@@ -1,48 +1,51 @@
 package com.smartledger.aldaftar.ui.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.DialogWindowProvider
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
-import android.view.WindowManager
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 
 /**
- * Reliable first-field focus + IME opening for Compose input surfaces.
+ * Opens the IME only for a field that explicitly owns focus.
  *
- * Dialog windows can exist for a few frames before the IME is willing to
- * honour a show() request. We therefore make the window IME-visible and
- * retry focus/show for a short, bounded period. This is deliberately local
- * to input surfaces so normal screens never pop the keyboard unexpectedly.
+ * Important lifecycle rule: requesting the keyboard is paired with an explicit
+ * cleanup when the owner leaves composition or becomes disabled. No window is
+ * forced into ALWAYS_VISIBLE mode; that global window flag is a common cause
+ * of the keyboard surviving dialog dismissal or reappearing on the next frame.
  */
 suspend fun requestFocusAndShowKeyboard(
     focusRequester: FocusRequester,
-    keyboardController: androidx.compose.ui.platform.SoftwareKeyboardController?,
-    attempts: Int = 8,
-    delayMs: Long = 35L,
-    postToView: (() -> Unit)? = null
+    keyboardController: SoftwareKeyboardController?,
+    attempts: Int = 4,
+    delayMs: Long = 35L
 ) {
     awaitFrame()
-    awaitFrame()
-
     repeat(attempts) { attempt ->
         runCatching { focusRequester.requestFocus() }
         runCatching { keyboardController?.show() }
-        postToView?.invoke()
-
         if (attempt < attempts - 1) delay(delayMs)
     }
 }
 
+/** Hides the IME and removes Compose focus from the current input owner. */
+fun hideKeyboardAndClearFocus(
+    focusManager: FocusManager,
+    keyboardController: SoftwareKeyboardController?
+) {
+    runCatching { focusManager.clearFocus(force = true) }
+    runCatching { keyboardController?.hide() }
+}
+
 /**
- * Use on a dialog/bottom-sheet that has an obvious first editable field.
- * It does not run on ordinary screens unless the caller places it there.
+ * Use only where opening the keyboard automatically is intentional.
+ * Cleanup is tied to the composable lifecycle so a dismissed dialog cannot
+ * leave a focused text field behind.
  */
 @Composable
 fun RequestFocusAndShowKeyboard(
@@ -51,34 +54,22 @@ fun RequestFocusAndShowKeyboard(
     key: Any? = Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-    val view = LocalView.current
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(enabled, key) {
-        if (!enabled) return@LaunchedEffect
-
-        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
-        val activityWindow = view.context.findActivity()?.window
-        val window = dialogWindow ?: activityWindow
-        window?.setSoftInputMode(
-            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-        )
-
+        if (!enabled) {
+            hideKeyboardAndClearFocus(focusManager, keyboardController)
+            return@LaunchedEffect
+        }
         requestFocusAndShowKeyboard(
             focusRequester = focusRequester,
-            keyboardController = keyboardController,
-            attempts = 12,
-            delayMs = 40L,
-            postToView = {
-                view.post { runCatching { keyboardController?.show() } }
-            }
+            keyboardController = keyboardController
         )
     }
-}
 
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
+    DisposableEffect(enabled, key) {
+        onDispose {
+            hideKeyboardAndClearFocus(focusManager, keyboardController)
+        }
+    }
 }
-

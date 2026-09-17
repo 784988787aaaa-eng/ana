@@ -99,13 +99,6 @@ fun ExchangeRateSetupContent(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-
-    val view = androidx.compose.ui.platform.LocalView.current
-    DisposableEffect(view) {
-        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-        onDispose {}
-    }
     RequestFocusAndShowKeyboard(focusRequester = focusRequester)
 
     val mizanColors = MaterialTheme.mizanColors

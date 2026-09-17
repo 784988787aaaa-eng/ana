@@ -130,10 +130,12 @@ object TrashItemParser {
             isForeign = txObj.optBoolean("is_foreign", false),
             currencyCode = txObj.optString("currency_code", FinanceConstants.DEFAULT_CURRENCY_CODE),
             foreignAmount = parseBigDecimal(txObj, "foreign_amount"),
-            exchangeRate = parseBigDecimal(txObj, "exchange_rate", "1"),
+            exchangeRate = parseBigDecimal(txObj, "exchange_rate", "0"),
             isRateCalculated = txObj.optBoolean("is_rate_calculated", false),
             equivalentAmount = parseBigDecimal(txObj, "equivalent_amount"),
-            baseCurrencyCode = txObj.optString("base_currency_code", FinanceConstants.DEFAULT_CURRENCY_CODE)
+            baseCurrencyCode = txObj.optString("base_currency_code", FinanceConstants.DEFAULT_CURRENCY_CODE),
+            snapshotVersion = txObj.optInt("snapshot_version", 1),
+            rateContext = txObj.optString("rate_context", "HISTORICAL_SNAPSHOT")
         )
     }
 
@@ -241,7 +243,7 @@ object TrashItemParser {
                             val baseCurrencyRaw = jsonObj.optString("base_currency_code", "DEFAULT")
                             val baseCurrencyCode = if (baseCurrencyRaw == "DEFAULT" || baseCurrencyRaw.isBlank()) currencySymbol else baseCurrencyRaw
                             baseCurrencyCodeVal = baseCurrencyCode
-                            val rateStr = jsonObj.optString("exchange_rate", "1.0")
+                            val rateStr = jsonObj.optString("exchange_rate", "0")
                             val rateDec = HabayebMathHelper.toBigDecimal(rateStr)
                             exchangeRateVal = HabayebMathHelper.formatSmart(rateDec)
                             equivalentAmountTextVal = "${HabayebMathHelper.formatSmart(equivalentValDec)} $baseCurrencyCode"
@@ -378,7 +380,7 @@ object TrashItemParser {
                             var rateStr = ""
                             if (txIsForeign && txIsRateCalculated) {
                                 val formattedEquiv = HabayebMathHelper.formatSmart(effectiveAmountDec)
-                                val exchangeRateStr = txObj.optString("exchange_rate", "1.0")
+                                val exchangeRateStr = txObj.optString("exchange_rate", "0")
                                 val exchangeRateDec = HabayebMathHelper.toBigDecimal(exchangeRateStr)
                                 val formattedRate = HabayebMathHelper.formatSmart(exchangeRateDec)
                                 equivStr = "($formattedEquiv $effectiveCurrency)"

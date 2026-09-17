@@ -54,7 +54,16 @@ fun TransactionCurrencySelector(
     onApplyExchangeRateChange: (Boolean) -> Unit,
     onSetupRateClick: (String) -> Unit
 ) {
-    val isForeignSelected = selectedTransactionCurrency != currencySymbol
+    val historicalCurrency = editingTransaction?.let {
+        it.currencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
+            ?: it.baseCurrencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
+    }
+    val rateBaseCurrency = if (editingTransaction != null && selectedTransactionCurrency == historicalCurrency) {
+        editingTransaction.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
+    } else currencySymbol
+    val isForeignSelected = if (editingTransaction != null && selectedTransactionCurrency == historicalCurrency) {
+        editingTransaction.isForeign
+    } else selectedTransactionCurrency != currencySymbol
 
     val yerSym = stringResource(R.string.currency_yer)
     val yerLabel = stringResource(R.string.currency_label_yer)
@@ -138,9 +147,9 @@ fun TransactionCurrencySelector(
                             val newApply = !applyExchangeRate
                             onApplyExchangeRateChange(newApply)
                             if (newApply) {
-                                val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-                                val currentRateVal = ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-                                if (!hasStoredRate || currentRateVal.compareTo(java.math.BigDecimal.ONE) == 0) {
+                                val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
+                                val currentRateVal = ExchangeRateHelper.getRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
+                                if (!hasStoredRate) {
                                     onSetupRateClick("")
                                 }
                             }
@@ -175,8 +184,8 @@ fun TransactionCurrencySelector(
                 if (applyExchangeRate) {
                     val rateInfo = remember(editingTransaction, exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
                         val isEditingHistoricalRate = editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0
-                        val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency) || isEditingHistoricalRate
-                        val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency).toString()
+                        val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency) || isEditingHistoricalRate
+                        val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency).toString()
                         val formattedRateStr = try {
                             BigDecimal(currentRateRaw).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
                         } catch (e: Exception) {
@@ -209,7 +218,7 @@ fun TransactionCurrencySelector(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = stringResource(R.string.currency_approved_rate_pattern, selectedTransactionCurrency, formattedRateStr, currencySymbol),
+                                text = stringResource(R.string.currency_approved_rate_pattern, rateBaseCurrency, formattedRateStr, selectedTransactionCurrency),
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeThemeColor

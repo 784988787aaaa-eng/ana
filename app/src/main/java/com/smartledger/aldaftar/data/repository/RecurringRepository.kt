@@ -26,19 +26,27 @@ class RecurringRepository(private val database:AppDatabase, private val dao:Recu
   dao.all().filter { it.isActive }.forEach { entity ->
    val config=toModel(entity); val due=RecurringScheduleCalculator.dueOccurrences(config, nowMillis, maxOccurrences = 50)
    if(due.isNotEmpty()) {
-    due.forEach { ts -> database.habayebDao().insertTransaction(
-      HabayebTransaction(id=UUID.randomUUID().toString(), customerId=config.customerId, type=config.type,
-       amount=FinancialPolicy.normalize(config.amount), timestamp=ts, description=config.description,
-       linkedMainTxId=config.originalTxId, isForeign=config.isForeign, currencyCode=config.currencyCode,
-       foreignAmount=FinancialPolicy.normalize(config.foreignAmount), exchangeRate=FinancialPolicy.normalize(config.exchangeRate),
-       isRateCalculated=config.isRateCalculated, equivalentAmount=FinancialPolicy.normalize(config.equivalentAmount)) ) }
-    dao.save(entity.copy(lastExecutedTimestamp=due.last()))
-    count += due.size
+    var lastGeneratedTimestamp = entity.lastExecutedTimestamp
+    due.forEach { ts ->
+      // Idempotency key = fixed template identity + occurrence timestamp.
+      // UUID is only the row id; it must never be the duplicate-prevention key.
+      if (dao.occurrenceAlreadyGenerated(config.originalTxId, ts)) return@forEach
+      database.habayebDao().insertTransaction(
+        HabayebTransaction(id=UUID.randomUUID().toString(), customerId=config.customerId, type=config.type,
+         amount=FinancialPolicy.normalize(config.amount), timestamp=ts, description=config.description,
+         linkedMainTxId=config.originalTxId, isForeign=config.isForeign, currencyCode=config.currencyCode,
+         foreignAmount=FinancialPolicy.normalize(config.foreignAmount), exchangeRate=FinancialPolicy.normalizeRate(config.exchangeRate),
+         isRateCalculated=config.isRateCalculated, equivalentAmount=FinancialPolicy.normalize(config.equivalentAmount),
+         baseCurrencyCode=config.baseCurrencyCode, snapshotVersion=config.snapshotVersion, rateContext=config.rateContext) )
+      lastGeneratedTimestamp = maxOf(lastGeneratedTimestamp, ts)
+      count++
+    }
+    dao.save(entity.copy(lastExecutedTimestamp=lastGeneratedTimestamp))
    }
   }; count
  }
 
  private fun validate(c:RecurringConfig){ require(c.id.isNotBlank()&&c.originalTxId.isNotBlank()&&c.customerId.isNotBlank()); require(c.endDateMillis>=c.startDateMillis); require(c.timeHour in 0..23&&c.timeMinute in 0..59) }
- private fun toModel(e:RecurringConfigEntity)=RecurringConfig(e.id,e.originalTxId,e.customerId,e.customerName,e.amount,e.type,e.description,e.frequency,e.daysOfWeek,e.daysOfMonth,e.timeHour,e.timeMinute,e.startDateMillis,e.endDateMillis,e.lastExecutedTimestamp,e.isActive,e.isForeign,e.currencyCode,e.foreignAmount,e.exchangeRate,e.isRateCalculated,e.equivalentAmount)
- private fun toEntity(c:RecurringConfig)=RecurringConfigEntity(c.id,c.originalTxId,c.customerId,c.customerName,FinancialPolicy.normalize(c.amount),c.type,c.description,c.frequency,c.daysOfWeek.distinct(),c.daysOfMonth.distinct(),c.timeHour,c.timeMinute,c.startDateMillis,c.endDateMillis,c.lastExecutedTimestamp,c.isActive,c.isForeign,c.currencyCode,FinancialPolicy.normalize(c.foreignAmount),FinancialPolicy.normalize(c.exchangeRate),c.isRateCalculated,FinancialPolicy.normalize(c.equivalentAmount))
+ private fun toModel(e:RecurringConfigEntity)=RecurringConfig(e.id,e.originalTxId,e.customerId,e.customerName,e.amount,e.type,e.description,e.frequency,e.daysOfWeek,e.daysOfMonth,e.timeHour,e.timeMinute,e.startDateMillis,e.endDateMillis,e.lastExecutedTimestamp,e.isActive,e.isForeign,e.currencyCode,e.foreignAmount,e.exchangeRate,e.isRateCalculated,e.equivalentAmount,e.baseCurrencyCode,e.snapshotVersion,e.rateContext)
+ private fun toEntity(c:RecurringConfig)=RecurringConfigEntity(c.id,c.originalTxId,c.customerId,c.customerName,FinancialPolicy.normalize(c.amount),c.type,c.description,c.frequency,c.daysOfWeek.distinct(),c.daysOfMonth.distinct(),c.timeHour,c.timeMinute,c.startDateMillis,c.endDateMillis,c.lastExecutedTimestamp,c.isActive,c.isForeign,c.currencyCode,FinancialPolicy.normalize(c.foreignAmount),FinancialPolicy.normalizeRate(c.exchangeRate),c.isRateCalculated,FinancialPolicy.normalize(c.equivalentAmount),c.baseCurrencyCode,c.snapshotVersion,c.rateContext)
 }

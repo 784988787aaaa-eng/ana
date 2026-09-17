@@ -166,7 +166,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             if (nextValue) {
                                 val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
                                 val currentRateVal = ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-                                if (!hasStoredRate || currentRateVal.compareTo(java.math.BigDecimal.ONE) == 0) {
+                                if (!hasStoredRate) {
                                     onRequestRateSetup("")
                                 }
                             }
@@ -232,7 +232,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = context.getString(R.string.currency_approved_rate_pattern, selectedTransactionCurrency, formattedRateStr, currencySymbol),
+                                text = context.getString(R.string.currency_approved_rate_pattern, currencySymbol, formattedRateStr, selectedTransactionCurrency),
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeThemeColor

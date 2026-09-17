@@ -62,12 +62,38 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
     }
     suspend fun insertCustomer(v:HabayebCustomer)=dao.insertCustomer(v)
     suspend fun updateCustomer(v:HabayebCustomer)=database.withTransaction { val old=dao.getCustomerByIdDirect(v.id); dao.updateCustomer(v); if(old!=null&&old.initialType!=v.initialType) when(v.initialType){TransactionType.OWED_BY_THEM.value->dao.adaptTransactionsToOwedByThem(v.id);TransactionType.OWED_TO_THEM.value->dao.adaptTransactionsToOwedToThem(v.id)} }
-    suspend fun insertCustomerWithOpeningTransaction(c:HabayebCustomer,t:HabayebTransaction?)=dao.insertCustomerWithOpeningTransaction(c,t?.let{it.copy(amount=it.amount.money(),foreignAmount=it.foreignAmount.money(),exchangeRate=it.exchangeRate.money(),equivalentAmount=it.equivalentAmount.money())})
+    suspend fun insertCustomerWithOpeningTransaction(c:HabayebCustomer,t:HabayebTransaction?)=dao.insertCustomerWithOpeningTransaction(c,t?.let{it.copy(amount=it.amount.money(),foreignAmount=it.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(it.exchangeRate),equivalentAmount=it.equivalentAmount.money())})
     suspend fun deleteCustomerAndTransactions(id:String)=database.withTransaction { database.recurringConfigDao().deleteForCustomer(id); dao.deleteCustomerAndTransactions(id) }
     suspend fun updateCustomerName(id:String,n:String)=dao.updateCustomerName(id,n)
-    suspend fun insertHabayebTransaction(v:HabayebTransaction)=dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=v.exchangeRate.money(),equivalentAmount=v.equivalentAmount.money()))
+    suspend fun insertHabayebTransaction(v:HabayebTransaction)=dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money()))
     suspend fun deleteHabayebTransaction(v:HabayebTransaction)=dao.deleteTransaction(v); suspend fun deleteHabayebTransactionById(id:String)=dao.deleteTransactionById(id)
     suspend fun getHabayebTransactionById(id:String)=dao.getTransactionById(id); suspend fun getCustomerByIdDirect(id:String)=dao.getCustomerByIdDirect(id)
+    suspend fun revalueHistoricalTransactions(baseCurrencyCode: String, targetCurrencyCode: String, newRate: BigDecimal) = database.withTransaction {
+        val rate = FinancialPolicy.normalize(newRate)
+        val candidates = dao.getAllTransactionsDirect().filter {
+            it.currencyCode == targetCurrencyCode &&
+            it.baseCurrencyCode == baseCurrencyCode &&
+            it.isRateCalculated
+        }
+        for (tx in candidates) {
+            val source = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
+            val equivalent = com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.convertDirectedAmount(
+                amount = source,
+                sourceCurrency = targetCurrencyCode,
+                targetCurrency = baseCurrencyCode,
+                rate = rate,
+                rateSourceCurrency = baseCurrencyCode,
+                rateTargetCurrency = targetCurrencyCode
+            )
+            dao.insertTransaction(tx.copy(
+                foreignAmount = FinancialPolicy.normalize(source),
+                exchangeRate = rate,
+                equivalentAmount = equivalent,
+                amount = equivalent
+            ))
+        }
+    }
+
     suspend fun getAllCustomersDirect()=dao.getAllCustomersDirect(); suspend fun getAllTransactionsDirect()=dao.getAllTransactionsDirect(); suspend fun getTransactionsForCustomerDirect(id:String)=dao.getTransactionsForCustomerDirect(id)
     suspend fun clearAllCustomers()=database.withTransaction { database.recurringConfigDao().clear(); dao.clearAllTransactions(); dao.clearAllPins(); dao.clearAllCustomers() }; suspend fun clearAllTransactions()=dao.clearAllTransactions(); suspend fun getTransactionsForCustomerPaged(id:String,l:Int,o:Int)=dao.getTransactionsForCustomerPaged(id,l,o)
     suspend fun getHabayebTransactionsCountDirect(): Int {

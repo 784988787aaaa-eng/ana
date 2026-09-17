@@ -118,26 +118,21 @@ object CurrencyConfig {
         return res
     }
 
-    fun getCurrencyRank(symbol: String): Int {
-        val sym = symbol.uppercase(Locale.ENGLISH).trim()
-        return when {
-            sym == "ر.ي" || sym == "YER" || sym.contains("يمن") -> 1
-            sym == "ر.س" || sym == "SAR" || sym.contains("سعود") -> 2
-            sym == "$" || sym == "USD" || sym.contains("دولار") -> 3
-            else -> 2 // القيمة الافتراضية متوسطة.
-        }
-    }
-
     fun getOriginalAmount(tx: HabayebTransaction): BigDecimal {
         return tx.foreignAmount
     }
     
+    /**
+     * Legacy helper kept for source compatibility. `toWeaker=true` means
+     * multiply by the supplied directional rate; otherwise divide.
+     * Invalid rates are rejected instead of silently becoming 1:1.
+     */
     fun convert(amount: BigDecimal, rate: BigDecimal, toWeaker: Boolean): BigDecimal {
-        if (rate <= BigDecimal.ZERO) return amount.setScale(4, RoundingMode.HALF_EVEN)
+        require(rate > BigDecimal.ZERO) { "سعر الصرف يجب أن يكون أكبر من صفر" }
         return if (toWeaker) {
-            amount.multiply(rate, MathContext.DECIMAL128).setScale(4, RoundingMode.HALF_EVEN)
+            amount.multiply(rate).setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.scale, RoundingMode.HALF_EVEN)
         } else {
-            amount.divide(rate, 4, RoundingMode.HALF_EVEN)
+            amount.divide(rate, com.smartledger.aldaftar.domain.model.FinancialPolicy.scale, RoundingMode.HALF_EVEN)
         }
     }
 
@@ -145,37 +140,56 @@ object CurrencyConfig {
         amount: BigDecimal,
         currencyPair: com.smartledger.aldaftar.domain.model.CurrencyPair
     ): BigDecimal {
-        return convertAmountBigDecimal(
+        return convertDirectedAmount(
             amount = amount,
-            baseCurrencySymbol = currencyPair.baseCurrency,
-            foreignCurrencySymbol = currencyPair.targetCurrency,
-            rate = currencyPair.safeRate
+            sourceCurrency = currencyPair.baseCurrency,
+            targetCurrency = currencyPair.targetCurrency,
+            rate = currencyPair.rate,
+            rateSourceCurrency = currencyPair.baseCurrency,
+            rateTargetCurrency = currencyPair.targetCurrency
         )
     }
 
+    /**
+     * Directional API: the supplied rate means baseCurrencySymbol -> foreignCurrencySymbol.
+     * The amount is therefore explicitly in baseCurrencySymbol.
+     */
     fun convertAmountBigDecimal(
         amount: BigDecimal,
         baseCurrencySymbol: String,
         foreignCurrencySymbol: String,
         rate: BigDecimal
-    ): BigDecimal {
-        val baseNorm = getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
-        val foreignNorm = getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
-        if (baseNorm == foreignNorm) {
-            return amount.setScale(4, RoundingMode.HALF_EVEN)
-        }
-        val finalRate = if (rate <= BigDecimal.ZERO) BigDecimal.ONE else rate.setScale(4, RoundingMode.HALF_EVEN)
-        val baseRank = getCurrencyRank(baseNorm)
-        val foreignRank = getCurrencyRank(foreignNorm)
+    ): BigDecimal = convertDirectedAmount(
+        amount, baseCurrencySymbol, foreignCurrencySymbol, rate,
+        baseCurrencySymbol, foreignCurrencySymbol
+    )
 
-        return if (baseRank < foreignRank) {
-            amount.multiply(finalRate, MathContext.DECIMAL128).setScale(4, RoundingMode.HALF_EVEN)
-        } else {
-            if (finalRate.compareTo(BigDecimal.ZERO) == 0) {
-                amount.setScale(4, RoundingMode.HALF_EVEN)
-            } else {
-                amount.divide(finalRate, 4, RoundingMode.HALF_EVEN)
-            }
+    /**
+     * Financial conversion API with an explicit rate direction. This is the
+     * production-safe path: operation is determined only by the rate's
+     * declared source/target currencies.
+     */
+    fun convertDirectedAmount(
+        amount: BigDecimal,
+        sourceCurrency: String,
+        targetCurrency: String,
+        rate: BigDecimal,
+        rateSourceCurrency: String,
+        rateTargetCurrency: String
+    ): BigDecimal {
+        val source = getBySymbol(sourceCurrency)?.symbol ?: sourceCurrency
+        val target = getBySymbol(targetCurrency)?.symbol ?: targetCurrency
+        val rateSource = getBySymbol(rateSourceCurrency)?.symbol ?: rateSourceCurrency
+        val rateTarget = getBySymbol(rateTargetCurrency)?.symbol ?: rateTargetCurrency
+        if (source == target) return amount.setScale(4, RoundingMode.HALF_EVEN)
+        require(rate > BigDecimal.ZERO) { "سعر الصرف غير موجود أو غير صالح" }
+        val normalizedRate = com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(rate)
+        return when {
+            source == rateSource && target == rateTarget ->
+                amount.multiply(normalizedRate).setScale(4, RoundingMode.HALF_EVEN)
+            source == rateTarget && target == rateSource ->
+                amount.divide(normalizedRate, 4, RoundingMode.HALF_EVEN)
+            else -> throw IllegalArgumentException("اتجاه سعر الصرف لا يطابق العملات المطلوبة")
         }
     }
 
@@ -214,15 +228,6 @@ object CurrencyConfig {
         } else {
             Pair(normDefaultSymbol, tx.amount.setScale(4, RoundingMode.HALF_EVEN))
         }
-    }
-
-    fun getTransactionCurrencyAndAmount(
-        tx: HabayebTransaction,
-        defaultCurrencySymbol: String,
-        exchangeRatesJson: String = "{}"
-    ): Pair<String, Double> {
-        val (curr, bd) = getTransactionCurrencyAndAmountBigDecimal(tx, defaultCurrencySymbol, exchangeRatesJson)
-        return Pair(curr, bd.toDouble())
     }
 
     fun formatDescriptionWithCurrency(description: String, symbol: String): String {

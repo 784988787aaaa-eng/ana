@@ -31,7 +31,7 @@ class CurrencySettingsState(
         get() = ExchangeRateHelper.getRate(localExchangeRatesJson, localDefaultCurrency, selectedTargetCurrency)
 
     var rateInputStr by mutableStateOf(
-        if (currentRateValue.compareTo(BigDecimal.ZERO) > 0 && currentRateValue.compareTo(BigDecimal.ONE) != 0) HabayebMathHelper.formatRate(currentRateValue) else ""
+        if (currentRateValue.compareTo(BigDecimal.ZERO) > 0) HabayebMathHelper.formatRate(currentRateValue) else ""
     )
 
     var activeDialogState by mutableStateOf<CurrencyDialogState>(CurrencyDialogState.None)
@@ -58,7 +58,7 @@ class CurrencySettingsState(
     fun onRateInputChange(newInput: String) {
         val cleaned = CurrencyConfig.normalizeDigits(newInput)
         rateInputStr = cleaned
-        val parsed = cleaned.toBigDecimalOrNull() ?: BigDecimal.ONE
+        val parsed = cleaned.toBigDecimalOrNull() ?: BigDecimal.ZERO
         localExchangeRatesJson = ExchangeRateHelper.setRate(
             localExchangeRatesJson,
             localDefaultCurrency,
@@ -69,7 +69,7 @@ class CurrencySettingsState(
 
     private fun refreshRateInput() {
         val rate = currentRateValue
-        rateInputStr = if (rate.compareTo(BigDecimal.ZERO) > 0 && rate.compareTo(BigDecimal.ONE) != 0) HabayebMathHelper.formatRate(rate) else ""
+        rateInputStr = if (rate.compareTo(BigDecimal.ZERO) > 0) HabayebMathHelper.formatRate(rate) else ""
     }
 
     fun handleSave(

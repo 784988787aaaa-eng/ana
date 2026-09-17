@@ -10,5 +10,6 @@ import kotlinx.coroutines.flow.Flow
  @Query("DELETE FROM recurring_configs WHERE id=:id") suspend fun delete(id:String)
  @Query("DELETE FROM recurring_configs WHERE originalTxId=:id") suspend fun deleteForTransaction(id:String)
  @Query("DELETE FROM recurring_configs WHERE customerId=:id") suspend fun deleteForCustomer(id:String)
+ @Query("SELECT EXISTS(SELECT 1 FROM habayeb_transactions WHERE linkedMainTxId = :templateId AND timestamp = :occurrenceTimestamp)") suspend fun occurrenceAlreadyGenerated(templateId:String, occurrenceTimestamp:Long): Boolean
  @Query("DELETE FROM recurring_configs") suspend fun clear()
 }

@@ -82,7 +82,7 @@ fun AddCustomerPopup(
 
     val settingsRate = remember(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
         val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-        if (currentRateVal.compareTo(java.math.BigDecimal.ZERO) > 0) currentRateVal else java.math.BigDecimal.ONE
+        currentRateVal
     }
 
     var showCalculator by rememberSaveable { mutableStateOf(false) }
@@ -121,13 +121,6 @@ fun AddCustomerPopup(
     val notesFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
-
-    val view = androidx.compose.ui.platform.LocalView.current
-    DisposableEffect(view) {
-        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        onDispose {}
-    }
 
     LaunchedEffect(Unit) {
         try {

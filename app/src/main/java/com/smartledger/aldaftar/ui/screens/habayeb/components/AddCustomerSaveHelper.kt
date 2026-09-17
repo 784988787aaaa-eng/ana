@@ -76,7 +76,7 @@ object AddCustomerSaveHelper {
             val settings = viewModel.settingsState.value
             val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
             val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-            if (!hasStoredRate || currentRateVal.compareTo(BigDecimal.ONE) == 0) {
+            if (!hasStoredRate) {
                 onShowRateSetup("")
                 return
             }
@@ -98,10 +98,10 @@ object AddCustomerSaveHelper {
                     val exchangeRateBd = if (isForeignSelected && applyExchangeRate) {
                         settingsRate
                     } else {
-                        BigDecimal.ONE
+                        BigDecimal.ZERO
                     }
                     val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
-                        CurrencyConfig.convertAmountBigDecimal(actualInitialAmountBd, currencySymbol, selectedTransactionCurrency, exchangeRateBd)
+                        CurrencyConfig.convertDirectedAmount(actualInitialAmountBd, selectedTransactionCurrency, currencySymbol, exchangeRateBd, currencySymbol, selectedTransactionCurrency)
                     } else {
                         BigDecimal.ZERO
                     }

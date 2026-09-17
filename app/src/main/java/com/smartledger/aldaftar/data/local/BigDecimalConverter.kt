@@ -20,19 +20,6 @@ class BigDecimalConverter {
     @TypeConverter
     fun toString(value: BigDecimal?): String? = value?.toPlainString()
 
-    @TypeConverter
-    fun fromDouble(value: Double?): BigDecimal? {
-        if (value == null || value.isNaN() || value.isInfinite()) return null
-        return try {
-            BigDecimal.valueOf(value)
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    @TypeConverter
-    fun toDouble(value: BigDecimal?): Double? = value?.toDouble()
-
     companion object {
         fun cleanNumberString(input: String): String {
             val trimmed = input.trim()

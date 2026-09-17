@@ -69,7 +69,6 @@ fun AddTransactionPopup(
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val currencySymbol = settings.currencySymbol
-
     val initialCurrencyAndDesc = remember(editingTransaction) {
         if (editingTransaction != null) {
             CurrencyConfig.parseTransactionCurrency(editingTransaction.description, currencySymbol)
@@ -78,15 +77,28 @@ fun AddTransactionPopup(
         }
     }
 
-    var selectedTransactionCurrency by rememberSaveable {
-        mutableStateOf(editingTransaction?.currencyCode?.let { if (it == "DEFAULT") currencySymbol else it } ?: initialCurrencyAndDesc.first)
+    val historicalTransactionCurrency = editingTransaction?.let {
+        it.currencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
+            ?: it.baseCurrencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
     }
+    var selectedTransactionCurrency by rememberSaveable {
+        mutableStateOf(historicalTransactionCurrency ?: initialCurrencyAndDesc.first)
+    }
+    val historicalBaseCurrency = editingTransaction?.baseCurrencyCode?.takeIf { it.isNotBlank() && it != "DEFAULT" }
+    val editingOriginalCurrency = historicalTransactionCurrency
+    val rateBaseCurrency = if (editingTransaction != null && selectedTransactionCurrency == editingOriginalCurrency) {
+        historicalBaseCurrency ?: currencySymbol
+    } else currencySymbol
 
-    val isForeignSelected = selectedTransactionCurrency != currencySymbol
+    val isForeignSelected = if (editingTransaction != null && selectedTransactionCurrency == editingOriginalCurrency) {
+        editingTransaction.isForeign
+    } else {
+        selectedTransactionCurrency != currencySymbol
+    }
     var applyExchangeRate by rememberSaveable { mutableStateOf(editingTransaction?.isRateCalculated ?: false) }
 
-    val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-    val settingsRate = if (currentRateVal.compareTo(java.math.BigDecimal.ZERO) <= 0) java.math.BigDecimal.ONE else currentRateVal
+    val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
+    val settingsRate = currentRateVal
 
     val effectiveRateBd = remember(editingTransaction, selectedTransactionCurrency, settingsRate) {
         if (editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
@@ -122,13 +134,6 @@ fun AddTransactionPopup(
     val descFocusRequester = remember { FocusRequester() }
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-
-    val view = androidx.compose.ui.platform.LocalView.current
-    DisposableEffect(view) {
-        val window = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        onDispose {}
-    }
 
     LaunchedEffect(Unit) {
         try {
@@ -195,10 +200,10 @@ fun AddTransactionPopup(
 
             val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
             val amountBd = CurrencyConfig.parseBigDecimal(cleanAmountStr)
-            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-            val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
+            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
+            val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
 
-            if (isForeignSelected && applyExchangeRate && (!hasStoredRate || currentRateVal.compareTo(BigDecimal.ONE) == 0)) {
+            if (isForeignSelected && applyExchangeRate && (!hasStoredRate)) {
                 tempRateStr = INITIAL_EMPTY_TEXT
                 showRateSetupOverlay = true
                 isSaving = false
@@ -210,11 +215,16 @@ fun AddTransactionPopup(
                 isSaving = false
             } else {
                 val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
-                    CurrencyConfig.convertAmountBigDecimal(amountBd, currencySymbol, selectedTransactionCurrency, effectiveRateBd)
+                    CurrencyConfig.convertDirectedAmount(amountBd, selectedTransactionCurrency, rateBaseCurrency, effectiveRateBd, rateBaseCurrency, selectedTransactionCurrency)
                 } else {
                     BigDecimal.ZERO
                 }
                 val saveAmountBd = if (isForeignSelected && applyExchangeRate) finalEquivalentAmountBd else amountBd
+                val saveCurrencyCode = if (editingTransaction != null && selectedTransactionCurrency == editingOriginalCurrency && !editingTransaction.isForeign) {
+                    "DEFAULT"
+                } else {
+                    selectedTransactionCurrency
+                }
                 val saveDescStr = CurrencyConfig.formatDescriptionWithCurrency(descStr.trim(), selectedTransactionCurrency)
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
@@ -228,11 +238,12 @@ fun AddTransactionPopup(
                         timestamp = saveTimestamp,
                         editingTxId = saveEditingTxId,
                         isForeign = isForeignSelected,
-                        currencyCode = selectedTransactionCurrency,
+                        currencyCode = saveCurrencyCode,
                         foreignAmount = amountBd,
-                        exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ONE,
+                        exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ZERO,
                         isRateCalculated = isForeignSelected && applyExchangeRate,
-                        equivalentAmount = finalEquivalentAmountBd
+                        equivalentAmount = finalEquivalentAmountBd,
+                        baseCurrencySymbol = rateBaseCurrency
                     )
                     if (saved) {
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
@@ -298,7 +309,7 @@ fun AddTransactionPopup(
                             },
                             onConfirm = { newRate ->
                                 val newSettings = settings.copy(
-                                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency, newRate)
+                                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency, newRate)
                                 )
                                 viewModel.saveSettings(newSettings)
                                 applyExchangeRate = true

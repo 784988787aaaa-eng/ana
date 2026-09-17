@@ -332,7 +332,7 @@ class HabayebFinanceViewModel(
         customer: HabayebCustomer, initialAmount: BigDecimal, initialType: String,
         customTimestamp: Long = System.currentTimeMillis() / 1000, initialDetails: String = "",
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
-        exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
+        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
     ): Boolean = withContext(Dispatchers.IO) {
         resetFiltersToDefault(resetCategory = true)
 
@@ -356,15 +356,17 @@ class HabayebFinanceViewModel(
         customerId: String, type: String, amount: BigDecimal, desc: String,
         timestamp: Long = System.currentTimeMillis() / 1000, editingTxId: String? = null, linkedMainTxId: String? = null,
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
-        exchangeRate: BigDecimal = BigDecimal.ONE, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
+        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO,
+        baseCurrencySymbol: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         resetFiltersToDefault(resetCategory = true)
 
+        val historicalOrCurrentBase = baseCurrencySymbol?.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: settingsState.value.currencySymbol
         val isEditing = editingTxId != null
         if (isEditing) {
             transactionUseCase.addHabayebTransaction(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, historicalOrCurrentBase
             )
             VibrationHelper.triggerSuccessVibration(getApplication())
             emitScrollToAccount(customerId)
@@ -373,7 +375,7 @@ class HabayebFinanceViewModel(
         val created = licenseRepository.runAuthorizedCreation {
             transactionUseCase.addHabayebTransaction(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, settingsState.value.currencySymbol
+                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, historicalOrCurrentBase
             )
             true
         }

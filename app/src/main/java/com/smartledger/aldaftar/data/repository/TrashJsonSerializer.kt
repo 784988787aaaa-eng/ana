@@ -60,6 +60,8 @@ object TrashJsonSerializer {
             put("is_rate_calculated", tx.isRateCalculated)
             put("equivalent_amount", tx.equivalentAmount.toPlainString())
             put("base_currency_code", tx.baseCurrencyCode)
+            put("snapshot_version", tx.snapshotVersion)
+            put("rate_context", tx.rateContext)
         }
     }
 }

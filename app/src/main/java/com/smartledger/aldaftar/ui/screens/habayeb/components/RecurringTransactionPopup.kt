@@ -399,7 +399,10 @@ private fun RecurringActionsRow(
                     foreignAmount = transaction.foreignAmount,
                     exchangeRate = transaction.exchangeRate,
                     isRateCalculated = transaction.isRateCalculated,
-                    equivalentAmount = transaction.equivalentAmount
+                    equivalentAmount = transaction.equivalentAmount,
+                    baseCurrencyCode = transaction.baseCurrencyCode,
+                    snapshotVersion = 1,
+                    rateContext = "FIXED_SNAPSHOT"
                 )
 
                 scope.launch { viewModel.saveRecurring(newConfig) }
