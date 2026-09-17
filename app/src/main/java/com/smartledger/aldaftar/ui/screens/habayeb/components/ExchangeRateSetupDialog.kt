@@ -76,6 +76,7 @@ import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 @Composable
 fun ExchangeRateSetupContent(
     selectedCurrency: String,
+    rateTargetCurrency: String,
     initialRateStr: String,
     activeThemeColor: Color,
     onDismiss: () -> Unit,
@@ -99,7 +100,7 @@ fun ExchangeRateSetupContent(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    RequestFocusAndShowKeyboard(focusRequester = focusRequester)
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
 
     val mizanColors = MaterialTheme.mizanColors
 
@@ -118,18 +119,8 @@ fun ExchangeRateSetupContent(
         label = "inputBorder"
     )
 
-    val usdStr = stringResource(id = R.string.currency_usd)
-    val sarStr = stringResource(id = R.string.currency_sar)
-    val rateUsdStr = stringResource(id = R.string.habayeb_enter_exchange_rate_usd)
-    val rateSarStr = stringResource(id = R.string.habayeb_enter_exchange_rate_sar)
-    val rateGenericStr = stringResource(id = R.string.habayeb_enter_exchange_rate_generic, selectedCurrency)
-
-    val currencyLabel = remember(selectedCurrency, usdStr, sarStr, rateUsdStr, rateSarStr, rateGenericStr) {
-        when (selectedCurrency) {
-            usdStr -> rateUsdStr
-            sarStr -> rateSarStr
-            else -> rateGenericStr
-        }
+    val currencyLabel = remember(selectedCurrency, rateTargetCurrency) {
+        "1 $selectedCurrency = $rateTargetCurrency"
     }
 
     val validRateToastStr = stringResource(id = R.string.habayeb_toast_enter_valid_rate)
@@ -164,7 +155,10 @@ fun ExchangeRateSetupContent(
                     value = rateTfv,
                     onValueChange = { inputTfv ->
                         val cleanedText = CurrencyConfig.normalizeDigits(inputTfv.text)
-                        if (cleanedText.isEmpty() || cleanedText.toDoubleOrNull() != null || cleanedText.last() == '.') {
+                        val isPartialDecimal = cleanedText.isEmpty() || cleanedText == "." || cleanedText.endsWith(".")
+                        val parsed = cleanedText.toBigDecimalOrNull()
+                        val decimalPlaces = cleanedText.substringAfter('.', "").length
+                        if (isPartialDecimal || (parsed != null && parsed > BigDecimal.ZERO && decimalPlaces <= com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale)) {
                             rateTfv = inputTfv.copy(text = cleanedText)
                         }
                     },
@@ -330,6 +324,7 @@ fun ExchangeRateSetupContent(
 @Composable
 fun ExchangeRateSetupDialog(
     selectedCurrency: String,
+    rateTargetCurrency: String,
     initialRateStr: String,
     activeThemeColor: Color,
     onDismiss: () -> Unit,
@@ -354,6 +349,7 @@ fun ExchangeRateSetupDialog(
         ) {
             ExchangeRateSetupContent(
                 selectedCurrency = selectedCurrency,
+                rateTargetCurrency = rateTargetCurrency,
                 initialRateStr = initialRateStr,
                 activeThemeColor = activeThemeColor,
                 onDismiss = onDismiss,

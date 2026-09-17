@@ -147,8 +147,7 @@ fun TransactionCurrencySelector(
                             val newApply = !applyExchangeRate
                             onApplyExchangeRateChange(newApply)
                             if (newApply) {
-                                val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
-                                val currentRateVal = ExchangeRateHelper.getRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
+                                val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency)
                                 if (!hasStoredRate) {
                                     onSetupRateClick("")
                                 }
@@ -184,8 +183,8 @@ fun TransactionCurrencySelector(
                 if (applyExchangeRate) {
                     val rateInfo = remember(editingTransaction, exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
                         val isEditingHistoricalRate = editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0
-                        val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency) || isEditingHistoricalRate
-                        val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency).toString()
+                        val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency) || isEditingHistoricalRate
+                        val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency).toString()
                         val formattedRateStr = try {
                             BigDecimal(currentRateRaw).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
                         } catch (e: Exception) {
@@ -218,7 +217,7 @@ fun TransactionCurrencySelector(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = stringResource(R.string.currency_approved_rate_pattern, rateBaseCurrency, formattedRateStr, selectedTransactionCurrency),
+                                text = stringResource(R.string.currency_approved_rate_pattern, selectedTransactionCurrency, formattedRateStr, rateBaseCurrency),
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeThemeColor

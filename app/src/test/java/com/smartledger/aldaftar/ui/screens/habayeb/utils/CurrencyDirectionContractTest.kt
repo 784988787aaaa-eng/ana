@@ -32,11 +32,17 @@ class CurrencyDirectionContractTest {
             CurrencyConfig.convertAmountBigDecimal(BigDecimal("100"), "ر.ي", "ر.ي", BigDecimal("999")))
     }
 
-    @Test fun storedBaseToForeignRateConvertsForeignTransactionBackToBaseByDivision() {
-        // Stored rate: 1 YER = 0.007142857... SAR. A 100 SAR transaction
-        // therefore equals 14,000 YER.
+    @Test fun conventionalForeignToBaseRateConvertsForeignTransactionByMultiplication() {
+        // Stored rate: 1 SAR = 140 YER. A 100 SAR transaction therefore equals 14,000 YER.
         MoneyAssertions.exact("14000.0000", CurrencyConfig.convertDirectedAmount(
-            BigDecimal("100"), "ر.س", "ر.ي", BigDecimal("0.007142857"), "ر.ي", "ر.س"
+            BigDecimal("100"), "ر.س", "ر.ي", BigDecimal("140"), "ر.س", "ر.ي"
+        ))
+    }
+
+    @Test fun screenshotRegressionOneHundredUsdAtFiveHundredFiftyYer() {
+        // Real user-facing convention: 1 USD = 550 YER => 100 USD = 55,000 YER.
+        MoneyAssertions.exact("55000.0000", CurrencyConfig.convertDirectedAmount(
+            BigDecimal("100"), "$", "ر.ي", BigDecimal("550"), "$", "ر.ي"
         ))
     }
 

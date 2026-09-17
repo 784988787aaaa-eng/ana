@@ -165,7 +165,7 @@ fun RollingDialPicker(
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
                 )
-                RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isEditing, key = isEditing)
+                RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isEditing, key = isEditing, autoShow = true)
             } else {
                 val formattedText = remember(value, format) {
                     String.format(Locale.US, format, value)

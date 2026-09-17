@@ -24,7 +24,7 @@ class BackupRestoreIntegrationTest {
         val file=File.createTempFile("smartledger-contract-",".sna",context.cacheDir)
         try {
             db.settingsDao().insertOrUpdateSettings(
-                AppSettings(id=1,currencySymbol="ر.ي",exchangeRatesJson="""{"ر.ي":{"ر.س":"140.0000"}}""")
+                AppSettings(id=1,currencySymbol="ر.ي",exchangeRatesJson="""{"ر.س":{"ر.ي":"140.0000"}}""")
             )
             db.habayebDao().insertCustomer(HabayebCustomer("c","C","","",1L))
             val tx=HabayebTransaction("t","c","OWED_BY_THEM",BigDecimal("14000"),2L,"",

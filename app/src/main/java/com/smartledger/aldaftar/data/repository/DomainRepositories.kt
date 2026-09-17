@@ -69,7 +69,7 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
     suspend fun deleteHabayebTransaction(v:HabayebTransaction)=dao.deleteTransaction(v); suspend fun deleteHabayebTransactionById(id:String)=dao.deleteTransactionById(id)
     suspend fun getHabayebTransactionById(id:String)=dao.getTransactionById(id); suspend fun getCustomerByIdDirect(id:String)=dao.getCustomerByIdDirect(id)
     suspend fun revalueHistoricalTransactions(baseCurrencyCode: String, targetCurrencyCode: String, newRate: BigDecimal) = database.withTransaction {
-        val rate = FinancialPolicy.normalize(newRate)
+        val rate = FinancialPolicy.normalizeRate(newRate)
         val candidates = dao.getAllTransactionsDirect().filter {
             it.currencyCode == targetCurrencyCode &&
             it.baseCurrencyCode == baseCurrencyCode &&
@@ -82,8 +82,8 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
                 sourceCurrency = targetCurrencyCode,
                 targetCurrency = baseCurrencyCode,
                 rate = rate,
-                rateSourceCurrency = baseCurrencyCode,
-                rateTargetCurrency = targetCurrencyCode
+                rateSourceCurrency = targetCurrencyCode,
+                rateTargetCurrency = baseCurrencyCode
             )
             dao.insertTransaction(tx.copy(
                 foreignAmount = FinancialPolicy.normalize(source),

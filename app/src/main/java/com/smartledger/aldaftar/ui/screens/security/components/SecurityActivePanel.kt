@@ -320,7 +320,7 @@ fun VerifyOldPinDialog(
                             .focusRequester(pinFocusRequester)
                     )
 
-                    RequestFocusAndShowKeyboard(focusRequester = pinFocusRequester, enabled = !showRecoveryMode)
+                    RequestFocusAndShowKeyboard(focusRequester = pinFocusRequester, enabled = !showRecoveryMode, autoShow = true)
 
                     TextButton(
                         onClick = { showRecoveryMode = true },
@@ -350,7 +350,7 @@ fun VerifyOldPinDialog(
                             .focusRequester(recoveryFocusRequester)
                     )
 
-                    RequestFocusAndShowKeyboard(focusRequester = recoveryFocusRequester, enabled = showRecoveryMode)
+                    RequestFocusAndShowKeyboard(focusRequester = recoveryFocusRequester, enabled = showRecoveryMode, autoShow = true)
 
                     if (!recoveryHint.isNullOrBlank()) {
                         Row(

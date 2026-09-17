@@ -1383,7 +1383,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                 inner()
             }
         )
-        RequestFocusAndShowKeyboard(focusRequester = searchFocusRequester)
+        RequestFocusAndShowKeyboard(focusRequester = searchFocusRequester, autoShow = true)
 
         if (search.isNotBlank()) {
             IconButton(onClick = { onSearchChange("") }, modifier = Modifier.size(40.dp)) {

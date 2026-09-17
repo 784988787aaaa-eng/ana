@@ -37,6 +37,7 @@ fun SettingsDialogHost(
         val targetCurrency = currenciesToSetup[currentSetupIndex]
         ExchangeRateSetupDialog(
             selectedCurrency = targetCurrency,
+            rateTargetCurrency = currencySymbol,
             initialRateStr = "",
             activeThemeColor = MaterialTheme.colorScheme.primary,
             onDismiss = {
@@ -55,13 +56,13 @@ fun SettingsDialogHost(
                 )
                 val alreadyHasRate = ExchangeRateHelper.hasRate(
                     migratedOriginalJson,
-                    currencySymbol,
-                    targetCurrency
+                    targetCurrency,
+                    currencySymbol
                 )
                 val existingRate = ExchangeRateHelper.getRate(
                     migratedOriginalJson,
-                    currencySymbol,
-                    targetCurrency
+                    targetCurrency,
+                    currencySymbol
                 )
                 val oldRateBD = existingRate
                 val newRateBD = newRate
@@ -74,8 +75,8 @@ fun SettingsDialogHost(
                     val updatedSettings = currentSettings.copy(
                         exchangeRatesJson = ExchangeRateHelper.setRate(
                             currentSettings.exchangeRatesJson,
-                            currencySymbol,
                             targetCurrency,
+                            currencySymbol,
                             newRate
                         )
                     )
@@ -105,8 +106,8 @@ fun SettingsDialogHost(
                 val updatedSettings = currentSettings.copy(
                     exchangeRatesJson = ExchangeRateHelper.setRate(
                         currentSettings.exchangeRatesJson,
-                        currencySymbol,
                         targetCurrency,
+                        currencySymbol,
                         newRate
                     )
                 )
@@ -125,8 +126,8 @@ fun SettingsDialogHost(
                 val updatedSettings = currentSettings.copy(
                     exchangeRatesJson = ExchangeRateHelper.setRate(
                         currentSettings.exchangeRatesJson,
-                        currencySymbol,
                         targetCurrency,
+                        currencySymbol,
                         newRate
                     )
                 )

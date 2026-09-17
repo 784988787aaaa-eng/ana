@@ -37,12 +37,12 @@ class HabayebTransactionUseCase(
         val tx=habayeb.getHabayebTransactionById(txId)?:return
         val target=tx.currencyCode.takeIf{it.isNotBlank()&&it!="DEFAULT"} ?: tx.baseCurrencyCode.ifBlank{defaultCurrency}
         val base=tx.baseCurrencyCode.takeIf{it.isNotBlank()&&it!="DEFAULT"} ?: defaultCurrency
-        val pair=CurrencyPair(base,target,newRate)
+        val pair=CurrencyPair(target,base,newRate)
         val source=if(tx.foreignAmount.compareTo(BigDecimal.ZERO)>0) tx.foreignAmount else tx.amount
         val enabled=calculateRate&&!pair.isSelfPair
         val equivalent=if (enabled) CurrencyConfig.convertDirectedAmount(
             amount=source, sourceCurrency=target, targetCurrency=base,
-            rate=pair.safeRate, rateSourceCurrency=base, rateTargetCurrency=target
+            rate=pair.safeRate, rateSourceCurrency=target, rateTargetCurrency=base
         ) else BigDecimal.ZERO
         habayeb.insertHabayebTransaction(tx.copy(currencyCode=target,baseCurrencyCode=base,isForeign=!pair.isSelfPair,exchangeRate=if(enabled) pair.safeRate else BigDecimal.ZERO,isRateCalculated=enabled,equivalentAmount=equivalent,amount=if(enabled) equivalent else source,foreignAmount=source))
     }

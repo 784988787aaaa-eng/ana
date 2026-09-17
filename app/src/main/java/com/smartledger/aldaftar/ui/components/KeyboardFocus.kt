@@ -43,22 +43,24 @@ fun hideKeyboardAndClearFocus(
 }
 
 /**
- * Use only where opening the keyboard automatically is intentional.
- * Cleanup is tied to the composable lifecycle so a dismissed dialog cannot
- * leave a focused text field behind.
+ * Automatic IME opening is opt-in. Callers must set autoShow=true only when
+ * opening the surface should intentionally focus a specific field. Cleanup is
+ * tied to the composable lifecycle so a dismissed surface cannot leave a
+ * focused text field or IME behind.
  */
 @Composable
 fun RequestFocusAndShowKeyboard(
     focusRequester: FocusRequester,
     enabled: Boolean = true,
-    key: Any? = Unit
+    key: Any? = Unit,
+    autoShow: Boolean = false
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(enabled, key) {
-        if (!enabled) {
-            hideKeyboardAndClearFocus(focusManager, keyboardController)
+    LaunchedEffect(enabled, key, autoShow) {
+        if (!enabled || !autoShow) {
+            if (!enabled) hideKeyboardAndClearFocus(focusManager, keyboardController)
             return@LaunchedEffect
         }
         requestFocusAndShowKeyboard(
@@ -67,7 +69,7 @@ fun RequestFocusAndShowKeyboard(
         )
     }
 
-    DisposableEffect(enabled, key) {
+    DisposableEffect(enabled, key, autoShow) {
         onDispose {
             hideKeyboardAndClearFocus(focusManager, keyboardController)
         }

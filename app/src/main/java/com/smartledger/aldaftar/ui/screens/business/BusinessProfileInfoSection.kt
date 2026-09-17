@@ -90,7 +90,7 @@ fun BusinessProfileInfoSection(
             )
 
             if (isDialog) {
-                RequestFocusAndShowKeyboard(focusRequester = dialogNameFocusRequester)
+                RequestFocusAndShowKeyboard(focusRequester = dialogNameFocusRequester, autoShow = true)
             }
 
             OutlinedTextField(

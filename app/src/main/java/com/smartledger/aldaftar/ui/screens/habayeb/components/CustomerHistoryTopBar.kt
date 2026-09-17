@@ -60,7 +60,7 @@ fun CustomerHistoryTopBar(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     var isMenuExpanded by remember { mutableStateOf(false) }
-    RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isSearchActive, key = isSearchActive)
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isSearchActive, key = isSearchActive, autoShow = true)
 
     Row(
         modifier = Modifier

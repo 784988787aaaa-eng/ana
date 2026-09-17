@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @Composable
 fun BusinessProfilePhonesSection(
@@ -208,11 +207,6 @@ fun BusinessProfilePhonesSection(
                     }
                 }
 
-                RequestFocusAndShowKeyboard(
-                    focusRequester = focusRequesters.first(),
-                    enabled = phonesExpanded,
-                    key = phonesExpanded to effectivePhones.size
-                )
             }
         }
     }

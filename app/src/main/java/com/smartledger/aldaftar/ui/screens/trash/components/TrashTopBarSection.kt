@@ -86,7 +86,7 @@ fun TrashTopBarSection(
             if (searching) {
                 val searchFocusRequester = remember { FocusRequester() }
                 val focusManager = LocalFocusManager.current
-                RequestFocusAndShowKeyboard(focusRequester = searchFocusRequester)
+                RequestFocusAndShowKeyboard(focusRequester = searchFocusRequester, autoShow = true)
 
                 Row(
                     modifier = Modifier

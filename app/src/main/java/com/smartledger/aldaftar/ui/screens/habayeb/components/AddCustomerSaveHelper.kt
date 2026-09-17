@@ -65,7 +65,11 @@ object AddCustomerSaveHelper {
             Toast.makeText(context, context.getString(R.string.habayeb_required_field), Toast.LENGTH_SHORT).show()
             return
         }
-        val actualInitialAmountBd = CurrencyConfig.parseBigDecimal(cleanAmountStr)
+        val actualInitialAmountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+        if (actualInitialAmountBd == null) {
+            Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
+            return
+        }
         if (actualInitialAmountBd < BigDecimal.ZERO) {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_initial_amount_negative), Toast.LENGTH_SHORT).show()
             return
@@ -74,8 +78,7 @@ object AddCustomerSaveHelper {
         val isForeignSelected = selectedTransactionCurrency != currencySymbol
         if (isForeignSelected && applyExchangeRate) {
             val settings = viewModel.settingsState.value
-            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-            val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
+            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
             if (!hasStoredRate) {
                 onShowRateSetup("")
                 return
@@ -101,7 +104,7 @@ object AddCustomerSaveHelper {
                         BigDecimal.ZERO
                     }
                     val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
-                        CurrencyConfig.convertDirectedAmount(actualInitialAmountBd, selectedTransactionCurrency, currencySymbol, exchangeRateBd, currencySymbol, selectedTransactionCurrency)
+                        CurrencyConfig.convertDirectedAmount(actualInitialAmountBd, selectedTransactionCurrency, currencySymbol, exchangeRateBd, selectedTransactionCurrency, currencySymbol)
                     } else {
                         BigDecimal.ZERO
                     }

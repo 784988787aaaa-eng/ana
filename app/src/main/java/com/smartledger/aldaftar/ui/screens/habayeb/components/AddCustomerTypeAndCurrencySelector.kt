@@ -164,8 +164,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             val nextValue = !applyExchangeRate
                             onApplyExchangeRateChange(nextValue)
                             if (nextValue) {
-                                val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-                                val currentRateVal = ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
+                                val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
                                 if (!hasStoredRate) {
                                     onRequestRateSetup("")
                                 }
@@ -200,8 +199,8 @@ fun AddCustomerTypeAndCurrencySelector(
 
                 if (applyExchangeRate) {
                     val rateState = remember(exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
-                        val has = ExchangeRateHelper.hasRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
-                        val rate = ExchangeRateHelper.getRate(exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
+                        val has = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
+                        val rate = ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
                         val formatted = try {
                             rate.setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
                         } catch (e: Exception) {
@@ -232,7 +231,7 @@ fun AddCustomerTypeAndCurrencySelector(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = context.getString(R.string.currency_approved_rate_pattern, currencySymbol, formattedRateStr, selectedTransactionCurrency),
+                                text = context.getString(R.string.currency_approved_rate_pattern, selectedTransactionCurrency, formattedRateStr, currencySymbol),
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeThemeColor

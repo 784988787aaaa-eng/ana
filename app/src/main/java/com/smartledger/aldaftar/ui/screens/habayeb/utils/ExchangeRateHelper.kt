@@ -6,46 +6,39 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 object ExchangeRateHelper {
-    
-    fun getCurrencyPair(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): CurrencyPair {
-        val rate = getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
+    fun getCurrencyPair(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): CurrencyPair {
+        val rate = getRateBigDecimal(jsonStr, sourceCurrencySymbol, targetCurrencySymbol)
         return CurrencyPair(
-            baseCurrency = baseCurrencySymbol,
-            targetCurrency = foreignCurrencySymbol,
+            baseCurrency = sourceCurrencySymbol,
+            targetCurrency = targetCurrencySymbol,
             rate = rate
         )
     }
 
-    fun setCurrencyPair(jsonStr: String, pair: CurrencyPair): String {
-        return setRate(jsonStr, pair.baseCurrency, pair.targetCurrency, pair.safeRate)
-    }
+    fun setCurrencyPair(jsonStr: String, pair: CurrencyPair): String =
+        setRate(jsonStr, pair.baseCurrency, pair.targetCurrency, pair.safeRate)
 
-    fun getRateBigDecimal(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): BigDecimal {
-        val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
-        val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
-        if (baseNorm == foreignNorm) return BigDecimal.ONE.setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+    /** Returns the direct rate source -> target, or the reciprocal of target -> source. */
+    fun getRateBigDecimal(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): BigDecimal {
+        val sourceNorm = CurrencyConfig.getBySymbol(sourceCurrencySymbol)?.symbol ?: sourceCurrencySymbol
+        val targetNorm = CurrencyConfig.getBySymbol(targetCurrencySymbol)?.symbol ?: targetCurrencySymbol
+        if (sourceNorm == targetNorm) return BigDecimal.ONE.setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
         return try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
-            if (root.has(baseNorm) && root.get(baseNorm) is JSONObject) {
-                val baseObj = root.getJSONObject(baseNorm)
-                if (baseObj.has(foreignNorm)) {
-                    val rawVal = baseObj.opt(foreignNorm)
-                    val r = when (rawVal) {
-                        is String -> rawVal.trim().toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        else -> BigDecimal.ZERO
-                    }
-                    if (r.compareTo(BigDecimal.ZERO) > 0) return r.setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+            if (root.has(sourceNorm) && root.get(sourceNorm) is JSONObject) {
+                val sourceObj = root.getJSONObject(sourceNorm)
+                if (sourceObj.has(targetNorm)) {
+                    val rawVal = sourceObj.opt(targetNorm)
+                    val r = if (rawVal is String) rawVal.trim().toBigDecimalOrNull() ?: BigDecimal.ZERO else BigDecimal.ZERO
+                    if (r > BigDecimal.ZERO) return r.setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
                 }
             }
-            if (root.has(foreignNorm) && root.get(foreignNorm) is JSONObject) {
-                val foreignObj = root.getJSONObject(foreignNorm)
-                if (foreignObj.has(baseNorm)) {
-                    val rawVal = foreignObj.opt(baseNorm)
-                    val invR = when (rawVal) {
-                        is String -> rawVal.trim().toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        else -> BigDecimal.ZERO
-                    }
-                    if (invR.compareTo(BigDecimal.ZERO) > 0) return BigDecimal.ONE.divide(invR, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN).setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+            if (root.has(targetNorm) && root.get(targetNorm) is JSONObject) {
+                val targetObj = root.getJSONObject(targetNorm)
+                if (targetObj.has(sourceNorm)) {
+                    val rawVal = targetObj.opt(sourceNorm)
+                    val reverse = if (rawVal is String) rawVal.trim().toBigDecimalOrNull() ?: BigDecimal.ZERO else BigDecimal.ZERO
+                    if (reverse > BigDecimal.ZERO) return BigDecimal.ONE.divide(reverse, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
                 }
             }
             BigDecimal.ZERO.setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
@@ -54,59 +47,48 @@ object ExchangeRateHelper {
         }
     }
 
-    fun getRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): BigDecimal {
-        return getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
+    fun getRate(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): BigDecimal =
+        getRateBigDecimal(jsonStr, sourceCurrencySymbol, targetCurrencySymbol)
+
+    fun hasRate(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): Boolean {
+        val sourceNorm = CurrencyConfig.getBySymbol(sourceCurrencySymbol)?.symbol ?: sourceCurrencySymbol
+        val targetNorm = CurrencyConfig.getBySymbol(targetCurrencySymbol)?.symbol ?: targetCurrencySymbol
+        if (sourceNorm == targetNorm) return true
+        return getRateBigDecimal(jsonStr, sourceNorm, targetNorm) > BigDecimal.ZERO
     }
 
-    fun hasRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String): Boolean {
-        val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
-        val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
-        if (baseNorm == foreignNorm) return true
+    fun clearRate(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): String {
+        val sourceNorm = CurrencyConfig.getBySymbol(sourceCurrencySymbol)?.symbol ?: sourceCurrencySymbol
+        val targetNorm = CurrencyConfig.getBySymbol(targetCurrencySymbol)?.symbol ?: targetCurrencySymbol
+        if (sourceNorm == targetNorm) return jsonStr
         return try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
-            if (root.has(baseNorm) && root.get(baseNorm) is JSONObject) {
-                val baseObj = root.getJSONObject(baseNorm)
-                if (baseObj.has(foreignNorm)) {
-                    val rate = getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
-                    if (rate.compareTo(BigDecimal.ZERO) > 0) return true
-                }
-            }
-            if (root.has(foreignNorm) && root.get(foreignNorm) is JSONObject) {
-                val foreignObj = root.getJSONObject(foreignNorm)
-                if (foreignObj.has(baseNorm)) {
-                    val rate = getRateBigDecimal(jsonStr, baseCurrencySymbol, foreignCurrencySymbol)
-                    if (rate.compareTo(BigDecimal.ZERO) > 0) return true
-                }
-            }
-            false
+            root.optJSONObject(sourceNorm)?.remove(targetNorm)
+            root.optJSONObject(targetNorm)?.remove(sourceNorm)
+            root.toString()
         } catch (_: Exception) {
-            false
+            jsonStr
         }
     }
 
-    fun setRate(jsonStr: String, baseCurrencySymbol: String, foreignCurrencySymbol: String, rate: BigDecimal): String {
-        val baseNorm = CurrencyConfig.getBySymbol(baseCurrencySymbol)?.symbol ?: baseCurrencySymbol
-        val foreignNorm = CurrencyConfig.getBySymbol(foreignCurrencySymbol)?.symbol ?: foreignCurrencySymbol
-        if (baseNorm == foreignNorm) return jsonStr
+    fun setRate(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String, rate: BigDecimal): String {
+        val sourceNorm = CurrencyConfig.getBySymbol(sourceCurrencySymbol)?.symbol ?: sourceCurrencySymbol
+        val targetNorm = CurrencyConfig.getBySymbol(targetCurrencySymbol)?.symbol ?: targetCurrencySymbol
+        if (sourceNorm == targetNorm) return jsonStr
         if (rate.compareTo(BigDecimal.ZERO) <= 0) return jsonStr
 
         val updatedJson = try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
-            
-            // Persist exactly the direction supplied by the caller. The reverse
-            // direction is a mathematical reciprocal and is never used to choose
-            // the multiplication/division operation by currency ordering.
-            val baseObj = if (root.has(baseNorm) && root.get(baseNorm) is JSONObject) {
-                root.getJSONObject(baseNorm)
+            // The entered rate is authoritative and directional: 1 source = rate target.
+            val sourceObj = if (root.has(sourceNorm) && root.get(sourceNorm) is JSONObject) {
+                root.getJSONObject(sourceNorm)
             } else {
                 JSONObject()
             }
-            baseObj.put(foreignNorm, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(rate).toPlainString())
-            root.put(baseNorm, baseObj)
-            // Keep one authoritative directed entry per pair. A reverse entry
-            // is deliberately removed so it cannot become stale or conflict.
-            root.optJSONObject(foreignNorm)?.remove(baseNorm)
-
+            sourceObj.put(targetNorm, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(rate).toPlainString())
+            root.put(sourceNorm, sourceObj)
+            // One authoritative entry per pair; the reverse is derived mathematically.
+            root.optJSONObject(targetNorm)?.remove(sourceNorm)
             root.toString()
         } catch (_: Exception) {
             jsonStr

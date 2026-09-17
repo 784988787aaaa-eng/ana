@@ -23,8 +23,30 @@
 
 ## Test count
 
-23 Kotlin test files + 2 test architecture documents.
+28 Kotlin test files + 2 test architecture documents. The count includes broad-stack financial scenario tests for YER/SAR/USD under every default currency, historical-vs-new data, reciprocal directions, and source-level build hygiene.
 
 ## Required execution
 
 Run the complete `testDebugUnitTest` suite repeatedly. Any failure is a release blocker until the root cause is understood and the implementation or test contract is corrected deliberately.
+
+## Mandatory golden scenarios
+
+1. Default YER:
+   - 1 USD = 550 YER; 100 USD = 55,000 YER.
+   - 1 SAR = 139.5 YER; 100 SAR = 13,950 YER.
+   - Combined balance = 68,950 YER.
+2. Default SAR:
+   - 1 USD = 3.75 SAR; 100 USD = 375 SAR.
+   - 1 YER = 0.0072 SAR; 10,000 YER = 72 SAR.
+   - Combined balance = 447 SAR.
+   - USD→YER must remain missing when only USD→SAR and YER→SAR exist.
+3. Default USD:
+   - 1 SAR = 0.266666666667 USD; 100 SAR = 26.666666666700 USD.
+   - 1 YER = 0.001818181818 USD; 55,000 YER = 99.999999990000 USD.
+4. Historical/new data:
+   - Old transaction keeps its historical base and equivalent after changing the default currency.
+   - New transaction uses the new default as its base.
+5. Unexchanged foreign data remains in its own currency and never silently enters the default-currency total.
+6. Every direct pair has a reciprocal read; no third-currency cross-rate is synthesized.
+7. Every scenario must be exercised through persistence/DAO aggregation and customer-balance calculation, not only through a standalone conversion function.
+

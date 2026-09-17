@@ -154,7 +154,7 @@ fun CustomerEditDialog(
         }
     }
 
-    RequestFocusAndShowKeyboard(focusRequester = editNameFocusRequester)
+    RequestFocusAndShowKeyboard(focusRequester = editNameFocusRequester, autoShow = true)
 
     MizanAnimatedDialog(
         onDismissRequest = onDismiss

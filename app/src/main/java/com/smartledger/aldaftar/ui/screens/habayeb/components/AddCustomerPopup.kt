@@ -81,7 +81,7 @@ fun AddCustomerPopup(
     var tempRateStr by rememberSaveable { mutableStateOf("") }
 
     val settingsRate = remember(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
-        val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency)
+        val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
         currentRateVal
     }
 
@@ -186,6 +186,7 @@ fun AddCustomerPopup(
                         }
                         ExchangeRateSetupContent(
                             selectedCurrency = selectedTransactionCurrency,
+                            rateTargetCurrency = currencySymbol,
                             initialRateStr = tempRateStr,
                             activeThemeColor = dynamicThemeColor,
                             onDismiss = {
@@ -194,7 +195,7 @@ fun AddCustomerPopup(
                             },
                             onConfirm = { newRate ->
                                 val newSettings = settings.copy(
-                                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency, newRate)
+                                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol, newRate)
                                 )
                                 viewModel.saveSettings(newSettings)
                                 applyExchangeRate = true

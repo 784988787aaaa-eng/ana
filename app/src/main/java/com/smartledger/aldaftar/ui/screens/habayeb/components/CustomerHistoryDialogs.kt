@@ -75,6 +75,7 @@ fun ExchangeRateModifyDialog(
     var showRateSetupOverlay by remember { mutableStateOf(false) }
     var setupOverlayCurrency by remember { mutableStateOf("") }
     var setupOverlayInitialRate by remember { mutableStateOf("") }
+    var setupOverlayTargetCurrency by remember { mutableStateOf(currencySymbol) }
 
     val (txCurrency, isExchangeRateRelevant) = remember(tx, currencySymbol) {
         val parsed = CurrencyConfig.parseTransactionCurrency(tx.description, "NONE")
@@ -111,6 +112,7 @@ fun ExchangeRateModifyDialog(
                         }
                         ExchangeRateSetupContent(
                             selectedCurrency = setupOverlayCurrency,
+                            rateTargetCurrency = setupOverlayTargetCurrency,
                             initialRateStr = setupOverlayInitialRate,
                             activeThemeColor = activeThemeColor,
                             onDismiss = {
@@ -139,6 +141,7 @@ fun ExchangeRateModifyDialog(
                                                 onConfirmRateSetup(txCurrency, storedRate)
                                             } else {
                                                 setupOverlayCurrency = txCurrency
+                                                setupOverlayTargetCurrency = tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
                                                 setupOverlayInitialRate = ""
                                                 showRateSetupOverlay = true
                                             }

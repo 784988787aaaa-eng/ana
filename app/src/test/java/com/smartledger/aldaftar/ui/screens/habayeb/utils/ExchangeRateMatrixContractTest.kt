@@ -6,7 +6,7 @@ import org.json.JSONObject
 import org.junit.Test
 
 class ExchangeRateMatrixContractTest {
-    @Test fun storedReverseRateIsReciprocalNotDuplicate() {
+    @Test fun enteredForeignToBaseRateIsStoredInTheEnteredDirection() {
         val json = ExchangeRateHelper.setRate("{}", "ر.س", "ر.ي", BigDecimal("140"))
         MoneyAssertions.exact("140.000000000000", ExchangeRateHelper.getRateBigDecimal(json, "ر.س", "ر.ي"))
         MoneyAssertions.exact("0.007142857143", ExchangeRateHelper.getRateBigDecimal(json, "ر.ي", "ر.س"))
@@ -51,4 +51,17 @@ class ExchangeRateMatrixContractTest {
         MoneyAssertions.exact("140.000000000000", ExchangeRateHelper.getRateBigDecimal(completed, "ر.ي", "ر.س"))
         MoneyAssertions.exact("0.007142857143", ExchangeRateHelper.getRateBigDecimal(completed, "ر.س", "ر.ي"))
     }
+    @Test fun clearingRateRemovesBothDirectionsAndLeavesPairMissing() {
+        var json = ExchangeRateHelper.setRate("{}", "$", "ر.ي", BigDecimal("550"))
+        json = ExchangeRateHelper.clearRate(json, "$", "ر.ي")
+        org.junit.Assert.assertFalse(ExchangeRateHelper.hasRate(json, "$", "ر.ي"))
+        org.junit.Assert.assertFalse(ExchangeRateHelper.hasRate(json, "ر.ي", "$"))
+    }
+
+    @Test fun foreignToDefaultRateMatchesTheUserVisibleConvention() {
+        val json = ExchangeRateHelper.setRate("{}", "$", "ر.ي", BigDecimal("550"))
+        MoneyAssertions.exact("550.000000000000", ExchangeRateHelper.getRateBigDecimal(json, "$", "ر.ي"))
+        MoneyAssertions.exact("0.001818181818", ExchangeRateHelper.getRateBigDecimal(json, "ر.ي", "$"))
+    }
+
 }

@@ -4,8 +4,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 data class CurrencyPair(
-    val baseCurrency: String,
-    val targetCurrency: String,
+    val baseCurrency: String, // rate source currency
+    val targetCurrency: String, // rate target currency
     val rate: BigDecimal = BigDecimal.ZERO
 ) {
     val isValid: Boolean

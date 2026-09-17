@@ -112,5 +112,5 @@ fun HabayebHeaderSearchBar(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    RequestFocusAndShowKeyboard(focusRequester = focusRequester)
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
 }

@@ -97,7 +97,7 @@ fun AddTransactionPopup(
     }
     var applyExchangeRate by rememberSaveable { mutableStateOf(editingTransaction?.isRateCalculated ?: false) }
 
-    val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
+    val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency)
     val settingsRate = currentRateVal
 
     val effectiveRateBd = remember(editingTransaction, selectedTransactionCurrency, settingsRate) {
@@ -199,11 +199,12 @@ fun AddTransactionPopup(
             isSaving = true
 
             val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
-            val amountBd = CurrencyConfig.parseBigDecimal(cleanAmountStr)
-            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
-            val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency)
-
-            if (isForeignSelected && applyExchangeRate && (!hasStoredRate)) {
+            val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency)
+            if (amountBd == null) {
+                Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
+                isSaving = false
+            } else if (isForeignSelected && applyExchangeRate && (!hasStoredRate)) {
                 tempRateStr = INITIAL_EMPTY_TEXT
                 showRateSetupOverlay = true
                 isSaving = false
@@ -215,7 +216,7 @@ fun AddTransactionPopup(
                 isSaving = false
             } else {
                 val finalEquivalentAmountBd = if (isForeignSelected && applyExchangeRate) {
-                    CurrencyConfig.convertDirectedAmount(amountBd, selectedTransactionCurrency, rateBaseCurrency, effectiveRateBd, rateBaseCurrency, selectedTransactionCurrency)
+                    CurrencyConfig.convertDirectedAmount(amountBd, selectedTransactionCurrency, rateBaseCurrency, effectiveRateBd, selectedTransactionCurrency, rateBaseCurrency)
                 } else {
                     BigDecimal.ZERO
                 }
@@ -259,8 +260,10 @@ fun AddTransactionPopup(
 
     val handleActionClick = { type: String ->
         val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
-        val amountBd = CurrencyConfig.parseBigDecimal(cleanAmountStr)
-        if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
+        val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+        if (amountBd == null) {
+            Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
+        } else if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
             Toast.makeText(context, context.getString(R.string.add_transaction_error_empty), Toast.LENGTH_SHORT).show()
         } else if (amountBd < BigDecimal.ZERO) {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
@@ -301,6 +304,7 @@ fun AddTransactionPopup(
                         }
                         ExchangeRateSetupContent(
                             selectedCurrency = selectedTransactionCurrency,
+                            rateTargetCurrency = rateBaseCurrency,
                             initialRateStr = tempRateStr,
                             activeThemeColor = activeThemeColor,
                             onDismiss = {
@@ -309,7 +313,7 @@ fun AddTransactionPopup(
                             },
                             onConfirm = { newRate ->
                                 val newSettings = settings.copy(
-                                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, rateBaseCurrency, selectedTransactionCurrency, newRate)
+                                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency, newRate)
                                 )
                                 viewModel.saveSettings(newSettings)
                                 applyExchangeRate = true

@@ -52,7 +52,7 @@ fun MicroRenameCategoryDialog(
     val categoryName = categoryNameTfv.text
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    RequestFocusAndShowKeyboard(focusRequester = focusRequester)
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
 
     MizanAnimatedDialog(
         onDismissRequest = onDismiss

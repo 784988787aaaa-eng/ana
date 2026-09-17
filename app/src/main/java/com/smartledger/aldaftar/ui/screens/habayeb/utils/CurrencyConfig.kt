@@ -22,9 +22,14 @@ object CurrencyConfig {
     
     private val converter = BigDecimalConverter()
 
-    fun parseBigDecimal(value: String): BigDecimal {
-        return converter.fromString(value) ?: BigDecimal.ZERO
+    fun parseBigDecimalOrNull(value: String): BigDecimal? {
+        val normalized = normalizeDigits(value).trim()
+        if (normalized.isBlank()) return null
+        return try { BigDecimal(normalized) } catch (_: Exception) { null }
     }
+
+    fun parseBigDecimal(value: String): BigDecimal =
+        parseBigDecimalOrNull(value) ?: BigDecimal.ZERO
 
     private val DEFAULT_CURRENCY_DEFINITIONS = listOf(
         Currency("YER", "ر.ي", "ريال يمني", "🇾🇪"),
@@ -122,20 +127,6 @@ object CurrencyConfig {
         return tx.foreignAmount
     }
     
-    /**
-     * Legacy helper kept for source compatibility. `toWeaker=true` means
-     * multiply by the supplied directional rate; otherwise divide.
-     * Invalid rates are rejected instead of silently becoming 1:1.
-     */
-    fun convert(amount: BigDecimal, rate: BigDecimal, toWeaker: Boolean): BigDecimal {
-        require(rate > BigDecimal.ZERO) { "سعر الصرف يجب أن يكون أكبر من صفر" }
-        return if (toWeaker) {
-            amount.multiply(rate).setScale(com.smartledger.aldaftar.domain.model.FinancialPolicy.scale, RoundingMode.HALF_EVEN)
-        } else {
-            amount.divide(rate, com.smartledger.aldaftar.domain.model.FinancialPolicy.scale, RoundingMode.HALF_EVEN)
-        }
-    }
-
     fun convertWithCurrencyPair(
         amount: BigDecimal,
         currencyPair: com.smartledger.aldaftar.domain.model.CurrencyPair
@@ -151,17 +142,16 @@ object CurrencyConfig {
     }
 
     /**
-     * Directional API: the supplied rate means baseCurrencySymbol -> foreignCurrencySymbol.
-     * The amount is therefore explicitly in baseCurrencySymbol.
+     * Convenience API: the supplied rate means sourceCurrency -> targetCurrency.
      */
     fun convertAmountBigDecimal(
         amount: BigDecimal,
-        baseCurrencySymbol: String,
-        foreignCurrencySymbol: String,
+        sourceCurrencySymbol: String,
+        targetCurrencySymbol: String,
         rate: BigDecimal
     ): BigDecimal = convertDirectedAmount(
-        amount, baseCurrencySymbol, foreignCurrencySymbol, rate,
-        baseCurrencySymbol, foreignCurrencySymbol
+        amount, sourceCurrencySymbol, targetCurrencySymbol, rate,
+        sourceCurrencySymbol, targetCurrencySymbol
     )
 
     /**

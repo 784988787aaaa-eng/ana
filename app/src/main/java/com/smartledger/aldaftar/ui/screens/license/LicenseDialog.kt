@@ -671,7 +671,8 @@ private fun UnifiedAccountLoginSection(
 
             RequestFocusAndShowKeyboard(
                 focusRequester = activationFocusRequester,
-                enabled = session.isSignedIn && !busy
+                enabled = session.isSignedIn && !busy,
+                autoShow = true
             )
 
             Button(
@@ -718,7 +719,7 @@ private fun SignedTokenCompactSection(
             shape = RoundedCornerShape(10.dp)
         )
 
-        RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy)
+        RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy, autoShow = true)
 
         Button(
             onClick = onActivate,

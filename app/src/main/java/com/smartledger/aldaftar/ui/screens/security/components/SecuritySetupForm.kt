@@ -72,7 +72,7 @@ fun SecuritySetupForm(
     val recoveryHintFocus = remember { FocusRequester() }
 
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
-    RequestFocusAndShowKeyboard(focusRequester = passcodeFocus)
+    RequestFocusAndShowKeyboard(focusRequester = passcodeFocus, autoShow = true)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
