@@ -25,7 +25,8 @@ class AppContainer(context: Context) {
     val mutation by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { HabayebMutationRepository(database) }
     val backupEngine by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { BackupEngine(context.applicationContext, database) }
     val cloudArchiveStore by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CloudArchiveStore(context.applicationContext) }
-    val automaticBackup by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AutomaticBackupCoordinator(backupEngine, cloudArchiveStore) }
+    val publicBackupStore by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { com.smartledger.aldaftar.data.backup.PublicBackupStore(context.applicationContext) }
+    val automaticBackup by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AutomaticBackupCoordinator(backupEngine, cloudArchiveStore, publicBackupStore) }
     val license by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { LicenseRepository(context.applicationContext) }
     val unifiedAccount by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { UnifiedAccountSessionRepository(context.applicationContext, license, cloudArchiveStore) }
 }

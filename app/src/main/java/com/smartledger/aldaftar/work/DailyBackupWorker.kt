@@ -30,7 +30,8 @@ class DailyBackupWorker(
                 is AutomaticBackupCoordinator.Result.LocalAndCloud -> {
                     notifications.show(
                         "تم النسخ الاحتياطي بنجاح",
-                        "تم حفظ الأرشيف: ${result.file.name} (محلياً + السحابة)"
+                        "تم حفظ الأرشيف: ${result.file.name} (محلياً + السحابة)",
+                        result.publicUri
                     )
                     WorkResult.success()
                 }
@@ -39,7 +40,8 @@ class DailyBackupWorker(
                     if (error != null && shouldRetry(error) && runAttemptCount < 3) {
                         notifications.show(
                             "تم حفظ النسخة محلياً",
-                            "تم حفظ الأرشيف: ${result.file.name}. تعذر رفعه إلى السحابة مؤقتاً؛ ستتم إعادة المحاولة تلقائياً."
+                            "تم حفظ الأرشيف: ${result.file.name}. تعذر رفعه إلى السحابة مؤقتاً؛ ستتم إعادة المحاولة تلقائياً.",
+                            result.publicUri
                         )
                         WorkResult.retry()
                     } else {
@@ -49,7 +51,8 @@ class DailyBackupWorker(
                                 "تم حفظ الأرشيف: ${result.file.name} محلياً."
                             } else {
                                 "تم حفظ الأرشيف: ${result.file.name} محلياً، وتعذر إكمال المزامنة السحابية."
-                            }
+                            },
+                            result.publicUri
                         )
                         WorkResult.success()
                     }

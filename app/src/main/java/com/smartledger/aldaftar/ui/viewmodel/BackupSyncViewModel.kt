@@ -7,6 +7,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.smartledger.aldaftar.data.account.UnifiedAccountSession
 import com.smartledger.aldaftar.data.account.UnifiedAccountSessionRepository
 import com.smartledger.aldaftar.data.backup.BackupEngine
+import com.smartledger.aldaftar.data.backup.PublicBackupStore
+import com.smartledger.aldaftar.platform.notifications.BackupNotificationManager
 import com.smartledger.aldaftar.data.cloud.CloudArchiveStore
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.repository.DataMaintenanceRepository
@@ -26,8 +28,11 @@ class BackupSyncViewModel(
     private val maintenanceRepository: DataMaintenanceRepository,
     private val engine: BackupEngine,
     private val unifiedAccountRepository: UnifiedAccountSessionRepository,
-    private val cloud: CloudArchiveStore = CloudArchiveStore(application.applicationContext)
+    private val cloud: CloudArchiveStore = CloudArchiveStore(application.applicationContext),
+    private val publicBackupStore: PublicBackupStore = PublicBackupStore(application.applicationContext)
 ) : AndroidViewModel(application) {
+
+    private val backupNotifications = BackupNotificationManager(application.applicationContext)
 
     val session: StateFlow<UnifiedAccountSession> = unifiedAccountRepository.session
 
@@ -199,15 +204,23 @@ class BackupSyncViewModel(
     fun createCloudBackup(onComplete: (CloudBackupFile?, File?) -> Unit = { _, _ -> }) {
         launchBusy({ pair -> onComplete(pair?.first, pair?.second) }) {
             val file = engine.createManual()
+            val publicUri = publicBackupStore.publish(file)
             if (!_cloudConnected.value && !cloud.connected()) return@launchBusy null to file
             val remote = cloud.upload(file, file.name)
+            backupNotifications.show(
+                "تم رفع النسخة إلى Google Drive",
+                "تم حفظ الأرشيف: ${file.name} في Documents/الدفتر الذكي برو.",
+                publicUri
+            )
             refreshCloud()
             remote to file
         }
     }
 
     fun createLocalBackup(onComplete: (File?) -> Unit = {}) = launchBusy(onComplete) {
-        engine.createManual()
+        val file = engine.createManual()
+        publicBackupStore.publish(file)
+        file
     }
 
     fun exportBackupBytes(onComplete: (ByteArray?) -> Unit = {}) = launchBusy(onComplete) {
@@ -306,12 +319,7 @@ class BackupSyncViewModel(
 
     fun recoveryCode(): String = engine.recoveryCode()
 
-    fun googleClientId(onComplete: (String?) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val id = runCatching { cloud.googleClientId() }.getOrNull()
-            withContext(Dispatchers.Main) { onComplete(id) }
-        }
-    }
+
 
     private fun <T> launchBusy(onComplete: (T?) -> Unit, block: suspend () -> T) {
         viewModelScope.launch(Dispatchers.IO) {

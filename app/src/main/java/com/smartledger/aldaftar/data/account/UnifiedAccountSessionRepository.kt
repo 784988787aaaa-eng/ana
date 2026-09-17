@@ -53,7 +53,7 @@ class UnifiedAccountSessionRepository(
             photoUrl = lastGoogleAccount?.photoUrl?.toString(),
             provider = if (isSignedIn) AccountProvider.GOOGLE else AccountProvider.NONE,
             accountCode = licenseSnap.accountCode,
-            isCloudConnected = isSignedIn,
+            isCloudConnected = cloudArchiveStore.connected(),
             licenseSnapshot = licenseSnap
         )
     }
@@ -89,7 +89,7 @@ class UnifiedAccountSessionRepository(
             photoUrl = lastGoogleAccount?.photoUrl?.toString(),
             provider = if (isSignedIn) AccountProvider.GOOGLE else AccountProvider.NONE,
             accountCode = updatedSnap.accountCode,
-            isCloudConnected = isSignedIn,
+            isCloudConnected = cloudArchiveStore.connected(),
             licenseSnapshot = updatedSnap
         )
         _session.value = updated
@@ -104,12 +104,6 @@ class UnifiedAccountSessionRepository(
         if (!email.isNullOrBlank()) {
             cloudConnectionStore.saveEmail(email)
             cloudArchiveStore.saveEmail(email)
-        }
-
-        if (!serverAuthCode.isNullOrBlank()) {
-            runCatching {
-                cloudArchiveStore.connectWithServerAuthCode(serverAuthCode)
-            }
         }
 
         // 1. التحقق التلقائي والتفعيل السحابي الفوري بمجرد تسجيل الدخول بنفس الحساب المرخص

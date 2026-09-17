@@ -29,7 +29,7 @@ const TOKEN_OFFLINE_DAYS = 30;
 
 // Google Drive Constants (Preserved from original worker)
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
-const DRIVE_ROOT = "الدفتر الذكي";
+const DRIVE_ROOT = "الدفتر الذكي برو";
 const DRIVE_MIME = "application/vnd.smartledger.backup";
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 const SESSION_IDLE_MS = 180 * 24 * 60 * 60 * 1000;
@@ -1155,29 +1155,34 @@ async function driveJson(token, method, path, env, options = {}) {
 
 async function listFiles(token, search, env) {
   const lower = search.toLowerCase();
-  const params = new URLSearchParams({
-    q: "trashed = false and mimeType = 'application/vnd.smartledger.backup' and name contains 'SMN_'",
-    pageSize: "1000",
-    fields: "nextPageToken,files(id,name,mimeType,size,modifiedTime,parents)",
-    orderBy: "name"
-  });
-  if (lower && /^[a-z0-9_.-]+$/i.test(lower)) {
-    params.set("q", `${params.get("q")} and name contains '${lower.replace(/'/g, "\\'")}'`);
-  }
+  const root = await ensureFolder(token, "root", DRIVE_ROOT, env);
+  const folderQuery = `'${root.id}' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'`;
+  const folderData = await driveJson(token, "GET", `files?pageSize=100&fields=files(id,name,mimeType)&q=${encodeURIComponent(folderQuery)}`, env);
   const items = [];
-  let pageToken = "";
-  do {
-    if (pageToken) params.set("pageToken", pageToken);
-    else params.delete("pageToken");
-    const data = await driveJson(token, "GET", `files?${params.toString()}`, env);
+
+  for (const folder of folderData.files || []) {
+    const qParts = [
+      `'${folder.id}' in parents`,
+      "trashed = false",
+      "mimeType = 'application/vnd.smartledger.backup'",
+      "name contains 'SNA_'"
+    ];
+    if (lower && /^[a-z0-9_.-]+$/i.test(lower)) {
+      qParts.push(`name contains '${lower.replace(/'/g, "\\'")}'`);
+    }
+    const data = await driveJson(token, "GET", `files?pageSize=100&fields=files(id,name,mimeType,size,modifiedTime)&orderBy=modifiedTime desc&q=${encodeURIComponent(qParts.join(" and "))}`, env);
     for (const item of data.files || []) {
       if (!BACKUP_PATTERN.test(item.name || "")) continue;
-      const month = String(item.name).slice(4, 11);
-      if (lower && !String(item.name).toLowerCase().includes(lower) && !month.toLowerCase().includes(lower)) continue;
-      items.push({ id: item.id, name: item.name, size: Number(item.size || 0), modifiedTime: Date.parse(item.modifiedTime || "") || 0, month });
+      if (lower && !String(item.name).toLowerCase().includes(lower) && !String(folder.name).toLowerCase().includes(lower)) continue;
+      items.push({
+        id: item.id,
+        name: item.name,
+        size: Number(item.size || 0),
+        modifiedTime: Date.parse(item.modifiedTime || "") || 0,
+        month: folder.name
+      });
     }
-    pageToken = data.nextPageToken || "";
-  } while (pageToken);
+  }
   items.sort((a, b) => b.modifiedTime - a.modifiedTime);
   return items;
 }
@@ -1197,9 +1202,14 @@ async function ensureFolder(token, parentId, name, env) {
   });
 }
 
+function monthFolderName(month) {
+  const match = /^(\d{4})-(\d{2})$/.exec(String(month || ""));
+  return match ? `شهر ${match[2]}` : "شهر غير محدد";
+}
+
 async function monthFolder(token, month, env) {
   const root = await ensureFolder(token, "root", DRIVE_ROOT, env);
-  return ensureFolder(token, root.id, month, env);
+  return ensureFolder(token, root.id, monthFolderName(month), env);
 }
 
 async function driveConnectWithServerAuthCode(request, env) {

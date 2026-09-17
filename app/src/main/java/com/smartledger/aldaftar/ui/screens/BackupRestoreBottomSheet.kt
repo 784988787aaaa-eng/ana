@@ -145,24 +145,35 @@ fun BackupRestoreBottomSheet(
         }
     }
 
-    var googleClientId by remember { mutableStateOf<String?>(null) }
-    val googleClientIdLoader = remember(backupSyncViewModel) {
-        { backupSyncViewModel.googleClientId { googleClientId = it?.takeIf(String::isNotBlank) } }
-    }
-    LaunchedEffect(Unit) { googleClientIdLoader() }
-
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
+
+    val legacyStoragePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { }
+
+    fun ensureBackupStorageAccess(onGranted: () -> Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            onGranted()
+            return
+        }
+        val required = arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+        val missing = required.filter {
+            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+        }.toTypedArray()
+        if (missing.isEmpty()) onGranted() else legacyStoragePermissionLauncher.launch(missing)
+    }
     LaunchedEffect(Unit) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    val googleClient = remember(googleClientId) {
-        GoogleDriveInternalAuth(context).client(googleClientId)
-    }
+    val googleClient = remember { GoogleDriveInternalAuth(context).client() }
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -171,7 +182,7 @@ fun BackupRestoreBottomSheet(
             GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 .getResult(com.google.android.gms.common.api.ApiException::class.java)
         }.onSuccess { account ->
-            backupSyncViewModel.signInWithGoogle(account, account.serverAuthCode) { success ->
+            backupSyncViewModel.signInWithGoogle(account, null) { success ->
                 if (success) {
                     VibrationHelper.triggerSuccessVibration(context)
                     Toast.makeText(context, context.getString(R.string.backup_toast_linked_success, account.email ?: ""), Toast.LENGTH_SHORT).show()
@@ -229,12 +240,14 @@ fun BackupRestoreBottomSheet(
                         backupSyncViewModel.connectCloud()
                     },
                     onCreateCloudBackup = {
-                        backupSyncViewModel.createCloudBackup { remote, file ->
-                            if (remote != null) {
-                                VibrationHelper.triggerBackupSuccessVibration(context)
-                                showBackupSnackbar("تم حفظ الأرشيف: ${file?.name ?: remote.name}")
-                            } else {
-                                Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
+                        ensureBackupStorageAccess {
+                            backupSyncViewModel.createCloudBackup { remote, file ->
+                                if (remote != null) {
+                                    VibrationHelper.triggerBackupSuccessVibration(context)
+                                    showBackupSnackbar("تم حفظ الأرشيف: ${file?.name ?: remote.name}")
+                                } else {
+                                    Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     },
@@ -1153,12 +1166,12 @@ private fun CloudArchiveBottomSheet(
             } else {
                 Button(
                     onClick = {
-                        vm.createCloudBackup { remote, file ->
+                        ensureBackupStorageAccess { vm.createCloudBackup { remote, file ->
                             if (remote != null) {
                                 VibrationHelper.triggerBackupSuccessVibration(context)
                                 showBackupSnackbar("تم حفظ الأرشيف: ${file?.name ?: remote.name}")
                             }
-                        }
+                        } }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
