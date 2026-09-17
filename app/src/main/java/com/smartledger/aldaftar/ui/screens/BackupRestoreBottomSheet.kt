@@ -292,14 +292,15 @@ fun BackupRestoreBottomSheet(
                         textAlign = TextAlign.Center
                     )
                 }
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                )
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        )
 
         // Direct Cloud Restore Confirmation Dialog
         directRestoreFile?.let { item ->
@@ -1171,12 +1172,6 @@ private fun CloudArchiveBottomSheet(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                )
             }
         }
     }

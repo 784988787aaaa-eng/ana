@@ -23,7 +23,7 @@ class HabayebTransactionUseCase(
         }
         return habayeb.insertCustomerWithOpeningTransaction(customer,opening)
     }
-    suspend fun addHabayebTransaction(customerId:String,type:String,amount:BigDecimal,desc:String,timestamp:Long=System.currentTimeMillis()/1000,editingTxId:String?=null,linkedMainTxId:String?=null,isForeign:Boolean=false,currencyCode:String="DEFAULT",foreignAmount:BigDecimal=BigDecimal.ZERO,exchangeRate:BigDecimal=BigDecimal.ZERO,isRateCalculated:Boolean=false,equivalentAmount:BigDecimal=BigDecimal.ZERO,baseCurrencySymbol:String) {
+    suspend fun addHabayebTransaction(customerId:String,type:String,amount:BigDecimal,desc:String,timestamp:Long=System.currentTimeMillis()/1000,editingTxId:String?=null,linkedMainTxId:String?=null,isForeign:Boolean=false,currencyCode:String="DEFAULT",foreignAmount:BigDecimal=BigDecimal.ZERO,exchangeRate:BigDecimal=BigDecimal.ZERO,isRateCalculated:Boolean=false,equivalentAmount:BigDecimal=BigDecimal.ZERO,baseCurrencySymbol:String): Boolean {
         if (isForeign && isRateCalculated) {
             require(exchangeRate > BigDecimal.ZERO) { "المعاملة المصروفة تحتاج سعر صرف صالح" }
             require(equivalentAmount >= BigDecimal.ZERO) { "المكافئ المالي غير صالح" }
