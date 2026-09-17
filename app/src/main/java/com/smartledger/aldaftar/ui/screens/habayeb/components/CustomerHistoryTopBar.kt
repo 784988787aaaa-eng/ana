@@ -170,48 +170,19 @@ fun CustomerHistoryTopBar(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = customerName,
+                            text = if (customerPhone.isNotBlank()) "$customerName : $customerPhone" else customerName,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
+                            modifier = Modifier.weight(1f)
                         )
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(activeThemeColor.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = stringResource(id = R.string.habayeb_edit_name_desc),
-                                tint = activeThemeColor,
-                                modifier = Modifier.size(12.dp)
-                            )
-                        }
-                    }
-                    if (customerPhone.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(
-                            text = customerPhone,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(
-                            text = stringResource(id = R.string.habayeb_no_phone_registered),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(id = R.string.habayeb_edit_name_desc),
+                            tint = activeThemeColor,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }

@@ -58,7 +58,7 @@ class HabayebFinanceViewModel(
     fun floatingAddState() = floatingUiRepository.add()
     fun saveFloatingAddState(state: com.smartledger.aldaftar.data.repository.FloatingAddState) = floatingUiRepository.saveAdd(state)
 
-    fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate()
+    fun isEligibleToCreate(): Boolean = licenseRepository.isEligibleToCreate(totalTransactionsCount.value)
     fun triggerLicensePrompt() = licenseRepository.triggerLicenseRequired()
 
     private val transactionUseCase = HabayebTransactionUseCase(habayebRepository, mutationRepository)
@@ -336,17 +336,11 @@ class HabayebFinanceViewModel(
     ): Boolean = withContext(Dispatchers.IO) {
         resetFiltersToDefault(resetCategory = true)
 
-        val created = licenseRepository.runAuthorizedCreation {
-            transactionUseCase.saveHabayebCustomer(
-                customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
-            )
-            true
-        }
-        if (created != true) {
-            licenseRepository.triggerLicenseRequired()
-            return@withContext false
-        }
+        val created = transactionUseCase.saveHabayebCustomer(
+            customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
+            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
+        )
+        if (!created) return@withContext false
         VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customer.id)
         true
@@ -372,17 +366,11 @@ class HabayebFinanceViewModel(
             emitScrollToAccount(customerId)
             return@withContext true
         }
-        val created = licenseRepository.runAuthorizedCreation {
-            transactionUseCase.addHabayebTransaction(
-                customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
-                foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, historicalOrCurrentBase
-            )
-            true
-        }
-        if (created != true) {
-            licenseRepository.triggerLicenseRequired()
-            return@withContext false
-        }
+        val created = transactionUseCase.addHabayebTransaction(
+            customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
+            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, historicalOrCurrentBase
+        )
+        if (!created) return@withContext false
         VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customerId)
         true

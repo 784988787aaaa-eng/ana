@@ -29,8 +29,8 @@ class DailyBackupWorker(
             when (val result = coordinator.runDaily()) {
                 is AutomaticBackupCoordinator.Result.LocalAndCloud -> {
                     notifications.show(
-                        "اكتملت النسخة الاحتياطية اليومية",
-                        "تم حفظ نسخة آمنة محلياً ومزامنتها مع Google Drive."
+                        "تم النسخ الاحتياطي بنجاح",
+                        "تم حفظ الأرشيف: ${result.file.name} (محلياً + السحابة)"
                     )
                     WorkResult.success()
                 }
@@ -39,16 +39,16 @@ class DailyBackupWorker(
                     if (error != null && shouldRetry(error) && runAttemptCount < 3) {
                         notifications.show(
                             "تم حفظ النسخة محلياً",
-                            "تعذر رفع النسخة إلى السحابة مؤقتاً؛ ستتم إعادة المحاولة تلقائياً."
+                            "تم حفظ الأرشيف: ${result.file.name}. تعذر رفعه إلى السحابة مؤقتاً؛ ستتم إعادة المحاولة تلقائياً."
                         )
                         WorkResult.retry()
                     } else {
                         notifications.show(
-                            "تم حفظ النسخة الاحتياطية",
+                            "تم النسخ الاحتياطي بنجاح",
                             if (error == null) {
-                                "تم حفظ نسخة اليوم في التخزين المحلي. اربط Google Drive للمزامنة السحابية."
+                                "تم حفظ الأرشيف: ${result.file.name} محلياً."
                             } else {
-                                "تم حفظ نسخة اليوم محلياً، وتعذر إكمال المزامنة السحابية."
+                                "تم حفظ الأرشيف: ${result.file.name} محلياً، وتعذر إكمال المزامنة السحابية."
                             }
                         )
                         WorkResult.success()

@@ -6,7 +6,7 @@
 
 - Cloudflare Worker: واجهة HTTPS العامة.
 - Workers KV: تخزين التراخيص، جلسات الجهاز، حالات OAuth، جلسات Drive، وحدود المحاولات.
-- Google Drive API: التخزين الفعلي لملفات `.slb`.
+- Google Drive API: التخزين الفعلي لملفات `SNA_*.sna` (مع قبول `SMN_*.slb` للاستيراد القديم).
 
 ## الأسرار
 
@@ -129,7 +129,7 @@ https://www.googleapis.com/auth/drive.file
 ```text
 الدفتر الذكي/
 └── YYYY-MM/
-    └── SMN_YYYY-MM-DD.slb
+    └── SNA_YYYY-MM-DD_HH-mm.sna
 ```
 
 الاستعراض يعتمد على `files.list` لملفات النسخ التي أنشأها التطبيق، لذلك لا يحتاج إلى اجتياز شجرة المجلدات في كل طلب.

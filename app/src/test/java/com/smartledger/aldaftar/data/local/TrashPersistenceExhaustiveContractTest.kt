@@ -34,4 +34,28 @@ class TrashPersistenceExhaustiveContractTest {
             assertNull(db.trashDao().getDeletedItemByIdDirect("trash"))
         } finally { db.close() }
     }
+    @Test fun operationCountKeepsTrashedSlotsUntilPermanentDelete()=runTest {
+        val db=Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext<Context>(),AppDatabase::class.java)
+            .allowMainThreadQueries().build()
+        try {
+            val c=HabayebCustomer("c2","C2","","",1L)
+            val tx=HabayebTransaction("t2","c2","OWED_BY_THEM",BigDecimal("100"),1L,"")
+            db.habayebDao().insertCustomer(c)
+            db.habayebDao().insertTransaction(tx)
+            val repository = com.smartledger.aldaftar.data.repository.HabayebRepository(db, db.habayebDao())
+            assertEquals(2, repository.getHabayebTransactionsCountDirect())
+
+            db.trashDao().insertDeletedItem(
+                DeletedItemEntity("bundle_c2", "الحبايب", "habayeb_bundle",
+                    TrashJsonSerializer.serializeHabayebBundle(c, listOf(tx), null, emptySet()), 2L)
+            )
+            db.habayebDao().deleteTransactionById(tx.id)
+            db.habayebDao().deleteCustomerById(c.id)
+            assertEquals(2, repository.getHabayebTransactionsCountDirect())
+
+            db.trashDao().deleteItemById("bundle_c2")
+            assertEquals(0, repository.getHabayebTransactionsCountDirect())
+        } finally { db.close() }
+    }
+
 }

@@ -120,9 +120,9 @@ object CustomerHistoryCalculator {
             primaryDisplayCurrency = currencySymbol
             netDebt = baseNetBd
         } else {
-            val nonZeroForeignEntry = netDebtBDMap.entries.firstOrNull { (k, v) ->
-                k != currencySymbol && v.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0
-            }
+            val nonZeroForeignEntry = netDebtBDMap.entries
+                .filter { (k, v) -> k != currencySymbol && v.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0 }
+                .maxWithOrNull(compareBy<Map.Entry<String, BigDecimal>> { it.value.abs() }.thenBy { it.key })
             if (nonZeroForeignEntry != null) {
                 primaryDisplayCurrency = nonZeroForeignEntry.key
                 netDebt = nonZeroForeignEntry.value
@@ -209,9 +209,9 @@ object CustomerHistoryCalculator {
             primaryDisplayCurrency = currencySymbol
             netDebt = baseNetBd
         } else {
-            val nonZeroForeignEntry = netDebtBDMap.entries.firstOrNull { (k, v) ->
-                k != currencySymbol && v.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0
-            }
+            val nonZeroForeignEntry = netDebtBDMap.entries
+                .filter { (k, v) -> k != currencySymbol && v.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0 }
+                .maxWithOrNull(compareBy<Map.Entry<String, BigDecimal>> { it.value.abs() }.thenBy { it.key })
             if (nonZeroForeignEntry != null) {
                 primaryDisplayCurrency = nonZeroForeignEntry.key
                 netDebt = nonZeroForeignEntry.value

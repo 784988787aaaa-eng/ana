@@ -174,6 +174,24 @@ interface HabayebDao {
     @Query("SELECT COUNT(*) FROM habayeb_customers")
     suspend fun getHabayebCustomersCountDirect(): Int
 
+    @Query("""
+        SELECT
+            (SELECT COUNT(*) FROM habayeb_customers) +
+            (SELECT COUNT(*) FROM habayeb_transactions) +
+            (SELECT COUNT(*) FROM deleted_items
+                WHERE originalTableName IN ('habayeb_customers', 'habayeb_transactions'))
+        """)
+    fun getBaseOperationsCountFlow(): Flow<Int>
+
+    @Query("""
+        SELECT
+            (SELECT COUNT(*) FROM habayeb_customers) +
+            (SELECT COUNT(*) FROM habayeb_transactions) +
+            (SELECT COUNT(*) FROM deleted_items
+                WHERE originalTableName IN ('habayeb_customers', 'habayeb_transactions'))
+        """)
+    suspend fun getBaseOperationsCountDirect(): Int
+
 
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")

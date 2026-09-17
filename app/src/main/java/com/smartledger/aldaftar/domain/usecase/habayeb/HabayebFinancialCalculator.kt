@@ -87,13 +87,14 @@ object HabayebFinancialCalculator {
             val defaultCurrencyTotal = netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO
             val defaultCurrencyTotalAbs = defaultCurrencyTotal.abs()
             
-            val activeForeignDebts = if (netDebtBDMap.size > 1) {
-                netDebtBDMap
-                    .filterKeys { it != normDefaultCurrency }
-                    .filterValues { bd -> bd.compareTo(BigDecimal.ZERO) != 0 }
-            } else {
-                emptyMap()
-            }
+            // A customer is NOT closed merely because the default/local currency is zero.
+            // An unexchanged foreign balance is real money and must remain visible.
+            // Therefore foreign balances are filtered independently of map size.
+            val activeForeignDebts = netDebtBDMap
+                .filterKeys { it != normDefaultCurrency }
+                .filterValues { bd ->
+                    bd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0
+                }
 
             // Determine primary display currency and net debt
             val displayCurrency: String
@@ -103,7 +104,11 @@ object HabayebFinancialCalculator {
                 displayCurrency = normDefaultCurrency
                 displayNetDebt = defaultCurrencyTotal
             } else {
-                val nonZeroForeignEntry = netDebtBDMap.entries.firstOrNull { it.key != normDefaultCurrency && it.value.compareTo(BigDecimal.ZERO) != 0 }
+                // When local/default balance is zero, show the foreign currency carrying
+                // the largest outstanding absolute balance. Do not rely on HashMap iteration
+                // order: the primary currency must be deterministic and financially meaningful.
+                val nonZeroForeignEntry = activeForeignDebts.entries
+                    .maxByOrNull { it.value.abs() }
                 if (nonZeroForeignEntry != null) {
                     displayCurrency = nonZeroForeignEntry.key
                     displayNetDebt = nonZeroForeignEntry.value
@@ -200,9 +205,12 @@ object HabayebFinancialCalculator {
 
             if (params.hiddenIds.contains(customerUi.id)) continue
 
+            // Financial tabs must use the same primary balance shown on the row.
+            // This keeps foreign-only customers discoverable even when local/default
+            // currency is exactly zero.
             val matchesTab = when (params.tab) {
-                1 -> customerUi.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) > 0
-                2 -> customerUi.defaultCurrencyTotal.compareTo(BigDecimal.ZERO) < 0
+                1 -> customerUi.displayNetDebt.compareTo(BigDecimal.ZERO) > 0
+                2 -> customerUi.displayNetDebt.compareTo(BigDecimal.ZERO) < 0
                 else -> true
             }
             if (!matchesTab) continue

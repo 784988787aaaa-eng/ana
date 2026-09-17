@@ -15,12 +15,14 @@ class GoogleDriveInternalAuth(private val context: Context) {
     }
 
     fun client(webClientId: String? = null): GoogleSignInClient {
+        val effectiveClientId = webClientId?.takeIf { it.isNotBlank() }
+            ?: com.smartledger.aldaftar.BuildConfig.GOOGLE_CLIENT_ID.takeIf { it.isNotBlank() }
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestScopes(SCOPE_DRIVE_FILE, SCOPE_DRIVE_APPDATA)
 
-        if (!webClientId.isNullOrBlank()) {
-            builder.requestServerAuthCode(webClientId, true)
+        if (!effectiveClientId.isNullOrBlank()) {
+            builder.requestServerAuthCode(effectiveClientId, true)
         }
         return GoogleSignIn.getClient(context, builder.build())
     }

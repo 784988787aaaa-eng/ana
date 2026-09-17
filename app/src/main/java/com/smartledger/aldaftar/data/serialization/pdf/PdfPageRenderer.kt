@@ -357,32 +357,22 @@ object PdfPageRenderer {
             }
 
             if (!isDryRun && currentCanvas != null) {
-                val bannerBg = Paint().apply {
-                    color = Color.parseColor(primaryColorHex)
-                    alpha = 15
-                    style = Paint.Style.FILL
-                }
-                val accentBar = Paint().apply {
-                    color = Color.parseColor(primaryColorHex)
-                    style = Paint.Style.FILL
-                }
-                currentCanvas.drawRect(25f, workingY, 570f, workingY + 32f, bannerBg)
-                currentCanvas.drawRect(566f, workingY, 570f, workingY + 32f, accentBar)
-
+                // Clean customer heading: no colored block/accent strip.
+                // Keep only the account name and phone number, separated by a colon.
                 val paintBannerText = Paint().apply {
                     color = Color.parseColor(PdfColors.TEXT_DARK)
                     textSize = 9.5f
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
                 }
-                val bannerText = context.getString(
-                    R.string.pdf_customer_banner_text,
-                    customer.name,
-                    customer.phone.ifEmpty { "-" }
-                )
+                val bannerText = if (customer.phone.isNotBlank()) {
+                    "${customer.name} : ${customer.phone}"
+                } else {
+                    customer.name
+                }
                 drawArabicText(currentCanvas, bannerText, 25f, workingY + 9f, 545, paintBannerText, Layout.Alignment.ALIGN_CENTER)
             }
-            workingY += 32f
+            workingY += 22f
         }
 
         if (!isDryRun && currentCanvas != null) {

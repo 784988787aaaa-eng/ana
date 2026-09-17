@@ -10,7 +10,7 @@
 const ACCOUNT_PATTERN = /^SL-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FINGERPRINT_PATTERN = /^[A-F0-9]{64}$/;
-const BACKUP_PATTERN = /^SMN_\d{4}-\d{2}-\d{2}(?:_\d{4})?\.slb$/i;
+const BACKUP_PATTERN = /^(?:SNA_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}\.sna|SMN_\d{4}-\d{2}-\d{2}(?:_\d{4})?\.slb)$/i;
 
 const PUBLIC_KEY_MAX = 8192;
 const ACTIVATION_CODE_LENGTH = 24;
@@ -1119,7 +1119,10 @@ async function sessionRecord(token, env) {
     throw new Error("invalid_session");
   }
   const updated = { ...session, lastSeenAt: Date.now() };
-  await kv.put(key, JSON.stringify(updated));
+  // Keep the backend session alive while it is actively used. The Google
+  // refresh token remains encrypted in KV; only this opaque session token
+  // is exposed to the Android client.
+  await kv.put(key, JSON.stringify(updated), { expirationTtl: 60 * 60 * 24 * 180 });
   return { key, ...updated };
 }
 

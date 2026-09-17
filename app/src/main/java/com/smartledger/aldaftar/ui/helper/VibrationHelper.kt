@@ -69,6 +69,14 @@ object VibrationHelper {
         vibrate(context, 35)
     }
 
+    /** Dedicated manual-backup confirmation: 40ms + 30ms gap + 40ms. */
+    fun triggerBackupSuccessVibration(context: Context) {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastSuccessTime < DEBOUNCE_MS) return
+        lastSuccessTime = now
+        vibratePattern(context, longArrayOf(0, 40, 30, 40))
+    }
+
     /**
      * Single distinct delete pulse (45ms) with debounce protection.
      */

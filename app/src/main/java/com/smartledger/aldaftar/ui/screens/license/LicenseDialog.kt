@@ -398,7 +398,8 @@ private fun CompactStateBanner(
     else MaterialTheme.colorScheme.onPrimaryContainer
 
     val description = when {
-        isLimitReached || isExpired -> "انتهت الفترة التجريبية لهذا الترخيص (وصلت للحد الأقصى: 100 معاملة). يرجى التفعيل للمتابعة."
+        isLimitReached -> "انتهت النسخة التجريبية (100/100 عملية) .. يرجى تفعيل النسخة الكاملة لمتابعة التسجيل"
+        isExpired -> "انتهت الفترة التجريبية لهذا الترخيص. يرجى التفعيل للمتابعة."
         snapshot.isDeviceReplaced -> snapshot.revocationMessage ?: "تم تفعيل حساب SmartLedger على جهاز آخر، وتم إلغاء تفعيل هذا الجهاز."
         isRevoked -> snapshot.revocationMessage ?: "تعذر اعتماد الترخيص الحالي. يرجى تفعيل ترخيص صالح للمتابعة."
         isVerification -> "يلزم إعادة التحقق من الترخيص عبر الإنترنت لمتابعة العمليات."
@@ -406,7 +407,7 @@ private fun CompactStateBanner(
             val days = snapshot.calculateRemainingDays() ?: 0
             "فترة تجريبية نشطة (متبقي $days يوماً)."
         }
-        else -> "المتبقي من التجربة المجانية: ${(snapshot.trialLimit - snapshot.trialUsed).coerceAtLeast(0)} معاملة."
+        else -> "المتبقي من النسخة التجريبية: ${(snapshot.trialLimit - snapshot.trialUsed).coerceAtLeast(0)} عملية من أصل ${snapshot.trialLimit}."
     }
 
     Surface(

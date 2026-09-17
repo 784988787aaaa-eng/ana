@@ -23,7 +23,7 @@ class BackupNotificationManager(private val context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, "النسخ الاحتياطي", NotificationManager.IMPORTANCE_LOW).apply {
+                NotificationChannel(CHANNEL, "النسخ الاحتياطي للدفتر الذكي", NotificationManager.IMPORTANCE_LOW).apply {
                     description = "إشعارات النسخ الاحتياطي اليومي المحلي والسحابي"
                     setShowBadge(true)
                 }
@@ -33,7 +33,7 @@ class BackupNotificationManager(private val context: Context) {
         manager.notify(
             ID,
             NotificationCompat.Builder(context, CHANNEL)
-                .setSmallIcon(R.drawable.img_app_icon)
+                .setSmallIcon(R.drawable.ic_splash_logo)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))

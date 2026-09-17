@@ -43,16 +43,15 @@ class LicenseRepository(private val context: Context) {
         }
     }
 
-    fun isEligibleToCreate(): Boolean {
+    fun isEligibleToCreate(currentUsed: Int? = null): Boolean {
         val state = snapshot()
         if (state.status == LicenseStatus.REVOKED ||
             state.status == LicenseStatus.VERIFICATION_REQUIRED ||
             state.status == LicenseStatus.TRIAL_EXPIRED
-        ) {
-            return false
-        }
+        ) return false
         if (state.isPaid) return true
-        return store.trialUsed < TRIAL_LIMIT
+        val used = currentUsed ?: store.trialUsed
+        return used < TRIAL_LIMIT
     }
 
     fun snapshot(now: Long = System.currentTimeMillis()): LicenseSnapshot {
@@ -151,7 +150,18 @@ class LicenseRepository(private val context: Context) {
         return parse(body, System.currentTimeMillis())
     }
 
-    suspend fun <T> runAuthorizedCreation(block: suspend () -> T): T? = creationMutex.withLock {
+    /**
+     * Authorizes a database creation against the authoritative live DB count.
+     * `trialUsed` is only a UI/cache mirror and is never used to grant capacity
+     * when a live count is supplied. The mutex closes the check/insert race for
+     * concurrent creation requests in the app process.
+     */
+    suspend fun <T> runAuthorizedCreation(
+        currentUsed: suspend () -> Int,
+        slots: Int = 1,
+        block: suspend () -> T
+    ): T? = creationMutex.withLock {
+        require(slots > 0) { "slots must be positive" }
         val state = snapshot()
         if (state.status == LicenseStatus.REVOKED ||
             state.status == LicenseStatus.VERIFICATION_REQUIRED ||
@@ -161,18 +171,26 @@ class LicenseRepository(private val context: Context) {
             return@withLock null
         }
         if (state.isPaid) return@withLock block()
-        if (store.trialUsed >= TRIAL_LIMIT) {
+
+        val used = currentUsed()
+        if (used + slots > TRIAL_LIMIT) {
+            store.trialUsed = used.coerceAtMost(TRIAL_LIMIT)
             _onLicenseRequired.tryEmit(Unit)
             return@withLock null
         }
-        store.trialUsed += 1
+
+        store.trialUsed = used + slots
         try {
-            block()
+            val result = block()
+            // Reconcile from the DB immediately after a successful mutation.
+            store.trialUsed = currentUsed().coerceAtMost(TRIAL_LIMIT)
+            result
         } catch (t: Throwable) {
-            store.trialUsed = (store.trialUsed - 1).coerceAtLeast(0)
+            store.trialUsed = currentUsed().coerceAtMost(TRIAL_LIMIT)
             throw t
         }
     }
+
 
     fun supportCodes(): Pair<String, String> {
         val account = store.accountCode ?: "غير مرتبط"

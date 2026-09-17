@@ -1,6 +1,8 @@
 package com.smartledger.aldaftar.ui.screens
 
 import android.app.Activity
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +60,8 @@ import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,11 +76,22 @@ fun BackupRestoreBottomSheet(
     val busyMessage by backupSyncViewModel.busyMessage.collectAsStateWithLifecycle()
     val error by backupSyncViewModel.error.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
+    fun showBackupSnackbar(message: String) {
+        snackbarScope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            launch { snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Indefinite) }
+            delay(2_000L)
+            snackbarHostState.currentSnackbarData?.dismiss()
+        }
+    }
 
     var manualOptions by remember { mutableStateOf(false) }
     var archiveOpen by remember { mutableStateOf(false) }
     var resetOpen by remember { mutableStateOf(false) }
     var directRestoreFile by remember { mutableStateOf<CloudBackupFile?>(null) }
+    var pendingExportName by remember { mutableStateOf<String?>(null) }
 
     // SAF Launchers for Local Backup Export & Import
     val createDocumentLauncher = rememberLauncherForActivityResult(
@@ -89,8 +105,8 @@ fun BackupRestoreBottomSheet(
                             os.write(bytes)
                             os.flush()
                         }
-                        VibrationHelper.triggerSuccessVibration(context)
-                        Toast.makeText(context, context.getString(R.string.toast_backup_export_success), Toast.LENGTH_SHORT).show()
+                        VibrationHelper.triggerBackupSuccessVibration(context)
+                        showBackupSnackbar("تم حفظ الأرشيف: ${pendingExportName ?: "SNA"}")
                     }.onFailure {
                         Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
                     }
@@ -129,8 +145,23 @@ fun BackupRestoreBottomSheet(
         }
     }
 
-    val googleClient = remember {
-        GoogleDriveInternalAuth(context).client()
+    var googleClientId by remember { mutableStateOf<String?>(null) }
+    val googleClientIdLoader = remember(backupSyncViewModel) {
+        { backupSyncViewModel.googleClientId { googleClientId = it?.takeIf(String::isNotBlank) } }
+    }
+    LaunchedEffect(Unit) { googleClientIdLoader() }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    val googleClient = remember(googleClientId) {
+        GoogleDriveInternalAuth(context).client(googleClientId)
     }
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -168,10 +199,11 @@ fun BackupRestoreBottomSheet(
                 )
             }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
                     .padding(horizontal = 12.dp)
                     .padding(bottom = 10.dp)
@@ -197,10 +229,10 @@ fun BackupRestoreBottomSheet(
                         backupSyncViewModel.connectCloud()
                     },
                     onCreateCloudBackup = {
-                        backupSyncViewModel.createCloudBackup { remote, _ ->
+                        backupSyncViewModel.createCloudBackup { remote, file ->
                             if (remote != null) {
-                                VibrationHelper.triggerSuccessVibration(context)
-                                Toast.makeText(context, context.getString(R.string.msg_backup_complete), Toast.LENGTH_SHORT).show()
+                                VibrationHelper.triggerBackupSuccessVibration(context)
+                                showBackupSnackbar("تم حفظ الأرشيف: ${file?.name ?: remote.name}")
                             } else {
                                 Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
                             }
@@ -228,8 +260,9 @@ fun BackupRestoreBottomSheet(
                 LocalBackupCard(
                     busy = busy,
                     onExportLocal = {
-                        val timestamp = WesternDigits.normalize(SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date()))
-                        createDocumentLauncher.launch(context.getString(R.string.backup_export_file_name, timestamp))
+                        val timestamp = WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US).format(Date()))
+                        pendingExportName = context.getString(R.string.backup_export_file_name, timestamp)
+                        createDocumentLauncher.launch(pendingExportName!!)
                     },
                     onImportLocal = {
                         openDocumentLauncher.launch(arrayOf("*/*"))
@@ -259,6 +292,12 @@ fun BackupRestoreBottomSheet(
                         textAlign = TextAlign.Center
                     )
                 }
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                )
             }
         }
 
@@ -350,6 +389,7 @@ fun BackupRestoreBottomSheet(
             }
         }
     }
+}
 }
 
 @Composable
@@ -1110,10 +1150,10 @@ private fun CloudArchiveBottomSheet(
             } else {
                 Button(
                     onClick = {
-                        vm.createCloudBackup { remote, _ ->
+                        vm.createCloudBackup { remote, file ->
                             if (remote != null) {
-                                VibrationHelper.triggerSuccessVibration(context)
-                                Toast.makeText(context, context.getString(R.string.msg_backup_complete), Toast.LENGTH_SHORT).show()
+                                VibrationHelper.triggerBackupSuccessVibration(context)
+                                showBackupSnackbar("تم حفظ الأرشيف: ${file?.name ?: remote.name}")
                             }
                         }
                     },
@@ -1131,6 +1171,12 @@ private fun CloudArchiveBottomSheet(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                )
             }
         }
     }

@@ -7,11 +7,12 @@ import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.RecurringConfig
+import com.smartledger.aldaftar.data.license.LicenseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
-class RecurringRepository(private val database:AppDatabase, private val dao:RecurringConfigDao) {
+class RecurringRepository(private val database:AppDatabase, private val dao:RecurringConfigDao, private val licenseRepository: LicenseRepository? = null) {
  val configsFlow:Flow<List<RecurringConfig>> = dao.allFlow().map { it.map(::toModel) }
  suspend fun all():List<RecurringConfig> = dao.all().map(::toModel)
  suspend fun byOriginalTransaction(id:String):RecurringConfig? = dao.byOriginalTransaction(id)?.let(::toModel)
@@ -22,28 +23,70 @@ class RecurringRepository(private val database:AppDatabase, private val dao:Recu
  suspend fun clear()=dao.clear()
 
  suspend fun executeDue(nowMillis:Long=System.currentTimeMillis()):Int = database.withTransaction {
-  var count=0
+  data class Pending(val entity: RecurringConfigEntity, val config: RecurringConfig, val timestamps: List<Long>)
+  val pending = mutableListOf<Pending>()
+
   dao.all().filter { it.isActive }.forEach { entity ->
-   val config=toModel(entity); val due=RecurringScheduleCalculator.dueOccurrences(config, nowMillis, maxOccurrences = 50)
-   if(due.isNotEmpty()) {
-    var lastGeneratedTimestamp = entity.lastExecutedTimestamp
-    due.forEach { ts ->
-      // Idempotency key = fixed template identity + occurrence timestamp.
-      // UUID is only the row id; it must never be the duplicate-prevention key.
-      if (dao.occurrenceAlreadyGenerated(config.originalTxId, ts)) return@forEach
-      database.habayebDao().insertTransaction(
-        HabayebTransaction(id=UUID.randomUUID().toString(), customerId=config.customerId, type=config.type,
-         amount=FinancialPolicy.normalize(config.amount), timestamp=ts, description=config.description,
-         linkedMainTxId=config.originalTxId, isForeign=config.isForeign, currencyCode=config.currencyCode,
-         foreignAmount=FinancialPolicy.normalize(config.foreignAmount), exchangeRate=FinancialPolicy.normalizeRate(config.exchangeRate),
-         isRateCalculated=config.isRateCalculated, equivalentAmount=FinancialPolicy.normalize(config.equivalentAmount),
-         baseCurrencyCode=config.baseCurrencyCode, snapshotVersion=config.snapshotVersion, rateContext=config.rateContext) )
-      lastGeneratedTimestamp = maxOf(lastGeneratedTimestamp, ts)
-      count++
+    val config=toModel(entity)
+    val due=RecurringScheduleCalculator.dueOccurrences(config, nowMillis, maxOccurrences = 50)
+      .filterNot { ts -> dao.occurrenceAlreadyGenerated(config.originalTxId, ts) }
+    if (due.isNotEmpty()) pending += Pending(entity, config, due)
+  }
+
+  val total = pending.sumOf { it.timestamps.size }
+  if (total == 0) return@withTransaction 0
+
+  val authorized = licenseRepository?.runAuthorizedCreation(
+    currentUsed = { currentOperationsCount() },
+    slots = total
+  ) {
+    pending.forEach { item ->
+      item.timestamps.forEach { ts ->
+        database.habayebDao().insertTransaction(
+          HabayebTransaction(id=UUID.randomUUID().toString(), customerId=item.config.customerId, type=item.config.type,
+            amount=FinancialPolicy.normalize(item.config.amount), timestamp=ts, description=item.config.description,
+            linkedMainTxId=item.config.originalTxId, isForeign=item.config.isForeign, currencyCode=item.config.currencyCode,
+            foreignAmount=FinancialPolicy.normalize(item.config.foreignAmount), exchangeRate=FinancialPolicy.normalizeRate(item.config.exchangeRate),
+            isRateCalculated=item.config.isRateCalculated, equivalentAmount=FinancialPolicy.normalize(item.config.equivalentAmount),
+            baseCurrencyCode=item.config.baseCurrencyCode, snapshotVersion=item.config.snapshotVersion, rateContext=item.config.rateContext)
+        )
+      }
+      dao.save(item.entity.copy(lastExecutedTimestamp=item.timestamps.maxOrNull() ?: item.entity.lastExecutedTimestamp))
     }
-    dao.save(entity.copy(lastExecutedTimestamp=lastGeneratedTimestamp))
-   }
-  }; count
+    total
+  }
+  if (licenseRepository == null) {
+    pending.forEach { item ->
+      item.timestamps.forEach { ts ->
+        database.habayebDao().insertTransaction(
+          HabayebTransaction(id=UUID.randomUUID().toString(), customerId=item.config.customerId, type=item.config.type,
+            amount=FinancialPolicy.normalize(item.config.amount), timestamp=ts, description=item.config.description,
+            linkedMainTxId=item.config.originalTxId, isForeign=item.config.isForeign, currencyCode=item.config.currencyCode,
+            foreignAmount=FinancialPolicy.normalize(item.config.foreignAmount), exchangeRate=FinancialPolicy.normalizeRate(item.config.exchangeRate),
+            isRateCalculated=item.config.isRateCalculated, equivalentAmount=FinancialPolicy.normalize(item.config.equivalentAmount),
+            baseCurrencyCode=item.config.baseCurrencyCode, snapshotVersion=item.config.snapshotVersion, rateContext=item.config.rateContext)
+        )
+      }
+      dao.save(item.entity.copy(lastExecutedTimestamp=item.timestamps.maxOrNull() ?: item.entity.lastExecutedTimestamp))
+    }
+    total
+  } else authorized ?: 0
+ }
+
+ private suspend fun currentOperationsCount(): Int {
+  val daoCount = database.habayebDao().getBaseOperationsCountDirect()
+  val trashItems = database.trashDao().getAllDeletedItemsDirect()
+  var count = daoCount
+  trashItems.forEach { item ->
+    when (item.originalTableName) {
+      "habayeb_customers", "habayeb_transactions" -> count++
+      "habayeb_bundle" -> {
+        val json = runCatching { org.json.JSONObject(item.jsonData) }.getOrNull()
+        count += 1 + (json?.optInt("totalTransactions", json.optJSONArray("transactions")?.length() ?: 0) ?: 0)
+      }
+    }
+  }
+  return count
  }
 
  private fun validate(c:RecurringConfig){ require(c.id.isNotBlank()&&c.originalTxId.isNotBlank()&&c.customerId.isNotBlank()); require(c.endDateMillis>=c.startDateMillis); require(c.timeHour in 0..23&&c.timeMinute in 0..59) }

@@ -17,11 +17,11 @@ class HabayebTransactionUseCase(
     private val mutations: HabayebMutationRepository
 ) {
     private fun id() = "dtx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
-    suspend fun saveHabayebCustomer(customer:HabayebCustomer, initialAmount:BigDecimal, initialType:String, customTimestamp:Long=System.currentTimeMillis()/1000, initialDetails:String="", isForeign:Boolean=false, currencyCode:String="DEFAULT", foreignAmount:BigDecimal=BigDecimal.ZERO, exchangeRate:BigDecimal=BigDecimal.ZERO, isRateCalculated:Boolean=false, equivalentAmount:BigDecimal=BigDecimal.ZERO, selectedCategoryFilter:String?, settings:AppSettings) {
+    suspend fun saveHabayebCustomer(customer:HabayebCustomer, initialAmount:BigDecimal, initialType:String, customTimestamp:Long=System.currentTimeMillis()/1000, initialDetails:String="", isForeign:Boolean=false, currencyCode:String="DEFAULT", foreignAmount:BigDecimal=BigDecimal.ZERO, exchangeRate:BigDecimal=BigDecimal.ZERO, isRateCalculated:Boolean=false, equivalentAmount:BigDecimal=BigDecimal.ZERO, selectedCategoryFilter:String?, settings:AppSettings): Boolean {
         val opening = initialAmount.compareTo(BigDecimal.ZERO).takeIf { it > 0 }?.let {
             HabayebTransaction(id(),customer.id,initialType,initialAmount,customTimestamp,initialDetails.ifEmpty{customer.notes},isForeign=isForeign,currencyCode=currencyCode,foreignAmount=foreignAmount,exchangeRate=exchangeRate,isRateCalculated=isRateCalculated,equivalentAmount=equivalentAmount,baseCurrencyCode=settings.currencySymbol)
         }
-        habayeb.insertCustomerWithOpeningTransaction(customer,opening)
+        return habayeb.insertCustomerWithOpeningTransaction(customer,opening)
     }
     suspend fun addHabayebTransaction(customerId:String,type:String,amount:BigDecimal,desc:String,timestamp:Long=System.currentTimeMillis()/1000,editingTxId:String?=null,linkedMainTxId:String?=null,isForeign:Boolean=false,currencyCode:String="DEFAULT",foreignAmount:BigDecimal=BigDecimal.ZERO,exchangeRate:BigDecimal=BigDecimal.ZERO,isRateCalculated:Boolean=false,equivalentAmount:BigDecimal=BigDecimal.ZERO,baseCurrencySymbol:String) {
         if (isForeign && isRateCalculated) {
@@ -31,7 +31,13 @@ class HabayebTransactionUseCase(
             require(baseCurrencySymbol.isNotBlank() && baseCurrencySymbol != "DEFAULT") { "عملة الأساس التاريخية مطلوبة" }
         }
         val txId=editingTxId?:id(); val link=(linkedMainTxId ?: editingTxId?.let{habayeb.getHabayebTransactionById(it)?.linkedMainTxId})?.trim()?.takeIf{it.isNotEmpty()&&it!="0"&&it!="null"&&it!=txId}
-        habayeb.insertHabayebTransaction(HabayebTransaction(txId,customerId,type,amount,timestamp,desc,link,isForeign,currencyCode,foreignAmount,exchangeRate,isRateCalculated,equivalentAmount,baseCurrencySymbol))
+        val tx = HabayebTransaction(txId,customerId,type,amount,timestamp,desc,link,isForeign,currencyCode,foreignAmount,exchangeRate,isRateCalculated,equivalentAmount,baseCurrencySymbol)
+        return if (editingTxId != null) {
+            habayeb.updateHabayebTransaction(tx)
+            true
+        } else {
+            habayeb.insertHabayebTransaction(tx)
+        }
     }
     suspend fun updateTransactionExchangeRate(txId:String,newRate:BigDecimal,calculateRate:Boolean,defaultCurrency:String) {
         val tx=habayeb.getHabayebTransactionById(txId)?:return
@@ -44,7 +50,7 @@ class HabayebTransactionUseCase(
             amount=source, sourceCurrency=target, targetCurrency=base,
             rate=pair.safeRate, rateSourceCurrency=target, rateTargetCurrency=base
         ) else BigDecimal.ZERO
-        habayeb.insertHabayebTransaction(tx.copy(currencyCode=target,baseCurrencyCode=base,isForeign=!pair.isSelfPair,exchangeRate=if(enabled) pair.safeRate else BigDecimal.ZERO,isRateCalculated=enabled,equivalentAmount=equivalent,amount=if(enabled) equivalent else source,foreignAmount=source))
+        habayeb.updateHabayebTransaction(tx.copy(currencyCode=target,baseCurrencyCode=base,isForeign=!pair.isSelfPair,exchangeRate=if(enabled) pair.safeRate else BigDecimal.ZERO,isRateCalculated=enabled,equivalentAmount=equivalent,amount=if(enabled) equivalent else source,foreignAmount=source))
     }
     suspend fun revalueHistoricalTransactions(baseCurrencyCode:String,targetCurrencyCode:String,newRate:BigDecimal) {
         require(newRate > BigDecimal.ZERO) { "سعر الصرف غير موجود أو غير صالح" }

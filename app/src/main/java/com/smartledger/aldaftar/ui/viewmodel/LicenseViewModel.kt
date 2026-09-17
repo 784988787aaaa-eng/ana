@@ -7,6 +7,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.smartledger.aldaftar.data.account.UnifiedAccountSession
 import com.smartledger.aldaftar.data.account.UnifiedAccountSessionRepository
 import com.smartledger.aldaftar.data.license.LicenseRepository
+import com.smartledger.aldaftar.data.repository.HabayebRepository
 import com.smartledger.aldaftar.domain.license.LicenseSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 class LicenseViewModel(
     application: Application,
     private val repository: LicenseRepository,
-    private val unifiedAccountRepository: UnifiedAccountSessionRepository
+    private val unifiedAccountRepository: UnifiedAccountSessionRepository,
+    private val habayebRepository: HabayebRepository
 ) : AndroidViewModel(application) {
 
     val session: StateFlow<UnifiedAccountSession> = unifiedAccountRepository.session
@@ -41,6 +43,15 @@ class LicenseViewModel(
         viewModelScope.launch {
             unifiedAccountRepository.session.collect { session ->
                 _snapshot.value = session.licenseSnapshot
+            }
+        }
+
+        viewModelScope.launch {
+            habayebRepository.getHabayebTransactionsCountFlow().collect { count ->
+                repository.syncTrialUsedWithCount(count)
+                val snap = repository.snapshot()
+                _snapshot.value = snap
+                unifiedAccountRepository.updateLicenseSnapshot(snap)
             }
         }
 

@@ -55,9 +55,13 @@ class CurrencyDirectionContractTest {
         ))
     }
 
-    @Test fun invalidRateIsNotAValidConversionRate() {
-        // This test intentionally protects the zero/negative-rate invariant.
-        val result = CurrencyConfig.convertAmountBigDecimal(BigDecimal("100"), "ر.ي", "ر.س", BigDecimal.ZERO)
-        org.junit.Assert.assertNotEquals("100.0000", result.toPlainString())
+    @Test fun invalidRateIsRejectedWithoutPerformingAConversion() {
+        // Zero/negative rates are invalid and must fail closed rather than
+        // producing a financial result or silently falling back.
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            CurrencyConfig.convertAmountBigDecimal(
+                BigDecimal("100"), "ر.ي", "ر.س", BigDecimal.ZERO
+            )
+        }
     }
 }
