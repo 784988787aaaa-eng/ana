@@ -293,14 +293,14 @@ fun BackupRestoreBottomSheet(
                     )
                 }
             }
-        }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-        )
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            )
+        }
 
         // Direct Cloud Restore Confirmation Dialog
         directRestoreFile?.let { item ->
@@ -334,6 +334,7 @@ fun BackupRestoreBottomSheet(
                     onRestoreSuccess(it)
                     archiveOpen = false
                 },
+                showBackupSnackbar = ::showBackupSnackbar,
                 onConnect = {
                     archiveOpen = false
                     signInLauncher.launch(googleClient.signInIntent)
@@ -1031,6 +1032,7 @@ private fun CloudArchiveBottomSheet(
     vm: BackupSyncViewModel,
     onDismiss: () -> Unit,
     onRestoreSuccess: (AppSettings) -> Unit,
+    showBackupSnackbar: (String) -> Unit,
     onConnect: () -> Unit
 ) {
     val connected by vm.cloudConnected.collectAsStateWithLifecycle()
