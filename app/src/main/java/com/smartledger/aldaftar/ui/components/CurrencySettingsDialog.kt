@@ -54,7 +54,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -72,7 +74,6 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import kotlinx.coroutines.android.awaitFrame
 import java.math.BigDecimal
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.components.hideKeyboardAndClearFocus
 
 private const val TAG = "CurrencySettingsDialog"
 
