@@ -87,6 +87,7 @@ class PublicBackupStore(private val context: Context) {
     }
 
     private fun monthFolderName(date: Date): String {
-        return SimpleDateFormat("yyyy_MM", Locale.US).format(date)
+        val month = SimpleDateFormat("MM", Locale.US).format(date).toInt()
+        return "شهر ${month.toString().padStart(2, '0')}"
     }
 }

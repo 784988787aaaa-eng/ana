@@ -7,7 +7,12 @@ import java.math.BigDecimal
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class TrashFinancialSnapshotContractTest {
     private fun tx() = HabayebTransaction(
         id="t",customerId="c",type="OWED_BY_THEM",amount=BigDecimal("14000.0000"),

@@ -361,7 +361,7 @@ object PdfPageRenderer {
                 // Keep only the account name and phone number, separated by a colon.
                 val paintBannerText = Paint().apply {
                     color = Color.parseColor(PdfColors.TEXT_DARK)
-                    textSize = 9.5f
+                    textSize = 14.0f
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
                 }

@@ -18,6 +18,12 @@ class BigDecimalConverter {
     }
 
     @TypeConverter
+    fun fromDouble(value: Double?): BigDecimal? {
+        if (value == null || value.isNaN() || value.isInfinite()) return null
+        return BigDecimal.valueOf(value)
+    }
+
+    @TypeConverter
     fun toString(value: BigDecimal?): String? = value?.toPlainString()
 
     companion object {

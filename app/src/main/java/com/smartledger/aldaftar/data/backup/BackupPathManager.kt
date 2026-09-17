@@ -21,7 +21,7 @@ class BackupPathManager(context: Context) {
     private val root = File(context.applicationContext.filesDir, ROOT_FOLDER)
 
     fun monthFolder(date: Date = Date()): File {
-        val month = SimpleDateFormat("yyyy_MM", Locale.US).format(date)
+        val month = SimpleDateFormat("yyyy-MM", Locale.US).format(date)
         return File(root, month)
     }
 

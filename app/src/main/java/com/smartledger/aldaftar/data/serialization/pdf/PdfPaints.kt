@@ -23,6 +23,7 @@ object PdfPaints {
 
     val paintCellNormal = createTextPaint(PdfColors.TEXT_CHARCOAL, 9.5f, TYPEFACE_NORMAL)
     val paintCellBold = createTextPaint(PdfColors.TEXT_DARK, 9.5f, TYPEFACE_BOLD)
+    val paintAccountNameBold = createTextPaint(PdfColors.TEXT_DARK, 11.5f, TYPEFACE_BOLD)
     val paintMutedText = createTextPaint(PdfColors.TEXT_MUTED_GREY, 8.5f, TYPEFACE_NORMAL)
     val paintEmptyDash = createTextPaint(PdfColors.TEXT_MUTED_GREY, 10f, TYPEFACE_NORMAL)
 

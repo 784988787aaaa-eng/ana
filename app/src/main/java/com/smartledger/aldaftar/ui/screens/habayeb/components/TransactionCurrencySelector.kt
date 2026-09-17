@@ -54,6 +54,7 @@ fun TransactionCurrencySelector(
     onApplyExchangeRateChange: (Boolean) -> Unit,
     onSetupRateClick: (String) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val historicalCurrency = editingTransaction?.let {
         it.currencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
             ?: it.baseCurrencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
@@ -181,23 +182,26 @@ fun TransactionCurrencySelector(
                 }
 
                 if (applyExchangeRate) {
-                    val rateInfo = remember(editingTransaction, exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
+                    val rateInfo = remember(editingTransaction, exchangeRatesJson, currencySymbol, selectedTransactionCurrency, context) {
                         val isEditingHistoricalRate = editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0
                         val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency) || isEditingHistoricalRate
+                        val overrideRate = if (isEditingHistoricalRate) editingTransaction.exchangeRate else null
                         val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency).toString()
-                        val formattedRateStr = try {
-                            BigDecimal(currentRateRaw).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
-                        } catch (e: Exception) {
-                            currentRateRaw
-                        }
-                        Triple(hasStoredRate, currentRateRaw, formattedRateStr)
+                        val displayText = ExchangeRateHelper.formatApprovedRateForDisplay(
+                            context = context,
+                            jsonStr = exchangeRatesJson,
+                            currencyA = selectedTransactionCurrency,
+                            currencyB = rateBaseCurrency,
+                            overrideRate = overrideRate
+                        )
+                        Triple(hasStoredRate, currentRateRaw, displayText)
                     }
 
                     val hasStoredRate = rateInfo.first
                     val currentRateRaw = rateInfo.second
-                    val formattedRateStr = rateInfo.third
+                    val displayText = rateInfo.third
 
-                    if (hasStoredRate) {
+                    if (hasStoredRate && displayText.isNotBlank()) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -217,7 +221,7 @@ fun TransactionCurrencySelector(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = stringResource(R.string.currency_approved_rate_pattern, selectedTransactionCurrency, formattedRateStr, rateBaseCurrency),
+                                text = displayText,
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeThemeColor

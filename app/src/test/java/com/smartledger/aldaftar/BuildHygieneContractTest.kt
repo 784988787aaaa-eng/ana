@@ -8,10 +8,12 @@ import org.junit.Test
 class BuildHygieneContractTest {
     @Test
     fun productionSourceContainsNoLegacyRoomMigrationsOrAlwaysVisibleIme() {
-        val root = File(System.getProperty("user.dir"))
+        val root = File(System.getProperty("user.dir") ?: ".")
         val sourceRoot = sequenceOf(
             File(root, "app/src/main/java"),
-            File(root, "app/src/main/kotlin")
+            File(root, "src/main/java"),
+            File(root, "app/src/main/kotlin"),
+            File(root, "src/main/kotlin")
         ).firstOrNull { it.exists() } ?: error("Production source root not found")
 
         sourceRoot.walkTopDown()

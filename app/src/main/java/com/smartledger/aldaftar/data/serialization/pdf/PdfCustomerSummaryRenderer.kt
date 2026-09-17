@@ -30,7 +30,7 @@ object PdfCustomerSummaryRenderer {
         nameWidth: Int = 175,
         foreignWidth: Int = 125
     ): Float {
-        val nameHeight = PdfDrawingUtils.measureTextHeight(c.name, PdfPaints.paintCellBold, nameWidth)
+        val nameHeight = PdfDrawingUtils.measureTextHeight(c.name, PdfPaints.paintAccountNameBold, nameWidth)
         val phoneHeight = if (c.phone.isNotBlank()) 14 else 0
         val colNameTotal = nameHeight + phoneHeight
 
@@ -70,7 +70,7 @@ object PdfCustomerSummaryRenderer {
 
         drawArabicText(canvas, (index + 1).toString(), 535f, currentY + textYOffset, 35, PdfPaints.paintCellNormal, Layout.Alignment.ALIGN_CENTER)
 
-        val nameLayout = PdfDrawingUtils.createStaticLayout(c.name, PdfPaints.paintCellBold, 170, Layout.Alignment.ALIGN_NORMAL)
+        val nameLayout = PdfDrawingUtils.createStaticLayout(c.name, PdfPaints.paintAccountNameBold, 170, Layout.Alignment.ALIGN_NORMAL)
         val nameTotalH = nameLayout.height + if (c.phone.isNotBlank()) 14f else 0f
         val nameYOffset = ((rowHeight - nameTotalH) / 2f).coerceAtLeast(3f)
 

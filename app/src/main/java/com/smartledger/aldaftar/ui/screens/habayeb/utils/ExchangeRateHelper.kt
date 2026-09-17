@@ -6,6 +6,30 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 object ExchangeRateHelper {
+    fun formatApprovedRateForDisplay(
+        context: android.content.Context,
+        jsonStr: String,
+        currencyA: String,
+        currencyB: String,
+        overrideRate: BigDecimal? = null
+    ): String {
+        val rateDirect = overrideRate ?: getRateBigDecimal(jsonStr, currencyA, currencyB)
+        if (rateDirect.compareTo(BigDecimal.ZERO) <= 0) return ""
+
+        val rateReciprocal = runCatching { BigDecimal.ONE.divide(rateDirect, 12, RoundingMode.HALF_EVEN) }.getOrDefault(BigDecimal.ZERO)
+
+        val (largerCur, smallerCur, displayRate) = if (rateDirect >= BigDecimal.ONE) {
+            Triple(currencyA, currencyB, rateDirect)
+        } else if (rateReciprocal >= BigDecimal.ONE) {
+            Triple(currencyB, currencyA, rateReciprocal)
+        } else {
+            Triple(currencyA, currencyB, rateDirect)
+        }
+
+        val formattedRateStr = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(displayRate)
+        return context.getString(com.smartledger.aldaftar.R.string.currency_approved_rate_pattern, largerCur, formattedRateStr, smallerCur)
+    }
+
     fun getCurrencyPair(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): CurrencyPair {
         val rate = getRateBigDecimal(jsonStr, sourceCurrencySymbol, targetCurrencySymbol)
         return CurrencyPair(

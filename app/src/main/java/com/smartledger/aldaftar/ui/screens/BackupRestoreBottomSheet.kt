@@ -145,6 +145,12 @@ fun BackupRestoreBottomSheet(
         }
     }
 
+    var googleClientId by remember { mutableStateOf<String?>(null) }
+    val googleClientIdLoader = remember(backupSyncViewModel) {
+        { backupSyncViewModel.googleClientId { googleClientId = it?.takeIf(String::isNotBlank) } }
+    }
+    LaunchedEffect(Unit) { googleClientIdLoader() }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
@@ -173,7 +179,9 @@ fun BackupRestoreBottomSheet(
         ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    val googleClient = remember { GoogleDriveInternalAuth(context).client() }
+    val googleClient = remember(googleClientId) {
+        GoogleDriveInternalAuth(context).client(googleClientId)
+    }
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -182,7 +190,7 @@ fun BackupRestoreBottomSheet(
             GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 .getResult(com.google.android.gms.common.api.ApiException::class.java)
         }.onSuccess { account ->
-            backupSyncViewModel.signInWithGoogle(account, null) { success ->
+            backupSyncViewModel.signInWithGoogle(account, account.serverAuthCode) { success ->
                 if (success) {
                     VibrationHelper.triggerSuccessVibration(context)
                     Toast.makeText(context, context.getString(R.string.backup_toast_linked_success, account.email ?: ""), Toast.LENGTH_SHORT).show()
@@ -351,7 +359,8 @@ fun BackupRestoreBottomSheet(
                 onConnect = {
                     archiveOpen = false
                     signInLauncher.launch(googleClient.signInIntent)
-                }
+                },
+                ensureBackupStorageAccess = ::ensureBackupStorageAccess
             )
         }
 
@@ -1046,7 +1055,8 @@ private fun CloudArchiveBottomSheet(
     onDismiss: () -> Unit,
     onRestoreSuccess: (AppSettings) -> Unit,
     showBackupSnackbar: (String) -> Unit,
-    onConnect: () -> Unit
+    onConnect: () -> Unit,
+    ensureBackupStorageAccess: (() -> Unit) -> Unit
 ) {
     val connected by vm.cloudConnected.collectAsStateWithLifecycle()
     val email by vm.cloudEmail.collectAsStateWithLifecycle()

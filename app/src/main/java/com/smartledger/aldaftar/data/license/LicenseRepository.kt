@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
@@ -218,7 +219,7 @@ class LicenseRepository(private val context: Context) {
             .put("devicePublicKey", device.publicKeyBase64())
 
         val response = runCatching {
-            post(resolveUrl("/license/auto-activate"), payload)
+            post("/license/auto-activate", payload)
         }.getOrNull() ?: return@withContext null
 
         if (response.optBoolean("licensed", false) && response.has("token")) {
@@ -271,7 +272,7 @@ class LicenseRepository(private val context: Context) {
             payload.put("email", email.trim().lowercase())
         }
 
-        val response = post(resolveUrl("/license/activate"), payload)
+        val response = post("/license/activate", payload)
         applySignedToken(response.getString("token"))
     }
 
@@ -298,7 +299,7 @@ class LicenseRepository(private val context: Context) {
         if (!email.isNullOrBlank()) {
             payload.put("email", email.trim().lowercase())
         }
-        val response = post(resolveUrl("/license/activate"), payload)
+        val response = post("/license/activate", payload)
         applySignedToken(response.getString("token"))
     }
 
@@ -307,7 +308,7 @@ class LicenseRepository(private val context: Context) {
             ?: throw IllegalArgumentException("لا يوجد حساب مسجل لإعادة الربط")
         require(Regex("SL-[A-Z0-9]{4}-[A-Z0-9]{4}").matches(clean)) { "كود الحساب غير صالح" }
         val challenge = "${System.currentTimeMillis()}:${UUID.randomUUID()}"
-        val response = post(resolveUrl("/license/verify"), JSONObject()
+        val response = post("/license/verify", JSONObject()
             .put("accountCode", clean)
             .put("deviceFingerprint", device.fingerprint())
             .put("challenge", challenge)
@@ -324,7 +325,7 @@ class LicenseRepository(private val context: Context) {
         val account = store.accountCode ?: return@withContext snapshot()
         val challenge = "${System.currentTimeMillis()}:${UUID.randomUUID()}"
         val response = runCatching {
-            post(resolveUrl("/license/verify"), JSONObject()
+            post("/license/verify", JSONObject()
                 .put("accountCode", account)
                 .put("deviceFingerprint", device.fingerprint())
                 .put("challenge", challenge)
@@ -362,54 +363,70 @@ class LicenseRepository(private val context: Context) {
         if (payload.length() == 0) return@withContext null
 
         runCatching {
-            post(resolveUrl("/license/check-status"), payload)
+            post("/license/check-status", payload)
         }.getOrNull()
     }
 
-    private fun resolveUrl(path: String): String {
-        val base = endpoint()
-        val cleanBase = base.removeSuffix("/").removeSuffix("/license")
+    private fun resolveUrls(path: String): List<String> {
+        val bases = endpoints()
         val cleanPath = "/" + path.trimStart('/')
-        return cleanBase + cleanPath
+        return bases.map { base ->
+            val cleanBase = base.removeSuffix("/").removeSuffix("/license")
+            cleanBase + cleanPath
+        }
     }
 
-    private fun endpoint(): String =
-        context.assets.open("license_endpoint.txt").bufferedReader().use { it.readText().trim().trimEnd('/') }
-            .also { require(it.isNotBlank() && !it.startsWith("__")) { "خدمة الترخيص غير مهيأة" } }
+    private fun endpoints(): List<String> = runCatching {
+        context.assets.open("license_endpoint.txt").bufferedReader().use { reader ->
+            reader.readLines().map { it.trim().trimEnd('/') }.filter { it.isNotBlank() && !it.startsWith("__") }
+        }
+    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: listOf("https://al-daftar-license-api.pages.dev", "https://al-daftar-license-api.mansour-ghawy.workers.dev")
 
-    private fun post(url: String, body: JSONObject): JSONObject {
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            doOutput = true
-            connectTimeout = 12_000
-            readTimeout = 15_000
-            setRequestProperty("Accept", "application/json")
-            setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            setRequestProperty("Cache-Control", "no-store")
-        }
-        try {
-            connection.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(body.toString()) }
-            val stream = if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream
-            val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
-            val json = runCatching { JSONObject(text) }.getOrElse { JSONObject() }
-            if (connection.responseCode !in 200..299) {
-                val errCode = json.optString("error")
-                val errMsg = json.optString("message")
-                throw IllegalStateException(when {
-                    errMsg.isNotBlank() -> errMsg
-                    errCode == "revoked" -> "الترخيص ملغى"
-                    errCode == "rate_limited" -> "تم تجاوز محاولات التحقق مؤقتاً"
-                    errCode == "activation_invalid" -> "رمز التفعيل غير صحيح"
-                    errCode == "trial_expired" -> "انتهت الفترة التجريبية لهذا الترخيص"
-                    errCode == "account_disabled" -> "تم إيقاف هذا الحساب من قبل الإدارة"
-                    errCode in listOf("installation_not_authorized", "proof_invalid", "challenge_expired") -> "جلسة الترخيص غير صالحة"
-                    else -> "تعذر التحقق من الترخيص"
-                })
+    private fun post(path: String, body: JSONObject): JSONObject {
+        val urls = resolveUrls(path)
+        var lastException: Exception? = null
+
+        for (url in urls) {
+            try {
+                val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    doOutput = true
+                    connectTimeout = 12_000
+                    readTimeout = 15_000
+                    setRequestProperty("Accept", "application/json")
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Cache-Control", "no-store")
+                }
+                return try {
+                    connection.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(body.toString()) }
+                    val stream = if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream
+                    val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                    val json = runCatching { JSONObject(text) }.getOrElse { JSONObject() }
+                    if (connection.responseCode !in 200..299) {
+                        val errCode = json.optString("error")
+                        val errMsg = json.optString("message")
+                        throw IllegalStateException(when {
+                            errMsg.isNotBlank() -> errMsg
+                            errCode == "revoked" -> "الترخيص ملغى"
+                            errCode == "rate_limited" -> "تم تجاوز محاولات التحقق مؤقتاً"
+                            errCode == "activation_invalid" -> "رمز التفعيل غير صحيح"
+                            errCode == "trial_expired" -> "انتهت الفترة التجريبية لهذا الترخيص"
+                            errCode == "account_disabled" -> "تم إيقاف هذا الحساب من قبل الإدارة"
+                            errCode in listOf("installation_not_authorized", "proof_invalid", "challenge_expired") -> "جلسة الترخيص غير صالحة"
+                            else -> "تعذر التحقق من الترخيص"
+                        })
+                    }
+                    json
+                } finally {
+                    connection.disconnect()
+                }
+            } catch (e: IllegalStateException) {
+                throw e
+            } catch (e: Exception) {
+                lastException = e
             }
-            return json
-        } finally {
-            connection.disconnect()
         }
+        throw (lastException ?: IOException("تعذر الاتصال بخادم الترخيص"))
     }
 
     private fun parse(body: JSONObject, now: Long): LicenseSnapshot {

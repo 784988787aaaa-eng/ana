@@ -171,8 +171,8 @@ fun CustomerHistoryTopBar(
                     ) {
                         Text(
                             text = if (customerPhone.isNotBlank()) "$customerName : $customerPhone" else customerName,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,

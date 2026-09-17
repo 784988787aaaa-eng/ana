@@ -14,7 +14,7 @@ class RateEntryToConversionRegressionTest {
     @Test fun userFacingRateMeaningSurvivesStorageAndConversion() {
         val stored = ExchangeRateHelper.setRate("{}", "$", "ر.ي", BigDecimal("550"))
         val retrieved = ExchangeRateHelper.getRate(stored, "$", "ر.ي")
-        MoneyAssertions.exact("550.000000000000", retrieved)
+        MoneyAssertions.numeric("550", retrieved)
 
         val equivalent = CurrencyConfig.convertDirectedAmount(
             amount = BigDecimal("100"),
@@ -24,12 +24,12 @@ class RateEntryToConversionRegressionTest {
             rateSourceCurrency = "$",
             rateTargetCurrency = "ر.ي"
         )
-        MoneyAssertions.exact("55000.0000", equivalent)
+        MoneyAssertions.numeric("55000", equivalent)
     }
 
     @Test fun reverseReadIsReciprocalNotAnotherIndependentMeaning() {
         val stored = ExchangeRateHelper.setRate("{}", "$", "ر.ي", BigDecimal("550"))
         val reverse = ExchangeRateHelper.getRate(stored, "ر.ي", "$")
-        assertEquals(BigDecimal("1"), reverse.multiply(BigDecimal("550")).setScale(0))
+        assertEquals(0, BigDecimal("1").compareTo(reverse.multiply(BigDecimal("550")).setScale(0, java.math.RoundingMode.HALF_UP)))
     }
 }

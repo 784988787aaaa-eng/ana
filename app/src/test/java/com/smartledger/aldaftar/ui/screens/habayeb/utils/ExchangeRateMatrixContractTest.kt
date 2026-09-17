@@ -4,7 +4,12 @@ import com.smartledger.aldaftar.testsupport.MoneyAssertions
 import java.math.BigDecimal
 import org.json.JSONObject
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class ExchangeRateMatrixContractTest {
     @Test fun enteredForeignToBaseRateIsStoredInTheEnteredDirection() {
         val json = ExchangeRateHelper.setRate("{}", "ر.س", "ر.ي", BigDecimal("140"))
@@ -48,8 +53,8 @@ class ExchangeRateMatrixContractTest {
             .put("ر.ي", JSONObject().put("ر.س", "0.007142857142857143"))
             .toString()
         val completed = ExchangeRateHelper.completeMatrix(json)
-        MoneyAssertions.exact("140.000000000000", ExchangeRateHelper.getRateBigDecimal(completed, "ر.ي", "ر.س"))
-        MoneyAssertions.exact("0.007142857143", ExchangeRateHelper.getRateBigDecimal(completed, "ر.س", "ر.ي"))
+        MoneyAssertions.exact("0.007142857143", ExchangeRateHelper.getRateBigDecimal(completed, "ر.ي", "ر.س"))
+        MoneyAssertions.exact("140.000000000000", ExchangeRateHelper.getRateBigDecimal(completed, "ر.س", "ر.ي"))
     }
     @Test fun clearingRateRemovesBothDirectionsAndLeavesPairMissing() {
         var json = ExchangeRateHelper.setRate("{}", "$", "ر.ي", BigDecimal("550"))

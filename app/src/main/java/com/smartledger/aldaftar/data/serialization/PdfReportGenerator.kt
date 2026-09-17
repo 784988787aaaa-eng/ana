@@ -109,7 +109,7 @@ object PdfReportGenerator {
 
             val paintTitle = Paint().apply {
                 color = Color.parseColor(PdfColors.TEXT_DARK)
-                textSize = 14.5f
+                textSize = 17.5f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }

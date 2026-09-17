@@ -38,7 +38,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.domain.model.TransactionType
@@ -131,16 +130,11 @@ fun AddTransactionPopup(
     val isLendOperationSelected = TransactionType.fromValue(customer.initialType) == TransactionType.OWED_BY_THEM || customer.initialType == TransactionType.OWED_BY_THEM.value
     var selectedType by rememberSaveable { mutableStateOf(editingTransaction?.type ?: initialSelectedType) }
 
+    // Focus requester for amount input when clicked by user
     val amountFocusRequester = remember { FocusRequester() }
     val descFocusRequester = remember { FocusRequester() }
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-
-    RequestFocusAndShowKeyboard(
-        focusRequester = amountFocusRequester,
-        key = editingTransaction?.id ?: "new-transaction",
-        autoShow = true
-    )
 
     val onSanitizedAmountChange: (TextFieldValue) -> Unit = { newTfv ->
         val raw = newTfv.text

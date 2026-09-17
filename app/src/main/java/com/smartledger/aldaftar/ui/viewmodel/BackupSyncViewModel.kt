@@ -319,7 +319,12 @@ class BackupSyncViewModel(
 
     fun recoveryCode(): String = engine.recoveryCode()
 
-
+    fun googleClientId(onComplete: (String?) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val id = runCatching { cloud.googleClientId() }.getOrNull()
+            withContext(Dispatchers.Main) { onComplete(id) }
+        }
+    }
 
     private fun <T> launchBusy(onComplete: (T?) -> Unit, block: suspend () -> T) {
         viewModelScope.launch(Dispatchers.IO) {

@@ -9,7 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ForeignOnlyCustomerClassificationTest {
-    private val customer = HabayebCustomer(id = "foreign-only", name = "عميل أجنبي", createdAt = 1L)
+    private val customer = HabayebCustomer(id = "foreign-only", name = "عميل أجنبي", phone = "", notes = "", createdAt = 1L)
 
     @Test
     fun unexchangedForeignBalance_isActive_notClosed_andUsesForeignCurrency() {

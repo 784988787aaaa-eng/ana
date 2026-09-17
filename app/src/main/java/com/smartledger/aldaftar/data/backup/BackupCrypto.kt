@@ -15,12 +15,18 @@ import javax.crypto.spec.PBEKeySpec
 class BackupCrypto(context: Context) {
     companion object { private const val TRANSFORMATION = "AES/GCM/NoPadding"; private const val TAG_BITS = 128; private const val SECRET_BYTES = 20; private const val PREFS = "smartledger_backup_key_v1" }
     private val secure = SecureRandom()
-    private val prefs = EncryptedSharedPreferences.create(
-        context.applicationContext, PREFS,
-        MasterKey.Builder(context.applicationContext).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val prefs by lazy {
+        runCatching {
+            EncryptedSharedPreferences.create(
+                context.applicationContext, PREFS,
+                MasterKey.Builder(context.applicationContext).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }.getOrElse {
+            context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        }
+    }
 
     fun localRecoveryCode(): String {
         val stored = prefs.getString("recovery", null)

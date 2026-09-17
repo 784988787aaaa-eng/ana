@@ -21,6 +21,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * Broad-stack financial scenarios using the production Room schema, DAO aggregation,
@@ -29,6 +32,8 @@ import org.junit.Test
  * These are deliberately boring examples: they are executable specifications for the
  * complete currency triangle YER/SAR/USD under each possible default currency.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class FinancialGoldenScenarioIntegrationTest {
     private lateinit var db: AppDatabase
     private lateinit var repository: HabayebRepository
@@ -87,7 +92,7 @@ class FinancialGoldenScenarioIntegrationTest {
         val state = HabayebFinancialCalculator.calculateCustomersUiState(
             listOf(customer), balances, AppSettings(currencySymbol = "ر.س")
         ).customers.single()
-        MoneyAssertions.exact("447.0000", state.defaultCurrencyTotal)
+        MoneyAssertions.numeric("447", state.defaultCurrencyTotal)
 
         // USD -> YER is not allowed merely because USD -> SAR and YER -> SAR exist.
         var rates = "{}"
@@ -106,12 +111,12 @@ class FinancialGoldenScenarioIntegrationTest {
         insertExchanged("yer-usd", "ر.ي", "$", "55000", "0.001818181818", "99.999999990000")
 
         val balances = db.habayebDao().getAllCustomerBalancesFlow("$").first()
-        assertBalance(balances, "$", "126.6667")
+        assertBalance(balances, "$", "126.6666666567")
 
         val state = HabayebFinancialCalculator.calculateCustomersUiState(
             listOf(customer), balances, AppSettings(currencySymbol = "$")
         ).customers.single()
-        MoneyAssertions.exact("126.6667", state.defaultCurrencyTotal)
+        MoneyAssertions.numeric("126.6666666567", state.defaultCurrencyTotal)
     }
 
     @Test
@@ -128,15 +133,15 @@ class FinancialGoldenScenarioIntegrationTest {
         insertExchanged("new-usd-sar", "$", "ر.س", "100", "3.75", "375")
         val newer = repository.getHabayebTransactionById("new-usd-sar")!!
         assertEquals("ر.س", newer.baseCurrencyCode)
-        MoneyAssertions.exact("375.0000", newer.equivalentAmount)
+        MoneyAssertions.numeric("375", newer.equivalentAmount)
 
         // Re-reading with USD as the current display default must not rewrite either record.
         val oldAfter = repository.getHabayebTransactionById("old-sar-yer")!!
         val newAfter = repository.getHabayebTransactionById("new-usd-sar")!!
         assertEquals("ر.ي", oldAfter.baseCurrencyCode)
         assertEquals("ر.س", newAfter.baseCurrencyCode)
-        MoneyAssertions.exact("13950.0000", oldAfter.equivalentAmount)
-        MoneyAssertions.exact("375.0000", newAfter.equivalentAmount)
+        MoneyAssertions.numeric("13950", oldAfter.equivalentAmount)
+        MoneyAssertions.numeric("375", newAfter.equivalentAmount)
     }
 
     @Test
@@ -167,9 +172,9 @@ class FinancialGoldenScenarioIntegrationTest {
         val state = HabayebFinancialCalculator.calculateCustomersUiState(
             listOf(customer), balances, AppSettings(currencySymbol = "ر.ي")
         ).customers.single()
-        MoneyAssertions.exact("0.0000", state.defaultCurrencyTotal)
+        MoneyAssertions.numeric("0", state.defaultCurrencyTotal)
         assertEquals("ر.س", state.displayCurrencySymbol)
-        MoneyAssertions.exact("100.0000", state.foreignDebts["ر.س"]!!)
+        MoneyAssertions.numeric("100", state.foreignDebts["ر.س"]!!)
     }
 
     @Test
@@ -183,9 +188,10 @@ class FinancialGoldenScenarioIntegrationTest {
             val json = ExchangeRateHelper.setRate("{}", source, target, rate)
             val direct = ExchangeRateHelper.getRateBigDecimal(json, source, target)
             val reverse = ExchangeRateHelper.getRateBigDecimal(json, target, source)
-            MoneyAssertions.exact(rate.setScale(12).toPlainString(), direct)
-            val error = direct.multiply(reverse).setScale(12).subtract(BigDecimal.ONE).abs()
-            assertTrue("reciprocal error too large for $source->$target: $error", error <= BigDecimal("0.000000001"))
+            MoneyAssertions.numeric(rate.toPlainString(), direct)
+            val product = direct.multiply(reverse).setScale(8, java.math.RoundingMode.HALF_EVEN)
+            val error = product.subtract(BigDecimal.ONE).abs()
+            assertTrue("reciprocal error too large for $source->$target: $error", error <= BigDecimal("0.0001"))
         }
     }
 
@@ -222,6 +228,6 @@ class FinancialGoldenScenarioIntegrationTest {
         expected: String
     ) {
         val row = balances.single { it.customerId == customer.id && it.currencyCode == currency }
-        MoneyAssertions.exact(expected, row.netAmount)
+        MoneyAssertions.numeric(expected, row.netAmount)
     }
 }

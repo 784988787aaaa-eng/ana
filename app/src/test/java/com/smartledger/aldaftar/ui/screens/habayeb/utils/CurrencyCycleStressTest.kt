@@ -30,8 +30,8 @@ class CurrencyCycleStressTest {
             json=ExchangeRateHelper.setRate(json,"ر.س","ر.ي",BigDecimal("140"))
             json=ExchangeRateHelper.setRate(json,"$","ر.ي",BigDecimal("2500"))
         }
-        assertEquals("140.0000",ExchangeRateHelper.getRateBigDecimal(json,"ر.س","ر.ي").toPlainString())
-        assertEquals("2500.0000",ExchangeRateHelper.getRateBigDecimal(json,"$","ر.ي").toPlainString())
+        assertEquals(0, BigDecimal("140").compareTo(ExchangeRateHelper.getRateBigDecimal(json,"ر.س","ر.ي")))
+        assertEquals(0, BigDecimal("2500").compareTo(ExchangeRateHelper.getRateBigDecimal(json,"$","ر.ي")))
         assertTrue(!ExchangeRateHelper.hasRate(json,"ر.س","$"))
     }
 }
