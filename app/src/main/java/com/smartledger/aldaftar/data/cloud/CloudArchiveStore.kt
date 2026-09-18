@@ -105,52 +105,16 @@ class CloudArchiveStore(context: Context) {
         backendDelete(cloudToken, ids)
     }
 
-    private fun backendBaseUrls(): List<String> {
-        val lines = runCatching {
-            appContext.assets.open("license_endpoint.txt").bufferedReader().use { reader ->
-                reader.readLines().map { it.trim().trimEnd('/') }.filter { it.isNotBlank() && !it.startsWith("__") }
-            }
-        }.getOrNull().orEmpty()
-        return lines.ifEmpty { listOf("https://al-daftar-license-api.pages.dev", "https://al-daftar-license-api.mansour-ghawy.workers.dev") }
-    }
+    private val backendService = com.smartledger.aldaftar.data.network.BackendService(appContext)
+
+    private fun backendBaseUrls(): List<String> = runCatching {
+        appContext.assets.open("license_endpoint.txt").bufferedReader().use { reader ->
+            reader.readLines().map { it.trim().trimEnd('/') }.filter { it.isNotBlank() && !it.startsWith("__") }
+        }
+    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: listOf("https://al-daftar-license-api.pages.dev", "https://al-daftar-license-api.mansour-ghawy.workers.dev")
 
     private fun backendPostJson(path: String, body: JSONObject): JSONObject {
-        val urls = backendBaseUrls()
-        var lastException: Exception? = null
-        for (baseUrl in urls) {
-            try {
-                val conn = (URL(baseUrl + "/" + path.trimStart('/')).openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    doOutput = true
-                    connectTimeout = 20_000
-                    readTimeout = 90_000
-                    setRequestProperty("Accept", "application/json")
-                    setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-                }
-                return try {
-                    conn.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(body.toString()) }
-                    val code = conn.responseCode
-                    val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-                    val text = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-                    val json = runCatching { JSONObject(text) }.getOrElse { JSONObject() }
-                    if (code !in 200..299) {
-                        throw CloudOperationException(code, json.optString("error", "cloud_error"),
-                            when (json.optString("error")) {
-                                "invalid_session" -> "انتهت جلسة Google Drive؛ يرجى إعادة ربط الحساب."
-                                "drive_forbidden" -> "ليس لدى Google Drive صلاحية كافية لهذا الحساب."
-                                "rate_limited" -> "تم تجاوز حد Google Drive مؤقتاً."
-                                else -> "تعذر تنفيذ عملية Google Drive."
-                            })
-                    }
-                    json
-                } finally { conn.disconnect() }
-            } catch (e: CloudOperationException) {
-                throw e
-            } catch (e: Exception) {
-                lastException = e
-            }
-        }
-        throw mapNetworkException(lastException ?: IOException("تعذر الاتصال بالخادم السحابي"))
+        return backendService.postJson(path, body)
     }
 
     private fun backendList(token: String, search: String): List<CloudBackupFile> {

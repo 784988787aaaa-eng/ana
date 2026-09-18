@@ -18,6 +18,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.math.BigDecimal
 import java.util.Date
 import kotlin.coroutines.coroutineContext
 
@@ -121,6 +122,7 @@ object MasterBookletPdfEngine {
                         dryCtx.displayedName, dryCtx.displayedDesc, dryCtx.phonesStr, dryCtx.hasLogo, dryCtx.logoH
                     )
                     dryCtx.currentY = headerBottomY
+                    drawCoverAndIndexDryRun(dryCtx, targetCustomers, summary)
 
                     val customerChunks = targetCustomers.chunked(50)
                     var processedCount = 0
@@ -161,11 +163,7 @@ object MasterBookletPdfEngine {
 
                 val canvas = realCtx.currentPageCanvas
                 if (canvas != null) {
-                    val headerBottomY = PdfPageRenderer.drawBusinessHeader(
-                        canvas, realCtx.displayedName, realCtx.displayedDesc, realCtx.phonesStr,
-                        realCtx.hasLogo, realCtx.scaledLogo, realCtx.logoW, realCtx.logoH, realCtx.docDateText, realCtx.docTimeText
-                    )
-                    realCtx.currentY = headerBottomY
+                    drawCoverAndIndexReal(realCtx, targetCustomers, summary)
                 }
 
                 val customerChunks = targetCustomers.chunked(50)
@@ -232,13 +230,21 @@ object MasterBookletPdfEngine {
         }
     }
 
-    private fun drawCoverAndIndexDryRun(ctx: BookletDrawingContext, customers: List<CustomerUiState>) {
+    private fun drawCoverAndIndexDryRun(
+        ctx: BookletDrawingContext,
+        customers: List<CustomerUiState>,
+        summary: com.smartledger.aldaftar.data.serialization.pdf.ComprehensivePdfSummary
+    ) {
         val headerBottomY = PdfPageRenderer.calculateHeaderBottomY(
             ctx.displayedName, ctx.displayedDesc, ctx.phonesStr, ctx.hasLogo, ctx.logoH
         )
         ctx.currentY = headerBottomY
         ctx.currentY += 22f
         ctx.currentY += 18f
+
+        val foreignCount = summary.foreignBalances.count { it.value.owedByThem.compareTo(BigDecimal.ZERO) != 0 || it.value.owedToThem.compareTo(BigDecimal.ZERO) != 0 }
+        val kpiCardHeight = PdfReportLayoutSpec.comprehensiveSummaryCardHeight(foreignCount)
+        ctx.currentY += kpiCardHeight + 12f
 
         ctx.currentY += 18f
         ctx.currentY += 24f
@@ -291,6 +297,17 @@ object MasterBookletPdfEngine {
         )
         ctx.currentY += 18f
 
+        val summaryEndY = PdfRowRenderer.drawComprehensiveSummaryCard(
+            canvas = canvas,
+            context = context,
+            primaryColorHex = ctx.primaryColorHex,
+            summary = summary,
+            totalItems = customers.size,
+            currencySymbol = ctx.currencySymbol,
+            startY = ctx.currentY
+        )
+        ctx.currentY = summaryEndY + 12f
+
         val paintIndexTitle = Paint().apply {
             color = Color.parseColor(ctx.primaryColorHex)
             textSize = 10.5f
@@ -335,6 +352,10 @@ object MasterBookletPdfEngine {
         customer: CustomerUiState,
         summary: com.smartledger.aldaftar.data.serialization.pdf.SingleCustomerPdfSummary
     ) {
+        if (ctx.currentY > 60f) {
+            ctx.startNewPage()
+            ctx.currentY = 42f
+        }
         ctx.currentY = PdfPageRenderer.drawCustomerStatementSheet(
             canvas = ctx.currentPageCanvas,
             context = ctx.context,

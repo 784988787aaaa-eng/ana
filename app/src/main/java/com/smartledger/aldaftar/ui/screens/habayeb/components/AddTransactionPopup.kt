@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -270,14 +269,6 @@ fun AddTransactionPopup(
     com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
-        // Both entry points (FAB and customer details) use this same popup.
-        // The amount field is the single initial IME owner.
-        RequestFocusAndShowKeyboard(
-            focusRequester = amountFocusRequester,
-            key = editingTransaction?.id ?: "new",
-            autoShow = true
-        )
-
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
                 shape = MizanDialogTokens.shape,
