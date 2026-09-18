@@ -76,6 +76,10 @@ fun MizanAnimatedDialog(
         },
         properties = properties
     ) {
+        // A Compose Dialog owns a separate Android Window. Configure it
+        // explicitly so IME resize is deterministic.
+        ConfigureDialogImeWindow()
+
         BackHandler(enabled = true) {
             dismissWithAnimation()
         }

@@ -99,12 +99,12 @@ object SingleCustomerExcelEngine {
                 cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16)
                 cell(3, "", 17)
             })
-            txRows.add(XlsxOpenXmlBuilder.Row(4, 10))
+            txRows.add(XlsxOpenXmlBuilder.Row(4, 6))
             txRows.add(XlsxOpenXmlBuilder.Row(5, 28).apply {
                 val phoneText = customer.phone.ifEmpty { context.getString(R.string.csv_not_registered) }
                 cell(0, context.getString(R.string.excel_account_card_format, customer.name, phoneText, accountTypeDesc), 7)
             })
-            txRows.add(XlsxOpenXmlBuilder.Row(6, 10))
+            txRows.add(XlsxOpenXmlBuilder.Row(6, 6))
             txRows.add(XlsxOpenXmlBuilder.Row(7, 30).apply { txHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
 
             val sortedTxs = summary.sortedProcessedTxs
@@ -167,7 +167,7 @@ object SingleCustomerExcelEngine {
                 cell(9, XlsxOpenXmlBuilder.Formula("H$txLastDataRow-I$txLastDataRow"), 14)
             })
             val txTotalsRow = txRow
-            txRows.add(XlsxOpenXmlBuilder.Row(txRow + 1, 12))
+            txRows.add(XlsxOpenXmlBuilder.Row(txRow + 1, 6))
             txRows.add(XlsxOpenXmlBuilder.Row(txRow + 2, 24).apply {
                 cell(0, context.getString(R.string.excel_footer_certified_icon, context.getString(R.string.pdf_footer_certified)), 17)
                 cell(7, context.getString(R.string.excel_footer_signature), 16)
@@ -179,7 +179,7 @@ object SingleCustomerExcelEngine {
             summaryRows.add(XlsxOpenXmlBuilder.Row(3, 28).apply { cell(0, "اسم الحساب: ${customer.name}", 7) })
             summaryRows.add(XlsxOpenXmlBuilder.Row(4, 24).apply { cell(0, "العملة الأساسية", 1); cell(1, currencySymbol, 6); cell(2, "إجمالي له", 1); cell(3, XlsxOpenXmlBuilder.Formula("'الحركات'!H$txTotalsRow"), 12); cell(4, "إجمالي عليه", 1); cell(5, XlsxOpenXmlBuilder.Formula("'الحركات'!I$txTotalsRow"), 13) })
             summaryRows.add(XlsxOpenXmlBuilder.Row(5, 30).apply { cell(0, "الرصيد النهائي", 7); cell(1, XlsxOpenXmlBuilder.Formula("'الحركات'!J$txTotalsRow"), 10) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(6, 14))
+            summaryRows.add(XlsxOpenXmlBuilder.Row(6, 6))
             summaryRows.add(XlsxOpenXmlBuilder.Row(7, 24).apply { cell(0, "طريقة الاستخدام", 7); cell(1, "عدّل المبالغ أو أسعار الصرف في ورقة الحركات؛ ستُعاد الحسابات تلقائيًا عند فتح الملف في Excel.", 0) })
             summaryRows.add(XlsxOpenXmlBuilder.Row(8, 24).apply { cell(0, "ملاحظة العملات", 7); cell(1, "العملات الأجنبية غير المحوّلة تبقى مستقلة ولا تدخل في رصيد العملة الأساسية.", 0) })
 

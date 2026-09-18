@@ -61,7 +61,7 @@ object AllCustomersExcelEngine {
             accountRows.add(XlsxOpenXmlBuilder.Row(1, 34).apply { cell(0, context.getString(R.string.excel_all_title), 15) })
             accountRows.add(XlsxOpenXmlBuilder.Row(2, 22).apply { cell(0, bizHeader.displayedName + " - " + bizHeader.displayedDesc, 16); cell(3, context.getString(R.string.excel_date_format, docDateText), 17) })
             accountRows.add(XlsxOpenXmlBuilder.Row(3, 22).apply { cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16) })
-            accountRows.add(XlsxOpenXmlBuilder.Row(4, 10))
+            accountRows.add(XlsxOpenXmlBuilder.Row(4, 6))
             accountRows.add(XlsxOpenXmlBuilder.Row(5, 30).apply {
                 cell(0, "ملخص الحسابات", 7)
                 cell(1, "إجمالي له", 1)
@@ -70,7 +70,7 @@ object AllCustomersExcelEngine {
                 cell(4, XlsxOpenXmlBuilder.Formula("SUMIF(E8:E${customers.size + 7},\"<0\",E8:E${customers.size + 7})*-1"), 13)
                 cell(5, "عدد الحسابات: ${customers.size}", 7)
             })
-            accountRows.add(XlsxOpenXmlBuilder.Row(6, 12))
+            accountRows.add(XlsxOpenXmlBuilder.Row(6, 6))
             accountRows.add(XlsxOpenXmlBuilder.Row(7, 30).apply { accountHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
 
             customers.forEachIndexed { index, c ->
@@ -100,7 +100,7 @@ object AllCustomersExcelEngine {
             val foreignRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
             foreignRows.add(XlsxOpenXmlBuilder.Row(1, 34).apply { cell(0, "الأرصدة بالعملات الأجنبية", 15) })
             foreignRows.add(XlsxOpenXmlBuilder.Row(2, 22).apply { cell(0, bizHeader.displayedName, 16) })
-            foreignRows.add(XlsxOpenXmlBuilder.Row(3, 10))
+            foreignRows.add(XlsxOpenXmlBuilder.Row(3, 6))
             foreignRows.add(XlsxOpenXmlBuilder.Row(4, 28).apply { foreignHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
             var foreignRow = 5
             customers.forEach { c ->
@@ -119,7 +119,7 @@ object AllCustomersExcelEngine {
             }
             if (foreignRow == 5) {
                 foreignRows.add(XlsxOpenXmlBuilder.Row(foreignRow, 24).apply { cell(0, "لا توجد أرصدة أجنبية مستقلة", 6) })
-                foreignRows.add(XlsxOpenXmlBuilder.Row(foreignRow + 1, 24))
+                foreignRows.add(XlsxOpenXmlBuilder.Row(foreignRow + 1, 6))
             }
             val foreignLastRow = (foreignRow - 1).coerceAtLeast(5)
             val foreignSummaryStart = foreignLastRow + 3
@@ -140,7 +140,7 @@ object AllCustomersExcelEngine {
             summaryRows.add(XlsxOpenXmlBuilder.Row(1, 36).apply { cell(0, "ملخص التقرير العام", 15) })
             summaryRows.add(XlsxOpenXmlBuilder.Row(2, 24).apply { cell(0, "العملة الأساسية", 1); cell(1, currencySymbol, 6); cell(2, "إجمالي له", 1); cell(3, XlsxOpenXmlBuilder.Formula("'الحسابات'!C5"), 12); cell(4, "إجمالي عليه", 1); cell(5, XlsxOpenXmlBuilder.Formula("'الحسابات'!E5"), 13) })
             summaryRows.add(XlsxOpenXmlBuilder.Row(3, 30).apply { cell(0, "صافي الرصيد", 7); cell(1, XlsxOpenXmlBuilder.Formula("'الحسابات'!E${accountLastRow + 1}"), 10); cell(2, "عدد الحسابات", 7); cell(3, customers.size, 6) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(4, 14))
+            summaryRows.add(XlsxOpenXmlBuilder.Row(4, 6))
             summaryRows.add(XlsxOpenXmlBuilder.Row(5, 24).apply { cell(0, "العملات الأجنبية", 7); cell(1, "راجع ورقة الأرصدة الأجنبية؛ لا تُجمع مع العملة الأساسية دون تحويل موثق.", 0) })
 
             XlsxOpenXmlBuilder.buildXlsxFile(

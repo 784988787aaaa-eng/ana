@@ -71,6 +71,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.ConfigureDialogImeWindow
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @Composable
@@ -337,6 +338,7 @@ fun ExchangeRateSetupDialog(
             decorFitsSystemWindows = true
         )
     ) {
+        ConfigureDialogImeWindow()
         Surface(
             modifier = Modifier
                 .width(280.dp)

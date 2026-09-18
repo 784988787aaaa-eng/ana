@@ -187,7 +187,12 @@ object PdfReportGenerator {
             val dryCardHeight = PdfReportLayoutSpec.comprehensiveSummaryCardHeight(
                 drySummary.foreignBalances.count { it.value.owedByThem.compareTo(BigDecimal.ZERO) != 0 || it.value.owedToThem.compareTo(BigDecimal.ZERO) != 0 }
             )
-            var dryY = headerBottomYCalc + 8f + dryCardHeight + 10f + 26f + 4f
+            val summaryStartY = headerBottomYCalc + 8f
+            var dryY = summaryStartY +
+                dryCardHeight +
+                10f +
+                PdfReportLayoutSpec.tableHeaderHeight() +
+                PdfReportLayoutSpec.tableFirstRowOffset()
             var dryPages = 1
             for (c in customers) {
                 val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
@@ -247,7 +252,7 @@ object PdfReportGenerator {
             val tableHeaderY = summaryEndY + 10f
             PdfPageRenderer.drawAllCustomersTableHeader(canvas, tableHeaderY, context)
 
-            var currentY = tableHeaderY + 30f
+            var currentY = tableHeaderY + PdfReportLayoutSpec.tableFirstRowOffset()
 
             for ((index, c) in customers.withIndex()) {
                 kotlin.coroutines.coroutineContext.ensureActive()
@@ -278,7 +283,7 @@ object PdfReportGenerator {
 
                     currentY = 46f
                     PdfPageRenderer.drawAllCustomersTableHeader(canvas, currentY, context)
-                    currentY += 30f
+                    currentY += PdfReportLayoutSpec.tableFirstRowOffset()
                 }
 
                 PdfRowRenderer.drawCustomerSummaryRow(canvas, context, index, c, currentY, rowHeight, currencySymbol)

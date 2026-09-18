@@ -73,7 +73,7 @@ class KeyboardInputSurfaceMatrixContractTest {
     }
 
     @Test
-    fun everyAutomaticKeyboardCallsiteIsExplicitlyOptedIn() {
+    fun everyAutomaticKeyboardCallsiteIsExplicitlyEnabled() {
         val root = mainRoot()
         val offenders = root.resolve("com/smartledger/aldaftar/ui").walkTopDown()
             .filter { it.isFile && it.extension == "kt" && it.name != "KeyboardFocus.kt" }
@@ -85,6 +85,17 @@ class KeyboardInputSurfaceMatrixContractTest {
             }.toList()
 
         assertTrue("Every automatic keyboard callsite must explicitly declare autoShow=true/false: $offenders", offenders.isEmpty())
+
+        val disabled = root.resolve("com/smartledger/aldaftar/ui").walkTopDown()
+            .filter { it.isFile && it.extension == "kt" && it.name != "KeyboardFocus.kt" }
+            .flatMap { file ->
+                val content = file.readText()
+                Regex("""RequestFocusAndShowKeyboard\s*\(([^)]*)\)""", RegexOption.DOT_MATCHES_ALL)
+                    .findAll(content)
+                    .filter { it.groupValues[1].contains("autoShow = false") }
+                    .map { "${file.name}:${it.value.replace("\n", " ")}" }
+            }.toList()
+        assertTrue("Intentional input surfaces must opt into automatic keyboard opening: $disabled", disabled.isEmpty())
     }
 
     @Test
@@ -128,4 +139,13 @@ class KeyboardInputSurfaceMatrixContractTest {
             .toList()
         assertTrue("Global ALWAYS_VISIBLE IME is forbidden: $offenders", offenders.isEmpty())
     }
+
+    @Test
+    fun transactionPopupOwnsInitialImeFocusExplicitly() {
+        val popup = source("ui/screens/habayeb/components/AddTransactionPopup.kt")
+        assertTrue(popup.contains("RequestFocusAndShowKeyboard("))
+        assertTrue(popup.contains("focusRequester = amountFocusRequester"))
+        assertTrue(popup.contains("autoShow = true"))
+    }
+
 }

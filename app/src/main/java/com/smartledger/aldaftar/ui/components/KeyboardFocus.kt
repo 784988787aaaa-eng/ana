@@ -7,6 +7,12 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
+import android.content.Context
+import android.view.View
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
@@ -22,6 +28,7 @@ import kotlinx.coroutines.delay
 suspend fun requestFocusAndShowKeyboard(
     focusRequester: FocusRequester,
     keyboardController: SoftwareKeyboardController?,
+    imeTargetView: View? = null,
     attempts: Int = 3,
     delayMs: Long = 16L
 ) {
@@ -32,6 +39,17 @@ suspend fun requestFocusAndShowKeyboard(
     repeat(attempts.coerceIn(1, 3)) { attempt ->
         runCatching { focusRequester.requestFocus() }
         runCatching { keyboardController?.show() }
+        // Compose's SoftwareKeyboardController is intentionally best-effort.
+        // Once focus is owned, ask Android's IME service as a bounded fallback
+        // using the same attached host view. This covers Dialog/input-connection
+        // timing differences without forcing a global ALWAYS_VISIBLE state.
+        runCatching {
+            val view = imeTargetView
+            if (view != null && view.isAttachedToWindow && view.isShown) {
+                val imm = view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
         if (attempt < attempts.coerceIn(1, 3) - 1) delay(delayMs.coerceIn(8L, 32L))
     }
 }
@@ -43,6 +61,22 @@ fun hideKeyboardAndClearFocus(
 ) {
     runCatching { focusManager.clearFocus(force = true) }
     runCatching { keyboardController?.hide() }
+}
+
+/**
+ * Configures the Android window that hosts a Compose Dialog for IME resize.
+ * The window is not told to show the IME; focus ownership remains explicit.
+ */
+@Composable
+fun ConfigureDialogImeWindow() {
+    val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+    DisposableEffect(dialogWindow) {
+        dialogWindow?.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
+        )
+        onDispose { }
+    }
 }
 
 /**
@@ -60,6 +94,7 @@ fun RequestFocusAndShowKeyboard(
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val hostView = LocalView.current
 
     LaunchedEffect(enabled, key, autoShow) {
         if (!enabled || !autoShow) {
@@ -68,7 +103,8 @@ fun RequestFocusAndShowKeyboard(
         }
         requestFocusAndShowKeyboard(
             focusRequester = focusRequester,
-            keyboardController = keyboardController
+            keyboardController = keyboardController,
+            imeTargetView = hostView
         )
     }
 

@@ -115,6 +115,7 @@ fun CurrencySettingsDialog(
         },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        ConfigureDialogImeWindow()
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)

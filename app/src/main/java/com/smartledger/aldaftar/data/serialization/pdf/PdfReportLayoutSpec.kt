@@ -9,11 +9,14 @@ object PdfReportLayoutSpec {
     private const val TABLE_HEADER_GAP = 10f
     private const val FOREIGN_CARD_HEADER = 28f
     private const val FOREIGN_CARD_ITEM = 68f
-    private const val FOREIGN_CARD_BOTTOM = 8f
+    private const val FOREIGN_CARD_BOTTOM = 4f
     private const val FOREIGN_COLUMNS = 2
     private const val COMPREHENSIVE_BASE_HEIGHT = 52f
-    private const val COMPREHENSIVE_FOREIGN_GAP = 12f
+    private const val COMPREHENSIVE_FOREIGN_TOP = 40f
+    private const val COMPREHENSIVE_FOREIGN_BOTTOM = 6f
     private const val COMPREHENSIVE_FOREIGN_ROW = 58f
+    private const val TABLE_HEADER_HEIGHT = 24f
+    private const val TABLE_FIRST_ROW_OFFSET = 30f
 
     fun contentStartY(headerBottomY: Float, titleHeight: Float, titleGap: Float = 6f): Float =
         headerBottomY + titleHeight + titleGap
@@ -29,10 +32,17 @@ object PdfReportLayoutSpec {
     fun comprehensiveSummaryCardHeight(foreignCurrencyCount: Int): Float {
         if (foreignCurrencyCount <= 0) return COMPREHENSIVE_BASE_HEIGHT
         val rows = ceil(foreignCurrencyCount / FOREIGN_COLUMNS.toDouble()).toInt()
-        return COMPREHENSIVE_BASE_HEIGHT + COMPREHENSIVE_FOREIGN_GAP + rows * COMPREHENSIVE_FOREIGN_ROW
+        val foreignContentHeight = COMPREHENSIVE_FOREIGN_TOP +
+            rows * COMPREHENSIVE_FOREIGN_ROW +
+            COMPREHENSIVE_FOREIGN_BOTTOM
+        return maxOf(COMPREHENSIVE_BASE_HEIGHT, foreignContentHeight)
     }
 
     fun comprehensiveForeignCardRowHeight(): Float = COMPREHENSIVE_FOREIGN_ROW
+
+    fun tableHeaderHeight(): Float = TABLE_HEADER_HEIGHT
+
+    fun tableFirstRowOffset(): Float = TABLE_FIRST_ROW_OFFSET
 
     fun customerTitleGap(): Float = CUSTOMER_TITLE_GAP
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
@@ -64,4 +65,38 @@ class KeyboardImeRuntimeContractTest {
         composeRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
         composeRule.runOnIdle { check(saved) { "IME Done must invoke the transaction save callback" } }
     }
+    @Test
+    fun transactionFormRequestsInitialFocusWithoutUserTap() {
+        composeRule.setContent {
+            var amount by remember { mutableStateOf(TextFieldValue("")) }
+            var description by remember { mutableStateOf(TextFieldValue("")) }
+            val amountFocus = remember { FocusRequester() }
+            val descriptionFocus = remember { FocusRequester() }
+
+            MaterialTheme {
+                AddTransactionFormFields(
+                    amountTfv = amount,
+                    onAmountChange = { amount = it },
+                    descTfv = description,
+                    onDescChange = { description = it },
+                    selectedTransactionCurrency = "YER",
+                    dateMillis = 0L,
+                    dynamicThemeColor = Color.Black,
+                    amountFocusRequester = amountFocus,
+                    descFocusRequester = descriptionFocus,
+                    onOpenCalculator = {},
+                    onOpenDatePicker = {},
+                    onDone = {}
+                )
+                RequestFocusAndShowKeyboard(
+                    focusRequester = amountFocus,
+                    autoShow = true
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("transaction_amount_input").assertIsFocused()
+    }
+
 }
