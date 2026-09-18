@@ -260,11 +260,11 @@ object PdfCustomerSummaryRenderer {
             Triple(context.getString(R.string.pdf_kpi_owed_to_us), "${HabayebMathHelper.formatSmart(summary.totalOwedByThem)} $currencySymbol", PdfColors.OWED_TEXT),
             Triple(context.getString(R.string.pdf_kpi_owed_by_us), "${HabayebMathHelper.formatSmart(summary.totalOwedToThem)} $currencySymbol", PdfColors.PAYMENT_TEXT)
         )
-        tiles.forEachIndexed { index, (_, value, color) ->
+        tiles.forEachIndexed { index, (_, value, valueColorHex) ->
             val left = 35f + index * (tileW + gap)
             val tilePaint = Paint().apply { color = Color.WHITE; style = Paint.Style.FILL }
             val tileBorder = Paint().apply { color = Color.parseColor(PdfColors.HEADER_BORDER); strokeWidth = 0.5f; style = Paint.Style.STROKE }
-            val valueP = Paint(valuePaint).apply { color = Color.parseColor(color) }
+            val valueP = Paint(valuePaint).apply { color = Color.parseColor(valueColorHex) }
             canvas.drawRoundRect(left, tileTop, left + tileW, tileTop + tileHeight, 5f, 5f, tilePaint)
             canvas.drawRoundRect(left, tileTop, left + tileW, tileTop + tileHeight, 5f, 5f, tileBorder)
             drawArabicText(canvas, tiles[index].first, left + 5f, tileTop + 7f, (tileW - 10f).roundToInt(), labelPaint, Layout.Alignment.ALIGN_CENTER)
