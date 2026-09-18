@@ -46,6 +46,7 @@ fun HabayebHeaderSearchBar(
     searchHint: String
 ) {
     val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Row(
         modifier = modifier
@@ -118,6 +119,5 @@ fun HabayebHeaderSearchBar(
         )
     }
 
-    val keyboardController = LocalSoftwareKeyboardController.current
     RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
 }

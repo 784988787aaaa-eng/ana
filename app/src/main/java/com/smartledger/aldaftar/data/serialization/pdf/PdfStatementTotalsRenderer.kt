@@ -12,6 +12,7 @@ import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
+import kotlin.math.roundToInt
 
 object PdfStatementTotalsRenderer {
 
@@ -227,12 +228,12 @@ object PdfStatementTotalsRenderer {
                 isAntiAlias = true
             }
 
-            drawArabicText(canvas, "$code — $symbol", left + 8f, top + 7f, cardWidth - 16f, codePaint, Layout.Alignment.ALIGN_NORMAL)
+            drawArabicText(canvas, "$code — $symbol", left + 8f, top + 7f, (cardWidth - 16f).roundToInt(), codePaint, Layout.Alignment.ALIGN_NORMAL)
             if (name.isNotBlank()) {
-                drawArabicText(canvas, name, left + 8f, top + 22f, cardWidth - 16f, namePaint, Layout.Alignment.ALIGN_NORMAL)
+                drawArabicText(canvas, name, left + 8f, top + 22f, (cardWidth - 16f).roundToInt(), namePaint, Layout.Alignment.ALIGN_NORMAL)
             }
-            drawArabicText(canvas, "${HabayebMathHelper.formatSmart(amount)} $symbol", left + 8f, top + 35f, cardWidth - 16f, amountPaint, Layout.Alignment.ALIGN_CENTER)
-            drawArabicText(canvas, "$statusText • ${context.getString(R.string.pdf_foreign_currency_tag)}", left + 8f, top + 54f, cardWidth - 16f, statusPaint, Layout.Alignment.ALIGN_CENTER)
+            drawArabicText(canvas, "${HabayebMathHelper.formatSmart(amount)} $symbol", left + 8f, top + 35f, (cardWidth - 16f).roundToInt(), amountPaint, Layout.Alignment.ALIGN_CENTER)
+            drawArabicText(canvas, "$statusText • ${context.getString(R.string.pdf_foreign_currency_tag)}", left + 8f, top + 54f, (cardWidth - 16f).roundToInt(), statusPaint, Layout.Alignment.ALIGN_CENTER)
         }
 
         return sectionTop + sectionHeight

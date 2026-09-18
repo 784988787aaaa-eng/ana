@@ -247,6 +247,8 @@ private fun CurrencySelectorColumns(
     onTargetCurrencyChange: (String) -> Unit,
     onRateInputChange: (String) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)

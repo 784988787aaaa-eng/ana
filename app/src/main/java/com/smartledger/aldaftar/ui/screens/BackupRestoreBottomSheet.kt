@@ -1415,6 +1415,7 @@ private fun ArchiveSubBar(
 @Composable
 private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClose: () -> Unit) {
     val searchFocusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
     Row(
         modifier = Modifier
             .fillMaxWidth()

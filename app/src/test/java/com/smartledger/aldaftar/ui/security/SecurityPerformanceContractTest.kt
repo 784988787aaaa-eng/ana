@@ -21,7 +21,7 @@ class SecurityPerformanceContractTest {
         assertFalse(file.contains("DampingRatioMediumBouncy"), "The lock header must not use a heavy bouncy spring on every digit")
         val buttons = File(root, "ui/screens/security/lock/LockKeypadViews.kt").readText()
         assertTrue(buttons.contains("collectIsPressedAsState"), "Keypad buttons need immediate pressed-state feedback")
-        assertTrue(buttons.contains("rememberRipple"), "Keypad buttons need a visible touch indication")
+        assertTrue(buttons.contains("ripple(bounded = true)"), "Keypad buttons need a visible touch indication")
     }
 
     @Test
