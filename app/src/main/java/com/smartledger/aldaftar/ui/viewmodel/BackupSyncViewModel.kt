@@ -203,13 +203,17 @@ class BackupSyncViewModel(
 
     fun createCloudBackup(onComplete: (CloudBackupFile?, File?) -> Unit = { _, _ -> }) {
         launchBusy({ pair -> onComplete(pair?.first, pair?.second) }) {
+            _busyMessage.value = "جاري إنشاء النسخة الاحتياطية ورفعها إلى Google Drive..."
             val file = engine.createManual()
             val publicUri = publicBackupStore.publish(file)
-            if (!_cloudConnected.value && !cloud.connected()) return@launchBusy null to file
+            if (!cloud.connected()) {
+                _error.value = "يرجى ربط حساب Google Drive أولاً"
+                return@launchBusy null to file
+            }
             val remote = cloud.upload(file, file.name)
             backupNotifications.show(
                 "تم رفع النسخة إلى Google Drive",
-                "تم حفظ الأرشيف: ${file.name} في Documents/الدفتر الذكي برو.",
+                "تم حفظ الأرشيف: ${file.name} في Google Drive / الدفتر الذكي برو.",
                 publicUri
             )
             refreshCloud()
@@ -265,19 +269,23 @@ class BackupSyncViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             _busy.value = true
-            _busyMessage.value = null
+            _busyMessage.value = "جاري البحث عن أحدث نسخة سحابية..."
             _error.value = null
             val currentList = _cloudBackups.value
             val list = if (currentList.isNotEmpty()) {
                 currentList
-            } else if (_cloudConnected.value || cloud.connected()) {
-                val fetched = runCatching { cloud.list("") }.getOrDefault(emptyList())
+            } else if (cloud.connected()) {
+                val fetched = runCatching { cloud.list("") }.getOrElse {
+                    _error.value = it.message
+                    emptyList()
+                }
                 _cloudBackups.value = fetched
                 fetched
             } else {
                 emptyList()
             }
             _busy.value = false
+            _busyMessage.value = null
 
             val latest = list.maxByOrNull { it.modifiedTime } ?: list.firstOrNull()
             withContext(Dispatchers.Main) {

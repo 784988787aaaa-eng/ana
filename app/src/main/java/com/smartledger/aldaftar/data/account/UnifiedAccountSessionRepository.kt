@@ -107,7 +107,7 @@ class UnifiedAccountSessionRepository(
         }
 
         if (!serverAuthCode.isNullOrBlank()) {
-            cloudArchiveStore.connectWithServerAuthCode(serverAuthCode)
+            runCatching { cloudArchiveStore.connectWithServerAuthCode(serverAuthCode) }
         }
 
         // 1. التحقق التلقائي والتفعيل السحابي الفوري بمجرد تسجيل الدخول بنفس الحساب المرخص
@@ -136,7 +136,7 @@ class UnifiedAccountSessionRepository(
             photoUrl = account.photoUrl?.toString(),
             provider = AccountProvider.GOOGLE,
             accountCode = updatedSnap.accountCode,
-            isCloudConnected = true,
+            isCloudConnected = cloudArchiveStore.connected(),
             licenseSnapshot = updatedSnap
         )
         _session.value = newSession
