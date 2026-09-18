@@ -347,34 +347,36 @@ object PdfPageRenderer {
         var currentCanvas = canvas
 
         if (includeCustomerHeaderBanner) {
-            if (workingY > 42f) {
-                if (workingY + 100f > 780f) {
-                    currentCanvas = onPageBreakNeeded?.invoke(false) ?: currentCanvas
-                    workingY = 42f
-                } else {
-                    workingY += 15f
-                }
+            val bannerText = if (customer.phone.isNotBlank()) {
+                "${customer.name} : ${customer.phone}"
+            } else {
+                customer.name
+            }
+            val paintBannerText = Paint().apply {
+                color = Color.parseColor(PdfColors.TEXT_DARK)
+                textSize = 14.0f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            val measuredBannerHeight = PdfDrawingUtils.measureTextHeight(bannerText, paintBannerText, 545)
+            val requiredHeight = 9f + measuredBannerHeight + PdfReportLayoutSpec.customerTitleGap() + 28f
+            if (workingY + requiredHeight > 780f) {
+                currentCanvas = onPageBreakNeeded?.invoke(false) ?: currentCanvas
+                workingY = 42f
             }
 
             if (!isDryRun && currentCanvas != null) {
                 // Clean customer heading: no colored block/accent strip.
-                // Keep only the account name and phone number, separated by a colon.
-                val paintBannerText = Paint().apply {
-                    color = Color.parseColor(PdfColors.TEXT_DARK)
-                    textSize = 14.0f
-                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    isAntiAlias = true
-                }
-                val bannerText = if (customer.phone.isNotBlank()) {
-                    "${customer.name} : ${customer.phone}"
-                } else {
-                    customer.name
-                }
-                drawArabicText(currentCanvas, bannerText, 25f, workingY + 9f, 545, paintBannerText, Layout.Alignment.ALIGN_CENTER)
+                // The table start is driven by the actual rendered banner height.
+                val bannerHeight = drawArabicText(
+                    currentCanvas, bannerText, 25f, workingY + 9f, 545, paintBannerText, Layout.Alignment.ALIGN_CENTER
+                )
+                workingY += PdfReportLayoutSpec.customerBannerAdvance(bannerHeight.toFloat())
+            } else {
+                // Dry-run reserves exactly the same adaptive height as the real banner.
+                workingY += PdfReportLayoutSpec.customerBannerAdvance(measuredBannerHeight.toFloat())
             }
-            workingY += 22f
         }
-
         if (!isDryRun && currentCanvas != null) {
             drawTableHeader(currentCanvas, workingY, context, customer.originalCustomer.initialType)
         }
@@ -455,7 +457,8 @@ object PdfPageRenderer {
                 workingY += calculatedHeight
             }
 
-            val extraSummaryHeight = 60f + (if (summary.uncalculatedForeignSums.isNotEmpty()) 24f + summary.uncalculatedForeignSums.size * 20f else 0f)
+            val foreignSummaryHeight = PdfReportLayoutSpec.foreignCurrencySectionHeight(summary.uncalculatedForeignSums.size)
+            val extraSummaryHeight = 66f + if (foreignSummaryHeight > 0f) 6f + foreignSummaryHeight else 0f
             if (workingY + extraSummaryHeight > 780f) {
                 currentCanvas = onPageBreakNeeded?.invoke(false) ?: currentCanvas
                 workingY = 42f
@@ -489,9 +492,9 @@ object PdfPageRenderer {
                     currencySymbol
                 )
             } else {
-                workingY += 25f + 4f + 30f + 8f
+                workingY += 66f
                 if (summary.uncalculatedForeignSums.isNotEmpty()) {
-                    workingY += 4f + 24f + (summary.uncalculatedForeignSums.size * 20f)
+                    workingY += 6f + PdfReportLayoutSpec.foreignCurrencySectionHeight(summary.uncalculatedForeignSums.size)
                 }
             }
         }

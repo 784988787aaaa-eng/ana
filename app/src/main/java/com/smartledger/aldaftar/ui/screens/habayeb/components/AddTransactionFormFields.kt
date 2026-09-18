@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -79,7 +80,8 @@ fun AddTransactionFormFields(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .focusRequester(amountFocusRequester),
+                .focusRequester(amountFocusRequester)
+                    .testTag("transaction_amount_input"),
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_amount_required),
@@ -183,7 +185,8 @@ fun AddTransactionFormFields(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .focusRequester(descFocusRequester),
+                .focusRequester(descFocusRequester)
+                    .testTag("transaction_description_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {
                 focusManager.clearFocus()

@@ -1,5 +1,8 @@
 package com.smartledger.aldaftar.ui.screens.license
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -667,7 +670,11 @@ private fun UnifiedAccountLoginSection(
                 enabled = !busy,
                 label = { Text("رمز التفعيل (من المطور)", fontSize = 11.sp) },
                 placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 11.sp) },
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(10.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    onActivate()
+                })
             )
 
             RequestFocusAndShowKeyboard(
@@ -717,7 +724,11 @@ private fun SignedTokenCompactSection(
             enabled = !busy,
             label = { Text("رمز الترخيص المحلي", fontSize = 11.sp) },
             placeholder = { Text("الصق رمز الترخيص الموقع هنا...", fontSize = 11.sp) },
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                onActivate()
+            })
         )
 
         RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy, autoShow = true)

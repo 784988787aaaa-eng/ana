@@ -27,11 +27,18 @@ data class SingleCustomerPdfSummary(
     val hasMultipleCurrencies: Boolean
 )
 
+data class ForeignCurrencyAggregate(
+    val owedByThem: BigDecimal = BigDecimal.ZERO,
+    val owedToThem: BigDecimal = BigDecimal.ZERO
+) {
+    val net: BigDecimal get() = owedByThem.subtract(owedToThem)
+}
+
 data class ComprehensivePdfSummary(
     val totalOwedByThem: BigDecimal,
     val totalOwedToThem: BigDecimal,
     val netPrimary: BigDecimal,
-    val foreignTotalsMap: Map<String, BigDecimal>
+    val foreignBalances: Map<String, ForeignCurrencyAggregate>
 )
 
 object PdfReportCalculator {
@@ -123,7 +130,7 @@ object PdfReportCalculator {
     ): ComprehensivePdfSummary {
         var totalOwedByThem = BigDecimal.ZERO
         var totalOwedToThem = BigDecimal.ZERO
-        val foreignTotalsMap = mutableMapOf<String, BigDecimal>()
+        val foreignBalances = mutableMapOf<String, ForeignCurrencyAggregate>()
 
         for (c in customers) {
             val bdVal = c.defaultCurrencyTotal
@@ -134,7 +141,12 @@ object PdfReportCalculator {
             }
             for ((curr, valBd) in c.foreignDebts) {
                 if (valBd.compareTo(BigDecimal.ZERO) != 0) {
-                    foreignTotalsMap[curr] = (foreignTotalsMap[curr] ?: BigDecimal.ZERO).add(valBd)
+                    val previous = foreignBalances[curr] ?: ForeignCurrencyAggregate()
+                    foreignBalances[curr] = if (valBd > BigDecimal.ZERO) {
+                        previous.copy(owedByThem = previous.owedByThem.add(valBd))
+                    } else {
+                        previous.copy(owedToThem = previous.owedToThem.add(valBd.abs()))
+                    }
                 }
             }
         }
@@ -145,7 +157,7 @@ object PdfReportCalculator {
             totalOwedByThem = totalOwedByThem,
             totalOwedToThem = totalOwedToThem,
             netPrimary = netPrimary,
-            foreignTotalsMap = foreignTotalsMap
+            foreignBalances = foreignBalances
         )
     }
 }

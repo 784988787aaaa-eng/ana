@@ -54,21 +54,24 @@ import com.smartledger.aldaftar.ui.screens.security.components.SecuritySetupForm
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private fun buildSecuritySettings(
+private suspend fun buildSecuritySettings(
     passcode: String,
     recoveryPhrase: String,
     recoveryHint: String,
     currentSettings: AppSettings
-): AppSettings {
-    val pHash = HashUtils.hashString(passcode)
-    val rHash = HashUtils.hashString(recoveryPhrase.trim())
-    return currentSettings.copy(
+): AppSettings = coroutineScope {
+    // PBKDF2 remains intentionally strong; the two independent derivations run off the UI thread.
+    val passcodeHash = async(Dispatchers.Default) { HashUtils.hashString(passcode) }
+    val recoveryHash = async(Dispatchers.Default) { HashUtils.hashString(recoveryPhrase.trim()) }
+    currentSettings.copy(
         isPasscodeEnabled = true,
-        passcodeHash = pHash,
-        recoveryPhraseHash = rHash,
+        passcodeHash = passcodeHash.await(),
+        recoveryPhraseHash = recoveryHash.await(),
         recoveryHint = recoveryHint.trim().takeIf { it.isNotBlank() }
     )
 }
@@ -174,9 +177,7 @@ fun SecurityScreen(
                             isSaving = true
                             coroutineScope.launch {
                                 try {
-                                    val updated = withContext(Dispatchers.Default) {
-                                        buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
-                                    }
+                                    val updated = buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                     viewModel.saveSettingsSync(updated)
                                     isSaving = false
                                     isEditingPasscode = false
@@ -283,9 +284,7 @@ fun SecurityDialog(
                             if (isValid) {
                                 isSaving = true
                                 coroutineScope.launch {
-                                    val updated = withContext(Dispatchers.Default) {
-                                        buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
-                                    }
+                                    val updated = buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
                                     viewModel.saveSettings(updated)
                                     isSaving = false
                                     isEditingPasscodeInDialog = false

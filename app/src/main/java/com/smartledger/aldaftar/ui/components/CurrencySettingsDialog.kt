@@ -1,5 +1,7 @@
 package com.smartledger.aldaftar.ui.components
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -375,7 +377,11 @@ private fun CurrencySelectorColumns(
                         onValueChange = onRateInputChange,
                         singleLine = true,
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        }),
                         textStyle = TextStyle(
                             textAlign = TextAlign.Center,
                             fontSize = 13.sp,

@@ -12,6 +12,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import com.smartledger.aldaftar.R
 
 @Composable
@@ -42,6 +45,8 @@ fun GeneralSettingsCard(
                 label = { Text(stringResource(R.string.settings_currency_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {}),
                 textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
             )
         }

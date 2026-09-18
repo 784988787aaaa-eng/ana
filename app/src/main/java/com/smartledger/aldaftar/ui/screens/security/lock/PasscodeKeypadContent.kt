@@ -1,8 +1,5 @@
 package com.smartledger.aldaftar.ui.screens.security.lock
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,8 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -46,8 +41,6 @@ import com.smartledger.aldaftar.ui.theme.NeutralTextPrimaryDark
 private val KEYPAD_ROW_1 = listOf("1", "2", "3")
 private val KEYPAD_ROW_2 = listOf("4", "5", "6")
 private val KEYPAD_ROW_3 = listOf("7", "8", "9")
-
-private const val LOCK_HEADER_SCALE_LABEL = "lockHeaderScale"
 
 private val LOCK_TEXT_COLOR = NeutralTextPrimaryDark
 private val LOCK_TEXT_SECONDARY_COLOR = NeutralTextPrimaryDark.copy(alpha = 0.62f)
@@ -71,12 +64,6 @@ fun PasscodeKeypadContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        val lockHeaderScale by animateFloatAsState(
-            targetValue = if (isCheckingPasscode) 1.15f else if (enteredPasscode.isNotEmpty()) 1.05f else 1.0f,
-            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy),
-            label = LOCK_HEADER_SCALE_LABEL
-        )
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(top = 40.dp)
@@ -84,7 +71,6 @@ fun PasscodeKeypadContent(
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .scale(lockHeaderScale)
                     .clip(CircleShape)
                     .background(BrandPrimary.copy(alpha = 0.25f)),
                 contentAlignment = Alignment.Center

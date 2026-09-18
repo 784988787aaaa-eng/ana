@@ -1,5 +1,9 @@
 package com.smartledger.aldaftar.ui.screens
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import android.app.Activity
 import android.Manifest
 import android.content.pm.PackageManager
@@ -1432,6 +1436,10 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
             value = search,
             onValueChange = onSearchChange,
             modifier = Modifier.weight(1f).focusRequester(searchFocusRequester),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = {
+                focusManager.clearFocus()
+            }),
             textStyle = TextStyle(
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Medium,

@@ -39,7 +39,7 @@ import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import com.smartledger.aldaftar.ui.components.requestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.util.Calendar
 import kotlinx.coroutines.launch
@@ -122,14 +122,12 @@ fun AddCustomerPopup(
     val focusManager = LocalFocusManager.current
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
 
-    LaunchedEffect(Unit) {
-        try {
-            requestFocusAndShowKeyboard(
-                focusRequester = focusRequester,
-                keyboardController = softwareKeyboardController
-            )
-        } catch (_: Exception) {}
-    }
+    // Primary competitive input: request focus and show the IME on the first
+    // attached frame, using the shared lifecycle-safe keyboard contract.
+    RequestFocusAndShowKeyboard(
+        focusRequester = focusRequester,
+        autoShow = true
+    )
 
     val onSanitizedInitialAmountChange: (String) -> Unit = { raw ->
         if (raw.isEmpty()) {

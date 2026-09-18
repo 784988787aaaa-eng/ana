@@ -1,5 +1,8 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -112,6 +115,10 @@ fun CustomerHistoryTopBar(
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(focusRequester),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        keyboardController?.hide()
+                    }),
                     decorationBox = { innerTextField ->
                         if (txSearchQuery.isEmpty()) {
                             Text(

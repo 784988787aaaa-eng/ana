@@ -118,8 +118,13 @@ class BackupEngine(
     private suspend fun rootToDatabase(root: JSONObject): AppSettings {
         val importedSettings = parseSettings(root.getJSONObject("settings"))
         val currentSettings = database.settingsDao().getSettingsDirect() ?: AppSettings(isFirstLaunch = false)
+        // Onboarding is an installation-local lifecycle marker, not user data.
+        // Never let a backup or app update reset it and show the welcome dialog
+        // again on an already-installed application.
         val settings = importedSettings.copy(
             id = 1,
+            isFirstLaunch = currentSettings.isFirstLaunch,
+            onboardingShown = currentSettings.onboardingShown,
             isPasscodeEnabled = currentSettings.isPasscodeEnabled,
             passcodeHash = currentSettings.passcodeHash,
             recoveryPhraseHash = currentSettings.recoveryPhraseHash,

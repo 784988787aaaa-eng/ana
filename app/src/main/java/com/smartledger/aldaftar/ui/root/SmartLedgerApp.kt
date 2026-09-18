@@ -122,8 +122,7 @@ fun SmartLedgerApp(
             if (firstLaunch && showOnboarding) {
                 WelcomeOnboardingDialog(
                     onDismiss = {
-                        financeViewModel.markOnboardingShown()
-                        financeViewModel.saveSettings(settings.copy(isFirstLaunch = false))
+                        financeViewModel.completeOnboarding()
                         showOnboarding = false
                     }
                 )

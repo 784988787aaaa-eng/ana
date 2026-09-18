@@ -10,6 +10,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.serialization.pdf.PdfDrawingUtils.drawArabicText
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
 
 object PdfStatementTotalsRenderer {
@@ -141,49 +142,100 @@ object PdfStatementTotalsRenderer {
     ): Float {
         if (uncalculatedForeignSums.isEmpty()) return currentY
 
-        var y = currentY + 4f
-        val itemHeight = 20f
-        val boxHeight = 24f + (uncalculatedForeignSums.size * itemHeight)
+        val entries = uncalculatedForeignSums.entries
+            .filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
+            .sortedBy { it.key }
+        if (entries.isEmpty()) return currentY
 
-        val paintBg = Paint().apply {
-            color = Color.parseColor(PdfColors.CARD_BG)
-            style = Paint.Style.FILL
-        }
-        val paintBorder = Paint().apply {
-            color = Color.parseColor(PdfColors.HEADER_BORDER)
-            strokeWidth = 1f
-            style = Paint.Style.STROKE
-        }
+        val sectionTop = currentY + 6f
+        val cardGap = 8f
+        val cardWidth = (545f - cardGap) / 2f
+        val cardHeight = PdfReportLayoutSpec.foreignCurrencyCardItemHeight()
+        val rows = kotlin.math.ceil(entries.size / 2.0).toInt()
+        val sectionHeight = PdfReportLayoutSpec.foreignCurrencySectionHeight(entries.size)
+
         val paintTitle = Paint().apply {
             color = Color.parseColor(PdfColors.PRIMARY_EMERALD)
             textSize = 9.5f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
-        val paintItem = Paint().apply {
-            color = Color.parseColor(PdfColors.TEXT_CHARCOAL)
-            textSize = 9f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
+        drawArabicText(
+            canvas,
+            context.getString(R.string.pdf_independent_totals_uncalculated),
+            25f, sectionTop + 6f, 545, paintTitle, Layout.Alignment.ALIGN_NORMAL
+        )
+
+        entries.forEachIndexed { index, entry ->
+            val column = index % 2
+            val row = index / 2
+            val left = if (column == 0) 25f else 25f + cardWidth + cardGap
+            val top = sectionTop + PdfReportLayoutSpec.foreignCurrencyCardItemHeight() * row + 28f
+            val right = left + cardWidth
+            val bottom = top + cardHeight
+
+            val cardPaint = Paint().apply {
+                color = Color.parseColor(PdfColors.FOREIGN_ROW_BG)
+                style = Paint.Style.FILL
+            }
+            val statusColor = if (entry.value > BigDecimal.ZERO) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT
+            val borderPaint = Paint().apply {
+                color = Color.parseColor(PdfColors.HEADER_BORDER)
+                strokeWidth = 0.7f
+                style = Paint.Style.STROKE
+            }
+            val accentPaint = Paint().apply {
+                color = Color.parseColor(statusColor)
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(left, top, right, bottom, 6f, 6f, cardPaint)
+            canvas.drawRoundRect(left, top, right, bottom, 6f, 6f, borderPaint)
+            canvas.drawRoundRect(left, top, left + 3.5f, bottom, 3f, 3f, accentPaint)
+
+            val currency = CurrencyConfig.getBySymbol(entry.key)
+            val code = currency?.code ?: entry.key
+            val symbol = currency?.symbol ?: entry.key
+            val name = currency?.arabicName.orEmpty()
+            val amount = entry.value.abs()
+            val statusText = if (entry.value > BigDecimal.ZERO) {
+                context.getString(R.string.pdf_status_owed_word)
+            } else {
+                context.getString(R.string.pdf_status_to_him_word)
+            }
+            val statusPaint = Paint().apply {
+                color = Color.parseColor(if (entry.value > BigDecimal.ZERO) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT)
+                textSize = 8f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            val codePaint = Paint().apply {
+                color = Color.parseColor(PdfColors.TEXT_DARK)
+                textSize = 9.5f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            val amountPaint = Paint().apply {
+                color = Color.parseColor(PdfColors.TEXT_CHARCOAL)
+                textSize = 12f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            val namePaint = Paint().apply {
+                color = Color.parseColor(PdfColors.TEXT_MEDIUM)
+                textSize = 7.5f
+                typeface = Typeface.DEFAULT
+                isAntiAlias = true
+            }
+
+            drawArabicText(canvas, "$code — $symbol", left + 8f, top + 7f, cardWidth - 16f, codePaint, Layout.Alignment.ALIGN_NORMAL)
+            if (name.isNotBlank()) {
+                drawArabicText(canvas, name, left + 8f, top + 22f, cardWidth - 16f, namePaint, Layout.Alignment.ALIGN_NORMAL)
+            }
+            drawArabicText(canvas, "${HabayebMathHelper.formatSmart(amount)} $symbol", left + 8f, top + 35f, cardWidth - 16f, amountPaint, Layout.Alignment.ALIGN_CENTER)
+            drawArabicText(canvas, "$statusText • ${context.getString(R.string.pdf_foreign_currency_tag)}", left + 8f, top + 54f, cardWidth - 16f, statusPaint, Layout.Alignment.ALIGN_CENTER)
         }
 
-        canvas.drawRoundRect(25f, y, 570f, y + boxHeight, 4f, 4f, paintBg)
-        canvas.drawRoundRect(25f, y, 570f, y + boxHeight, 4f, 4f, paintBorder)
-
-        drawArabicText(canvas, context.getString(R.string.pdf_independent_totals_uncalculated), 35f, y + 6f, 520, paintTitle, Layout.Alignment.ALIGN_NORMAL)
-
-        var itemY = y + 24f
-        for ((curr, amount) in uncalculatedForeignSums) {
-            val isPositive = amount.compareTo(BigDecimal.ZERO) > 0
-            val isNegative = amount.compareTo(BigDecimal.ZERO) < 0
-            val statusText = if (isPositive) context.getString(R.string.pdf_status_owed_word) else if (isNegative) context.getString(R.string.pdf_status_to_him_word) else context.getString(R.string.pdf_status_balanced_word)
-            val foreignTag = context.getString(R.string.pdf_foreign_currency_tag)
-            val lineStr = "• ${context.getString(R.string.pdf_total_currency_prefix, curr)}: ${HabayebMathHelper.formatSmart(amount.abs())} $curr ($statusText - $foreignTag)"
-            drawArabicText(canvas, lineStr, 40f, itemY, 510, paintItem, Layout.Alignment.ALIGN_NORMAL)
-            itemY += itemHeight
-        }
-
-        return y + boxHeight + 6f
+        return sectionTop + sectionHeight
     }
 }
 

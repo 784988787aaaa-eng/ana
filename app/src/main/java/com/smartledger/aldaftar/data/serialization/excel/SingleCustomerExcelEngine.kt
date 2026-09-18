@@ -53,223 +53,206 @@ object SingleCustomerExcelEngine {
             val col5HeaderText = if (isOwedToThemAccount) context.getString(R.string.pdf_col_paid) else context.getString(R.string.pdf_col_received)
             val accountTypeDesc = if (isOwedToThemAccount) context.getString(R.string.excel_type_supplier) else context.getString(R.string.excel_type_customer)
 
-            val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol)
+            val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol, exchangeRatesJson)
 
-            val columns = listOf(
-                XlsxOpenXmlBuilder.SheetColumn(1, 1, 6.0),   // م (Sequence)
-                XlsxOpenXmlBuilder.SheetColumn(2, 2, 16.0),  // التاريخ (Date)
-                XlsxOpenXmlBuilder.SheetColumn(3, 3, 44.0),  // البيان والتفاصيل (Desc)
-                XlsxOpenXmlBuilder.SheetColumn(4, 4, 16.0),  // مدين (Debit)
-                XlsxOpenXmlBuilder.SheetColumn(5, 5, 16.0),  // دائن (Credit)
-                XlsxOpenXmlBuilder.SheetColumn(6, 6, 18.0)   // الرصيد (Running balance)
+            val txSheetName = "الحركات"
+            val summarySheetName = "الملخص"
+            val txHeaders = listOf(
+                context.getString(R.string.excel_col_seq),
+                context.getString(R.string.pdf_col_date),
+                context.getString(R.string.pdf_col_description),
+                "العملة",
+                "المبلغ الأصلي",
+                "سعر الصرف",
+                "المعادل بالعملة الأساسية",
+                "له",
+                "عليه",
+                "الرصيد",
+                "حالة التحويل",
+                "عملة الأساس",
+                "الأثر"
+            )
+            val txColumns = listOf(
+                XlsxOpenXmlBuilder.SheetColumn(1, 1, 7.0),
+                XlsxOpenXmlBuilder.SheetColumn(2, 2, 16.0),
+                XlsxOpenXmlBuilder.SheetColumn(3, 3, 42.0),
+                XlsxOpenXmlBuilder.SheetColumn(4, 4, 13.0),
+                XlsxOpenXmlBuilder.SheetColumn(5, 5, 17.0),
+                XlsxOpenXmlBuilder.SheetColumn(6, 6, 16.0),
+                XlsxOpenXmlBuilder.SheetColumn(7, 7, 21.0),
+                XlsxOpenXmlBuilder.SheetColumn(8, 8, 17.0),
+                XlsxOpenXmlBuilder.SheetColumn(9, 9, 17.0),
+                XlsxOpenXmlBuilder.SheetColumn(10, 10, 17.0),
+                XlsxOpenXmlBuilder.SheetColumn(11, 11, 18.0),
+                XlsxOpenXmlBuilder.SheetColumn(12, 12, 16.0),
+                XlsxOpenXmlBuilder.SheetColumn(13, 13, 14.0)
+            )
+            val txRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
+            txRows.add(XlsxOpenXmlBuilder.Row(1, 32).apply {
+                cell(0, context.getString(R.string.excel_single_title), 15)
+            })
+            txRows.add(XlsxOpenXmlBuilder.Row(2, 22).apply {
+                cell(0, bizHeader.displayedName + " - " + bizHeader.displayedDesc, 16)
+                cell(3, context.getString(R.string.excel_date_format, docDateText), 17)
+            })
+            txRows.add(XlsxOpenXmlBuilder.Row(3, 22).apply {
+                cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16)
+                cell(3, "", 17)
+            })
+            txRows.add(XlsxOpenXmlBuilder.Row(4, 10))
+            txRows.add(XlsxOpenXmlBuilder.Row(5, 28).apply {
+                val phoneText = customer.phone.ifEmpty { context.getString(R.string.csv_not_registered) }
+                cell(0, context.getString(R.string.excel_account_card_format, customer.name, phoneText, accountTypeDesc), 7)
+            })
+            txRows.add(XlsxOpenXmlBuilder.Row(6, 10))
+            txRows.add(XlsxOpenXmlBuilder.Row(7, 30).apply { txHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
+
+            val sortedTxs = summary.sortedProcessedTxs
+            var txRow = 8
+            sortedTxs.forEachIndexed { index, pt ->
+                val tx = pt.tx
+                val txType = TransactionType.fromValue(tx.type)
+                val isCol4 = if (isOwedToThemAccount) {
+                    txType == TransactionType.OWED_TO_THEM || txType == TransactionType.PAYMENT_BY_THEM
+                } else {
+                    txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM
+                }
+                val originalCurrency = com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.getBySymbol(pt.resolvedCurrency)
+                val currencyCode = originalCurrency?.code ?: pt.resolvedCurrency
+                val sourceAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
+                val hasConversion = tx.isRateCalculated && tx.exchangeRate > BigDecimal.ZERO && tx.equivalentAmount > BigDecimal.ZERO
+                val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
+                val typeName = when (txType) {
+                    TransactionType.OWED_BY_THEM -> context.getString(R.string.pdf_tx_type_owed_by_them)
+                    TransactionType.PAYMENT_BY_THEM -> if (isOwedToThemAccount) context.getString(R.string.pdf_tx_type_payment_to_them) else context.getString(R.string.pdf_tx_type_payment_by_them)
+                    TransactionType.OWED_TO_THEM -> context.getString(R.string.pdf_tx_type_owed_to_them)
+                    TransactionType.PAYMENT_TO_THEM -> context.getString(R.string.pdf_tx_type_payment_to_them)
+                    else -> context.getString(R.string.pdf_tx_type_new)
+                }
+                val descText = buildString {
+                    append(typeName)
+                    if (cleanDetails.isNotBlank()) append(" - ").append(cleanDetails)
+                    if (hasConversion) append(" — ").append(HabayebMathHelper.formatSmart(sourceAmount)).append(" ").append(currencyCode).append(" × ").append(HabayebMathHelper.formatRate(tx.exchangeRate))
+                }
+                val date = Date(if (tx.timestamp > 1_000_000_000_000L) tx.timestamp else tx.timestamp * 1000)
+                val dateText = "${DAY_FORMATTER_AR.get().format(date)} ${DATE_FORMATTER_EN.get().format(date)}"
+                val baseAmount = pt.baseCurrencyAmount
+                val hasBase = baseAmount.compareTo(BigDecimal.ZERO) > 0
+                val row = XlsxOpenXmlBuilder.Row(txRow, 24)
+                row.cell(0, index + 1, 6)
+                row.cell(1, dateText, XlsxOpenXmlBuilder.STYLE_EDITABLE_TEXT)
+                row.cell(2, descText, XlsxOpenXmlBuilder.STYLE_EDITABLE_TEXT)
+                row.cell(3, currencyCode, 6)
+                row.cell(4, sourceAmount, XlsxOpenXmlBuilder.STYLE_EDITABLE_NUMBER)
+                row.cell(5, if (hasConversion) tx.exchangeRate else null, XlsxOpenXmlBuilder.STYLE_EDITABLE_RATE)
+                row.cell(6, if (hasConversion) XlsxOpenXmlBuilder.Formula("IF(AND(E$txRow<>\"\",F$txRow>0),E$txRow*F$txRow,\"\")") else null, 4)
+                row.cell(7, if (isCol4) XlsxOpenXmlBuilder.Formula("IF(D$txRow=L$txRow,E$txRow,IF(G$txRow>0,G$txRow,\"\"))") else null, 2)
+                row.cell(8, if (!isCol4) XlsxOpenXmlBuilder.Formula("IF(D$txRow=L$txRow,E$txRow,IF(G$txRow>0,G$txRow,\"\"))") else null, 3)
+                row.cell(9, XlsxOpenXmlBuilder.Formula("SUM(H$8:H$txRow)-SUM(I$8:I$txRow)"), 4)
+                row.cell(10, if (hasConversion) "محسوب بسعر صرف تاريخي" else if (pt.isTxForeign) "عملة أجنبية — غير محوّل" else "العملة الأساسية", 6)
+                row.cell(11, CurrencyConfig.getBySymbol(tx.baseCurrencyCode)?.code ?: tx.baseCurrencyCode.ifBlank { currencySymbol }, 6)
+                row.cell(12, if (isCol4) "له" else "عليه", 6)
+                txRows.add(row)
+                txRow++
+            }
+            if (sortedTxs.isEmpty()) {
+                txRows.add(XlsxOpenXmlBuilder.Row(txRow, 28).apply { cell(0, context.getString(R.string.pdf_no_transactions), 6) })
+                txRow++
+            }
+            val txLastDataRow = (txRow - 1).coerceAtLeast(8)
+            txRows.add(XlsxOpenXmlBuilder.Row(txRow, 28).apply {
+                cell(0, "الإجماليات", 11)
+                cell(7, XlsxOpenXmlBuilder.Formula("SUM(H8:H$txLastDataRow)"), 12)
+                cell(8, XlsxOpenXmlBuilder.Formula("SUM(I8:I$txLastDataRow)"), 13)
+                cell(9, XlsxOpenXmlBuilder.Formula("H$txLastDataRow-I$txLastDataRow"), 14)
+            })
+            val txTotalsRow = txRow
+            txRows.add(XlsxOpenXmlBuilder.Row(txRow + 1, 12))
+            txRows.add(XlsxOpenXmlBuilder.Row(txRow + 2, 24).apply {
+                cell(0, context.getString(R.string.excel_footer_certified_icon, context.getString(R.string.pdf_footer_certified)), 17)
+                cell(7, context.getString(R.string.excel_footer_signature), 16)
+            })
+
+            val summaryRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
+            summaryRows.add(XlsxOpenXmlBuilder.Row(1, 34).apply { cell(0, "ملخص تقرير الحساب", 15) })
+            summaryRows.add(XlsxOpenXmlBuilder.Row(2, 22).apply { cell(0, bizHeader.displayedName, 16); cell(4, context.getString(R.string.excel_date_format, docDateText), 17) })
+            summaryRows.add(XlsxOpenXmlBuilder.Row(3, 28).apply { cell(0, "اسم الحساب: ${customer.name}", 7) })
+            summaryRows.add(XlsxOpenXmlBuilder.Row(4, 24).apply { cell(0, "العملة الأساسية", 1); cell(1, currencySymbol, 6); cell(2, "إجمالي له", 1); cell(3, XlsxOpenXmlBuilder.Formula("'الحركات'!H$txTotalsRow"), 12); cell(4, "إجمالي عليه", 1); cell(5, XlsxOpenXmlBuilder.Formula("'الحركات'!I$txTotalsRow"), 13) })
+            summaryRows.add(XlsxOpenXmlBuilder.Row(5, 30).apply { cell(0, "الرصيد النهائي", 7); cell(1, XlsxOpenXmlBuilder.Formula("'الحركات'!J$txTotalsRow"), 10) })
+            summaryRows.add(XlsxOpenXmlBuilder.Row(6, 14))
+            summaryRows.add(XlsxOpenXmlBuilder.Row(7, 24).apply { cell(0, "طريقة الاستخدام", 7); cell(1, "عدّل المبالغ أو أسعار الصرف في ورقة الحركات؛ ستُعاد الحسابات تلقائيًا عند فتح الملف في Excel.", 0) })
+            summaryRows.add(XlsxOpenXmlBuilder.Row(8, 24).apply { cell(0, "ملاحظة العملات", 7); cell(1, "العملات الأجنبية غير المحوّلة تبقى مستقلة ولا تدخل في رصيد العملة الأساسية.", 0) })
+
+            val summaryColumns = listOf(
+                XlsxOpenXmlBuilder.SheetColumn(1, 1, 20.0), XlsxOpenXmlBuilder.SheetColumn(2, 2, 28.0),
+                XlsxOpenXmlBuilder.SheetColumn(3, 3, 18.0), XlsxOpenXmlBuilder.SheetColumn(4, 4, 20.0),
+                XlsxOpenXmlBuilder.SheetColumn(5, 5, 18.0), XlsxOpenXmlBuilder.SheetColumn(6, 6, 18.0)
             )
 
-            val rowsList = mutableListOf<XlsxOpenXmlBuilder.Row>()
-            val mergesList = mutableListOf<XlsxOpenXmlBuilder.MergeRange>()
-
-            val rTitle = XlsxOpenXmlBuilder.Row(1, ht = 32)
-            rTitle.cell(0, context.getString(R.string.excel_single_title), 15)
-            rowsList.add(rTitle)
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("A1:F1"))
-
-            val rBiz = XlsxOpenXmlBuilder.Row(2, ht = 22)
-            rBiz.cell(0, bizHeader.displayedName + " - " + bizHeader.displayedDesc, 16)
-            rBiz.cell(3, context.getString(R.string.excel_date_format, docDateText), 17)
-            rowsList.add(rBiz)
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("A2:C2"))
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("D2:F2"))
-
-            val rBizSub = XlsxOpenXmlBuilder.Row(3, ht = 22)
-            rBizSub.cell(0, context.getString(R.string.excel_phone_format, bizHeader.phonesStr), 16)
-            rBizSub.cell(3, "", 17)
-            rowsList.add(rBizSub)
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("A3:C3"))
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("D3:F3"))
-
-            rowsList.add(XlsxOpenXmlBuilder.Row(4, ht = 12))
-
-            val rCard = XlsxOpenXmlBuilder.Row(5, ht = 28)
-            val phoneText = customer.phone.ifEmpty { context.getString(R.string.csv_not_registered) }
-            val cardText = context.getString(R.string.excel_account_card_format, customer.name, phoneText, accountTypeDesc)
-            rCard.cell(0, cardText, 7)
-            rowsList.add(rCard)
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("A5:F5"))
-
-            rowsList.add(XlsxOpenXmlBuilder.Row(6, ht = 12))
-
-            val rTableHeader = XlsxOpenXmlBuilder.Row(7, ht = 28)
-            rTableHeader.cell(0, context.getString(R.string.excel_col_seq), 1)
-            rTableHeader.cell(1, context.getString(R.string.pdf_col_date), 1)
-            rTableHeader.cell(2, context.getString(R.string.pdf_col_description), 1)
-            rTableHeader.cell(3, col4HeaderText, 1)
-            rTableHeader.cell(4, col5HeaderText, 1)
-            rTableHeader.cell(5, context.getString(R.string.pdf_col_remaining) + " ($currencySymbol)", 1)
-            rowsList.add(rTableHeader)
-
-            var rIdx = 8
-            val sortedTxs = summary.sortedProcessedTxs
-            if (sortedTxs.isEmpty()) {
-                val rEmpty = XlsxOpenXmlBuilder.Row(rIdx, ht = 28)
-                rEmpty.cell(0, context.getString(R.string.pdf_no_transactions), 6)
-                rowsList.add(rEmpty)
-                mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:F$rIdx"))
-                rIdx++
-            } else {
-                var runningBal = BigDecimal.ZERO
-                sortedTxs.forEachIndexed { index, pt ->
-                    val tx = pt.tx
-                    val isTxForeign = pt.isTxForeign
-                    val hasBaseAmount = pt.baseCurrencyAmount.compareTo(BigDecimal.ZERO) > 0
-
-                    val txType = TransactionType.fromValue(tx.type)
-                    val isCol4 = if (isOwedToThemAccount) {
-                        txType == TransactionType.OWED_TO_THEM || txType == TransactionType.PAYMENT_BY_THEM
-                    } else {
-                        txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM
-                    }
-
-                    val col4Amount = if (hasBaseAmount && isCol4) pt.baseCurrencyAmount else BigDecimal.ZERO
-                    val col5Amount = if (hasBaseAmount && !isCol4) pt.baseCurrencyAmount else BigDecimal.ZERO
-
-                    if (hasBaseAmount) {
-                        if (isCol4) {
-                            runningBal = runningBal.add(pt.baseCurrencyAmount)
-                        } else {
-                            runningBal = runningBal.subtract(pt.baseCurrencyAmount)
-                        }
-                    }
-
-                    val txDate = Date(if (tx.timestamp > 1000000000000L) tx.timestamp else tx.timestamp * 1000)
-                    val rowDay = try { DAY_FORMATTER_AR.get().format(txDate) } catch (e: Exception) { "" }
-                    val rowDate = try { DATE_FORMATTER_EN.get().format(txDate) } catch (e: Exception) { "" }
-                    val fullDateStr = "$rowDay $rowDate"
-
-                    val typeName = when (txType) {
-                        TransactionType.OWED_BY_THEM -> context.getString(R.string.pdf_tx_type_owed_by_them)
-                        TransactionType.PAYMENT_BY_THEM -> if (isOwedToThemAccount) context.getString(R.string.pdf_tx_type_payment_to_them) else context.getString(R.string.pdf_tx_type_payment_by_them)
-                        TransactionType.OWED_TO_THEM -> context.getString(R.string.pdf_tx_type_owed_to_them)
-                        TransactionType.PAYMENT_TO_THEM -> context.getString(R.string.pdf_tx_type_payment_to_them)
-                        else -> context.getString(R.string.pdf_tx_type_new)
-                    }
-
-                    val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
-                    var descText = typeName
-                    if (cleanDetails.isNotBlank()) {
-                        descText += " - $cleanDetails"
-                    }
-
-                    if (tx.isRateCalculated) {
-                        val origCurrency = CurrencyConfig.getBySymbol(tx.currencyCode)?.symbol ?: tx.currencyCode
-                        val origAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
-                        val formattedAmount = HabayebMathHelper.formatSmart(origAmount)
-                        val formattedRate = HabayebMathHelper.formatRate(tx.exchangeRate)
-                        descText += context.getString(R.string.excel_tx_rate_note, formattedAmount, origCurrency, formattedRate)
-                    } else if (isTxForeign) {
-                        val origCurrency = CurrencyConfig.getBySymbol(tx.currencyCode)?.symbol ?: tx.currencyCode
-                        val origAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
-                        val formattedAmount = HabayebMathHelper.formatSmart(origAmount)
-                        descText += context.getString(R.string.excel_tx_foreign_note, formattedAmount, origCurrency)
-                    }
-
-                    val rRow = XlsxOpenXmlBuilder.Row(rIdx, ht = 24)
-                    rRow.cell(0, index + 1, 6)
-                    rRow.cell(1, fullDateStr, 6)
-                    rRow.cell(2, descText, 0)
-
-                    if (col4Amount.compareTo(BigDecimal.ZERO) > 0) {
-                        rRow.cell(3, col4Amount, 2)
-                    } else {
-                        rRow.cell(3, "-", 6)
-                    }
-
-                    if (col5Amount.compareTo(BigDecimal.ZERO) > 0) {
-                        rRow.cell(4, col5Amount, 3)
-                    } else {
-                        rRow.cell(4, "-", 6)
-                    }
-
-                    if (hasBaseAmount) {
-                        rRow.cell(5, runningBal, 4)
-                    } else {
-                        rRow.cell(5, "-", 6)
-                    }
-
-                    rowsList.add(rRow)
-                    rIdx++
-                }
-
-                val rTotals = XlsxOpenXmlBuilder.Row(rIdx, ht = 28)
-                rTotals.cell(0, context.getString(R.string.excel_totals_icon, context.getString(R.string.pdf_summary_independent_totals)), 11)
-                rTotals.cell(3, summary.totalDebts, 12)
-                rTotals.cell(4, summary.totalPayments, 13)
-                rTotals.cell(5, currencySymbol, 14)
-                rowsList.add(rTotals)
-                mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:C$rIdx"))
-                rIdx++
+            val currencyRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
+            val currencyHeaders = listOf("العملة", "الاسم", "إجمالي المبلغ الأصلي", "المعادل المحول", "ملاحظة")
+            currencyRows.add(XlsxOpenXmlBuilder.Row(1, 34).apply { cell(0, "ملخص العملات", 15) })
+            currencyRows.add(XlsxOpenXmlBuilder.Row(2, 28).apply { currencyHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
+            val supportedCurrencies = CurrencyConfig.currencies
+            supportedCurrencies.forEachIndexed { index, currency ->
+                val rowNo = index + 3
+                currencyRows.add(XlsxOpenXmlBuilder.Row(rowNo, 24).apply {
+                    cell(0, currency.code, 6)
+                    cell(1, currency.arabicName, 6)
+                    cell(2, XlsxOpenXmlBuilder.Formula("SUMIFS('الحركات'!E$8:E$1048576,'الحركات'!D$8:D$1048576,\"${currency.code}\",'الحركات'!M$8:M$1048576,\"له\")-SUMIFS('الحركات'!E$8:E$1048576,'الحركات'!D$8:D$1048576,\"${currency.code}\",'الحركات'!M$8:M$1048576,\"عليه\")"), 4)
+                    cell(3, XlsxOpenXmlBuilder.Formula("SUMIF('الحركات'!D$8:D$1048576,\"${currency.code}\",'الحركات'!G$8:G$1048576)"), 4)
+                    cell(4, if (currency.symbol == currencySymbol) "العملة الأساسية" else "رصيد مستقل؛ التحويل يظهر فقط عند وجود سعر صرف", 6)
+                })
             }
-
-            rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 12))
-            rIdx++
-
-            val rawPositive = summary.calculatedNetDebt.compareTo(BigDecimal.ZERO) > 0
-            val rawNegative = summary.calculatedNetDebt.compareTo(BigDecimal.ZERO) < 0
-            val isOwedToThemStatus = if (isOwedToThemAccount) rawPositive else rawNegative
-            val isOwedByThemStatus = if (isOwedToThemAccount) rawNegative else rawPositive
-
-            val (bannerStyle, statusTitle) = when {
-                isOwedByThemStatus -> 8 to context.getString(R.string.pdf_net_banner_owed_by)
-                isOwedToThemStatus -> 9 to context.getString(R.string.pdf_net_banner_owed_to)
-                else -> 10 to context.getString(R.string.pdf_net_banner_balanced)
-            }
-
-            val formattedNetBalance = "${HabayebMathHelper.formatSmart(summary.calculatedNetDebt.abs())} $currencySymbol"
-
-            val rBanner = XlsxOpenXmlBuilder.Row(rIdx, ht = 28)
-            rBanner.cell(0, context.getString(R.string.excel_net_banner_format, statusTitle, formattedNetBalance), bannerStyle)
-            rowsList.add(rBanner)
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:F$rIdx"))
-            rIdx++
-
-            if (summary.uncalculatedForeignSums.isNotEmpty()) {
-                rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 12))
-                rIdx++
-
-                val rForeignHeader = XlsxOpenXmlBuilder.Row(rIdx, ht = 24)
-                rForeignHeader.cell(0, context.getString(R.string.excel_foreign_icon, context.getString(R.string.pdf_independent_totals_uncalculated)), 19)
-                rowsList.add(rForeignHeader)
-                mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:F$rIdx"))
-                rIdx++
-
-                for ((curr, amount) in summary.uncalculatedForeignSums) {
-                    val isPositive = amount.compareTo(BigDecimal.ZERO) > 0
-                    val isNegative = amount.compareTo(BigDecimal.ZERO) < 0
-                    val statusText = if (isPositive) context.getString(R.string.pdf_status_owed_word) else if (isNegative) context.getString(R.string.pdf_status_to_him_word) else context.getString(R.string.pdf_status_balanced_word)
-                    val foreignTag = context.getString(R.string.pdf_foreign_currency_tag)
-                    val lineStr = context.getString(R.string.excel_foreign_line_format, context.getString(R.string.pdf_total_currency_prefix, curr), HabayebMathHelper.formatSmart(amount.abs()), curr, statusText, foreignTag)
-
-                    val rForeignLine = XlsxOpenXmlBuilder.Row(rIdx, ht = 22)
-                    rForeignLine.cell(0, lineStr, 7)
-                    rowsList.add(rForeignLine)
-                    mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:F$rIdx"))
-                    rIdx++
-                }
-            }
-
-            rowsList.add(XlsxOpenXmlBuilder.Row(rIdx, ht = 16))
-            rIdx++
-
-            val rFooter = XlsxOpenXmlBuilder.Row(rIdx, ht = 24)
-            rFooter.cell(0, context.getString(R.string.excel_footer_certified_icon, context.getString(R.string.pdf_footer_certified)), 17)
-            rFooter.cell(3, context.getString(R.string.excel_footer_signature), 16)
-            rowsList.add(rFooter)
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("A$rIdx:C$rIdx"))
-            mergesList.add(XlsxOpenXmlBuilder.MergeRange("D$rIdx:F$rIdx"))
 
             XlsxOpenXmlBuilder.buildXlsxFile(
-                sheetName = context.getString(R.string.excel_sheet_single),
-                columns = columns,
-                rows = rowsList,
-                merges = mergesList,
+                workbook = XlsxOpenXmlBuilder.WorkbookSpec(
+                    sheets = listOf(
+                        XlsxOpenXmlBuilder.SheetSpec(
+                            name = summarySheetName, columns = summaryColumns, rows = summaryRows,
+                            merges = listOf(
+                                XlsxOpenXmlBuilder.MergeRange("A1:F1"),
+                                XlsxOpenXmlBuilder.MergeRange("A2:D2"),
+                                XlsxOpenXmlBuilder.MergeRange("A3:F3"),
+                                XlsxOpenXmlBuilder.MergeRange("B7:F7"),
+                                XlsxOpenXmlBuilder.MergeRange("B8:F8")
+                            ), freezeRows = 3,
+                            protected = true
+                        ),
+                        XlsxOpenXmlBuilder.SheetSpec(
+                            name = txSheetName, columns = txColumns, rows = txRows,
+                            merges = listOf(
+                                XlsxOpenXmlBuilder.MergeRange("A1:M1"),
+                                XlsxOpenXmlBuilder.MergeRange("A2:C2"),
+                                XlsxOpenXmlBuilder.MergeRange("D2:M2"),
+                                XlsxOpenXmlBuilder.MergeRange("A3:C3"),
+                                XlsxOpenXmlBuilder.MergeRange("D3:M3"),
+                                XlsxOpenXmlBuilder.MergeRange("A5:M5"),
+                                XlsxOpenXmlBuilder.MergeRange("A$txTotalsRow:G$txTotalsRow"),
+                                XlsxOpenXmlBuilder.MergeRange("A${txRow + 2}:G${txRow + 2}"),
+                                XlsxOpenXmlBuilder.MergeRange("H${txRow + 2}:M${txRow + 2}")
+                            ),
+                            freezeRows = 7,
+                            autoFilterRef = "A7:M$txLastDataRow",
+                            table = if (sortedTxs.isNotEmpty()) XlsxOpenXmlBuilder.TableSpec("TransactionsTable", "TransactionsTable", "A7:M$txLastDataRow", txHeaders) else null,
+                            protected = true
+                        ),
+                        XlsxOpenXmlBuilder.SheetSpec(
+                            name = "العملات",
+                            columns = listOf(
+                                XlsxOpenXmlBuilder.SheetColumn(1, 1, 14.0),
+                                XlsxOpenXmlBuilder.SheetColumn(2, 2, 22.0),
+                                XlsxOpenXmlBuilder.SheetColumn(3, 3, 22.0),
+                                XlsxOpenXmlBuilder.SheetColumn(4, 4, 20.0),
+                                XlsxOpenXmlBuilder.SheetColumn(5, 5, 40.0)
+                            ),
+                            rows = currencyRows,
+                            merges = listOf(XlsxOpenXmlBuilder.MergeRange("A1:E1")),
+                            freezeRows = 2,
+                            protected = true
+                        )
+                    )
+                ),
                 file = file
             )
             return file

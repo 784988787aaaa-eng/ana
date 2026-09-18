@@ -100,8 +100,26 @@ class FinanceViewModel(
 
     fun hasShownOnboarding(): Boolean = settingsState.value.onboardingShown
 
+    /**
+     * Completes first-run onboarding in one atomic settings write. Keeping
+     * both flags in the same write prevents an async race from restoring
+     * onboardingShown=false after the dialog has already been dismissed.
+     */
+    fun completeOnboarding() {
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.saveSettings(
+                settingsState.value.copy(
+                    isFirstLaunch = false,
+                    onboardingShown = true
+                )
+            )
+        }
+    }
+
+    /** @deprecated Use completeOnboarding() so both first-run flags change together. */
+    @Deprecated("Use completeOnboarding()")
     fun markOnboardingShown() {
-        viewModelScope.launch { settingsRepository.saveSettings(settingsState.value.copy(onboardingShown = true)) }
+        completeOnboarding()
     }
 
     fun saveSettings(settings: AppSettings) {

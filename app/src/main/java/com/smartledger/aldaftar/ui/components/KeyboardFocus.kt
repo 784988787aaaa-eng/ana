@@ -22,14 +22,17 @@ import kotlinx.coroutines.delay
 suspend fun requestFocusAndShowKeyboard(
     focusRequester: FocusRequester,
     keyboardController: SoftwareKeyboardController?,
-    attempts: Int = 4,
-    delayMs: Long = 35L
+    attempts: Int = 3,
+    delayMs: Long = 16L
 ) {
+    // Wait for exactly one frame so the input owner is attached before asking
+    // the IME to appear. The first request is immediate; the tiny bounded
+    // retries are only a platform fallback and never block the UI thread.
     awaitFrame()
-    repeat(attempts) { attempt ->
+    repeat(attempts.coerceIn(1, 3)) { attempt ->
         runCatching { focusRequester.requestFocus() }
         runCatching { keyboardController?.show() }
-        if (attempt < attempts - 1) delay(delayMs)
+        if (attempt < attempts.coerceIn(1, 3) - 1) delay(delayMs.coerceIn(8L, 32L))
     }
 }
 

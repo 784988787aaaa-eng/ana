@@ -23,6 +23,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -61,6 +63,7 @@ fun SecurityActivePanel(
 ) {
     val context = LocalContext.current
     val mizanColors = MaterialTheme.mizanColors
+    val haptic = LocalHapticFeedback.current
     var pendingAction by remember { mutableStateOf<SecurityActiveAction?>(null) }
 
     Card(
@@ -168,7 +171,15 @@ fun SecurityActivePanel(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
 
             OutlinedButton(
-                onClick = { pendingAction = SecurityActiveAction.CHANGE_PIN },
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    pendingAction = SecurityActiveAction.CHANGE_PIN
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -193,8 +204,14 @@ fun SecurityActivePanel(
             }
 
             OutlinedButton(
-                onClick = { pendingAction = SecurityActiveAction.DEACTIVATE },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = deactivateContent),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    pendingAction = SecurityActiveAction.DEACTIVATE
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+                    contentColor = deactivateContent
+                ),
                 border = androidx.compose.foundation.BorderStroke(1.dp, deactivateBorder),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier

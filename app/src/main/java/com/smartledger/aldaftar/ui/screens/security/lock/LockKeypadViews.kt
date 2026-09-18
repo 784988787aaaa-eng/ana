@@ -13,12 +13,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,10 +40,12 @@ fun KeypadButton(
     val textSize = remember(isFunctional) { if (isFunctional) 13.sp else 24.sp }
     val fontWeight = remember(isFunctional) { if (isFunctional) FontWeight.Medium else FontWeight.ExtraBold }
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
 
     Box(
         modifier = Modifier
             .size(72.dp)
+            .scale(if (isPressed) 0.96f else 1f)
             .clip(CircleShape)
             .background(bg)
             .border(
@@ -50,8 +55,8 @@ fun KeypadButton(
             )
             .clickable(
                 onClick = onClick,
-                indication = null,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
+                indication = androidx.compose.material.ripple.rememberRipple(bounded = true)
             )
             .testTag("keypad_btn_$text"),
         contentAlignment = Alignment.Center
@@ -74,10 +79,12 @@ fun KeypadIconButton(
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
 
     Box(
         modifier = Modifier
             .size(72.dp)
+            .scale(if (isPressed) 0.96f else 1f)
             .clip(CircleShape)
             .background(mizanColors.securityIndicatorFilled.copy(alpha = 0.15f))
             .border(
@@ -87,8 +94,8 @@ fun KeypadIconButton(
             )
             .clickable(
                 onClick = onClick,
-                indication = null,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
+                indication = androidx.compose.material.ripple.rememberRipple(bounded = true)
             )
             .testTag("keypad_biometric_btn"),
         contentAlignment = Alignment.Center

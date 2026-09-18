@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,7 +77,8 @@ fun AddCustomerFormFields(
             isError = isDuplicateName && nameStr.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(focusRequester),
+                .focusRequester(focusRequester)
+                .testTag("customer_name_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { initialAmountFocusRequester.requestFocus() }),
             colors = fieldColors
@@ -104,7 +106,8 @@ fun AddCustomerFormFields(
             shape = fieldShape,
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(initialAmountFocusRequester),
+                .focusRequester(initialAmountFocusRequester)
+                .testTag("customer_initial_amount_input"),
             colors = fieldColors,
             leadingIcon = {
                 IconButton(onClick = onCalculatorClick, modifier = Modifier.size(36.dp)) {
@@ -137,7 +140,8 @@ fun AddCustomerFormFields(
             shape = fieldShape,
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(notesFocusRequester),
+                .focusRequester(notesFocusRequester)
+                .testTag("customer_notes_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { phoneFocusRequester.requestFocus() }),
             colors = fieldColors,
@@ -168,7 +172,8 @@ fun AddCustomerFormFields(
             keyboardActions = KeyboardActions(onDone = { onDone() }),
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(phoneFocusRequester),
+                .focusRequester(phoneFocusRequester)
+                .testTag("customer_phone_input"),
             colors = fieldColors,
             trailingIcon = {
                 IconButton(onClick = onContactPickerClick, modifier = Modifier.size(36.dp)) {

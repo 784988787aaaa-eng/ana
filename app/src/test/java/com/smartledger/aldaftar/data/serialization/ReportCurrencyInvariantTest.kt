@@ -41,3 +41,4 @@ class ReportCurrencyInvariantTest {
         assertEquals("3",s.uncalculatedForeignSums["$"]?.stripTrailingZeros()?.toPlainString())
     }
 }
+

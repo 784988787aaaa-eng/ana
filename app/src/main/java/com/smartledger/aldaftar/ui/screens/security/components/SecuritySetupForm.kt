@@ -21,6 +21,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +64,7 @@ fun SecuritySetupForm(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
+    val haptic = LocalHapticFeedback.current
 
     var passcodeVisible by remember { mutableStateOf(false) }
     var confirmPasscodeVisible by remember { mutableStateOf(false) }
@@ -332,10 +335,15 @@ fun SecuritySetupForm(
                     !isSaving
 
             Button(
-                onClick = onSave,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onSave()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = BrandPrimary,
-                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f),
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                 ),
                 enabled = isValid,
                 shape = RoundedCornerShape(14.dp),
@@ -354,7 +362,7 @@ fun SecuritySetupForm(
                 } else {
                     Text(
                         text = stringResource(id = R.string.sec_btn_activate),
-                        color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )

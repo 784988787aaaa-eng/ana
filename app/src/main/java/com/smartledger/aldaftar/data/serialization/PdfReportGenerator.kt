@@ -23,6 +23,7 @@ import com.smartledger.aldaftar.data.serialization.pdf.PdfDrawingUtils
 import com.smartledger.aldaftar.data.serialization.pdf.PdfIntentLauncher
 import com.smartledger.aldaftar.data.serialization.pdf.PdfPageRenderer
 import com.smartledger.aldaftar.data.serialization.pdf.PdfReportCalculator
+import com.smartledger.aldaftar.data.serialization.pdf.PdfReportLayoutSpec
 import com.smartledger.aldaftar.data.serialization.pdf.PdfRowRenderer
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import kotlinx.coroutines.CancellationException
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.math.BigDecimal
 import java.util.Date
 
 object PdfReportGenerator {
@@ -71,7 +73,7 @@ object PdfReportGenerator {
             context = context,
             customer = customerUiState,
             summary = summary,
-            startY = headerBottomYCalc + 20f,
+            startY = headerBottomYCalc + 8f,
             primaryColorHex = primaryColorHex,
             currencySymbol = currencySymbol,
             isDryRun = true,
@@ -120,7 +122,7 @@ object PdfReportGenerator {
                 context = context,
                 customer = customerUiState,
                 summary = summary,
-                startY = headerBottomY + 20f,
+                startY = headerBottomY + 8f,
                 primaryColorHex = primaryColorHex,
                 currencySymbol = currencySymbol,
                 isDryRun = false,
@@ -181,7 +183,11 @@ object PdfReportGenerator {
 
         var totalPages = 1
         run {
-            var dryY = headerBottomYCalc + 108f
+            val drySummary = PdfReportCalculator.calculateComprehensiveReport(customers)
+            val dryCardHeight = PdfReportLayoutSpec.comprehensiveSummaryCardHeight(
+                drySummary.foreignBalances.count { it.value.owedByThem.compareTo(BigDecimal.ZERO) != 0 || it.value.owedToThem.compareTo(BigDecimal.ZERO) != 0 }
+            )
+            var dryY = headerBottomYCalc + 8f + dryCardHeight + 10f + 26f + 4f
             var dryPages = 1
             for (c in customers) {
                 val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
@@ -229,19 +235,19 @@ object PdfReportGenerator {
             }
             PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_title), 25f, (headerBottomY - 4f).coerceAtLeast(65f), 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
-            PdfRowRenderer.drawComprehensiveSummaryCard(
+            val summaryEndY = PdfRowRenderer.drawComprehensiveSummaryCard(
                 canvas = canvas,
                 context = context,
                 primaryColorHex = primaryColorHex,
                 summary = summary,
                 totalItems = totalItems,
                 currencySymbol = currencySymbol,
-                startY = headerBottomY + 16f
+                startY = headerBottomY + 8f
             )
+            val tableHeaderY = summaryEndY + 10f
+            PdfPageRenderer.drawAllCustomersTableHeader(canvas, tableHeaderY, context)
 
-            PdfPageRenderer.drawAllCustomersTableHeader(canvas, headerBottomY + 78f, context)
-
-            var currentY = headerBottomY + 108f
+            var currentY = tableHeaderY + 30f
 
             for ((index, c) in customers.withIndex()) {
                 kotlin.coroutines.coroutineContext.ensureActive()
