@@ -44,11 +44,6 @@ object PdfTransactionRowRenderer {
                 val formattedAmount = HabayebMathHelper.formatSmart(origAmount)
                 val formattedRate = HabayebMathHelper.formatRate(tx.exchangeRate)
                 append("\n[ صرف: $formattedAmount $origCurrency × $formattedRate ]")
-            } else if (pt.isTxForeign) {
-                val origCurrency = CurrencyConfig.getBySymbol(tx.currencyCode)?.symbol ?: tx.currencyCode
-                val origAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
-                val formattedAmount = HabayebMathHelper.formatSmart(origAmount)
-                append("\n[ $formattedAmount $origCurrency - نقد أجنبي ]")
             }
         }
     }
@@ -160,8 +155,20 @@ object PdfTransactionRowRenderer {
             val balText = if (isBalanced) "-" else formattedRunning
             drawArabicText(canvas, balText, 25f, currentY + textYOffset, 75, paintRunning, Layout.Alignment.ALIGN_CENTER)
         } else {
-            drawArabicText(canvas, "-", 180f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
-            drawArabicText(canvas, "-", 100f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
+            val foreignAmountVal = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
+            val foreignSymbol = CurrencyConfig.getBySymbol(tx.currencyCode)?.symbol ?: tx.currencyCode
+            val formattedForeign = "${HabayebMathHelper.formatSmart(foreignAmountVal)} $foreignSymbol"
+            val paintForeignText = Paint(PdfPaints.paintCellBold).apply {
+                color = Color.parseColor(PdfColors.TEXT_DARK)
+                textSize = 8.5f
+            }
+            if (isCol4) {
+                drawArabicText(canvas, formattedForeign, 180f, currentY + textYOffset, 80, paintForeignText, Layout.Alignment.ALIGN_CENTER)
+                drawArabicText(canvas, "-", 100f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
+            } else {
+                drawArabicText(canvas, "-", 180f, currentY + textYOffset, 80, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
+                drawArabicText(canvas, formattedForeign, 100f, currentY + textYOffset, 80, paintForeignText, Layout.Alignment.ALIGN_CENTER)
+            }
             drawArabicText(canvas, "-", 25f, currentY + textYOffset, 75, PdfPaints.paintEmptyDash, Layout.Alignment.ALIGN_CENTER)
         }
     }

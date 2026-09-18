@@ -68,17 +68,8 @@ object PdfReportGenerator {
         )
 
         var dryPageCount = 1
-        val customerIntroStartY = headerBottomYCalc + 30f
-        val customerStatementStartY = PdfPageRenderer.drawCustomerReportIntro(
-            canvas = null,
-            context = context,
-            customer = customerUiState,
-            summary = summary,
-            currencySymbol = currencySymbol,
-            startY = customerIntroStartY,
-            primaryColorHex = primaryColorHex,
-            isDryRun = true
-        )
+        // Customer banner removed: table starts directly after statement title area.
+        val customerStatementStartY = headerBottomYCalc + 30f
         PdfPageRenderer.drawCustomerStatementSheet(
             canvas = null,
             context = context,
@@ -128,16 +119,8 @@ object PdfReportGenerator {
             }
             PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, headerBottomY + 2f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
 
-            val customerStatementStartY = PdfPageRenderer.drawCustomerReportIntro(
-                canvas = canvas,
-                context = context,
-                customer = customerUiState,
-                summary = summary,
-                currencySymbol = currencySymbol,
-                startY = headerBottomY + 30f,
-                primaryColorHex = primaryColorHex,
-                isDryRun = false
-            )
+            // Customer intro banner removed. Keep the financial table close to the title.
+            val customerStatementStartY = headerBottomY + 30f
 
             PdfPageRenderer.drawCustomerStatementSheet(
                 canvas = canvas,
