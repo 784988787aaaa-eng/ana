@@ -128,7 +128,18 @@ interface HabayebDao {
             MAX(timestamp) AS lastTimestamp,
             COUNT(*) AS txCount
         FROM habayeb_transactions
-        GROUP BY customerId, currencyCode
+        GROUP BY customerId,
+            CASE
+                WHEN is_rate_calculated = 1 THEN
+                    CASE
+                        WHEN base_currency_code IS NULL OR base_currency_code = '' OR base_currency_code = 'DEFAULT'
+                            THEN :defaultCurrencySymbol
+                        ELSE base_currency_code
+                    END
+                WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
+                    THEN :defaultCurrencySymbol
+                ELSE currency_code
+            END
     """)
     fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>>
 

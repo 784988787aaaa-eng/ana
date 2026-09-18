@@ -46,6 +46,9 @@ class KeyboardInputSurfaceMatrixContractTest {
     private fun fieldCount(source: String): Int =
         Regex("(?<![A-Za-z])(?:BasicTextField|OutlinedTextField|TextField)\\s*\\(").findAll(source).count()
 
+    private fun String.countOccurrences(sub: String): Int =
+        if (sub.isEmpty() || length < sub.length) 0 else windowed(sub.length).count { it == sub }
+
     @Test
     fun inputSurfaceInventoryIsExplicitAndComplete() {
         val root = mainRoot()
@@ -64,8 +67,8 @@ class KeyboardInputSurfaceMatrixContractTest {
             val source = source(relative)
             val fields = fieldCount(source)
             assertTrue("$relative must contain at least one input", fields > 0)
-            assertEquals("$relative: every input needs keyboardOptions", fields, source.count("keyboardOptions ="))
-            assertEquals("$relative: every input needs keyboardActions", fields, source.count("keyboardActions ="))
+            assertEquals("$relative: every input needs keyboardOptions", fields, source.countOccurrences("keyboardOptions ="))
+            assertEquals("$relative: every input needs keyboardActions", fields, source.countOccurrences("keyboardActions ="))
         }
     }
 
@@ -75,9 +78,10 @@ class KeyboardInputSurfaceMatrixContractTest {
         val offenders = root.resolve("com/smartledger/aldaftar/ui").walkTopDown()
             .filter { it.isFile && it.extension == "kt" && it.name != "KeyboardFocus.kt" }
             .flatMap { file ->
-                file.readLines().asSequence().filter { line ->
-                    line.contains("RequestFocusAndShowKeyboard(") && !line.contains("autoShow =")
-                }.map { "${file.name}:$it" }
+                val content = file.readText()
+                val matches = Regex("""RequestFocusAndShowKeyboard\s*\(([^)]*)\)""", RegexOption.DOT_MATCHES_ALL).findAll(content)
+                matches.filter { !it.groupValues[1].contains("autoShow =") }
+                    .map { "${file.name}:${it.value.replace("\n", " ")}" }
             }.toList()
 
         assertTrue("Every automatic keyboard callsite must explicitly declare autoShow=true/false: $offenders", offenders.isEmpty())
@@ -89,9 +93,9 @@ class KeyboardInputSurfaceMatrixContractTest {
         val host = source("ui/screens/habayeb/HabayebDialogHost.kt")
         val history = source("ui/screens/habayeb/components/CustomerHistoryDialogsManager.kt")
 
-        assertEquals("AddTransactionPopup owns exactly one shared transaction form", 1, popup.count("AddTransactionFormFields("))
-        assertEquals("main entry point must use the shared popup", 1, host.count("AddTransactionPopup("))
-        assertEquals("customer-details entry point must use the same popup", 1, history.count("AddTransactionPopup("))
+        assertEquals("AddTransactionPopup owns exactly one shared transaction form", 1, popup.countOccurrences("AddTransactionFormFields("))
+        assertEquals("main entry point must use the shared popup", 1, host.countOccurrences("AddTransactionPopup("))
+        assertEquals("customer-details entry point must use the same popup", 1, history.countOccurrences("AddTransactionPopup("))
     }
 
     @Test

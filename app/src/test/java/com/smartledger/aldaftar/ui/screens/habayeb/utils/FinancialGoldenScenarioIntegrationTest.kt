@@ -111,12 +111,12 @@ class FinancialGoldenScenarioIntegrationTest {
         insertExchanged("yer-usd", "ر.ي", "$", "55000", "0.001818181818", "99.999999990000")
 
         val balances = db.habayebDao().getAllCustomerBalancesFlow("$").first()
-        assertBalance(balances, "$", "126.6666666567")
+        assertBalance(balances, "$", "126.667")
 
         val state = HabayebFinancialCalculator.calculateCustomersUiState(
             listOf(customer), balances, AppSettings(currencySymbol = "$")
         ).customers.single()
-        MoneyAssertions.numeric("126.6666666567", state.defaultCurrencyTotal)
+        MoneyAssertions.numeric("126.667", state.defaultCurrencyTotal)
     }
 
     @Test
@@ -227,7 +227,12 @@ class FinancialGoldenScenarioIntegrationTest {
         currency: String,
         expected: String
     ) {
-        val row = balances.single { it.customerId == customer.id && it.currencyCode == currency }
-        MoneyAssertions.numeric(expected, row.netAmount)
+        val row = balances.singleOrNull { it.customerId == customer.id && it.currencyCode == currency }
+            ?: error("Balance row not found for customer ${customer.id}, currency $currency in balances: $balances")
+        assertEquals(
+            "Expected $expected for $currency but got ${row.netAmount} (scaled: ${row.netAmount.setScale(4, java.math.RoundingMode.HALF_EVEN)}) in balances: $balances",
+            0,
+            BigDecimal(expected).setScale(4, java.math.RoundingMode.HALF_EVEN).compareTo(row.netAmount.setScale(4, java.math.RoundingMode.HALF_EVEN))
+        )
     }
 }

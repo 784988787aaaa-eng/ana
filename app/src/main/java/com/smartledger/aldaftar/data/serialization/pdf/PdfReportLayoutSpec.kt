@@ -16,7 +16,7 @@ object PdfReportLayoutSpec {
     private const val COMPREHENSIVE_FOREIGN_ROW = 58f
 
     fun contentStartY(headerBottomY: Float, titleHeight: Float, titleGap: Float = 6f): Float =
-        headerBottomY + titleGap + titleHeight + CONTENT_GAP
+        headerBottomY + titleHeight + titleGap
 
     fun foreignCurrencySectionHeight(currencyCount: Int): Float {
         if (currencyCount <= 0) return 0f

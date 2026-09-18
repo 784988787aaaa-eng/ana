@@ -1,9 +1,9 @@
 package com.smartledger.aldaftar.ui.security
 
 import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class SecurityPerformanceContractTest {
     private val root = File("src/main/java/com/smartledger/aldaftar")
@@ -11,17 +11,17 @@ class SecurityPerformanceContractTest {
     @Test
     fun lockScreenDoesNotUseArtificialWaitBeforeInteraction() {
         val file = File(root, "ui/screens/AppLockScreen.kt").readText()
-        assertFalse(file.contains("delay(200)"), "The lock screen must not add a fixed 200ms wait before biometric prompt")
-        assertFalse(file.contains("Thread.sleep"), "Security UI must never block the UI thread")
+        assertFalse("The lock screen must not add a fixed 200ms wait before biometric prompt", file.contains("delay(200)"))
+        assertFalse("Security UI must never block the UI thread", file.contains("Thread.sleep"))
     }
 
     @Test
     fun lockKeypadUsesImmediateVisualFeedbackAndNoHeavySpringHeaderAnimation() {
         val file = File(root, "ui/screens/security/lock/PasscodeKeypadContent.kt").readText()
-        assertFalse(file.contains("DampingRatioMediumBouncy"), "The lock header must not use a heavy bouncy spring on every digit")
+        assertFalse("The lock header must not use a heavy bouncy spring on every digit", file.contains("DampingRatioMediumBouncy"))
         val buttons = File(root, "ui/screens/security/lock/LockKeypadViews.kt").readText()
-        assertTrue(buttons.contains("collectIsPressedAsState"), "Keypad buttons need immediate pressed-state feedback")
-        assertTrue(buttons.contains("ripple(bounded = true)"), "Keypad buttons need a visible touch indication")
+        assertTrue("Keypad buttons need immediate pressed-state feedback", buttons.contains("collectIsPressedAsState"))
+        assertTrue("Keypad buttons need a visible touch indication", buttons.contains("ripple(bounded = true)"))
     }
 
     @Test
@@ -36,7 +36,7 @@ class SecurityPerformanceContractTest {
     @Test
     fun securitySaveKeepsStrongHashingOffUiThreadAndDoesNotDoubleToggleEditMode() {
         val screen = File(root, "ui/screens/SecurityScreen.kt").readText()
-        assertTrue(screen.contains("async(Dispatchers.Default)"), "PIN/recovery hashing must remain off the UI thread")
+        assertTrue("PIN/recovery hashing must remain off the UI thread", screen.contains("async(Dispatchers.Default)"))
         assertFalse(screen.contains("isEditingPasscode = true\n                        isEditingPasscode = false"))
     }
 

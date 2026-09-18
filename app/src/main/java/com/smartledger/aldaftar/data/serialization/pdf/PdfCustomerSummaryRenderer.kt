@@ -263,7 +263,7 @@ object PdfCustomerSummaryRenderer {
                 val bottom = top + PdfReportLayoutSpec.comprehensiveForeignCardRowHeight() - 4f
                 val bg = Paint().apply { color = Color.parseColor(PdfColors.FOREIGN_ROW_BG); style = Paint.Style.FILL }
                 val border = Paint().apply { color = Color.parseColor(PdfColors.HEADER_BORDER); strokeWidth = 0.6f; style = Paint.Style.STROKE }
-                val accentColor = if (entry.value.net >= BigDecimal.ZERO) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT
+                val accentColor = if (entry.value.net.compareTo(BigDecimal.ZERO) >= 0) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT
                 val accent = Paint().apply { color = Color.parseColor(accentColor); style = Paint.Style.FILL }
                 canvas.drawRoundRect(left, top, right, bottom, 5f, 5f, bg)
                 canvas.drawRoundRect(left, top, right, bottom, 5f, 5f, border)
@@ -279,14 +279,14 @@ object PdfCustomerSummaryRenderer {
                     isAntiAlias = true
                 }
                 val statusPaint = Paint().apply {
-                    color = Color.parseColor(if (entry.value.net >= BigDecimal.ZERO) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT)
+                    color = Color.parseColor(if (entry.value.net.compareTo(BigDecimal.ZERO) >= 0) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT)
                     textSize = 7.5f
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
                 }
                 val status = when {
-                    entry.value.net > BigDecimal.ZERO -> context.getString(R.string.pdf_status_for_us)
-                    entry.value.net < BigDecimal.ZERO -> context.getString(R.string.pdf_status_on_us)
+                    entry.value.net.compareTo(BigDecimal.ZERO) > 0 -> context.getString(R.string.pdf_status_for_us)
+                    entry.value.net.compareTo(BigDecimal.ZERO) < 0 -> context.getString(R.string.pdf_status_on_us)
                     else -> context.getString(R.string.pdf_status_balanced_word)
                 }
                 val grossText = "له: ${HabayebMathHelper.formatSmart(entry.value.owedByThem)} $symbol   •   عليه: ${HabayebMathHelper.formatSmart(entry.value.owedToThem)} $symbol"

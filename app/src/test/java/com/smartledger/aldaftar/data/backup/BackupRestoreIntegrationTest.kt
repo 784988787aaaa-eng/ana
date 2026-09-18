@@ -34,7 +34,7 @@ class BackupRestoreIntegrationTest {
             db.recurringConfigDao().save(
                 RecurringConfigEntity("r","t","c","C",tx.amount,tx.type,tx.description,"DAILY",emptyList(),emptyList(),
                     10,0,1,4_000_000_000_000L,0,true,tx.isForeign,tx.currencyCode,tx.foreignAmount,
-                    tx.exchangeRate,tx.isRateCalculated,tx.equivalentAmount)
+                    tx.exchangeRate,tx.isRateCalculated,tx.equivalentAmount,tx.baseCurrencyCode)
             )
             val engine=BackupEngine(context,db)
             engine.create(file)

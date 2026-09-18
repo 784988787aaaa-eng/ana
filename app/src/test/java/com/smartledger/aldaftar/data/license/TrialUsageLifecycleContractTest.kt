@@ -5,7 +5,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class TrialUsageLifecycleContractTest {
     private fun bundleJson(txCount: Int): String = JSONObject().put("totalTransactions", txCount).toString()
     private fun count(baseActive: Int, trash: List<Pair<String, String>>): Int {

@@ -117,7 +117,7 @@ object PdfRowRenderer {
         totalItems: Int,
         currencySymbol: String,
         startY: Float = 98f
-    ) = PdfCustomerSummaryRenderer.drawComprehensiveSummaryCard(
+    ): Float = PdfCustomerSummaryRenderer.drawComprehensiveSummaryCard(
         canvas, context, primaryColorHex, summary, totalItems, currencySymbol, startY
     )
 }

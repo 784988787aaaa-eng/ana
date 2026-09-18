@@ -9,7 +9,9 @@ import java.io.File
  * contracts; actual frame/IME latency must still be measured on devices.
  */
 class KeyboardPerformanceContractTest {
-    private fun source(path: String): String = File("app/src/main/java/$path").readText()
+    private fun source(path: String): String =
+        listOf(File("src/main/java/$path"), File("app/src/main/java/$path"))
+            .firstOrNull(File::exists)?.readText() ?: error("File not found: $path")
 
     @Test
     fun keyboardFirstAttemptIsImmediateAfterSingleAttachmentFrame() {
@@ -24,7 +26,8 @@ class KeyboardPerformanceContractTest {
 
     @Test
     fun inputSurfacesMustNotUseBlockingSleepOrRunBlocking() {
-        val root = File("app/src/main/java/com/smartledger/aldaftar/ui")
+        val root = listOf(File("src/main/java/com/smartledger/aldaftar/ui"), File("app/src/main/java/com/smartledger/aldaftar/ui"))
+            .firstOrNull(File::exists) ?: error("UI dir not found")
         val offenders = root.walkTopDown().filter { it.isFile && it.extension == "kt" }.flatMap { file ->
             file.readLines().asSequence().withIndex().filter { (_, line) ->
                 line.contains("Thread.sleep(") || line.contains("runBlocking(")
@@ -44,7 +47,7 @@ class KeyboardPerformanceContractTest {
 
     @Test
     fun mainActivityKeepsSplashOnlyForRequiredSettingsLoad() {
-        val src = File("app/src/main/java/com/smartledger/aldaftar/MainActivity.kt").readText()
+        val src = source("com/smartledger/aldaftar/MainActivity.kt")
         assertTrue(src.contains("setKeepOnScreenCondition { !financeViewModel.isSettingsLoaded.value }"))
         assertTrue("No arbitrary startup delay is allowed", !src.contains("delay(") && !src.contains("Thread.sleep("))
     }
