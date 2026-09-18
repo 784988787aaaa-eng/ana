@@ -68,12 +68,23 @@ object PdfReportGenerator {
         )
 
         var dryPageCount = 1
+        val customerIntroStartY = headerBottomYCalc + 30f
+        val customerStatementStartY = PdfPageRenderer.drawCustomerReportIntro(
+            canvas = null,
+            context = context,
+            customer = customerUiState,
+            summary = summary,
+            currencySymbol = currencySymbol,
+            startY = customerIntroStartY,
+            primaryColorHex = primaryColorHex,
+            isDryRun = true
+        )
         PdfPageRenderer.drawCustomerStatementSheet(
             canvas = null,
             context = context,
             customer = customerUiState,
             summary = summary,
-            startY = headerBottomYCalc + 8f,
+            startY = customerStatementStartY,
             primaryColorHex = primaryColorHex,
             currencySymbol = currencySymbol,
             isDryRun = true,
@@ -115,14 +126,25 @@ object PdfReportGenerator {
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }
-            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, (headerBottomY - 4f).coerceAtLeast(65f), 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, headerBottomY + 2f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+
+            val customerStatementStartY = PdfPageRenderer.drawCustomerReportIntro(
+                canvas = canvas,
+                context = context,
+                customer = customerUiState,
+                summary = summary,
+                currencySymbol = currencySymbol,
+                startY = headerBottomY + 30f,
+                primaryColorHex = primaryColorHex,
+                isDryRun = false
+            )
 
             PdfPageRenderer.drawCustomerStatementSheet(
                 canvas = canvas,
                 context = context,
                 customer = customerUiState,
                 summary = summary,
-                startY = headerBottomY + 8f,
+                startY = customerStatementStartY,
                 primaryColorHex = primaryColorHex,
                 currencySymbol = currencySymbol,
                 isDryRun = false,

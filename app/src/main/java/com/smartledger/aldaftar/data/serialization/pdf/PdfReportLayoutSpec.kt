@@ -11,10 +11,12 @@ object PdfReportLayoutSpec {
     private const val FOREIGN_CARD_ITEM = 68f
     private const val FOREIGN_CARD_BOTTOM = 4f
     private const val FOREIGN_COLUMNS = 2
-    private const val COMPREHENSIVE_BASE_HEIGHT = 52f
-    private const val COMPREHENSIVE_FOREIGN_TOP = 40f
+    private const val COMPREHENSIVE_BASE_HEIGHT = 72f
+    private const val COMPREHENSIVE_FOREIGN_TOP = 72f
     private const val COMPREHENSIVE_FOREIGN_BOTTOM = 6f
     private const val COMPREHENSIVE_FOREIGN_ROW = 58f
+    private const val CUSTOMER_INTRO_HEIGHT = 66f
+    private const val CUSTOMER_INTRO_GAP = 8f
     private const val TABLE_HEADER_HEIGHT = 24f
     private const val TABLE_FIRST_ROW_OFFSET = 30f
 
@@ -49,4 +51,8 @@ object PdfReportLayoutSpec {
     fun tableHeaderGap(): Float = TABLE_HEADER_GAP
 
     fun customerBannerAdvance(actualTextHeight: Float): Float = actualTextHeight + CUSTOMER_TITLE_GAP
+
+    fun customerIntroHeight(): Float = CUSTOMER_INTRO_HEIGHT
+
+    fun customerIntroGap(): Float = CUSTOMER_INTRO_GAP
 }

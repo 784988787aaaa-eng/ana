@@ -338,6 +338,10 @@
     <string name="pdf_status_to_him_word">له</string>
     <string name="pdf_no_pending_balances_foreign">لا توجد مبالغ معلقة بعملات أجنبية أخرى.</string>
     <string name="pdf_other_currencies_balances">مبالغ العملات الأخرى: </string>
+    <string name="pdf_kpi_accounts">عدد الحسابات</string>
+    <string name="pdf_kpi_owed_to_us">إجمالي لنا</string>
+    <string name="pdf_kpi_owed_by_us">إجمالي علينا</string>
+    <string name="pdf_kpi_net_position">المركز الصافي: %1$s — %2$s</string>
     <string name="pdf_comprehensive_accounts_summary">إجمالي الحسابات: %1$d | المبلغ الإجمالي (%2$s): لنا %3$s | علينا %4$s | الصافي: %5$s (%6$s)</string>
     <string name="pdf_comprehensive_report_subpage">كشف الحسابات الشامل - تابع صفحة %1$d</string>
     <string name="pdf_col_account_name">اسم الحساب</string>
@@ -364,7 +368,12 @@
     <string name="pdf_phone_prefix">هاتف:</string>
     <string name="pdf_doc_date">حرر في: %1$s - %2$s</string>
     <string name="pdf_doc_time">الوقت: %1$s</string>
-    <string name="pdf_statement_title">كشف حساب: %1$s</string>
+    <string name="pdf_statement_title">كشف الحساب المالي — %1$s</string>
+    <string name="pdf_phone_not_registered">الهاتف غير مسجل</string>
+    <string name="pdf_intro_current_balance">الرصيد الحالي</string>
+    <string name="pdf_intro_transactions_count">عدد العمليات: %1$d</string>
+    <string name="pdf_intro_foreign_count">أرصدة عملات أخرى: %1$d</string>
+    <string name="pdf_intro_review_hint">ملخص للمراجعة</string>
     <string name="pdf_status_balanced">(الحساب متعادل)</string>
     <string name="pdf_card_owed_by_them">إجمالي المطلوب منه</string>
     <string name="pdf_card_owed_by_them_to_them_dynamic">إجمالي المستحق له</string>

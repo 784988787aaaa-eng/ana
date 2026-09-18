@@ -212,36 +212,71 @@ object PdfCustomerSummaryRenderer {
         val cardHeight = PdfReportLayoutSpec.comprehensiveSummaryCardHeight(nonZeroForeign.size)
         val endY = startY + cardHeight
 
-        canvas.drawRoundRect(25f, startY, 570f, endY, 6f, 6f, paintCardBg)
-        canvas.drawRoundRect(25f, startY, 570f, endY, 6f, 6f, paintCardBorder)
+        canvas.drawRoundRect(25f, startY, 570f, endY, 7f, 7f, paintCardBg)
+        canvas.drawRoundRect(25f, startY, 570f, endY, 7f, 7f, paintCardBorder)
 
         val netPrimary = summary.netPrimary
-        val netPrimaryFormatted = HabayebMathHelper.formatSmart(netPrimary.abs()) + " " + currencySymbol
-        val netPrimaryStatus = if (netPrimary.compareTo(BigDecimal.ZERO) > 0) {
-            context.getString(R.string.pdf_status_for_us)
-        } else if (netPrimary.compareTo(BigDecimal.ZERO) < 0) {
-            context.getString(R.string.pdf_status_on_us)
-        } else {
-            context.getString(R.string.pdf_status_balanced_word)
+        val netStatus = when {
+            netPrimary > BigDecimal.ZERO -> context.getString(R.string.pdf_status_for_us)
+            netPrimary < BigDecimal.ZERO -> context.getString(R.string.pdf_status_on_us)
+            else -> context.getString(R.string.pdf_status_balanced_word)
+        }
+        val netColor = when {
+            netPrimary > BigDecimal.ZERO -> PdfColors.OWED_TEXT
+            netPrimary < BigDecimal.ZERO -> PdfColors.PAYMENT_TEXT
+            else -> PdfColors.TEXT_DARK
         }
 
-        val primarySummary = context.getString(
-            R.string.pdf_comprehensive_accounts_summary,
-            totalItems,
-            currencySymbol,
-            HabayebMathHelper.formatSmart(summary.totalOwedByThem),
-            HabayebMathHelper.formatSmart(summary.totalOwedToThem),
-            netPrimaryFormatted,
-            netPrimaryStatus
-        )
-
-        val paintMainSummary = Paint().apply {
-            color = Color.parseColor(PdfColors.TEXT_CHARCOAL)
-            textSize = 9.5f
+        val labelPaint = Paint().apply {
+            color = Color.parseColor(PdfColors.TEXT_MUTED_GREY)
+            textSize = 7.2f
+            typeface = Typeface.DEFAULT
+            isAntiAlias = true
+        }
+        val valuePaint = Paint().apply {
+            color = Color.parseColor(PdfColors.TEXT_DARK)
+            textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
         }
-        drawArabicText(canvas, primarySummary, 30f, startY + 11f, 535, paintMainSummary, Layout.Alignment.ALIGN_CENTER)
+        val netPaint = Paint().apply {
+            color = Color.parseColor(netColor)
+            textSize = 10f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        val accentPaint = Paint().apply {
+            color = Color.parseColor(primaryColorHex)
+            style = Paint.Style.FILL
+        }
+
+        // Three compact KPIs replace the old crowded one-line summary.
+        val tileTop = startY + 7f
+        val tileHeight = 54f
+        val gap = 6f
+        val tileW = (525f - gap * 2f) / 3f
+        val tiles = listOf(
+            Triple(context.getString(R.string.pdf_kpi_accounts), totalItems.toString(), PdfColors.TEXT_DARK),
+            Triple(context.getString(R.string.pdf_kpi_owed_to_us), "${HabayebMathHelper.formatSmart(summary.totalOwedByThem)} $currencySymbol", PdfColors.OWED_TEXT),
+            Triple(context.getString(R.string.pdf_kpi_owed_by_us), "${HabayebMathHelper.formatSmart(summary.totalOwedToThem)} $currencySymbol", PdfColors.PAYMENT_TEXT)
+        )
+        tiles.forEachIndexed { index, (_, value, color) ->
+            val left = 35f + index * (tileW + gap)
+            val tilePaint = Paint().apply { color = Color.WHITE; style = Paint.Style.FILL }
+            val tileBorder = Paint().apply { color = Color.parseColor(PdfColors.HEADER_BORDER); strokeWidth = 0.5f; style = Paint.Style.STROKE }
+            val valueP = Paint(valuePaint).apply { color = Color.parseColor(color) }
+            canvas.drawRoundRect(left, tileTop, left + tileW, tileTop + tileHeight, 5f, 5f, tilePaint)
+            canvas.drawRoundRect(left, tileTop, left + tileW, tileTop + tileHeight, 5f, 5f, tileBorder)
+            drawArabicText(canvas, tiles[index].first, left + 5f, tileTop + 7f, (tileW - 10f).roundToInt(), labelPaint, Layout.Alignment.ALIGN_CENTER)
+            drawArabicText(canvas, value, left + 5f, tileTop + 25f, (tileW - 10f).roundToInt(), valueP, Layout.Alignment.ALIGN_CENTER)
+        }
+
+        val netLineY = tileTop + tileHeight + 5f
+        drawArabicText(
+            canvas,
+            context.getString(R.string.pdf_kpi_net_position, "${HabayebMathHelper.formatSmart(netPrimary.abs())} $currencySymbol", netStatus),
+            35f, netLineY, 525, netPaint, Layout.Alignment.ALIGN_CENTER
+        )
 
         if (nonZeroForeign.isNotEmpty()) {
             val titlePaint = Paint().apply {
@@ -250,20 +285,20 @@ object PdfCustomerSummaryRenderer {
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }
-            drawArabicText(canvas, context.getString(R.string.pdf_other_currencies_balances), 35f, startY + 30f, 525, titlePaint, Layout.Alignment.ALIGN_NORMAL)
+            drawArabicText(canvas, context.getString(R.string.pdf_other_currencies_balances), 35f, startY + 68f, 525, titlePaint, Layout.Alignment.ALIGN_NORMAL)
 
-            val gap = 6f
-            val cardW = (525f - gap) / 2f
+            val foreignGap = 6f
+            val cardW = (525f - foreignGap) / 2f
             nonZeroForeign.forEachIndexed { index, entry ->
                 val col = index % 2
                 val row = index / 2
-                val left = 35f + col * (cardW + gap)
-                val top = startY + 40f + row * PdfReportLayoutSpec.comprehensiveForeignCardRowHeight()
+                val left = 35f + col * (cardW + foreignGap)
+                val top = startY + 82f + row * PdfReportLayoutSpec.comprehensiveForeignCardRowHeight()
                 val right = left + cardW
                 val bottom = top + PdfReportLayoutSpec.comprehensiveForeignCardRowHeight() - 4f
                 val bg = Paint().apply { color = Color.parseColor(PdfColors.FOREIGN_ROW_BG); style = Paint.Style.FILL }
                 val border = Paint().apply { color = Color.parseColor(PdfColors.HEADER_BORDER); strokeWidth = 0.6f; style = Paint.Style.STROKE }
-                val accentColor = if (entry.value.net.compareTo(BigDecimal.ZERO) >= 0) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT
+                val accentColor = if (entry.value.net >= BigDecimal.ZERO) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT
                 val accent = Paint().apply { color = Color.parseColor(accentColor); style = Paint.Style.FILL }
                 canvas.drawRoundRect(left, top, right, bottom, 5f, 5f, bg)
                 canvas.drawRoundRect(left, top, right, bottom, 5f, 5f, border)
@@ -279,14 +314,14 @@ object PdfCustomerSummaryRenderer {
                     isAntiAlias = true
                 }
                 val statusPaint = Paint().apply {
-                    color = Color.parseColor(if (entry.value.net.compareTo(BigDecimal.ZERO) >= 0) PdfColors.OWED_TEXT else PdfColors.PAYMENT_TEXT)
-                    textSize = 7.5f
+                    color = Color.parseColor(accentColor)
+                    textSize = 7.4f
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
                 }
                 val status = when {
-                    entry.value.net.compareTo(BigDecimal.ZERO) > 0 -> context.getString(R.string.pdf_status_for_us)
-                    entry.value.net.compareTo(BigDecimal.ZERO) < 0 -> context.getString(R.string.pdf_status_on_us)
+                    entry.value.net > BigDecimal.ZERO -> context.getString(R.string.pdf_status_for_us)
+                    entry.value.net < BigDecimal.ZERO -> context.getString(R.string.pdf_status_on_us)
                     else -> context.getString(R.string.pdf_status_balanced_word)
                 }
                 val grossText = "له: ${HabayebMathHelper.formatSmart(entry.value.owedByThem)} $symbol   •   عليه: ${HabayebMathHelper.formatSmart(entry.value.owedToThem)} $symbol"

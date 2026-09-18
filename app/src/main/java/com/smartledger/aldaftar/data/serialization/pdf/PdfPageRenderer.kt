@@ -331,6 +331,88 @@ object PdfPageRenderer {
         currencySymbol: String
     ) = PdfRowRenderer.drawComprehensiveSummaryCard(canvas, context, primaryColorHex, summary, totalItems, currencySymbol)
 
+    fun drawCustomerReportIntro(
+        canvas: Canvas?,
+        context: Context,
+        customer: CustomerUiState,
+        summary: SingleCustomerPdfSummary,
+        currencySymbol: String,
+        startY: Float,
+        primaryColorHex: String,
+        isDryRun: Boolean = false
+    ): Float {
+        val introHeight = PdfReportLayoutSpec.customerIntroHeight()
+        if (isDryRun || canvas == null) return startY + introHeight + PdfReportLayoutSpec.customerIntroGap()
+
+        val cardPaint = Paint().apply {
+            color = Color.parseColor(PdfColors.CARD_BG)
+            style = Paint.Style.FILL
+        }
+        val borderPaint = Paint().apply {
+            color = Color.parseColor(PdfColors.HEADER_BORDER)
+            strokeWidth = 0.7f
+            style = Paint.Style.STROKE
+        }
+        canvas.drawRoundRect(25f, startY, 570f, startY + introHeight, 7f, 7f, cardPaint)
+        canvas.drawRoundRect(25f, startY, 570f, startY + introHeight, 7f, 7f, borderPaint)
+
+        val net = summary.calculatedNetDebt
+        val statusText = when {
+            net > BigDecimal.ZERO -> context.getString(R.string.pdf_status_for_us)
+            net < BigDecimal.ZERO -> context.getString(R.string.pdf_status_on_us)
+            else -> context.getString(R.string.pdf_status_balanced_word)
+        }
+        val statusColor = when {
+            net > BigDecimal.ZERO -> PdfColors.OWED_TEXT
+            net < BigDecimal.ZERO -> PdfColors.PAYMENT_TEXT
+            else -> PdfColors.TEXT_MEDIUM
+        }
+        val namePaint = Paint().apply {
+            color = Color.parseColor(PdfColors.TEXT_DARK)
+            textSize = 12f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        val labelPaint = Paint().apply {
+            color = Color.parseColor(PdfColors.TEXT_MUTED_GREY)
+            textSize = 7.5f
+            typeface = Typeface.DEFAULT
+            isAntiAlias = true
+        }
+        val valuePaint = Paint().apply {
+            color = Color.parseColor(PdfColors.TEXT_DARK)
+            textSize = 9.5f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        val statusPaint = Paint().apply {
+            color = Color.parseColor(statusColor)
+            textSize = 9f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        val accentPaint = Paint().apply {
+            color = Color.parseColor(primaryColorHex)
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(25f, startY, 29f, startY + introHeight, 3f, 3f, accentPaint)
+
+        drawArabicText(canvas, customer.name, 42f, startY + 8f, 225, namePaint, Layout.Alignment.ALIGN_NORMAL)
+        val contact = customer.phone.ifBlank { context.getString(R.string.pdf_phone_not_registered) }
+        drawArabicText(canvas, contact, 42f, startY + 28f, 225, labelPaint, Layout.Alignment.ALIGN_NORMAL)
+
+        drawArabicText(canvas, context.getString(R.string.pdf_intro_current_balance), 305f, startY + 8f, 105, labelPaint, Layout.Alignment.ALIGN_CENTER)
+        drawArabicText(canvas, "${HabayebMathHelper.formatSmart(net.abs())} $currencySymbol", 300f, startY + 24f, 115, valuePaint, Layout.Alignment.ALIGN_CENTER)
+        drawArabicText(canvas, statusText, 300f, startY + 43f, 115, statusPaint, Layout.Alignment.ALIGN_CENTER)
+
+        val foreignCount = summary.uncalculatedForeignSums.count { it.value.compareTo(BigDecimal.ZERO) != 0 }
+        drawArabicText(canvas, context.getString(R.string.pdf_intro_transactions_count, summary.sortedProcessedTxs.size), 425f, startY + 9f, 125, labelPaint, Layout.Alignment.ALIGN_CENTER)
+        drawArabicText(canvas, context.getString(R.string.pdf_intro_foreign_count, foreignCount), 425f, startY + 29f, 125, labelPaint, Layout.Alignment.ALIGN_CENTER)
+        drawArabicText(canvas, context.getString(R.string.pdf_intro_review_hint), 425f, startY + 48f, 125, labelPaint, Layout.Alignment.ALIGN_CENTER)
+
+        return startY + introHeight + PdfReportLayoutSpec.customerIntroGap()
+    }
+
     fun drawCustomerStatementSheet(
         canvas: Canvas?,
         context: Context,

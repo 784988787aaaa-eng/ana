@@ -38,7 +38,10 @@ data class ComprehensivePdfSummary(
     val totalOwedByThem: BigDecimal,
     val totalOwedToThem: BigDecimal,
     val netPrimary: BigDecimal,
-    val foreignBalances: Map<String, ForeignCurrencyAggregate>
+    val foreignBalances: Map<String, ForeignCurrencyAggregate>,
+    val owedAccounts: Int = 0,
+    val toAccounts: Int = 0,
+    val balancedAccounts: Int = 0
 )
 
 object PdfReportCalculator {
@@ -130,14 +133,21 @@ object PdfReportCalculator {
     ): ComprehensivePdfSummary {
         var totalOwedByThem = BigDecimal.ZERO
         var totalOwedToThem = BigDecimal.ZERO
+        var owedAccounts = 0
+        var toAccounts = 0
+        var balancedAccounts = 0
         val foreignBalances = mutableMapOf<String, ForeignCurrencyAggregate>()
 
         for (c in customers) {
             val bdVal = c.defaultCurrencyTotal
             if (bdVal.compareTo(BigDecimal.ZERO) > 0) {
                 totalOwedByThem = totalOwedByThem.add(bdVal)
+                owedAccounts++
             } else if (bdVal.compareTo(BigDecimal.ZERO) < 0) {
                 totalOwedToThem = totalOwedToThem.add(bdVal.abs())
+                toAccounts++
+            } else {
+                balancedAccounts++
             }
             for ((curr, valBd) in c.foreignDebts) {
                 if (valBd.compareTo(BigDecimal.ZERO) != 0) {
@@ -157,7 +167,10 @@ object PdfReportCalculator {
             totalOwedByThem = totalOwedByThem,
             totalOwedToThem = totalOwedToThem,
             netPrimary = netPrimary,
-            foreignBalances = foreignBalances
+            foreignBalances = foreignBalances,
+            owedAccounts = owedAccounts,
+            toAccounts = toAccounts,
+            balancedAccounts = balancedAccounts
         )
     }
 }

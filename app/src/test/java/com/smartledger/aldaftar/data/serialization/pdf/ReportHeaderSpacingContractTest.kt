@@ -9,9 +9,12 @@ class ReportHeaderSpacingContractTest {
     fun customerTitleGapIsSmallAndIndependentOfHeaderHeight() {
         assertEquals(6f, PdfReportLayoutSpec.customerTitleGap(), 0.001f)
         assertEquals(10f, PdfReportLayoutSpec.tableHeaderGap(), 0.001f)
+        assertEquals(66f, PdfReportLayoutSpec.customerIntroHeight(), 0.001f)
         assertTrue(PdfReportLayoutSpec.customerBannerAdvance(14f) < 25f)
         assertTrue(PdfReportLayoutSpec.customerBannerAdvance(28f) > PdfReportLayoutSpec.customerBannerAdvance(14f))
         assertTrue(PdfReportLayoutSpec.comprehensiveSummaryCardHeight(3) > PdfReportLayoutSpec.comprehensiveSummaryCardHeight(1))
+        assertTrue(PdfReportLayoutSpec.customerIntroHeight() >= 60f)
+        assertEquals(8f, PdfReportLayoutSpec.customerIntroGap(), 0.001f)
     }
 }
 
