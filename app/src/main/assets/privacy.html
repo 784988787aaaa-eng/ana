@@ -3,84 +3,462 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#4B36A2">
+
   <title>سياسة الخصوصية | الدفتر الذكي</title>
-  <meta name="description" content="سياسة الخصوصية لتطبيق الدفتر الذكي وكيفية التعامل مع بيانات المستخدم والأذونات والنسخ الاحتياطي.">
+
+  <meta name="description"
+        content="سياسة الخصوصية لتطبيق الدفتر الذكي، وكيفية التعامل مع بيانات المستخدم والنسخ الاحتياطي عبر Google Drive.">
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
-    :root{--primary:#4B36A2;--primary-dark:#352478;--accent:#00B2FE;--bg:#F7F8FC;--card:#fff;--text:#172033;--muted:#64748b;--border:#E6E8F0;--success:#16a34a;--shadow:0 20px 60px rgba(23,32,51,.08)}
-    *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);line-height:1.9}
-    .hero{position:relative;overflow:hidden;background:radial-gradient(circle at 10% 20%,rgba(255,255,255,.16),transparent 25%),radial-gradient(circle at 90% 80%,rgba(0,178,254,.15),transparent 25%),linear-gradient(135deg,#4B36A2,#352478 58%,#006A98);color:#fff;padding:70px 20px 125px;text-align:center}
-    .hero:before,.hero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.07)}.hero:before{width:280px;height:280px;top:-120px;right:-80px}.hero:after{width:220px;height:220px;bottom:-100px;left:-60px}
-    .logo{width:82px;height:82px;margin:0 auto 22px;border-radius:24px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:42px;box-shadow:0 15px 35px rgba(0,0,0,.12);backdrop-filter:blur(10px)}
-    .hero h1{font-size:clamp(30px,5vw,48px);font-weight:800;margin-bottom:8px}.hero p{color:rgba(255,255,255,.85);font-size:17px}.updated{display:inline-flex;align-items:center;gap:8px;margin-top:22px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);font-size:13px}
-    .container{width:min(100% - 32px,900px);margin:-70px auto 60px;position:relative;z-index:2}.privacy-card{background:var(--card);border:1px solid var(--border);border-radius:26px;box-shadow:var(--shadow);overflow:hidden}.intro{padding:34px;border-bottom:1px solid var(--border)}.intro p{color:var(--muted);font-size:16px}
-    .section{padding:34px;border-bottom:1px solid var(--border)}.section:last-child{border-bottom:none}.section-title{display:flex;align-items:center;gap:14px;margin-bottom:18px}.number{width:42px;height:42px;min-width:42px;border-radius:13px;background:#F0EDFF;color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800}.section h2{font-size:21px;font-weight:800}.section p{color:#475569;font-size:15px}
-    .section ul{list-style:none;margin-top:15px;display:grid;gap:12px}.section li{position:relative;padding:14px 18px;background:#F8FAFC;border:1px solid #EEF2F7;border-radius:13px;color:#475569}.section li::before{content:"✓";color:var(--success);font-weight:800;margin-left:10px}
-    .drive-box{margin-top:20px;padding:20px;border-radius:16px;background:linear-gradient(135deg,#F8F6FF,#F1F8FF);border:1px solid #DDD6FE}.drive-title{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:8px}.drive-icon{width:34px;height:34px;border-radius:10px;background:white;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 15px rgba(75,54,162,.08)}
-    .permission-note{margin-top:15px;padding:15px 18px;border-radius:14px;background:#F8FAFC;border:1px solid #EEF2F7;color:#475569;font-size:14px}.permission-note strong{color:var(--primary)}
-    .contact{margin:28px 34px 34px;padding:26px;border-radius:20px;background:linear-gradient(135deg,#172033,#352478);color:white;text-align:center}.contact h2{font-size:21px;margin-bottom:7px}.contact p{color:#CBD5E1;font-size:14px;margin-bottom:18px}.email-btn{display:inline-flex;align-items:center;gap:9px;text-decoration:none;background:white;color:#172033;padding:11px 19px;border-radius:12px;font-weight:700;transition:.2s ease}.email-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
-    footer{text-align:center;color:#94A3B8;font-size:13px;padding:0 20px 35px}
-    @media(max-width:600px){.hero{padding:50px 18px 105px}.hero h1{font-size:31px}.hero p{font-size:14px}.container{width:min(100% - 20px,900px);margin-top:-55px}.privacy-card{border-radius:20px}.intro,.section{padding:24px 20px}.section h2{font-size:18px}.section p,.section li{font-size:14px}.contact{margin:22px 20px 20px}}
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --border: #e6eaf0;
+      --success: #16a34a;
+      --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Cairo", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.9;
+    }
+
+    /* الخلفية العلوية */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,.16), transparent 25%),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,.10), transparent 25%),
+        linear-gradient(135deg, #2563eb, #1e40af);
+      color: white;
+      padding: 70px 20px 125px;
+      text-align: center;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,.07);
+    }
+
+    .hero::before {
+      width: 280px;
+      height: 280px;
+      top: -120px;
+      right: -80px;
+    }
+
+    .hero::after {
+      width: 220px;
+      height: 220px;
+      bottom: -100px;
+      left: -60px;
+    }
+
+    .logo {
+      width: 82px;
+      height: 82px;
+      margin: 0 auto 22px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      box-shadow: 0 15px 35px rgba(0,0,0,.12);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero h1 {
+      font-size: clamp(30px, 5vw, 48px);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .hero p {
+      color: rgba(255,255,255,.85);
+      font-size: 17px;
+    }
+
+    .updated {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 22px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      font-size: 13px;
+    }
+
+    /* المحتوى */
+    .container {
+      width: min(100% - 32px, 900px);
+      margin: -70px auto 60px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .privacy-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .intro {
+      padding: 34px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .intro p {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .section {
+      padding: 34px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .number {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      border-radius: 13px;
+      background: #eff6ff;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .section h2 {
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .section p {
+      color: #475569;
+      font-size: 15px;
+    }
+
+    .section ul {
+      list-style: none;
+      margin-top: 15px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .section li {
+      position: relative;
+      padding: 14px 18px 14px 18px;
+      background: #f8fafc;
+      border: 1px solid #eef2f7;
+      border-radius: 13px;
+      color: #475569;
+    }
+
+    .section li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: 800;
+      margin-left: 10px;
+    }
+
+    /* بطاقة Google Drive */
+    .drive-box {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f8fbff, #f1f5ff);
+      border: 1px solid #dbeafe;
+    }
+
+    .drive-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .drive-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 5px 15px rgba(37,99,235,.08);
+    }
+
+    /* التواصل */
+    .contact {
+      margin: 28px 34px 34px;
+      padding: 26px;
+      border-radius: 20px;
+      background: #172033;
+      color: white;
+      text-align: center;
+    }
+
+    .contact h2 {
+      font-size: 21px;
+      margin-bottom: 7px;
+    }
+
+    .contact p {
+      color: #cbd5e1;
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+
+    .email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+      background: white;
+      color: #172033;
+      padding: 11px 19px;
+      border-radius: 12px;
+      font-weight: 700;
+      transition: .2s ease;
+    }
+
+    .email-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+    }
+
+    footer {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      padding: 0 20px 35px;
+    }
+
+    /* الجوال */
+    @media (max-width: 600px) {
+      .hero {
+        padding: 50px 18px 105px;
+      }
+
+      .hero h1 {
+        font-size: 31px;
+      }
+
+      .hero p {
+        font-size: 14px;
+      }
+
+      .container {
+        width: min(100% - 20px, 900px);
+        margin-top: -55px;
+      }
+
+      .privacy-card {
+        border-radius: 20px;
+      }
+
+      .intro,
+      .section {
+        padding: 24px 20px;
+      }
+
+      .section h2 {
+        font-size: 18px;
+      }
+
+      .section p,
+      .section li {
+        font-size: 14px;
+      }
+
+      .contact {
+        margin: 22px 20px 20px;
+      }
+    }
   </style>
 </head>
+
 <body>
-<header class="hero">
-  <div class="logo">📒</div>
-  <h1>سياسة الخصوصية</h1>
-  <p>تطبيق الدفتر الذكي</p>
-  <div class="updated">🔒 خصوصيتك أولويتنا</div>
-</header>
 
-<main class="container">
-  <div class="privacy-card">
-    <section class="intro">
-      <p>يلتزم تطبيق <strong>الدفتر الذكي</strong> بحماية خصوصية مستخدميه والحفاظ على أمان بياناتهم. توضح هذه السياسة باختصار كيفية تعامل التطبيق مع البيانات والأذونات.</p>
-    </section>
+  <!-- الرأس -->
+  <header class="hero">
+    <div class="logo">📒</div>
 
-    <section class="section">
-      <div class="section-title"><div class="number">01</div><h2>جمع البيانات</h2></div>
-      <p>لا يقوم التطبيق بجمع بياناتك الشخصية أو المالية على خوادم خاصة به. تُحفظ البيانات التي تدخلها داخل التطبيق على جهازك، وتبقى تحت سيطرتك.</p>
-    </section>
+    <h1>سياسة الخصوصية</h1>
 
-    <section class="section">
-      <div class="section-title"><div class="number">02</div><h2>الوصول إلى Google Drive</h2></div>
-      <p>قد يطلب التطبيق الوصول إلى حسابك في Google Drive لغرض <strong>النسخ الاحتياطي والاسترداد</strong> فقط.</p>
-      <div class="drive-box">
-        <div class="drive-title"><div class="drive-icon">☁️</div>النسخ الاحتياطي والاسترداد</div>
-        <p>عند اختيارك النسخ الاحتياطي، تُحفظ النسخة في مساحة التخزين الخاصة بك في Google Drive. لا نستخدم الوصول إلى Drive لأغراض أخرى.</p>
-      </div>
-    </section>
+    <p>تطبيق الدفتر الذكي</p>
 
-    <section class="section">
-      <div class="section-title"><div class="number">03</div><h2>الأذونات (Permissions)</h2></div>
-      <ul>
-        <li><strong>التخزين:</strong> لحفظ ملفات PDF والتقارير والنسخ الاحتياطية المحلية التي ينشئها أو يختار حفظها المستخدم.</li>
-        <li><strong>جهات الاتصال:</strong> <strong>لا يطلب التطبيق إذن الوصول إلى جهات الاتصال ولا يقرأ قائمة جهات الاتصال في جهازك.</strong></li>
-        <li><strong>الإنترنت:</strong> للنسخ الاحتياطي والمزامنة والوظائف التي تتطلب اتصالًا بالشبكة.</li>
-        <li><strong>الإشعارات والاهتزاز:</strong> لتقديم التنبيهات والاستجابة المناسبة لبعض تفاعلات التطبيق.</li>
-      </ul>
-      <div class="permission-note"><strong>ملاحظة:</strong> لا يطلب التطبيق صلاحية جهات الاتصال، ولا يستخدمها لجمع أو نقل أو مشاركة بياناتك.</div>
-    </section>
+    <div class="updated">
+      🔒 خصوصيتك أولويتنا
+    </div>
+  </header>
 
-    <section class="section">
-      <div class="section-title"><div class="number">04</div><h2>مشاركة البيانات مع أطراف ثالثة</h2></div>
-      <p>لا نبيع بياناتك الشخصية أو المالية ولا نشاركها لأغراض إعلانية أو تسويقية. أي نقل تختاره أنت، مثل مشاركة ملف PDF أو استخدام النسخ الاحتياطي، يتم بناءً على اختيارك.</p>
-    </section>
 
-    <section class="section">
-      <div class="section-title"><div class="number">05</div><h2>حماية بياناتك</h2></div>
-      <p>ننصح بالحفاظ على قفل جهازك وعدم مشاركة النسخ الاحتياطية أو الملفات التي تحتوي على بياناتك مع أشخاص غير موثوقين.</p>
-    </section>
+  <!-- المحتوى -->
+  <main class="container">
 
-    <section class="contact">
-      <h2>هل لديك استفسار؟</h2>
-      <p>إذا كان لديك سؤال حول سياسة الخصوصية أو طريقة التعامل مع بياناتك، يمكنك التواصل معنا عبر البريد الإلكتروني.</p>
-      <a class="email-btn" href="mailto:mansour.ghawy@gmail.com">✉️ تواصل معنا</a>
-    </section>
-  </div>
-</main>
+    <div class="privacy-card">
 
-<footer>© 2026 الدفتر الذكي — جميع الحقوق محفوظة</footer>
+      <!-- المقدمة -->
+      <section class="intro">
+        <p>
+          يلتزم تطبيق <strong>الدفتر الذكي</strong> بحماية خصوصية مستخدميه
+          والحفاظ على أمان بياناتهم. توضح سياسة الخصوصية هذه كيفية تعامل
+          التطبيق مع البيانات والمعلومات التي يتم إدخالها واستخدامها.
+        </p>
+      </section>
+
+
+      <!-- جمع البيانات -->
+      <section class="section">
+
+        <div class="section-title">
+          <div class="number">01</div>
+          <h2>جمع البيانات</h2>
+        </div>
+
+        <p>
+          تطبيقنا لا يقوم بجمع أو تخزين أي بيانات شخصية على خوادم خارجية.
+          جميع البيانات التي تدخلها داخل التطبيق، بما في ذلك البيانات المالية
+          والأسماء، يتم حفظها محلياً على جهازك.
+        </p>
+
+      </section>
+
+
+      <!-- Google Drive -->
+      <section class="section">
+
+        <div class="section-title">
+          <div class="number">02</div>
+          <h2>الوصول إلى Google Drive</h2>
+        </div>
+
+        <p>
+          قد يطلب التطبيق الوصول إلى حسابك في Google Drive لغرض واحد فقط،
+          وهو توفير ميزة <strong>النسخ الاحتياطي والاسترداد</strong>.
+        </p>
+
+        <div class="drive-box">
+
+          <div class="drive-title">
+            <div class="drive-icon">☁️</div>
+            النسخ الاحتياطي والاسترداد
+          </div>
+
+          <p>
+            يتم رفع النسخ الاحتياطية من جهازك مباشرة إلى مساحة التخزين
+            الشخصية الخاصة بك في Google Drive. لا يملك مطور التطبيق
+            صلاحية الوصول إلى هذه البيانات أو الاطلاع عليها.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <!-- الأذونات -->
+      <section class="section">
+
+        <div class="section-title">
+          <div class="number">03</div>
+          <h2>الأذونات (Permissions)</h2>
+        </div>
+
+        <ul>
+          <li>
+            <strong>التخزين:</strong>
+            يستخدم التطبيق صلاحية التخزين لحفظ ملفات PDF
+            والنسخ الاحتياطية المحلية على جهازك.
+          </li>
+        </ul>
+
+      </section>
+
+
+      <!-- الطرف الثالث -->
+      <section class="section">
+
+        <div class="section-title">
+          <div class="number">04</div>
+          <h2>مشاركة البيانات مع أطراف ثالثة</h2>
+        </div>
+
+        <p>
+          نحن لا نشارك أو نبيع بياناتك الشخصية أو المالية لأي جهة خارجية.
+          كما لا يتم استخدام بياناتك لأغراض إعلانية أو تجارية من قبلنا.
+        </p>
+
+      </section>
+
+
+      <!-- التواصل -->
+      <section class="contact">
+
+        <h2>هل لديك استفسار؟</h2>
+
+        <p>
+          إذا كان لديك أي سؤال أو استفسار يتعلق بسياسة الخصوصية
+          أو طريقة التعامل مع بياناتك، يمكنك التواصل معنا عبر البريد الإلكتروني.
+        </p>
+
+        <a class="email-btn"
+           href="mailto:mansour.ghawy@gmail.com">
+          ✉️ تواصل معنا
+        </a>
+
+      </section>
+
+    </div>
+
+  </main>
+
+
+  <footer>
+    © 2026 الدفتر الذكي — جميع الحقوق محفوظة
+  </footer>
+
 </body>
-</html>
+  </html>
