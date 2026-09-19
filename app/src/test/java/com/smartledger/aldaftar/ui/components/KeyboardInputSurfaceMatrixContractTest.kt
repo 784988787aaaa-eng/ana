@@ -156,6 +156,7 @@ class KeyboardInputSurfaceMatrixContractTest {
     @Test
     fun transactionPopupOwnsInitialImeFocusExplicitly() {
         val popup = source("ui/screens/habayeb/components/AddTransactionPopup.kt")
+        val txFields = source("ui/screens/habayeb/components/AddTransactionFormFields.kt")
         assertTrue(popup.contains("amountFocusRequester"))
         assertTrue(txFields.contains("RequestFocusAndShowKeyboard("))
         assertTrue(txFields.contains("focusRequester = amountFocusRequester"))
