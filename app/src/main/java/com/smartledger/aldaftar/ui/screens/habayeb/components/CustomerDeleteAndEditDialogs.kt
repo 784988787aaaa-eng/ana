@@ -33,6 +33,12 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.platform.contacts.StringUtils
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
 
