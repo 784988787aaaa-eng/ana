@@ -15,8 +15,24 @@ import java.io.File
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.LinkedHashMap
+import java.util.LinkedHashSet
 import java.util.Locale
 
+/**
+ * مولّد كشف الحساب بصيغة XLSX.
+ *
+ * التصميم المعتمد في هذه النسخة:
+ * - ورقة واحدة فقط باسم «الحركات».
+ * - إزالة ورقة «الملخص» المنفصلة حتى لا تتكرر المعلومات.
+ * - إزالة الأعمدة المشتقة «حالة التحويل» و«عملة الأساس» و«الأثر» نهائياً.
+ * - إبقاء «العملة» و«المبلغ الأصلي» و«سعر الصرف» و«المعادل بالعملة الأساسية» و«له/عليه/الرصيد».
+ * - وضع «ملخص العملات» أسفل جدول الحركات في الورقة نفسها.
+ * - استخدام صيغ Excel مرتبطة بصفوف الحركات الفعلية، بدلاً من نطاق الصفوف الكامل 1,048,576،
+ *   حتى يبقى الملف أخف وأوضح ولا تتضخم الصيغ بلا داعٍ.
+ * - عدم جمع أرصدة العملات المختلفة في رقم واحد؛ لكل عملة صافي مستقل،
+ *   والمعادل المحول يظهر فقط عندما يكون التحويل متاحاً.
+ */
 object SingleCustomerExcelEngine {
 
     private const val TAG = "SingleCustomerExcel"
@@ -25,9 +41,12 @@ object SingleCustomerExcelEngine {
     private const val FILE_PREFIX = "statement_"
 
     private val DATE_FORMATTER_EN = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale(LOCALE_EN)) }
-    private val TIME_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", Locale(LOCALE_AR)) }
     private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", Locale(LOCALE_AR)) }
 
+    /**
+     * ينشئ كشف الحساب اعتماداً على آخر بيانات التطبيق كما هي، مع الحفاظ على قابلية
+     * تعديل المبلغ وسعر الصرف داخل Excel وإعادة الحساب تلقائياً عند فتح الملف.
+     */
     fun generate(
         context: Context,
         customer: HabayebCustomer,
@@ -43,20 +62,26 @@ object SingleCustomerExcelEngine {
         try {
             val bizHeader = BusinessProfileLoader.load(context, businessProfile)
             val now = Date()
-            val dayName = try { DAY_FORMATTER_AR.get().format(now) } catch (e: Exception) { "" }
-            val dateFormatted = try { DATE_FORMATTER_EN.get().format(now) } catch (e: Exception) { "" }
-            val timeFormatted = try { TIME_FORMATTER_AR.get().format(now) } catch (e: Exception) { "" }
+            val dayName = try { DAY_FORMATTER_AR.get().format(now) } catch (_: Exception) { "" }
+            val dateFormatted = try { DATE_FORMATTER_EN.get().format(now) } catch (_: Exception) { "" }
             val docDateText = "$dayName $dateFormatted"
 
             val isOwedToThemAccount = customer.initialType == TransactionType.OWED_TO_THEM.value
-            val col4HeaderText = if (isOwedToThemAccount) context.getString(R.string.pdf_col_owed_to) else context.getString(R.string.pdf_col_owed_by)
-            val col5HeaderText = if (isOwedToThemAccount) context.getString(R.string.pdf_col_paid) else context.getString(R.string.pdf_col_received)
-            val accountTypeDesc = if (isOwedToThemAccount) context.getString(R.string.excel_type_supplier) else context.getString(R.string.excel_type_customer)
+            val accountTypeDesc = if (isOwedToThemAccount) {
+                context.getString(R.string.excel_type_supplier)
+            } else {
+                context.getString(R.string.excel_type_customer)
+            }
 
-            val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol, exchangeRatesJson)
+            val summary = PdfReportCalculator.calculateSingleCustomerReport(
+                transactions,
+                currencySymbol,
+                exchangeRatesJson
+            )
 
             val txSheetName = "الحركات"
-            val summarySheetName = "الملخص"
+
+            // الأعمدة التي بقيت في كشف الحركات بعد التنظيف النهائي.
             val txHeaders = listOf(
                 context.getString(R.string.excel_col_seq),
                 context.getString(R.string.pdf_col_date),
@@ -67,10 +92,7 @@ object SingleCustomerExcelEngine {
                 "المعادل بالعملة الأساسية",
                 "له",
                 "عليه",
-                "الرصيد",
-                "حالة التحويل",
-                "عملة الأساس",
-                "الأثر"
+                "الرصيد"
             )
             val txColumns = listOf(
                 XlsxOpenXmlBuilder.SheetColumn(1, 1, 7.0),
@@ -82,11 +104,9 @@ object SingleCustomerExcelEngine {
                 XlsxOpenXmlBuilder.SheetColumn(7, 7, 21.0),
                 XlsxOpenXmlBuilder.SheetColumn(8, 8, 17.0),
                 XlsxOpenXmlBuilder.SheetColumn(9, 9, 17.0),
-                XlsxOpenXmlBuilder.SheetColumn(10, 10, 17.0),
-                XlsxOpenXmlBuilder.SheetColumn(11, 11, 18.0),
-                XlsxOpenXmlBuilder.SheetColumn(12, 12, 16.0),
-                XlsxOpenXmlBuilder.SheetColumn(13, 13, 14.0)
+                XlsxOpenXmlBuilder.SheetColumn(10, 10, 17.0)
             )
+
             val txRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
             txRows.add(XlsxOpenXmlBuilder.Row(1, 32).apply {
                 cell(0, context.getString(R.string.excel_single_title), 15)
@@ -102,13 +122,34 @@ object SingleCustomerExcelEngine {
             txRows.add(XlsxOpenXmlBuilder.Row(4, 6))
             txRows.add(XlsxOpenXmlBuilder.Row(5, 28).apply {
                 val phoneText = customer.phone.ifEmpty { context.getString(R.string.csv_not_registered) }
-                cell(0, context.getString(R.string.excel_account_card_format, customer.name, phoneText, accountTypeDesc), 7)
+                cell(
+                    0,
+                    context.getString(
+                        R.string.excel_account_card_format,
+                        customer.name,
+                        phoneText,
+                        accountTypeDesc
+                    ),
+                    7
+                )
             })
             txRows.add(XlsxOpenXmlBuilder.Row(6, 6))
-            txRows.add(XlsxOpenXmlBuilder.Row(7, 30).apply { txHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
+            txRows.add(XlsxOpenXmlBuilder.Row(7, 30).apply {
+                txHeaders.forEachIndexed { i, h -> cell(i, h, XlsxOpenXmlBuilder.STYLE_HEADER) }
+            })
 
             val sortedTxs = summary.sortedProcessedTxs
             var txRow = 8
+
+            // نحتفظ فقط بأرقام الصفوف، لا ببيانات إضافية داخل الملف.
+            // هذه الخرائط تُستخدم لصناعة ملخص العملات بصيغ Excel ديناميكية دون إعادة إضافة
+            // عمود «الأثر» الذي تم حذفه نهائياً من جدول الحركات.
+            val currencyCodesInOrder = LinkedHashSet<String>()
+            val owedRowsByCurrency = LinkedHashMap<String, MutableList<Int>>()
+            val dueRowsByCurrency = LinkedHashMap<String, MutableList<Int>>()
+
+            val baseCurrencyCode = CurrencyConfig.getBySymbol(currencySymbol)?.code ?: currencySymbol
+
             sortedTxs.forEachIndexed { index, pt ->
                 val tx = pt.tx
                 val txType = TransactionType.fromValue(tx.type)
@@ -117,48 +158,109 @@ object SingleCustomerExcelEngine {
                 } else {
                     txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM
                 }
-                val originalCurrency = com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.getBySymbol(pt.resolvedCurrency)
+
+                val originalCurrency = CurrencyConfig.getBySymbol(pt.resolvedCurrency)
                 val currencyCode = originalCurrency?.code ?: pt.resolvedCurrency
-                val sourceAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
-                val hasConversion = tx.isRateCalculated && tx.exchangeRate > BigDecimal.ZERO && tx.equivalentAmount > BigDecimal.ZERO
+                currencyCodesInOrder.add(currencyCode)
+
+                val sourceAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    tx.foreignAmount
+                } else {
+                    tx.amount
+                }
+                val hasConversion = tx.isRateCalculated &&
+                    tx.exchangeRate > BigDecimal.ZERO &&
+                    tx.equivalentAmount > BigDecimal.ZERO
                 val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
+
                 val typeName = when (txType) {
                     TransactionType.OWED_BY_THEM -> context.getString(R.string.pdf_tx_type_owed_by_them)
-                    TransactionType.PAYMENT_BY_THEM -> if (isOwedToThemAccount) context.getString(R.string.pdf_tx_type_payment_to_them) else context.getString(R.string.pdf_tx_type_payment_by_them)
+                    TransactionType.PAYMENT_BY_THEM -> if (isOwedToThemAccount) {
+                        context.getString(R.string.pdf_tx_type_payment_to_them)
+                    } else {
+                        context.getString(R.string.pdf_tx_type_payment_by_them)
+                    }
                     TransactionType.OWED_TO_THEM -> context.getString(R.string.pdf_tx_type_owed_to_them)
                     TransactionType.PAYMENT_TO_THEM -> context.getString(R.string.pdf_tx_type_payment_to_them)
                     else -> context.getString(R.string.pdf_tx_type_new)
                 }
+
                 val descText = buildString {
                     append(typeName)
                     if (cleanDetails.isNotBlank()) append(" - ").append(cleanDetails)
-                    if (hasConversion) append(" — ").append(HabayebMathHelper.formatSmart(sourceAmount)).append(" ").append(currencyCode).append(" × ").append(HabayebMathHelper.formatRate(tx.exchangeRate))
+                    if (hasConversion) {
+                        append(" — ")
+                            .append(HabayebMathHelper.formatSmart(sourceAmount))
+                            .append(" ")
+                            .append(currencyCode)
+                            .append(" × ")
+                            .append(HabayebMathHelper.formatRate(tx.exchangeRate))
+                    }
                 }
+
                 val date = Date(if (tx.timestamp > 1_000_000_000_000L) tx.timestamp else tx.timestamp * 1000)
                 val dateText = "${DAY_FORMATTER_AR.get().format(date)} ${DATE_FORMATTER_EN.get().format(date)}"
-                val baseAmount = pt.baseCurrencyAmount
-                val hasBase = baseAmount.compareTo(BigDecimal.ZERO) > 0
                 val row = XlsxOpenXmlBuilder.Row(txRow, 24)
+
                 row.cell(0, index + 1, 6)
                 row.cell(1, dateText, XlsxOpenXmlBuilder.STYLE_EDITABLE_TEXT)
                 row.cell(2, descText, XlsxOpenXmlBuilder.STYLE_EDITABLE_TEXT)
                 row.cell(3, currencyCode, 6)
                 row.cell(4, sourceAmount, XlsxOpenXmlBuilder.STYLE_EDITABLE_NUMBER)
-                row.cell(5, if (hasConversion) tx.exchangeRate else null, XlsxOpenXmlBuilder.STYLE_EDITABLE_RATE)
-                row.cell(6, if (hasConversion) XlsxOpenXmlBuilder.Formula("IF(AND(E$txRow<>\"\",F$txRow>0),E$txRow*F$txRow,\"\")") else null, 4)
-                row.cell(7, if (isCol4) XlsxOpenXmlBuilder.Formula("IF(D$txRow=L$txRow,E$txRow,IF(G$txRow>0,G$txRow,\"\"))") else null, 2)
-                row.cell(8, if (!isCol4) XlsxOpenXmlBuilder.Formula("IF(D$txRow=L$txRow,E$txRow,IF(G$txRow>0,G$txRow,\"\"))") else null, 3)
-                row.cell(9, XlsxOpenXmlBuilder.Formula("SUM(H$8:H$txRow)-SUM(I$8:I$txRow)"), 4)
-                row.cell(10, if (hasConversion) "محسوب بسعر صرف تاريخي" else if (pt.isTxForeign) "عملة أجنبية — غير محوّل" else "العملة الأساسية", 6)
-                row.cell(11, CurrencyConfig.getBySymbol(tx.baseCurrencyCode)?.code ?: tx.baseCurrencyCode.ifBlank { currencySymbol }, 6)
-                row.cell(12, if (isCol4) "له" else "عليه", 6)
+                row.cell(
+                    5,
+                    if (hasConversion) tx.exchangeRate else null,
+                    XlsxOpenXmlBuilder.STYLE_EDITABLE_RATE
+                )
+                row.cell(
+                    6,
+                    if (hasConversion) {
+                        XlsxOpenXmlBuilder.Formula(
+                            "IF(AND(E$txRow<>\"\",F$txRow>0),E$txRow*F$txRow,\"\")"
+                        )
+                    } else {
+                        null
+                    },
+                    XlsxOpenXmlBuilder.STYLE_FORMULA_NUMBER
+                )
+
+                // بعد حذف «عملة الأساس»، نستخدم كود العملة الأساسي داخل الصيغة نفسها.
+                // لا نعيد إنشاء عمود مساعد مخفي، وبذلك تبقى الورقة نظيفة فعلياً.
+                val directionFormula =
+                    "IF(D$txRow=\"$baseCurrencyCode\",E$txRow,IF(G$txRow>0,G$txRow,\"\"))"
+                row.cell(
+                    7,
+                    if (isCol4) XlsxOpenXmlBuilder.Formula(directionFormula) else null,
+                    2
+                )
+                row.cell(
+                    8,
+                    if (!isCol4) XlsxOpenXmlBuilder.Formula(directionFormula) else null,
+                    3
+                )
+                row.cell(
+                    9,
+                    XlsxOpenXmlBuilder.Formula("SUM(H$8:H$txRow)-SUM(I$8:I$txRow)"),
+                    XlsxOpenXmlBuilder.STYLE_FORMULA_NUMBER
+                )
+
+                if (isCol4) {
+                    owedRowsByCurrency.getOrPut(currencyCode) { mutableListOf() }.add(txRow)
+                } else {
+                    dueRowsByCurrency.getOrPut(currencyCode) { mutableListOf() }.add(txRow)
+                }
+
                 txRows.add(row)
                 txRow++
             }
+
             if (sortedTxs.isEmpty()) {
-                txRows.add(XlsxOpenXmlBuilder.Row(txRow, 28).apply { cell(0, context.getString(R.string.pdf_no_transactions), 6) })
+                txRows.add(XlsxOpenXmlBuilder.Row(txRow, 28).apply {
+                    cell(0, context.getString(R.string.pdf_no_transactions), 6)
+                })
                 txRow++
             }
+
             val txLastDataRow = (txRow - 1).coerceAtLeast(8)
             txRows.add(XlsxOpenXmlBuilder.Row(txRow, 28).apply {
                 cell(0, "الإجماليات", 11)
@@ -167,88 +269,128 @@ object SingleCustomerExcelEngine {
                 cell(9, XlsxOpenXmlBuilder.Formula("H$txLastDataRow-I$txLastDataRow"), 14)
             })
             val txTotalsRow = txRow
-            txRows.add(XlsxOpenXmlBuilder.Row(txRow + 1, 6))
-            txRows.add(XlsxOpenXmlBuilder.Row(txRow + 2, 24).apply {
-                cell(0, context.getString(R.string.excel_footer_certified_icon, context.getString(R.string.pdf_footer_certified)), 17)
-                cell(7, context.getString(R.string.excel_footer_signature), 16)
-            })
 
-            val summaryRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
-            summaryRows.add(XlsxOpenXmlBuilder.Row(1, 34).apply { cell(0, "ملخص تقرير الحساب", 15) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(2, 22).apply { cell(0, bizHeader.displayedName, 16); cell(4, context.getString(R.string.excel_date_format, docDateText), 17) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(3, 28).apply { cell(0, "اسم الحساب: ${customer.name}", 7) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(4, 24).apply { cell(0, "العملة الأساسية", 1); cell(1, currencySymbol, 6); cell(2, "إجمالي له", 1); cell(3, XlsxOpenXmlBuilder.Formula("'الحركات'!H$txTotalsRow"), 12); cell(4, "إجمالي عليه", 1); cell(5, XlsxOpenXmlBuilder.Formula("'الحركات'!I$txTotalsRow"), 13) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(5, 30).apply { cell(0, "الرصيد النهائي", 7); cell(1, XlsxOpenXmlBuilder.Formula("'الحركات'!J$txTotalsRow"), 10) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(6, 6))
-            summaryRows.add(XlsxOpenXmlBuilder.Row(7, 24).apply { cell(0, "طريقة الاستخدام", 7); cell(1, "عدّل المبالغ أو أسعار الصرف في ورقة الحركات؛ ستُعاد الحسابات تلقائيًا عند فتح الملف في Excel.", 0) })
-            summaryRows.add(XlsxOpenXmlBuilder.Row(8, 24).apply { cell(0, "ملاحظة العملات", 7); cell(1, "العملات الأجنبية غير المحوّلة تبقى مستقلة ولا تدخل في رصيد العملة الأساسية.", 0) })
+            // -----------------------------
+            // ملخص العملات — داخل ورقة الحركات نفسها
+            // -----------------------------
+            // لا نجمع العملات المختلفة في إجمالي واحد، لأن ذلك سيخلط وحدات نقدية مختلفة.
+            // «له/عليه/الصافي» هنا بالمبلغ الأصلي لكل عملة، بينما «المعادل المحول»
+            // يعتمد على عمودي «له/عليه» في جدول الحركات عندما يتوفر التحويل.
+            val summaryTitleRow = txTotalsRow + 2
+            val summaryHeaderRow = summaryTitleRow + 1
+            val summaryDataStartRow = summaryHeaderRow + 1
 
-            val summaryColumns = listOf(
-                XlsxOpenXmlBuilder.SheetColumn(1, 1, 20.0), XlsxOpenXmlBuilder.SheetColumn(2, 2, 28.0),
-                XlsxOpenXmlBuilder.SheetColumn(3, 3, 18.0), XlsxOpenXmlBuilder.SheetColumn(4, 4, 20.0),
-                XlsxOpenXmlBuilder.SheetColumn(5, 5, 18.0), XlsxOpenXmlBuilder.SheetColumn(6, 6, 18.0)
+            // العملة الأساسية تظهر دائماً حتى لو لم توجد أي حركة بعد.
+            currencyCodesInOrder.remove(baseCurrencyCode)
+            val summaryCurrencyCodes = mutableListOf<String>().apply {
+                add(baseCurrencyCode)
+                addAll(currencyCodesInOrder)
+            }
+
+            val currencyHeaders = listOf(
+                "العملة",
+                "اسم العملة",
+                "له",
+                "عليه",
+                "الصافي",
+                "المعادل المحول",
+                "عدد الحركات"
             )
 
-            val currencyRows = mutableListOf<XlsxOpenXmlBuilder.Row>()
-            val currencyHeaders = listOf("العملة", "الاسم", "إجمالي المبلغ الأصلي", "المعادل المحول", "ملاحظة")
-            currencyRows.add(XlsxOpenXmlBuilder.Row(1, 34).apply { cell(0, "ملخص العملات", 15) })
-            currencyRows.add(XlsxOpenXmlBuilder.Row(2, 28).apply { currencyHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
-            val supportedCurrencies = CurrencyConfig.currencies
-            supportedCurrencies.forEachIndexed { index, currency ->
-                val rowNo = index + 3
-                currencyRows.add(XlsxOpenXmlBuilder.Row(rowNo, 24).apply {
-                    cell(0, currency.code, 6)
-                    cell(1, currency.arabicName, 6)
-                    cell(2, XlsxOpenXmlBuilder.Formula("SUMIFS('الحركات'!E$8:E$1048576,'الحركات'!D$8:D$1048576,\"${currency.code}\",'الحركات'!M$8:M$1048576,\"له\")-SUMIFS('الحركات'!E$8:E$1048576,'الحركات'!D$8:D$1048576,\"${currency.code}\",'الحركات'!M$8:M$1048576,\"عليه\")"), 4)
-                    cell(3, XlsxOpenXmlBuilder.Formula("SUMIF('الحركات'!D$8:D$1048576,\"${currency.code}\",'الحركات'!G$8:G$1048576)"), 4)
-                    cell(4, if (currency.symbol == currencySymbol) "العملة الأساسية" else "رصيد مستقل؛ التحويل يظهر فقط عند وجود سعر صرف", 6)
+            txRows.add(XlsxOpenXmlBuilder.Row(summaryTitleRow, 30).apply {
+                cell(0, "ملخص العملات", 7)
+            })
+            txRows.add(XlsxOpenXmlBuilder.Row(summaryHeaderRow, 28).apply {
+                currencyHeaders.forEachIndexed { i, h -> cell(i, h, XlsxOpenXmlBuilder.STYLE_HEADER) }
+            })
+
+            summaryCurrencyCodes.forEachIndexed { index, code ->
+                val rowNo = summaryDataStartRow + index
+                val currency = CurrencyConfig.getByCode(code) ?: CurrencyConfig.getBySymbol(code)
+                val currencyName = currency?.arabicName ?: code
+                val owedRows = owedRowsByCurrency[code].orEmpty()
+                val dueRows = dueRowsByCurrency[code].orEmpty()
+
+                val owedFormula = sumCellRefsFormula(owedRows, "E")
+                val dueFormula = sumCellRefsFormula(dueRows, "E")
+                val netFormula = "C$rowNo-D$rowNo"
+                val convertedFormula = if (code == baseCurrencyCode) {
+                    "E$rowNo"
+                } else {
+                    "IF(COUNTIFS(D$8:D$txLastDataRow,\"$code\",G$8:G$txLastDataRow,\">0\")=0,\"\",SUMIFS(H$8:H$txLastDataRow,D$8:D$txLastDataRow,\"$code\")-SUMIFS(I$8:I$txLastDataRow,D$8:D$txLastDataRow,\"$code\"))"
+                }
+                val countFormula = "COUNTIF(D$8:D$txLastDataRow,\"$code\")"
+
+                txRows.add(XlsxOpenXmlBuilder.Row(rowNo, 24).apply {
+                    cell(0, code, 6)
+                    cell(1, currencyName, 6)
+                    cell(2, XlsxOpenXmlBuilder.Formula(owedFormula), 4)
+                    cell(3, XlsxOpenXmlBuilder.Formula(dueFormula), 4)
+                    cell(4, XlsxOpenXmlBuilder.Formula(netFormula), 10)
+                    cell(5, XlsxOpenXmlBuilder.Formula(convertedFormula), 4)
+                    cell(6, XlsxOpenXmlBuilder.Formula(countFormula), 6)
                 })
             }
 
+            val summaryDataLastRow = summaryDataStartRow + summaryCurrencyCodes.lastIndex
+            val summaryNoteRow = summaryDataLastRow + 2
+            txRows.add(XlsxOpenXmlBuilder.Row(summaryNoteRow, 30).apply {
+                cell(
+                    0,
+                    "ملاحظة: لا تُجمع أرصدة العملات المختلفة معاً. المعادل المحول يظهر فقط للحركات التي تحتوي على تحويل صالح، وتبقى العملات غير المحولة مستقلة.",
+                    17
+                )
+            })
+
+            // اعتماد التقرير يأتي في نهاية المحتوى، بعد الحركات وملخص العملات.
+            val footerRow = summaryNoteRow + 2
+            txRows.add(XlsxOpenXmlBuilder.Row(footerRow, 24).apply {
+                cell(
+                    0,
+                    context.getString(
+                        R.string.excel_footer_certified_icon,
+                        context.getString(R.string.pdf_footer_certified)
+                    ),
+                    17
+                )
+                cell(7, context.getString(R.string.excel_footer_signature), 16)
+            })
+
+            val merges = listOf(
+                XlsxOpenXmlBuilder.MergeRange("A1:J1"),
+                XlsxOpenXmlBuilder.MergeRange("A2:C2"),
+                XlsxOpenXmlBuilder.MergeRange("D2:J2"),
+                XlsxOpenXmlBuilder.MergeRange("A3:C3"),
+                XlsxOpenXmlBuilder.MergeRange("D3:J3"),
+                XlsxOpenXmlBuilder.MergeRange("A5:J5"),
+                XlsxOpenXmlBuilder.MergeRange("A$txTotalsRow:G$txTotalsRow"),
+                XlsxOpenXmlBuilder.MergeRange("A$summaryTitleRow:G$summaryTitleRow"),
+                XlsxOpenXmlBuilder.MergeRange("A$summaryNoteRow:G$summaryNoteRow"),
+                XlsxOpenXmlBuilder.MergeRange("A$footerRow:G$footerRow"),
+                XlsxOpenXmlBuilder.MergeRange("H$footerRow:J$footerRow")
+            )
+
             XlsxOpenXmlBuilder.buildXlsxFile(
                 workbook = XlsxOpenXmlBuilder.WorkbookSpec(
+                    // الورقة الوحيدة المقصودة في هذا التصدير هي «الحركات».
                     sheets = listOf(
                         XlsxOpenXmlBuilder.SheetSpec(
-                            name = summarySheetName, columns = summaryColumns, rows = summaryRows,
-                            merges = listOf(
-                                XlsxOpenXmlBuilder.MergeRange("A1:F1"),
-                                XlsxOpenXmlBuilder.MergeRange("A2:D2"),
-                                XlsxOpenXmlBuilder.MergeRange("A3:F3"),
-                                XlsxOpenXmlBuilder.MergeRange("B7:F7"),
-                                XlsxOpenXmlBuilder.MergeRange("B8:F8")
-                            ), freezeRows = 3,
-                            protected = true
-                        ),
-                        XlsxOpenXmlBuilder.SheetSpec(
-                            name = txSheetName, columns = txColumns, rows = txRows,
-                            merges = listOf(
-                                XlsxOpenXmlBuilder.MergeRange("A1:M1"),
-                                XlsxOpenXmlBuilder.MergeRange("A2:C2"),
-                                XlsxOpenXmlBuilder.MergeRange("D2:M2"),
-                                XlsxOpenXmlBuilder.MergeRange("A3:C3"),
-                                XlsxOpenXmlBuilder.MergeRange("D3:M3"),
-                                XlsxOpenXmlBuilder.MergeRange("A5:M5"),
-                                XlsxOpenXmlBuilder.MergeRange("A$txTotalsRow:G$txTotalsRow"),
-                                XlsxOpenXmlBuilder.MergeRange("A${txRow + 2}:G${txRow + 2}"),
-                                XlsxOpenXmlBuilder.MergeRange("H${txRow + 2}:M${txRow + 2}")
-                            ),
+                            name = txSheetName,
+                            columns = txColumns,
+                            rows = txRows,
+                            merges = merges,
                             freezeRows = 7,
-                            autoFilterRef = "A7:M$txLastDataRow",
-                            table = if (sortedTxs.isNotEmpty()) XlsxOpenXmlBuilder.TableSpec("TransactionsTable", "TransactionsTable", "A7:M$txLastDataRow", txHeaders) else null,
-                            protected = true
-                        ),
-                        XlsxOpenXmlBuilder.SheetSpec(
-                            name = "العملات",
-                            columns = listOf(
-                                XlsxOpenXmlBuilder.SheetColumn(1, 1, 14.0),
-                                XlsxOpenXmlBuilder.SheetColumn(2, 2, 22.0),
-                                XlsxOpenXmlBuilder.SheetColumn(3, 3, 22.0),
-                                XlsxOpenXmlBuilder.SheetColumn(4, 4, 20.0),
-                                XlsxOpenXmlBuilder.SheetColumn(5, 5, 40.0)
-                            ),
-                            rows = currencyRows,
-                            merges = listOf(XlsxOpenXmlBuilder.MergeRange("A1:E1")),
-                            freezeRows = 2,
+                            autoFilterRef = "A7:J$txLastDataRow",
+                            table = if (sortedTxs.isNotEmpty()) {
+                                XlsxOpenXmlBuilder.TableSpec(
+                                    "TransactionsTable",
+                                    "TransactionsTable",
+                                    "A7:J$txLastDataRow",
+                                    txHeaders
+                                )
+                            } else {
+                                null
+                            },
                             protected = true
                         )
                     )
@@ -261,5 +403,14 @@ object SingleCustomerExcelEngine {
             return null
         }
     }
-}
 
+    /**
+     * يبني SUM من مراجع الخلايا الفعلية للحركات.
+     * استخدام مراجع الصفوف يمنع الحاجة إلى عمود «الأثر» المحذوف،
+     * وفي الوقت نفسه يبقي الملخص قابلاً لإعادة الحساب إذا عدّل المستخدم المبالغ في Excel.
+     */
+    private fun sumCellRefsFormula(rows: List<Int>, column: String): String {
+        if (rows.isEmpty()) return "0"
+        return "SUM(${rows.joinToString(",") { "$column$it" }})"
+    }
+}
