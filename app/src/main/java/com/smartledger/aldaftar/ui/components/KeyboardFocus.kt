@@ -38,8 +38,11 @@ suspend fun requestFocusAndShowKeyboard(
     repeat(boundedAttempts) { attempt ->
         awaitFrame()
 
-        val focused = runCatching { focusRequester.requestFocus() }
-            .getOrDefault(false)
+        val focused: Boolean = try {
+            focusRequester.requestFocus()
+        } catch (_: IllegalStateException) {
+            false
+        }
 
         if (focused) {
             runCatching { keyboardController?.show() }
