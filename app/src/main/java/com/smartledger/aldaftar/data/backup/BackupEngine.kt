@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.data.backup
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.room.withTransaction
 import com.smartledger.aldaftar.data.local.AppDatabase
 import com.smartledger.aldaftar.data.local.entities.*
@@ -50,11 +51,25 @@ class BackupEngine(
             .put("payload", Base64.encodeToString(encrypted, Base64.NO_WRAP))
         val temp = File(target.parentFile, ".${target.name}.tmp")
         temp.writeText(envelope.toString(), Charsets.UTF_8)
-        runCatching {
-            Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        }.recoverCatching {
-            Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }.getOrElse { throw IllegalStateException("تعذر حفظ ملف النسخة") }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            runCatching {
+                Files.move(
+                    temp.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
+            }.recoverCatching {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }.getOrElse { throw IllegalStateException("تعذر حفظ ملف النسخة", it) }
+        } else {
+            if (target.exists() && !target.delete()) {
+                throw IllegalStateException("تعذر استبدال ملف النسخة")
+            }
+            if (!temp.renameTo(target)) {
+                throw IllegalStateException("تعذر حفظ ملف النسخة")
+            }
+        }
         return target
     }
 
