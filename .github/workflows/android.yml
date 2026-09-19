@@ -5,43 +5,19 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      # حماية حقيقية للذاكرة وإجبار مترجم كوتلن و KSP لتفادي NPE و OOM
       GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3584m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy="in-process"
-      
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Prepare public service configuration
-        env:
-          LICENSE_ENDPOINT: ${{ vars.LICENSE_ENDPOINT }}
-          ACCOUNT_PUBLIC_KEY: ${{ vars.ACCOUNT_LICENSE_PUBLIC_KEY }}
-          LOCAL_PUBLIC_KEY: ${{ vars.LOCAL_LICENSE_PUBLIC_KEY }}
-        run: |
-          set -e
-          mkdir -p app/src/main/assets
-          if [ -n "$LICENSE_ENDPOINT" ]; then
-            printf '%s' "$LICENSE_ENDPOINT" > app/src/main/assets/license_endpoint.txt
-          fi
-          if [ ! -s app/src/main/assets/license_endpoint.txt ]; then
-            echo "❌ ملف license_endpoint.txt غير موجود وقيمة vars.LICENSE_ENDPOINT غير متوفرة."
-            exit 1
-          fi
-          if [ -n "$ACCOUNT_PUBLIC_KEY" ]; then
-            printf '%s\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
-          fi
-          if [ -n "$LOCAL_PUBLIC_KEY" ]; then
-            printf '%s\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
-          fi
-          if [ ! -s app/src/main/assets/license_account_public.pem ] || [ ! -s app/src/main/assets/license_local_public.pem ]; then
-            echo "❌ مفاتيح الترخيص العامة (ACCOUNT_LICENSE_PUBLIC_KEY أو LOCAL_LICENSE_PUBLIC_KEY) غير مكتملة في GitHub Variables."
-            exit 1
-          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -50,17 +26,57 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 1. إعداد شهادة Debug القياسية لنظام أندرويد فقط في مسارها النظامي بدون أي مساس بملفات الـ Release
+      - name: Prepare public service configuration
+        env:
+          LICENSE_ENDPOINT: ${{ vars.LICENSE_ENDPOINT }}
+          ACCOUNT_PUBLIC_KEY: ${{ vars.ACCOUNT_LICENSE_PUBLIC_KEY }}
+          LOCAL_PUBLIC_KEY: ${{ vars.LOCAL_LICENSE_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets
+          printf '%s' "$LICENSE_ENDPOINT" > app/src/main/assets/license_endpoint.txt
+          printf '%s\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
+          printf '%s\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
+          test -s app/src/main/assets/license_endpoint.txt
+          test -s app/src/main/assets/license_account_public.pem
+          test -s app/src/main/assets/license_local_public.pem
+
+      - name: Verify Gradle Wrapper
+        run: |
+          set -euo pipefail
+          test -x ./gradlew
+          test -s gradle/wrapper/gradle-wrapper.jar
+          jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null
+          ./gradlew --version
+
+      # Release gate: static analysis + the complete JVM unit-test suite must pass
+      # before any signed production artifact is built.
+      - name: Run lint and complete unit-test suite
+        run: |
+          set -euo pipefail
+          ./gradlew clean lintDebug testDebugUnitTest --stacktrace --no-parallel --max-workers=1
+
+      # Release gate: execute instrumentation/UI tests on a real Android runtime.
+      - name: Run instrumentation/UI tests on API 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: Pixel_6
+          force-avd-creation: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest --stacktrace --no-parallel --max-workers=1
+
       - name: Set up Standard Android Debug Keystore
         run: |
-          echo "🔑 Preparing standard Android debug keystore..."
+          set -euo pipefail
           mkdir -p ~/.android
           if [ ! -f ~/.android/debug.keystore ]; then
-            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android               -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048               -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-          # ممنوع منعاً باتاً نسخ debug.keystore إلى aldaftar.keystore أو تعويض أي release keystore
 
-      # 2. تجهيز مستودع الإصدار من أسرار GitHub والتحقق من الشهادة دون تخزين أي سر في المستودع
       - name: Setup and Verify Release Keystore from GitHub Secret
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -70,13 +86,12 @@ jobs:
           EXPECTED_SHA256: ${{ secrets.RELEASE_CERT_SHA256 }}
           KEYSTORE_DEST: "app/aldaftar.keystore"
         run: |
-          set -e
-          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$EXPECTED_SHA256" ]; then
-            echo "❌ أحد أسرار التوقيع المطلوبة غير موجود في GitHub Secrets."
-            exit 1
-          fi
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_PASSWORD"
+          test -n "$EXPECTED_SHA256"
 
-          mkdir -p app
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_DEST"
           test -s "$KEYSTORE_DEST"
 
@@ -84,36 +99,17 @@ jobs:
           EXTRACTED_SHA256=$(printf '%s\n' "$CERT_OUTPUT" | grep -i "SHA256:" | head -n 1 | sed 's/.*SHA256:[[:space:]]*//' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
           EXPECTED_SHA256_CLEAN=$(printf '%s' "$EXPECTED_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
 
-          if [ -z "$EXTRACTED_SHA256" ] || [ "$EXTRACTED_SHA256" != "$EXPECTED_SHA256_CLEAN" ]; then
-            echo "❌ شهادة الإصدار لا تطابق بصمة SHA-256 الموجودة في GitHub Secrets."
-            exit 1
-          fi
+          test -n "$EXTRACTED_SHA256"
+          test "$EXTRACTED_SHA256" = "$EXPECTED_SHA256_CLEAN"
 
-          echo "✅ تم التحقق من مستودع توقيع الإصدار."
-
-      # 3. التحقق من سلامة Gradle Wrapper
-      - name: Verify Gradle Wrapper
-        run: |
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || ! jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
-            echo "⚠️ Gradle wrapper jar is missing or corrupted! Generating valid wrapper..."
-            mkdir -p gradle/wrapper
-            if command -v gradle &> /dev/null; then
-              gradle wrapper --gradle-version 9.3.1
-            else
-              curl -sLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar || true
-            fi
-          fi
-          chmod +x gradlew || true
-
-      # 4. بناء نسخة Release مع تمرير بارامترات التوقيع الموثقة
-      - name: Build Release APK
+      - name: Build signed Release APK
         env:
           RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          echo "🚀 Building Release APK with verified signing configuration..."
+          set -euo pipefail
           ./gradlew assembleRelease \
             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
@@ -121,52 +117,29 @@ jobs:
             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
             --stacktrace --no-parallel --max-workers=1
 
-      # 5. الفحص الإجباري لشهادة Release APK باستخدام البصمة المحفوظة في GitHub Secrets
-      - name: Verify Release APK Signature
+      - name: Verify Release APK signature
         env:
           EXPECTED_SHA256: ${{ secrets.RELEASE_CERT_SHA256 }}
         run: |
-          set -e
-          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
-            echo "❌ لم يتم العثور على ملف Release APK."
-            exit 1
-          fi
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" -type f | head -n 1)
+          test -n "$APK_PATH"
 
-          APKSIGNER_BIN=""
-          if command -v apksigner >/dev/null 2>&1; then
-            APKSIGNER_BIN="apksigner"
-          elif [ -n "$ANDROID_SDK_ROOT" ]; then
-            APKSIGNER_BIN=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -n 1 || true)
-          elif [ -n "$ANDROID_HOME" ]; then
-            APKSIGNER_BIN=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1 || true)
-          fi
-
-          if [ -n "$APKSIGNER_BIN" ] && [ -x "$APKSIGNER_BIN" ]; then
-            SIGN_VERIFY_OUTPUT=$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH" 2>&1)
-          else
-            SIGN_VERIFY_OUTPUT=$(keytool -printcert -jarfile "$APK_PATH" 2>&1)
-          fi
-
+          APKSIGNER_BIN=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          SIGN_VERIFY_OUTPUT=$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH" 2>&1)
           ACTUAL_SHA256=$(printf '%s\n' "$SIGN_VERIFY_OUTPUT" | grep -iE "SHA-256 digest|SHA256:" | head -n 1 | sed -E 's/.*SHA-256 digest:[[:space:]]*//I; s/.*SHA256:[[:space:]]*//I' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
           EXPECTED_SHA256_CLEAN=$(printf '%s' "$EXPECTED_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
+          test -n "$ACTUAL_SHA256"
+          test "$ACTUAL_SHA256" = "$EXPECTED_SHA256_CLEAN"
 
-          if [ -z "$EXPECTED_SHA256_CLEAN" ] || [ -z "$ACTUAL_SHA256" ] || [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256_CLEAN" ]; then
-            echo "❌ توقيع Release APK لا يطابق بصمة SHA-256 الموجودة في GitHub Secrets."
-            exit 1
-          fi
-
-          echo "✅ تم التحقق من توقيع Release APK."
-
-      # 6. بناء Release AAB بنفس إعدادات وتوقيع Release الحالية دون تغييرها
-      - name: Build Release AAB
+      - name: Build signed Release AAB
         env:
           RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          echo "📦 Building Release AAB with the existing verified signing configuration..."
+          set -euo pipefail
           ./gradlew bundleRelease \
             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
@@ -174,24 +147,30 @@ jobs:
             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
             --stacktrace --no-parallel --max-workers=1
 
-          AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" | head -n 1)
-          if [ -z "$AAB_PATH" ] || [ ! -f "$AAB_PATH" ]; then
-            echo "❌ لم يتم العثور على ملف Release AAB."
-            exit 1
-          fi
+          AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" -type f | head -n 1)
+          test -n "$AAB_PATH"
+          echo "Release AAB: $AAB_PATH"
 
-          echo "✅ تم إنشاء Release AAB: $AAB_PATH"
-
-      # 7. رفع حزمة Release APK المؤكدة فقط بعد اجتياز فحص البصمة
-      - name: Upload Verified Release APK Artifact
+      - name: Upload verified Release APK
         uses: actions/upload-artifact@v4
         with:
           name: Al-Daftar-Release-APK
           path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
 
-      # 8. رفع حزمة Release AAB
-      - name: Upload Release AAB Artifact
+      - name: Upload Release AAB
         uses: actions/upload-artifact@v4
         with:
           name: Al-Daftar-Release-AAB
           path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Al-Daftar-Test-Reports
+          path: |
+            app/build/reports/**
+            app/build/test-results/**
+          if-no-files-found: warn
