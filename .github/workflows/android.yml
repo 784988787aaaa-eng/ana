@@ -158,9 +158,40 @@ jobs:
 
           echo "✅ تم التحقق من توقيع Release APK."
 
-      # 6. رفع حزمة Release APK المؤكدة فقط بعد اجتياز فحص البصمة
+      # 6. بناء Release AAB بنفس إعدادات وتوقيع Release الحالية دون تغييرها
+      - name: Build Release AAB
+        env:
+          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "📦 Building Release AAB with the existing verified signing configuration..."
+          ./gradlew bundleRelease \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            --stacktrace --no-parallel --max-workers=1
+
+          AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" | head -n 1)
+          if [ -z "$AAB_PATH" ] || [ ! -f "$AAB_PATH" ]; then
+            echo "❌ لم يتم العثور على ملف Release AAB."
+            exit 1
+          fi
+
+          echo "✅ تم إنشاء Release AAB: $AAB_PATH"
+
+      # 7. رفع حزمة Release APK المؤكدة فقط بعد اجتياز فحص البصمة
       - name: Upload Verified Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Al-Daftar-Release-APK
           path: app/build/outputs/apk/release/*.apk
+
+      # 8. رفع حزمة Release AAB
+      - name: Upload Release AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Al-Daftar-Release-AAB
+          path: app/build/outputs/bundle/release/*.aab
