@@ -1,21 +1,29 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanTouchTarget
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
@@ -25,94 +33,62 @@ fun CategoryDeleteConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirmDelete: (deleteLinkedAccounts: Boolean) -> Unit
 ) {
-    val errorColor = MaterialTheme.colorScheme.error
-    val buttonShape = MizanDialogTokens.buttonShape
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Card(
-            shape = MizanDialogTokens.shape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            modifier = Modifier
-                .fillMaxWidth(0.90f)
-                .widthIn(max = 340.dp)
-                .padding(8.dp)
+    MizanAnimatedDialog(onDismissRequest = onDismiss) { dismiss ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
         ) {
+            MizanDialogHeader(
+                title = stringResource(R.string.habayeb_category_delete_confirm, categoryName),
+                icon = Icons.Default.Delete,
+                iconTint = MaterialTheme.colorScheme.error,
+                onCloseClick = dismiss
+            )
             Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.habayeb_category_delete_confirm, categoryName),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = activeThemeColor,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = buttonShape,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(MizanTouchTarget.standardButtonHeight)
-                ) {
-                    Text(
-                        text = stringResource(R.string.habayeb_category_delete_cancel),
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
                 OutlinedButton(
-                    onClick = {
-                        onConfirmDelete(false)
-                        onDismiss()
-                    },
+                    onClick = { onConfirmDelete(false); dismiss() },
+                    modifier = Modifier.fillMaxWidth().height(42.dp),
+                    shape = MizanDialogTokens.buttonShape,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    shape = buttonShape,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(MizanTouchTarget.standardButtonHeight)
+                    contentPadding = PaddingValues(horizontal = 12.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.habayeb_category_delete_only),
+                        stringResource(R.string.habayeb_category_delete_only),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
-
-                OutlinedButton(
-                    onClick = {
-                        onConfirmDelete(true)
-                        onDismiss()
-                    },
-                    border = BorderStroke(1.dp, errorColor.copy(alpha = 0.5f)),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = errorColor
+                Button(
+                    onClick = { onConfirmDelete(true); dismiss() },
+                    modifier = Modifier.fillMaxWidth().height(42.dp),
+                    shape = MizanDialogTokens.buttonShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
                     ),
-                    shape = buttonShape,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(MizanTouchTarget.standardButtonHeight)
+                    contentPadding = PaddingValues(horizontal = 12.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.habayeb_category_delete_all_accounts),
+                        stringResource(R.string.habayeb_category_delete_all_accounts),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold
+                    )
+                }
+                OutlinedButton(
+                    onClick = dismiss,
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    shape = MizanDialogTokens.buttonShape,
+                    border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.45f)),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.habayeb_category_delete_cancel),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

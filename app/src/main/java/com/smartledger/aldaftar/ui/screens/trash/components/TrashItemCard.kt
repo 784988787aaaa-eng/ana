@@ -74,7 +74,6 @@ fun TrashItemCard(
     onOpenCustomerOverlay: () -> Unit = {},
     onOpenTransactionDetail: () -> Unit = {}
 ) {
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -157,10 +156,10 @@ fun TrashItemCard(
                 if (isSelected) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(7.dp))
                             .background(primaryColor)
-                            .border(1.dp, MaterialTheme.colorScheme.onPrimary, CircleShape),
+                            .border(1.dp, MaterialTheme.colorScheme.onPrimary, RoundedCornerShape(7.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -303,7 +302,7 @@ fun TrashItemCard(
                     Box(
                         modifier = Modifier
                             .size(24.dp)
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(7.dp))
                             .background(primaryColor),
                         contentAlignment = Alignment.Center
                     ) {
@@ -332,7 +331,7 @@ fun TrashItemCard(
                         }
 
                         IconButton(
-                            onClick = { showDeleteConfirm = true },
+                            onClick = onPermanentDelete,
                             modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
@@ -346,53 +345,5 @@ fun TrashItemCard(
                 }
             }
         }
-    }
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onPermanentDelete()
-                        showDeleteConfirm = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = errorColor),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.trash_delete_permanently),
-                        color = MaterialTheme.colorScheme.onError,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text(
-                        text = stringResource(id = R.string.trash_cancel),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            },
-            title = {
-                Text(
-                    text = stringResource(id = R.string.trash_delete_warning_title),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            text = {
-                Text(
-                    text = stringResource(id = R.string.trash_delete_warning_desc),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = MizanDialogTokens.shape,
-        )
     }
 }

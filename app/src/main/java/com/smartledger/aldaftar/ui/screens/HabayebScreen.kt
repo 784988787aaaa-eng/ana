@@ -384,9 +384,25 @@ fun HabayebScreen(
                 ) {
                     CustomerMultiSelectFloatingBar(
                         selectedCount = selectedCustomerIds.size,
+                        totalCount = uiState.filteredCustomers.size,
                         activeThemeColor = activeThemeColor,
                         onBulkDelete = { activeDialogState = HabayebDialogState.DeleteConfirm },
-                        onBulkAssignCategory = { activeDialogState = HabayebDialogState.BulkAssignCategory }
+                        onBulkAssignCategory = { activeDialogState = HabayebDialogState.BulkAssignCategory },
+                        onCancelSelection = {
+                            selectedCustomerIds.clear()
+                            isMultiSelectActive = false
+                        },
+                        onToggleSelectAll = {
+                            val ids = uiState.filteredCustomers.map { it.id }
+                            if (selectedCustomerIds.size == ids.size) {
+                                selectedCustomerIds.clear()
+                                isMultiSelectActive = false
+                            } else {
+                                selectedCustomerIds.clear()
+                                selectedCustomerIds.addAll(ids)
+                                isMultiSelectActive = ids.isNotEmpty()
+                            }
+                        }
                     )
                 }
             }

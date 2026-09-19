@@ -53,6 +53,7 @@ import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.components.MizanSelectionBar
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
@@ -1159,24 +1160,20 @@ private fun CloudArchiveBottomSheet(
                 }
             }
 
-            // Bottom Actions inside Archive
-            if (selectionMode && selected.isNotEmpty()) {
-                Button(
-                    onClick = { deleteMany = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.Default.Delete, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.backup_delete_selected_btn, selected.size),
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+            // Unified selection actions: compact, RTL, and destructive actions require confirmation.
+            if (selectionMode) {
+                MizanSelectionBar(
+                    selectedCount = selected.size,
+                    totalCount = items.size,
+                    onDismiss = {
+                        selectionMode = false
+                        selected = emptySet()
+                    },
+                    onToggleAll = {
+                        selected = if (selected.size == items.size) emptySet() else items.map { it.id }.toSet()
+                    },
+                    onDelete = { deleteMany = true }
+                )
             } else {
                 Button(
                     onClick = {
@@ -1537,13 +1534,24 @@ private fun CloudBackupRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 if (selection) {
-                    IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
+                    Surface(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(7.dp))
+                            .clickable(onClick = onClick),
+                        color = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (checked) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
                     }
                 } else {
                     Surface(

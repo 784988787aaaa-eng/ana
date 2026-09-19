@@ -10,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -34,14 +33,8 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.platform.contacts.StringUtils
-import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
-import com.smartledger.aldaftar.ui.components.MizanDialogActions
-import com.smartledger.aldaftar.ui.components.MizanDialogCard
-import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.mizanColors
 
 @Composable
 fun CustomerDeleteConfirmationDialog(
@@ -51,60 +44,25 @@ fun CustomerDeleteConfirmationDialog(
     onDismiss: () -> Unit
 ) {
     val isSingle = customer != null || selectedCustomerIds.size == 1
-    val singleCustomerName = customer?.name ?: ""
-
-    val mizanColors = MaterialTheme.mizanColors
-    val debtRed = mizanColors.debt
-
-    MizanAnimatedDialog(
-        onDismissRequest = onDismiss
-    ) { dismiss ->
-        MizanDialogCard(
-            maxWidth = MizanDialogTokens.compactMaxWidth,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-        ) {
-            MizanDialogHeader(
-                title = if (isSingle) {
-                    stringResource(id = R.string.habayeb_delete_account_title)
-                } else {
-                    stringResource(id = R.string.habayeb_bulk_delete_title)
-                },
-                icon = Icons.Default.Delete,
-                iconTint = debtRed,
-                onCloseClick = dismiss
-            )
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = if (isSingle) {
-                        stringResource(id = R.string.habayeb_delete_account_confirm, singleCustomerName)
-                    } else {
-                        stringResource(id = R.string.habayeb_bulk_delete_confirm, selectedCustomerIds.size)
-                    },
-                    fontSize = 13.5.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 20.sp
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                MizanDialogActions(
-                    confirmText = stringResource(id = R.string.habayeb_delete_yes),
-                    onConfirm = {
-                        onConfirm()
-                        dismiss()
-                    },
-                    confirmContainerColor = debtRed,
-                    confirmContentColor = mizanColors.onDebt,
-                    cancelText = stringResource(id = R.string.habayeb_cancel),
-                    onCancel = dismiss
-                )
-            }
-        }
+    val singleCustomerName = customer?.name.orEmpty()
+    val title = if (isSingle) {
+        stringResource(id = R.string.habayeb_delete_account_title)
+    } else {
+        stringResource(id = R.string.habayeb_bulk_delete_title)
     }
+    val message = if (isSingle) {
+        stringResource(id = R.string.habayeb_delete_account_confirm, singleCustomerName)
+    } else {
+        stringResource(id = R.string.habayeb_bulk_delete_confirm, selectedCustomerIds.size)
+    }
+
+    MizanDeleteConfirmationDialog(
+        title = title,
+        message = message,
+        confirmText = stringResource(id = R.string.habayeb_delete_yes),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable

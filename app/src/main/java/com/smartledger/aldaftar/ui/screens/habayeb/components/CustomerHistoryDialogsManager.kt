@@ -9,6 +9,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
@@ -24,6 +25,7 @@ data class CustomerHistoryDialogState(
     val showAddTransactionDialogFromHistory: HabayebCustomer? = null,
     val defaultTransactionTypeFromHistory: String = FinanceConstants.TYPE_OWED_BY_THEM,
     val transactionForOptionsDialog: HabayebTransaction? = null,
+    val transactionForDeleteConfirm: HabayebTransaction? = null,
     val transactionForAutoRepeatDialog: HabayebTransaction? = null,
     val showDeleteBulkTxConfirmDialog: Boolean = false,
     val showFilterMenu: Boolean = false,
@@ -146,12 +148,7 @@ fun CustomerHistoryDialogsManager(
                 }
             },
             onDelete = {
-                val txId = optTx.id
-                viewModel.deleteHabayebTransaction(txId)
-                coroutineScope.launch { viewModel.deleteRecurringForTransaction(txId) }
-                Toast.makeText(context, context.getString(R.string.habayeb_toast_delete_tx_success), Toast.LENGTH_SHORT).show()
-                onRefreshRecurringTrigger()
-                updateState { it.copy(transactionForOptionsDialog = null) }
+                updateState { it.copy(transactionForDeleteConfirm = optTx, transactionForOptionsDialog = null) }
             },
             onAutoRepeat = {
                 updateState { it.copy(transactionForAutoRepeatDialog = optTx, transactionForOptionsDialog = null) }
@@ -177,6 +174,23 @@ fun CustomerHistoryDialogsManager(
             },
             activeThemeColor = activeThemeColor,
             activeSubColor = activeSubColor
+        )
+    }
+
+    dialogState.transactionForDeleteConfirm?.let { tx ->
+        MizanDeleteConfirmationDialog(
+            title = stringResource(R.string.habayeb_confirm_delete_txs),
+            message = stringResource(R.string.habayeb_confirm_delete_single_tx, activeCustomer.name),
+            confirmText = stringResource(R.string.habayeb_delete),
+            onDismiss = { updateState { it.copy(transactionForDeleteConfirm = null) } },
+            onConfirm = {
+                val txId = tx.id
+                viewModel.deleteHabayebTransaction(txId)
+                coroutineScope.launch { viewModel.deleteRecurringForTransaction(txId) }
+                Toast.makeText(context, context.getString(R.string.habayeb_toast_delete_tx_success), Toast.LENGTH_SHORT).show()
+                onRefreshRecurringTrigger()
+                updateState { it.copy(transactionForDeleteConfirm = null) }
+            }
         )
     }
 

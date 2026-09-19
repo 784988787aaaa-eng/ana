@@ -66,7 +66,6 @@ fun TrashTransactionDetailBottomSheet(
     onPermanentDelete: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -215,7 +214,7 @@ fun TrashTransactionDetailBottomSheet(
                 }
 
                 OutlinedButton(
-                    onClick = { showDeleteConfirm = true },
+                    onClick = { onPermanentDelete() },
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
@@ -241,16 +240,5 @@ fun TrashTransactionDetailBottomSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
         }
-    }
-
-    if (showDeleteConfirm) {
-        TrashDetailDeleteConfirmDialog(
-            onConfirmPermanentDelete = {
-                showDeleteConfirm = false
-                onPermanentDelete()
-                onDismiss()
-            },
-            onDismiss = { showDeleteConfirm = false }
-        )
     }
 }

@@ -140,7 +140,7 @@
     <string name="habayeb_required_field">هذا الحقل مطلوب لإتمام الحفظ</string>
     <string name="habayeb_go_back">تراجع</string>
     <string name="habayeb_delete_account_title">حذف كلي للحساب</string>
-    <string name="habayeb_delete_account_confirm">هل أنت متأكد من حذف الحساب \'%s\' مع جميع حركاته المالية نهائياً؟</string>
+    <string name="habayeb_delete_account_confirm">سيتم نقل الحساب \'%s\' مع حركاته المالية إلى سلة المحذوفات ويمكن استعادته لاحقاً.</string>
     <string name="habayeb_delete_yes">نعم، حذف</string>
     <string name="habayeb_edit_name_title">تعديل اسم الزبون</string>
     <string name="habayeb_edit_customer_dialog_title">تعديل الحساب</string>
@@ -156,7 +156,7 @@
     <string name="habayeb_toast_valid_amount">الرجاء كتابة مبلغ المعاملة بشكل صحيح</string>
     <string name="habayeb_toast_select_type">تنبيه: يرجى تحديد نوع الحساب أولاً (له أو عليه) قبل الحفظ</string>
     <string name="habayeb_toast_tx_save_success">تم حفظ المعاملة بنجاح</string>
-    <string name="habayeb_toast_delete_success">تم حذف الحساب بنجاح</string>
+    <string name="habayeb_toast_delete_success">تم نقل الحساب إلى سلة المحذوفات</string>
     <string name="habayeb_toast_pdf_export_failed">فشل تصدير كشف الحساب: %s</string>
     <string name="habayeb_share_options">خيارات المشاركة</string>
     <string name="share_section_reports">التقارير والملفات</string>
@@ -198,10 +198,12 @@
     <string name="habayeb_rate_active">نشط (صرف: %1$s)</string>
     <string name="habayeb_rate_inactive_clean">صرف غير نشط</string>
     <string name="habayeb_no_notes">لا يوجد ملاحظات</string>
+    <string name="habayeb_select_all">تحديد الكل</string>
     <string name="habayeb_all_selected">تم تحديد الكل</string>
     <string name="habayeb_items_selected">%1$d محدد</string>
     <string name="habayeb_add_tx_desc">إضافة معاملة</string>
     <string name="habayeb_confirm_delete_txs">تأكيد الحذف</string>
+    <string name="habayeb_confirm_delete_single_tx">سيتم نقل معاملة حساب %1$s إلى سلة المحذوفات ويمكن استعادتها لاحقاً.</string>
     <string name="habayeb_confirm_delete_txs_msg">هل أنت متأكد من حذف %1$d معاملات نهائياً؟</string>
     <string name="habayeb_activate_exchange">تفعيل الصرف</string>
     <string name="habayeb_deactivate_exchange">تعطيل الصرف</string>
@@ -239,13 +241,13 @@
     <string name="habayeb_no_creditors">لا يوجد دائنين حالياً!</string>
     <string name="habayeb_add_customer_fab">إضافة عميل أو مورد</string>
     <string name="habayeb_bulk_delete_title">تأكيد حذف الكل</string>
-    <string name="habayeb_bulk_delete_confirm">هل أنت متأكد من حذف الحسابات المحددة (%d) مع جميع سجلاتها المالية نهائياً؟ لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="habayeb_bulk_delete_confirm">سيتم نقل الحسابات المحددة (%d) مع سجلاتها المالية إلى سلة المحذوفات ويمكن استعادتها لاحقاً.</string>
     <string name="habayeb_last_modified">آخر تعديل: %s</string>
     <string name="contact_whatsapp_direct">تواصل مباشر عبر الواتساب</string>
     <string name="habayeb_filter_date">التاريخ:</string>
-    <string name="habayeb_toast_delete_tx_success">تم حذف المعاملة بنجاح</string>
+    <string name="habayeb_toast_delete_tx_success">تم نقل المعاملة إلى سلة المحذوفات</string>
     <string name="habayeb_toast_stop_recurring_success">تم إيقاف وحذف الجدولة التلقائية للمعاملة</string>
-    <string name="habayeb_toast_delete_bulk_success">تم حذف المعاملات المحددة بنجاح</string>
+    <string name="habayeb_toast_delete_bulk_success">تم نقل المعاملات المحددة إلى سلة المحذوفات</string>
     <string name="habayeb_to_text">إلى</string>
     <string name="habayeb_recurring_title">جدولة التكرار التلقائي</string>
     <string name="habayeb_recurring_daily">يومياً</string>
@@ -257,6 +259,7 @@
     <string name="habayeb_recurring_btn_update">تحديث الجدولة ⚙</string>
     <string name="habayeb_recurring_btn_activate">تفعيل التكرار تلقائياً 🚀</string>
     <string name="habayeb_recurring_btn_stop_short">إيقاف التكرار</string>
+    <string name="habayeb_recurring_delete_confirm">سيتم إيقاف التكرار لهذه المعاملة. لن يؤثر ذلك على المعاملة أو بياناتها الحالية.</string>
     <string name="habayeb_recurring_toast_stop_success">تم إيقاف وحذف الجدولة التلقائية بنجاح.</string>
     <string name="add_transaction_title_edit">تعديل المعاملة</string>
     <string name="add_transaction_title_new">إضافة معاملة جديدة</string>
@@ -655,6 +658,8 @@
     <string name="trash_back">عودة</string>
     <string name="trash_restore_selected">استعادة المحددة</string>
     <string name="trash_delete_selected_permanently">حذف المحددة نهائياً</string>
+    <string name="trash_delete_selected_title">حذف العناصر المحددة نهائياً</string>
+    <string name="trash_delete_selected_confirm">سيتم حذف %1$d عناصر نهائياً من السلة، ولا يمكن استعادتها.</string>
     <string name="trash_search">بحث</string>
     <string name="trash_empty_bin">إفراغ السلة</string>
     <string name="trash_empty_message">لا توجد محذوفات</string>

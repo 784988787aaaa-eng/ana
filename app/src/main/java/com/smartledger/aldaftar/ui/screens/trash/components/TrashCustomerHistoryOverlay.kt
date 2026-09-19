@@ -45,7 +45,6 @@ fun TrashCustomerHistoryOverlay(
 ) {
     BackHandler { onDismiss() }
 
-    var showConfirmDeleteAccount by remember { mutableStateOf(false) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -146,7 +145,7 @@ fun TrashCustomerHistoryOverlay(
                         }
 
                         IconButton(
-                            onClick = { showConfirmDeleteAccount = true },
+                            onClick = onDeleteFullAccountPermanently,
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -324,37 +323,5 @@ fun TrashCustomerHistoryOverlay(
                 }
             }
         }
-    }
-
-    if (showConfirmDeleteAccount) {
-        AlertDialog(
-            shape = MizanDialogTokens.shape,
-            onDismissRequest = { showConfirmDeleteAccount = false },
-            title = {
-                Text(
-                    text = stringResource(id = R.string.trash_delete_warning_title),
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(text = stringResource(id = R.string.trash_delete_warning_desc))
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showConfirmDeleteAccount = false
-                        onDeleteFullAccountPermanently()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = errorColor)
-                ) {
-                    Text(text = stringResource(id = R.string.trash_delete_permanently))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDeleteAccount = false }) {
-                    Text(text = stringResource(id = R.string.trash_cancel))
-                }
-            }
-        )
     }
 }

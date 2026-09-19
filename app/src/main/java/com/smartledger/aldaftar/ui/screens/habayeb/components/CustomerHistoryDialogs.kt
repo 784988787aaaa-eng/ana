@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
@@ -30,32 +30,14 @@ fun DeleteBulkTxConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    if (show) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(stringResource(id = R.string.habayeb_confirm_delete_txs), fontWeight = FontWeight.Bold, fontSize = 16.sp) },
-            text = { Text(stringResource(id = R.string.habayeb_confirm_delete_txs_msg, selectedCount)) },
-            confirmButton = {
-                Button(
-                    onClick = onConfirm,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(stringResource(id = R.string.habayeb_delete), color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(id = R.string.habayeb_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = MizanDialogTokens.shape,
-        )
-    }
+    if (!show) return
+    MizanDeleteConfirmationDialog(
+        title = stringResource(id = R.string.habayeb_confirm_delete_txs),
+        message = stringResource(id = R.string.habayeb_confirm_delete_txs_msg, selectedCount),
+        confirmText = stringResource(id = R.string.habayeb_delete),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable

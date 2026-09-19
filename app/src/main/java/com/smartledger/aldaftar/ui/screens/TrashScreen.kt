@@ -25,6 +25,7 @@ import com.smartledger.aldaftar.ui.screens.trash.components.TrashItemListSection
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashTopBarSection
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashTransactionDetailBottomSheet
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashWrapper
+import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
 import com.smartledger.aldaftar.ui.screens.trash.utils.TrashStrings
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
@@ -47,6 +48,7 @@ enum class TrashSortType {
 sealed interface TrashDialogState {
     object None : TrashDialogState
     object EmptyConfirm : TrashDialogState
+    data class PermanentDeleteConfirm(val itemIds: List<String>) : TrashDialogState
     data class CustomerHistoryOverlay(val wrapper: TrashWrapper) : TrashDialogState
     data class TransactionDetail(val wrapper: TrashWrapper) : TrashDialogState
 }
@@ -238,10 +240,21 @@ fun TrashScreen(
                 isSelectionMode = isSelectionMode,
                 searchQuery = searchQuery,
                 selectedCount = selectedItemIds.size,
+                totalCount = processedItems.size,
                 hasItems = items.isNotEmpty(),
                 onSearchQueryChange = { searchQuery = it },
                 onSearchToggle = { isSearchActive = it },
                 onClearSelection = { clearSelection() },
+                onToggleSelectAll = {
+                    val visibleIds = processedItems.map { it.entity.id }
+                    if (visibleIds.isNotEmpty() && selectedItemIds.size == visibleIds.size) {
+                        clearSelection()
+                    } else {
+                        selectedItemIds.clear()
+                        selectedItemIds.addAll(visibleIds)
+                        isSelectionMode = true
+                    }
+                },
                 onBack = handleBackAction,
                 onRestoreSelected = {
                     val selectedItems = items.filter { selectedItemIds.contains(it.id) }
@@ -249,9 +262,9 @@ fun TrashScreen(
                     clearSelection()
                 },
                 onDeleteSelectedPermanently = {
-                    val selectedItems = items.filter { selectedItemIds.contains(it.id) }
-                    viewModel.permanentlyDeleteMultipleItems(selectedItems)
-                    clearSelection()
+                    if (selectedItemIds.isNotEmpty()) {
+                        activeDialogState = TrashDialogState.PermanentDeleteConfirm(selectedItemIds.toList())
+                    }
                 },
                 onRequestEmptyTrash = { activeDialogState = TrashDialogState.EmptyConfirm }
             )
@@ -285,7 +298,7 @@ fun TrashScreen(
                     }
                 },
                 onRestoreItem = { item -> viewModel.restoreDeletedItem(item) },
-                onPermanentDeleteItem = { item -> viewModel.permanentlyDeleteDeletedItem(item) },
+                onPermanentDeleteItem = { item -> activeDialogState = TrashDialogState.PermanentDeleteConfirm(listOf(item.id)) },
                 onOpenCustomerOverlay = { wrapper -> activeDialogState = TrashDialogState.CustomerHistoryOverlay(wrapper) },
                 onOpenTransactionDetail = { wrapper -> activeDialogState = TrashDialogState.TransactionDetail(wrapper) },
                 onLoadMore = { itemsLimit += 50 }
@@ -320,8 +333,7 @@ fun TrashScreen(
                     activeDialogState = TrashDialogState.None
                 },
                 onDeleteFullAccountPermanently = {
-                    viewModel.permanentlyDeleteDeletedItem(currentEntity)
-                    activeDialogState = TrashDialogState.None
+                    activeDialogState = TrashDialogState.PermanentDeleteConfirm(listOf(currentEntity.id))
                 },
                 onRestoreSingleTx = { txId ->
                     viewModel.restoreSingleTransactionFromBundle(currentEntity.id, txId, currentEntity)
@@ -357,8 +369,7 @@ fun TrashScreen(
                     activeDialogState = TrashDialogState.None
                 },
                 onPermanentDelete = {
-                    viewModel.permanentlyDeleteDeletedItem(currentEntity)
-                    activeDialogState = TrashDialogState.None
+                    activeDialogState = TrashDialogState.PermanentDeleteConfirm(listOf(currentEntity.id))
                 }
             )
         }
@@ -372,4 +383,24 @@ fun TrashScreen(
             activeDialogState = TrashDialogState.None
         }
     )
+
+    (activeDialogState as? TrashDialogState.PermanentDeleteConfirm)?.let { state ->
+        val count = state.itemIds.size
+        MizanDeleteConfirmationDialog(
+            title = stringResource(if (count == 1) R.string.trash_delete_warning_title else R.string.trash_delete_selected_title),
+            message = if (count == 1) {
+                stringResource(R.string.trash_delete_warning_desc)
+            } else {
+                stringResource(R.string.trash_delete_selected_confirm, count)
+            },
+            confirmText = stringResource(R.string.trash_delete_permanently),
+            onConfirm = {
+                val selected = items.filter { state.itemIds.contains(it.id) }
+                viewModel.permanentlyDeleteMultipleItems(selected)
+                clearSelection()
+                activeDialogState = TrashDialogState.None
+            },
+            onDismiss = { activeDialogState = TrashDialogState.None }
+        )
+    }
 }

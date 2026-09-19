@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.domain.model.RecurringConfig
@@ -75,6 +76,7 @@ fun RecurringTransactionPopup(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var existingConfig by remember(transaction.id) { mutableStateOf<RecurringConfig?>(null) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
     LaunchedEffect(transaction.id) { existingConfig = viewModel.recurringByOriginalTransaction(transaction.id) }
 
     var frequency by remember(existingConfig?.id) { mutableStateOf(existingConfig?.frequency ?: FinanceConstants.FREQ_DAILY) }
@@ -340,11 +342,7 @@ private fun RecurringActionsRow(
 
         if (existingConfig != null) {
             OutlinedButton(
-                onClick = {
-                    scope.launch { viewModel.deleteRecurring(existingConfig.id) }
-                    Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_stop_success), Toast.LENGTH_SHORT).show()
-                    onDismiss()
-                },
+                onClick = { showDeleteConfirmation = true },
                 modifier = Modifier
                     .weight(1.2f)
                     .height(MizanDialogTokens.buttonHeight),
@@ -424,4 +422,19 @@ private fun RecurringActionsRow(
             )
         }
     }
+    if (showDeleteConfirmation && existingConfig != null) {
+        MizanDeleteConfirmationDialog(
+            title = stringResource(R.string.habayeb_action_delete),
+            message = stringResource(R.string.habayeb_recurring_delete_confirm),
+            confirmText = stringResource(R.string.habayeb_delete),
+            onDismiss = { showDeleteConfirmation = false },
+            onConfirm = {
+                scope.launch { viewModel.deleteRecurring(existingConfig!!.id) }
+                Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_stop_success), Toast.LENGTH_SHORT).show()
+                showDeleteConfirmation = false
+                onDismiss()
+            }
+        )
+    }
+
 }

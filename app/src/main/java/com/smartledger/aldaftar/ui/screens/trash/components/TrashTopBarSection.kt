@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.components.MizanSelectionBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,10 +61,12 @@ fun TrashTopBarSection(
     isSelectionMode: Boolean,
     searchQuery: String,
     selectedCount: Int,
+    totalCount: Int,
     hasItems: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onSearchToggle: (Boolean) -> Unit,
     onClearSelection: () -> Unit,
+    onToggleSelectAll: () -> Unit,
     onBack: () -> Unit,
     onRestoreSelected: () -> Unit,
     onDeleteSelectedPermanently: () -> Unit,
@@ -173,52 +176,44 @@ fun TrashTopBarSection(
                     }
                 }
             } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        if (isSelectionMode) {
+                if (isSelectionMode) {
+                    MizanSelectionBar(
+                        selectedCount = selectedCount,
+                        totalCount = totalCount,
+                        onDismiss = onClearSelection,
+                        onToggleAll = onToggleSelectAll,
+                        onDelete = if (selectedCount > 0) onDeleteSelectedPermanently else null,
+                        leadingActions = {
                             IconButton(
-                                onClick = onClearSelection,
-                                modifier = Modifier.size(38.dp)
+                                onClick = onRestoreSelected,
+                                enabled = selectedCount > 0,
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(id = R.string.trash_cancel_selection),
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        } else {
-                            IconButton(
-                                onClick = onBack,
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowForward,
-                                    contentDescription = stringResource(id = R.string.trash_back),
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(22.dp)
+                                    imageVector = Icons.Default.Restore,
+                                    contentDescription = stringResource(id = R.string.trash_restore_selected),
+                                    tint = if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                         }
-
-                        if (isSelectionMode) {
-                            Text(
-                                text = stringResource(id = R.string.trash_selected_count, selectedCount),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        } else {
+                    )
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            IconButton(onClick = onBack, modifier = Modifier.size(38.dp)) {
+                                Icon(Icons.Default.ArrowForward, stringResource(id = R.string.trash_back), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                            }
                             Text(
                                 text = stringResource(id = R.string.trash_title),
                                 fontWeight = FontWeight.Black,
@@ -226,58 +221,13 @@ fun TrashTopBarSection(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        if (isSelectionMode) {
-                            IconButton(
-                                onClick = onRestoreSelected,
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Restore,
-                                    contentDescription = stringResource(id = R.string.trash_restore_selected),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = onDeleteSelectedPermanently,
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DeleteForever,
-                                    contentDescription = stringResource(id = R.string.trash_delete_selected_permanently),
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             if (hasItems) {
-                                IconButton(
-                                    onClick = { onSearchToggle(true) },
-                                    modifier = Modifier.size(38.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = stringResource(id = R.string.trash_search),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(22.dp)
-                                    )
+                                IconButton(onClick = { onSearchToggle(true) }, modifier = Modifier.size(38.dp)) {
+                                    Icon(Icons.Default.Search, stringResource(id = R.string.trash_search), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
                                 }
-                                IconButton(
-                                    onClick = onRequestEmptyTrash,
-                                    modifier = Modifier.size(38.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DeleteForever,
-                                        contentDescription = stringResource(id = R.string.trash_empty_bin),
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(22.dp)
-                                    )
+                                IconButton(onClick = onRequestEmptyTrash, modifier = Modifier.size(38.dp)) {
+                                    Icon(Icons.Default.DeleteForever, stringResource(id = R.string.trash_empty_bin), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
                                 }
                             }
                         }
