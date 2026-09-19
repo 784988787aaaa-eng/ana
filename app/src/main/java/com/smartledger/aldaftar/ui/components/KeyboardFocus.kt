@@ -38,11 +38,15 @@ suspend fun requestFocusAndShowKeyboard(
     repeat(boundedAttempts) { attempt ->
         awaitFrame()
 
-        val focused: Boolean = try {
-            focusRequester.requestFocus()
-        } catch (_: IllegalStateException) {
-            false
-        }
+        // Compose versions used by this project expose requestFocus() with a
+        // return type that may be Unit rather than Boolean. Keep the helper
+        // source-compatible with that API while still honoring a Boolean
+        // result when the runtime provides one. A successful Unit-returning
+        // request is treated as a successful focus request; an exception is
+        // still a failed attempt and is retried on the next frame.
+        val focusResult = runCatching { focusRequester.requestFocus() }
+        val focused = focusResult.isSuccess &&
+            ((focusResult.getOrNull() as? Boolean) ?: true)
 
         if (focused) {
             runCatching { keyboardController?.show() }
