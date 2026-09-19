@@ -21,7 +21,7 @@ class ReportLayoutSpacingContractTest {
         assertTrue(single.contains("Row(txRow + 1, 6)"))
         assertTrue(all.contains("Row(4, 6)"))
         assertTrue(all.contains("Row(6, 6)"))
-        assertTrue(all.contains("Row(3, 6)"))
+        assertTrue(all.contains("Row(3, 22)"))
         assertTrue(all.contains("Row(foreignRow + 1, 6)"))
     }
 }
