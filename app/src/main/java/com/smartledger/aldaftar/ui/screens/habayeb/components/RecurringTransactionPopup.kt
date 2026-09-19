@@ -76,7 +76,6 @@ fun RecurringTransactionPopup(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var existingConfig by remember(transaction.id) { mutableStateOf<RecurringConfig?>(null) }
-    val showRecurringDeleteConfirmation = remember { mutableStateOf(false) }
     LaunchedEffect(transaction.id) { existingConfig = viewModel.recurringByOriginalTransaction(transaction.id) }
 
     var frequency by remember(existingConfig?.id) { mutableStateOf(existingConfig?.frequency ?: FinanceConstants.FREQ_DAILY) }
@@ -318,6 +317,7 @@ private fun RecurringActionsRow(
     activeThemeColor: Color,
     onDismiss: () -> Unit
 ) {
+    val showRecurringDeleteConfirmation = remember { mutableStateOf(false) }
     val context = LocalContext.current
     Row(
         modifier = Modifier.fillMaxWidth(),
