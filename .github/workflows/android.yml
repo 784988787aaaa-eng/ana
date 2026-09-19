@@ -65,6 +65,7 @@ jobs:
           arch: x86_64
           profile: Nexus 6
           force-avd-creation: true
+          emulator-boot-timeout: 1200
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: bash ./gradlew connectedDebugAndroidTest --stacktrace --no-parallel --max-workers=1
