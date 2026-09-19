@@ -76,7 +76,7 @@ fun RecurringTransactionPopup(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var existingConfig by remember(transaction.id) { mutableStateOf<RecurringConfig?>(null) }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showRecurringDeleteConfirmation by remember { mutableStateOf(false) }
     LaunchedEffect(transaction.id) { existingConfig = viewModel.recurringByOriginalTransaction(transaction.id) }
 
     var frequency by remember(existingConfig?.id) { mutableStateOf(existingConfig?.frequency ?: FinanceConstants.FREQ_DAILY) }
@@ -342,7 +342,7 @@ private fun RecurringActionsRow(
 
         if (existingConfig != null) {
             OutlinedButton(
-                onClick = { showDeleteConfirmation = true },
+                onClick = { showRecurringDeleteConfirmation = true },
                 modifier = Modifier
                     .weight(1.2f)
                     .height(MizanDialogTokens.buttonHeight),
@@ -422,16 +422,16 @@ private fun RecurringActionsRow(
             )
         }
     }
-    if (showDeleteConfirmation && existingConfig != null) {
+    if (showRecurringDeleteConfirmation && existingConfig != null) {
         MizanDeleteConfirmationDialog(
             title = stringResource(R.string.habayeb_action_delete),
             message = stringResource(R.string.habayeb_recurring_delete_confirm),
             confirmText = stringResource(R.string.habayeb_delete),
-            onDismiss = { showDeleteConfirmation = false },
+            onDismiss = { showRecurringDeleteConfirmation = false },
             onConfirm = {
                 scope.launch { viewModel.deleteRecurring(existingConfig!!.id) }
                 Toast.makeText(context, context.getString(R.string.habayeb_recurring_toast_stop_success), Toast.LENGTH_SHORT).show()
-                showDeleteConfirmation = false
+                showRecurringDeleteConfirmation = false
                 onDismiss()
             }
         )
