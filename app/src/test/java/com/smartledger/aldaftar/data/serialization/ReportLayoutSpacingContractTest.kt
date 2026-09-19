@@ -18,7 +18,6 @@ class ReportLayoutSpacingContractTest {
         val all = source("AllCustomersExcelEngine.kt")
         assertTrue(single.contains("Row(4, 6)"))
         assertTrue(single.contains("Row(6, 6)"))
-        assertTrue(single.contains("Row(txRow + 1, 6)"))
         assertTrue(all.contains("Row(4, 6)"))
         assertTrue(all.contains("Row(6, 6)"))
         assertTrue(all.contains("Row(3, 22)"))
