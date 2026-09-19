@@ -39,7 +39,9 @@ data class HabayebUiState(
     val pinnedCustomerIds: Set<String> = emptySet(),
     val selectedCategory: String? = null,
     val selectedCustomerIds: List<String> = emptyList(),
-    val activeCustomersCount: Int = 0
+    val activeCustomersCount: Int = 0,
+    val isInitialized: Boolean = false,
+    val isLoading: Boolean = false
 )
 
 @OptIn(FlowPreview::class)
@@ -206,12 +208,12 @@ class HabayebFinanceViewModel(
     val customCategoriesState: StateFlow<List<CustomCategory>> = categoriesRepository.customCategoriesFlow
         .map { list -> list.filter { !it.isSystemClosed } }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val orderedCategoriesState: StateFlow<List<String>> = categoriesRepository.customCategoriesFlow
         .map { all -> all.sortedBy { it.displayOrder }.map { if (it.isSystemClosed) "CLOSED" else it.name } }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("CLOSED"))
+        .stateIn(viewModelScope, SharingStarted.Eagerly, listOf("CLOSED"))
 
     val closedCategoryNameState: StateFlow<String> = categoriesRepository.customCategoriesFlow
         .map { all -> 
@@ -219,7 +221,7 @@ class HabayebFinanceViewModel(
                 ?: getApplication<Application>().getString(com.smartledger.aldaftar.R.string.category_system_closed)
         }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 
             getApplication<Application>().getString(com.smartledger.aldaftar.R.string.category_system_closed))
 
     fun renameClosedCategory(newName: String) { viewModelScope.launch { categoryUseCase.renameClosedCategory(newName) } }
@@ -245,7 +247,15 @@ class HabayebFinanceViewModel(
                 }
         }
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CustomersUiState())
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            CustomersUiState(isLoading = true, isInitialized = false)
+        )
+
+    val isInitialDataReady: StateFlow<Boolean> = customersUiState
+        .map { it.isInitialized }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val filterGroup1Flow = combine(searchQuery, selectedFilterTab, financialSortMode, historicalSortMode) { q, t, f, h -> HabayebFilterGroup1(q, t, f, h) }
     private val filterGroup2Flow = combine(temporarilyHiddenCustomerIds, selectedCategoryFilter, pinnedCustomerIds) { hid, cat, pin -> HabayebFilterGroup2(hid, cat, pin) }
@@ -276,13 +286,14 @@ class HabayebFinanceViewModel(
     }
 
     val uiState: StateFlow<HabayebUiState> = combine(
+        customersUiState,
         filteredResultFlow,
         categoryUiDataFlow,
         filterParametersFlow,
         selectedCustomerIdsState
-    ) { filteredRes, categoryData, filterParams, selectedIds ->
+    ) { currentCustomersUi, filteredRes, categoryData, filterParams, selectedIds ->
         HabayebUiState(
-            customers = customersUiState.value.customers,
+            customers = currentCustomersUi.customers,
             filteredCustomers = filteredRes.filteredCustomers,
             totalOwedByThem = filteredRes.totalOwedByThem,
             totalOwedToThem = filteredRes.totalOwedToThem,
@@ -297,36 +308,42 @@ class HabayebFinanceViewModel(
             pinnedCustomerIds = filterParams.pinnedIds,
             selectedCategory = filterParams.selectedCat,
             selectedCustomerIds = selectedIds,
-            activeCustomersCount = filteredRes.activeCustomersCount
+            activeCustomersCount = filteredRes.activeCustomersCount,
+            isInitialized = currentCustomersUi.isInitialized,
+            isLoading = currentCustomersUi.isLoading
         )
     }
         .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HabayebUiState())
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            HabayebUiState(isInitialized = false, isLoading = true)
+        )
 
     val filteredCustomersState: StateFlow<List<CustomerUiState>> = uiState
         .map { it.filteredCustomers }
         .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val habayebOwedByThemTotalState: StateFlow<BigDecimal> = uiState
         .map { it.totalOwedByThem }
         .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BigDecimal.ZERO)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, BigDecimal.ZERO)
 
     val habayebOwedToThemTotalState: StateFlow<BigDecimal> = uiState
         .map { it.totalOwedToThem }
         .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BigDecimal.ZERO)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, BigDecimal.ZERO)
 
     val categoryCountsState: StateFlow<Map<String, Int>> = uiState
         .map { it.categoryCounts }
         .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     suspend fun saveHabayebCustomer(
         customer: HabayebCustomer, initialAmount: BigDecimal, initialType: String,

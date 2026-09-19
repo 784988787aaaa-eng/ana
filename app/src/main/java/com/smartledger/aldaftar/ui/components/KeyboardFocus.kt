@@ -8,49 +8,57 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.window.DialogWindowProvider
-import android.content.Context
 import android.view.View
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
-import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.delay
 
 /**
  * Opens the IME only for a field that explicitly owns focus.
  *
- * Important lifecycle rule: requesting the keyboard is paired with an explicit
- * cleanup when the owner leaves composition or becomes disabled. No window is
- * forced into ALWAYS_VISIBLE mode; that global window flag is a common cause
- * of the keyboard surviving dialog dismissal or reappearing on the next frame.
+ * The caller must place this composable in the same Compose window as the
+ * target input. This is especially important for Dialogs, because a Compose
+ * Dialog owns a separate Android Window from the Activity.
+ *
+ * The first attempt happens on the first attached frame. Two additional
+ * frame-bounded attempts cover Android/IME connection timing without sleeps,
+ * unbounded retries, or global ALWAYS_VISIBLE window flags.
  */
 suspend fun requestFocusAndShowKeyboard(
     focusRequester: FocusRequester,
     keyboardController: SoftwareKeyboardController?,
     imeTargetView: View? = null,
-    attempts: Int = 3,
-    delayMs: Long = 16L
+    attempts: Int = 3
 ) {
-    // Wait for exactly one frame so the input owner is attached before asking
-    // the IME to appear. The first request is immediate; the tiny bounded
-    // retries are only a platform fallback and never block the UI thread.
-    awaitFrame()
-    repeat(attempts.coerceIn(1, 3)) { attempt ->
-        runCatching { focusRequester.requestFocus() }
-        runCatching { keyboardController?.show() }
-        // Compose's SoftwareKeyboardController is intentionally best-effort.
-        // Once focus is owned, ask Android's IME service as a bounded fallback
-        // using the same attached host view. This covers Dialog/input-connection
-        // timing differences without forcing a global ALWAYS_VISIBLE state.
-        runCatching {
+    val boundedAttempts = attempts.coerceIn(1, 3)
+
+    repeat(boundedAttempts) { attempt ->
+        awaitFrame()
+
+        val focused = runCatching { focusRequester.requestFocus() }
+            .getOrDefault(false)
+
+        if (focused) {
+            runCatching { keyboardController?.show() }
+
             val view = imeTargetView
             if (view != null && view.isAttachedToWindow && view.isShown) {
-                val imm = view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                imm?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+                runCatching {
+                    ViewCompat.getWindowInsetsController(view)
+                        ?.show(WindowInsetsCompat.Type.ime())
+                }
             }
         }
-        if (attempt < attempts.coerceIn(1, 3) - 1) delay(delayMs.coerceIn(8L, 32L))
+
+        if (focused) return
+
+        // The next frame is the retry boundary. This keeps the fallback
+        // deterministic and gives Compose/Android one more frame to attach
+        // the input connection.
+        if (attempt == boundedAttempts - 1) return
     }
 }
 
@@ -80,10 +88,11 @@ fun ConfigureDialogImeWindow() {
 }
 
 /**
- * Automatic IME opening is opt-in. Callers must set autoShow=true only when
- * opening the surface should intentionally focus a specific field. Cleanup is
- * tied to the composable lifecycle so a dismissed surface cannot leave a
- * focused text field or IME behind.
+ * Automatic IME opening is opt-in.
+ *
+ * IMPORTANT: call this next to the target input, inside the Dialog/BottomSheet
+ * that owns that input. Calling it from the Activity-level parent of a Dialog
+ * creates a race between two Android Windows and is not a reliable IME contract.
  */
 @Composable
 fun RequestFocusAndShowKeyboard(
@@ -98,9 +107,12 @@ fun RequestFocusAndShowKeyboard(
 
     LaunchedEffect(enabled, key, autoShow) {
         if (!enabled || !autoShow) {
-            if (!enabled) hideKeyboardAndClearFocus(focusManager, keyboardController)
+            if (!enabled) {
+                hideKeyboardAndClearFocus(focusManager, keyboardController)
+            }
             return@LaunchedEffect
         }
+
         requestFocusAndShowKeyboard(
             focusRequester = focusRequester,
             keyboardController = keyboardController,

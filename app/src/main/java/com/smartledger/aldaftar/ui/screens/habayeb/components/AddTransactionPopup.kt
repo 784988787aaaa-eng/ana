@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.focus.focusProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
@@ -130,7 +131,7 @@ fun AddTransactionPopup(
     val isLendOperationSelected = TransactionType.fromValue(customer.initialType) == TransactionType.OWED_BY_THEM || customer.initialType == TransactionType.OWED_BY_THEM.value
     var selectedType by rememberSaveable { mutableStateOf(editingTransaction?.type ?: initialSelectedType) }
 
-    // Focus requester for amount input when clicked by user
+    // Focus requester for amount input
     val amountFocusRequester = remember { FocusRequester() }
     val descFocusRequester = remember { FocusRequester() }
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
@@ -346,6 +347,7 @@ fun AddTransactionPopup(
                                     modifier = Modifier
                                         .align(Alignment.CenterStart)
                                         .size(24.dp)
+                                        .focusProperties { canFocus = false }
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,

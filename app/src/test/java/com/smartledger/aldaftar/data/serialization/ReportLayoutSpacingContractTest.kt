@@ -6,7 +6,11 @@ import java.io.File
 
 class ReportLayoutSpacingContractTest {
     private fun source(relative: String): String =
-        File("app/src/main/java/com/smartledger/aldaftar/data/serialization/excel/$relative").readText()
+        listOf(
+            File("src/main/java/com/smartledger/aldaftar/data/serialization/excel/$relative"),
+            File("app/src/main/java/com/smartledger/aldaftar/data/serialization/excel/$relative")
+        ).firstOrNull(File::exists)?.readText()
+            ?: error("Excel source not found: $relative")
 
     @Test
     fun excelSpacerRowsStayCompactWithoutChangingRowIndices() {

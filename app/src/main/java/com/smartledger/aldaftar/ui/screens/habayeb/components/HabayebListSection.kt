@@ -1,13 +1,17 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -24,6 +28,8 @@ import com.smartledger.aldaftar.ui.state.CustomerUiState
 fun HabayebListSection(
     listState: LazyListState,
     filteredCustomers: List<CustomerUiState>,
+    isInitialized: Boolean = true,
+    isLoading: Boolean = false,
     selectedFilterTab: Int,
     selectedCategory: String? = null,
     selectedCustomerIds: List<String>,
@@ -91,7 +97,15 @@ fun HabayebListSection(
             },
         contentPadding = PaddingValues(top = 0.dp, bottom = 72.dp)
     ) {
-        if (filteredCustomers.isEmpty()) {
+        if (!isInitialized || isLoading) {
+            // حالة التهيئة/التحميل (Loading/Uninitialized): يُمنع فيها منعاً باتاً رسم شاشة "قائمة الحسابات فارغة"
+            items(count = 7, key = { "placeholder_customer_$it" }) {
+                LoadingCustomerPlaceholderRow(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp)
+                )
+            }
+        } else if (filteredCustomers.isEmpty()) {
+            // حالة الفراغ الحقيقي (Empty): لا تُعرض إلا بعد انتهاء استعلام قاعدة البيانات وعودة النتيجة الصريحة برقم 0
             item(key = "empty_state_${catKey}_$selectedFilterTab") {
                 Box(
                     modifier = Modifier
@@ -117,6 +131,7 @@ fun HabayebListSection(
                 }
             }
         } else {
+            // حالة وجود بيانات (Success/Populated): عرض القائمة فوراً
             items(
                 items = filteredCustomers,
                 key = { it.id },
@@ -181,5 +196,63 @@ private fun RenderCustomerRowItem(
             currentActiveCategory = getCustomerCategory(customer.id),
             onRemoveFromCategory = onRemoveFromCategoryClick
         )
+    }
+}
+
+@Composable
+private fun LoadingCustomerPlaceholderRow(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(68.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .width(110.dp)
+                            .height(14.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(70.dp)
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f))
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .width(60.dp)
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+        }
     }
 }

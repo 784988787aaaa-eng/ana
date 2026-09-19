@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @Composable
 fun AddCustomerFormFields(
@@ -60,6 +61,13 @@ fun AddCustomerFormFields(
     )
 
     val inputTextStyle = androidx.compose.material3.LocalTextStyle.current.copy(fontSize = 13.5.sp)
+
+    // The form is composed inside the dialog. Keep automatic IME startup here
+    // so focus and the keyboard controller belong to the same Android Window.
+    RequestFocusAndShowKeyboard(
+        focusRequester = focusRequester,
+        autoShow = true
+    )
 
     Column(
         modifier = modifier.fillMaxWidth(),

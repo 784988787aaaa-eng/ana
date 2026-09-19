@@ -13,9 +13,10 @@ import java.io.File
  */
 class PdfRendererBuildContractTest {
     private fun source(name: String): String =
-        File("app/src/main/java/com/smartledger/aldaftar/data/serialization/pdf/$name")
-            .takeIf(File::exists)
-            ?.readText()
+        listOf(
+            File("src/main/java/com/smartledger/aldaftar/data/serialization/pdf/$name"),
+            File("app/src/main/java/com/smartledger/aldaftar/data/serialization/pdf/$name")
+        ).firstOrNull(File::exists)?.readText()
             ?: error("PDF renderer source not found: $name")
 
     @Test
@@ -30,5 +31,21 @@ class PdfRendererBuildContractTest {
         val source = source("PdfPageRenderer.kt")
         assertTrue(source.contains("import com.smartledger.aldaftar.ui.helper.HabayebMathHelper"))
         assertTrue(source.contains("HabayebMathHelper.formatSmart(net.abs())"))
+    }
+
+    @Test
+    fun bookletCustomerTitleMatchesSingleReportAndAvoidsTableOverlap() {
+        val rendererSource = source("PdfPageRenderer.kt")
+        // Verify title format matches single report
+        assertTrue(rendererSource.contains("R.string.pdf_statement_title"))
+        // Verify text size is 17.5f matching single report
+        assertTrue(rendererSource.contains("textSize = 17.5f"))
+        // Verify title bottom margin is included so title does not hide behind table header
+        assertTrue(rendererSource.contains("titleBottomMargin = 12f"))
+        assertTrue(rendererSource.contains("workingY = textStartY + actualBannerHeight + titleBottomMargin"))
+
+        val engineSource = source("MasterBookletPdfEngine.kt")
+        // Verify inter-customer spacing / pagination check is in place
+        assertTrue(engineSource.contains("ctx.currentY + 200f > 780f"))
     }
 }

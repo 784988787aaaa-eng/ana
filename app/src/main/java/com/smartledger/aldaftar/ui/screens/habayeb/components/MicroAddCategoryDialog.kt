@@ -47,11 +47,11 @@ fun MicroAddCategoryDialog(
     var categoryName by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
-
     MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismiss ->
+        RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
+
         val handleSave = {
             val trimmed = categoryName.trim()
             if (trimmed.isNotBlank()) {

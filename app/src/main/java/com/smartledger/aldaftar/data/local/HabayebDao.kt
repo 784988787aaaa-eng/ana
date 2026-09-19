@@ -104,7 +104,7 @@ interface HabayebDao {
                             WHEN is_rate_calculated = 1 THEN equivalent_amount
                             WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
                                 THEN amount
-                            WHEN foreign_amount > 0 THEN foreign_amount
+                            WHEN is_foreign = 1 AND CAST(foreign_amount AS REAL) > 0 THEN foreign_amount
                             ELSE amount
                         END
                     WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN
@@ -112,7 +112,7 @@ interface HabayebDao {
                             WHEN is_rate_calculated = 1 THEN equivalent_amount
                             WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
                                 THEN amount
-                            WHEN foreign_amount > 0 THEN foreign_amount
+                            WHEN is_foreign = 1 AND CAST(foreign_amount AS REAL) > 0 THEN foreign_amount
                             ELSE amount
                         END
                     ELSE 0

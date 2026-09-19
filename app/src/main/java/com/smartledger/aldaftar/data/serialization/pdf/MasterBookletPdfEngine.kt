@@ -335,6 +335,14 @@ object MasterBookletPdfEngine {
         customer: CustomerUiState,
         summary: com.smartledger.aldaftar.data.serialization.pdf.SingleCustomerPdfSummary
     ) {
+        if (ctx.currentY > 150f) {
+            if (ctx.currentY + 200f > 780f) {
+                ctx.startNewPage()
+                ctx.currentY = 42f
+            } else {
+                ctx.currentY += 16f
+            }
+        }
         ctx.currentY = PdfPageRenderer.drawCustomerStatementSheet(
             canvas = ctx.currentPageCanvas,
             context = ctx.context,

@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import java.util.Date
 
 @Composable
@@ -60,6 +61,14 @@ fun AddTransactionFormFields(
     onDone: (() -> Unit)? = null
 ) {
     val focusManager = LocalFocusManager.current
+
+    // This form is shared by both transaction entry points. Because it is
+    // composed inside MizanAnimatedDialog, the IME request uses the dialog's
+    // own Android Window instead of racing the parent Activity window.
+    RequestFocusAndShowKeyboard(
+        focusRequester = amountFocusRequester,
+        autoShow = true
+    )
 
     val fieldShape = remember { RoundedCornerShape(10.dp) }
 

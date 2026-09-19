@@ -75,13 +75,27 @@ fun DateAndTimeSection(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = stringResource(id = R.string.datetime_picker_date),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.datetime_picker_date),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = DateTimeArabicHelper.formatArabicDateWithDayName(calendar),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1
+                    )
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -91,6 +105,7 @@ fun DateAndTimeSection(
                         label = stringResource(id = R.string.datetime_picker_day),
                         value = day,
                         range = 1..maxDays,
+                        format = "%02d",
                         onValueChange = { updateCalendar(Calendar.DAY_OF_MONTH, it) }
                     )
 
@@ -98,6 +113,7 @@ fun DateAndTimeSection(
                         label = stringResource(id = R.string.datetime_picker_month),
                         value = month,
                         range = 1..12,
+                        format = "%02d",
                         onValueChange = { updateCalendar(Calendar.MONTH, it) }
                     )
 
@@ -105,6 +121,7 @@ fun DateAndTimeSection(
                         label = stringResource(id = R.string.datetime_picker_year),
                         value = year,
                         range = 1980..2100,
+                        format = "%d",
                         onValueChange = { updateCalendar(Calendar.YEAR, it) }
                     )
                 }

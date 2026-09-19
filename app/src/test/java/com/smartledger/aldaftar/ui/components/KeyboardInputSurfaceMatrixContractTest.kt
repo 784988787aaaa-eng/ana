@@ -99,6 +99,19 @@ class KeyboardInputSurfaceMatrixContractTest {
     }
 
     @Test
+    fun automaticImeForSharedEntryFormsIsOwnedByTheActualInputSurface() {
+        val txPopup = source("ui/screens/habayeb/components/AddTransactionPopup.kt")
+        val txFields = source("ui/screens/habayeb/components/AddTransactionFormFields.kt")
+        val customerPopup = source("ui/screens/habayeb/components/AddCustomerPopup.kt")
+        val customerFields = source("ui/screens/habayeb/components/AddCustomerFormFields.kt")
+
+        assertTrue("transaction popup must not start IME from the Activity-level owner", !txPopup.contains("RequestFocusAndShowKeyboard"))
+        assertTrue("transaction form must own its IME startup", txFields.contains("RequestFocusAndShowKeyboard("))
+        assertTrue("customer popup must not start IME from the Activity-level owner", !customerPopup.contains("RequestFocusAndShowKeyboard"))
+        assertTrue("customer form must own its IME startup", customerFields.contains("RequestFocusAndShowKeyboard("))
+    }
+
+    @Test
     fun transactionCreationUsesOneSharedInputFormFromBothEntryPoints() {
         val popup = source("ui/screens/habayeb/components/AddTransactionPopup.kt")
         val host = source("ui/screens/habayeb/HabayebDialogHost.kt")

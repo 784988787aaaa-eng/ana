@@ -32,7 +32,8 @@ data class CustomersUiState(
     val customers: List<CustomerUiState> = emptyList(),
     val totalOwedByThem: BigDecimal = BigDecimal.ZERO,
     val totalOwedToThem: BigDecimal = BigDecimal.ZERO,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isInitialized: Boolean = false
 )
 
 @Immutable

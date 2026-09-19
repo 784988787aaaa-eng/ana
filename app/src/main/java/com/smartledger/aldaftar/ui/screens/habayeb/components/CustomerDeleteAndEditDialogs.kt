@@ -59,6 +59,8 @@ fun CustomerDeleteConfirmationDialog(
     MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismiss ->
+        RequestFocusAndShowKeyboard(focusRequester = editNameFocusRequester, autoShow = true)
+
         MizanDialogCard(
             maxWidth = MizanDialogTokens.compactMaxWidth,
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
@@ -153,8 +155,6 @@ fun CustomerEditDialog(
             editedPhoneTfv = TextFieldValue(text = phone, selection = TextRange(phone.length))
         }
     }
-
-    RequestFocusAndShowKeyboard(focusRequester = editNameFocusRequester, autoShow = true)
 
     MizanAnimatedDialog(
         onDismissRequest = onDismiss

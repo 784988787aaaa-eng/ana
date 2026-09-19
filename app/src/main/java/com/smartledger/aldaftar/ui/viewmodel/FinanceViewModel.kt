@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -49,7 +50,7 @@ class FinanceViewModel(
 
     val settingsState: StateFlow<AppSettings> = settingsRepository.settingsFlow
         .map { it ?: AppSettings() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     private val _themeModeState = MutableStateFlow(0)
     val themeModeState: StateFlow<Int> = _themeModeState.asStateFlow()
@@ -89,11 +90,16 @@ class FinanceViewModel(
 
     init {
         viewModelScope.launch {
-            settingsState.collect { settings ->
+            combine(
+                settingsState,
+                habayebRepository.customersFlow
+            ) { settings, customers ->
+                settings to customers
+            }.collect { (settings, _) ->
                 _themeModeState.value = settings.themeMode
-                _isSettingsLoaded.value = true
                 _isPasscodeEnabled.value = settings.isPasscodeEnabled
                 _isFirstLaunch.value = settings.isFirstLaunch
+                _isSettingsLoaded.value = true
             }
         }
     }

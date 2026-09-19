@@ -101,9 +101,16 @@ fun ExchangeRateSetupContent(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    RequestFocusAndShowKeyboard(focusRequester = focusRequester, autoShow = true)
-
     val mizanColors = MaterialTheme.mizanColors
+
+    // This composable is used both in a standalone Dialog and as dialog
+    // content inside other Mizan dialogs. Own IME startup at the actual input
+    // surface so LocalView/IME controller always belong to the correct window.
+    RequestFocusAndShowKeyboard(
+        focusRequester = focusRequester,
+        autoShow = true
+    )
+
 
     val statusColor by animateColorAsState(
         targetValue = when {

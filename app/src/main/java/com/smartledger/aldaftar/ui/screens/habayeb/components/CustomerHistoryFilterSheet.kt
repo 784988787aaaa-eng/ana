@@ -17,10 +17,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DateTimeArabicHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -68,11 +70,27 @@ fun CustomerHistoryFilterSheet(
         )
     }
 
-    val (startStr, endStr) = remember(customStartDate, customEndDate) {
-        val formatter = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
-        val start = customStartDate?.let { WesternDigits.normalize(formatter.format(Date(it))) } ?: "..."
-        val end = customEndDate?.let { WesternDigits.normalize(formatter.format(Date(it))) } ?: "..."
+    val defaultFromLabel = stringResource(id = R.string.datetime_picker_from_date)
+    val defaultToLabel = stringResource(id = R.string.datetime_picker_to_date)
+    val (startStr, endStr) = remember(customStartDate, customEndDate, defaultFromLabel, defaultToLabel) {
+        val start = customStartDate?.let {
+            val cal = Calendar.getInstance().apply { timeInMillis = it }
+            DateTimeArabicHelper.formatArabicDateFull(cal)
+        } ?: defaultFromLabel
+        val end = customEndDate?.let {
+            val cal = Calendar.getInstance().apply { timeInMillis = it }
+            DateTimeArabicHelper.formatArabicDateFull(cal)
+        } ?: defaultToLabel
         Pair(start, end)
+    }
+
+    val filterDurationLabel = remember(customStartDate, customEndDate) {
+        if (customStartDate != null && customEndDate != null) {
+            val s = Calendar.getInstance().apply { timeInMillis = customStartDate }
+            val e = Calendar.getInstance().apply { timeInMillis = customEndDate }
+            val days = DateTimeArabicHelper.calculateDaysBetween(s, e)
+            DateTimeArabicHelper.formatDaysCountArabic(days)
+        } else null
     }
 
     if (showRangePicker) {
@@ -152,44 +170,114 @@ fun CustomerHistoryFilterSheet(
             }
 
             if (dateFilterMode == 3) {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                            .clickable {
-                                selectedRangeTab = RangeTab.START
-                                showRangePicker = true
-                            }
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(14.dp))
-                            Text(startStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    selectedRangeTab = RangeTab.START
+                                    showRangePicker = true
+                                },
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (customStartDate != null) activeThemeColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(15.dp))
+                                Text(
+                                    text = startStr,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (customStartDate != null) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (customStartDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = stringResource(id = R.string.habayeb_to_text),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    selectedRangeTab = RangeTab.END
+                                    showRangePicker = true
+                                },
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (customEndDate != null) activeThemeColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(15.dp))
+                                Text(
+                                    text = endStr,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (customEndDate != null) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (customEndDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
-                    Text(stringResource(id = R.string.habayeb_to_text), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                            .clickable {
-                                selectedRangeTab = RangeTab.END
-                                showRangePicker = true
+
+                    if (filterDurationLabel != null) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = activeThemeColor.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.25f)),
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Event,
+                                    contentDescription = null,
+                                    tint = activeThemeColor,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "المدة المحددة: $filterDurationLabel",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = activeThemeColor
+                                )
                             }
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(14.dp))
-                            Text(endStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

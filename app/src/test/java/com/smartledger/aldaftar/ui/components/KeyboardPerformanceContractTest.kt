@@ -21,7 +21,9 @@ class KeyboardPerformanceContractTest {
         val show = src.indexOf("keyboardController?.show()", focus)
         assertTrue("IME focus must happen immediately after attachment frame", frame >= 0 && focus > frame && show > focus)
         assertTrue("Fallback retries must remain tightly bounded", src.contains("attempts.coerceIn(1, 3)"))
-        assertTrue("Fallback delay must remain frame-scale", src.contains("delayMs.coerceIn(8L, 32L)"))
+        assertTrue("IME retries must be frame-bounded", src.contains("awaitFrame()"))
+        assertTrue("IME helper must use the window's insets controller when available", src.contains("WindowInsetsCompat.Type.ime()"))
+        assertTrue("Blocking Handler/View.post fallback must not be used", !src.contains("view.post"))
     }
 
     @Test

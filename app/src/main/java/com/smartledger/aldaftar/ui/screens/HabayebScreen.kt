@@ -326,6 +326,8 @@ fun HabayebScreen(
                 HabayebListSection(
                     listState = listState,
                     filteredCustomers = uiState.filteredCustomers,
+                    isInitialized = uiState.isInitialized,
+                    isLoading = uiState.isLoading,
                     selectedFilterTab = uiState.selectedFilterTab,
                     selectedCategory = uiState.selectedCategory,
                     selectedCustomerIds = selectedCustomerIds,

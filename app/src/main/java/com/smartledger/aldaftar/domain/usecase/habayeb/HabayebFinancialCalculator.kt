@@ -153,7 +153,8 @@ object HabayebFinancialCalculator {
             customers = customerStates,
             totalOwedByThem = globalTotalOwedByThem.setScale(4, RoundingMode.HALF_EVEN),
             totalOwedToThem = globalTotalOwedToThem.setScale(4, RoundingMode.HALF_EVEN),
-            isLoading = false
+            isLoading = false,
+            isInitialized = true
         )
     }
 

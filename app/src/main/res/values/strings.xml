@@ -794,6 +794,8 @@
     <string name="datetime_picker_decrease">نقصان</string>
     <string name="datetime_picker_quick_today">اليوم</string>
     <string name="datetime_picker_quick_plus_month">+30 يوم</string>
+    <string name="datetime_picker_duration_prefix">المدة: %1$s</string>
+    <string name="datetime_picker_duration_total_prefix">إجمالي المدة: %1$s</string>
 
     <!-- ============================================================================== -->
     <!-- 09. النوافذ الحوارية ورسائل التأكيد (Dialogs, Overlays & Alert Messages)           -->

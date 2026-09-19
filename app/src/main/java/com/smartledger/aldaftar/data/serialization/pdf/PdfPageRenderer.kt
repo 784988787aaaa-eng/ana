@@ -430,35 +430,37 @@ object PdfPageRenderer {
         var currentCanvas = canvas
 
         if (includeCustomerHeaderBanner) {
-            val bannerText = if (customer.phone.isNotBlank()) {
-                "${customer.name} : ${customer.phone}"
+            val titleAccount = if (customer.phone.isNotBlank()) {
+                "${customer.name} (${customer.phone})"
             } else {
                 customer.name
             }
+            val bannerText = context.getString(R.string.pdf_statement_title, titleAccount)
             val paintBannerText = Paint().apply {
                 color = Color.parseColor(PdfColors.TEXT_DARK)
-                textSize = 14.0f
+                textSize = 17.5f
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 isAntiAlias = true
             }
             val measuredBannerHeight = PdfDrawingUtils.measureTextHeight(bannerText, paintBannerText, 545)
-            val requiredHeight = 9f + measuredBannerHeight + PdfReportLayoutSpec.customerTitleGap() + 28f
+            val titleTopMargin = 8f
+            val titleBottomMargin = 12f
+            val tableHeaderHeight = 28f
+            val requiredHeight = titleTopMargin + measuredBannerHeight + titleBottomMargin + tableHeaderHeight
             if (workingY + requiredHeight > 780f) {
                 currentCanvas = onPageBreakNeeded?.invoke(false) ?: currentCanvas
                 workingY = 42f
             }
 
-            if (!isDryRun && currentCanvas != null) {
-                // Clean customer heading: no colored block/accent strip.
-                // The table start is driven by the actual rendered banner height.
-                val bannerHeight = drawArabicText(
-                    currentCanvas, bannerText, 25f, workingY + 9f, 545, paintBannerText, Layout.Alignment.ALIGN_CENTER
-                )
-                workingY += PdfReportLayoutSpec.customerBannerAdvance(bannerHeight.toFloat())
+            val textStartY = workingY + titleTopMargin
+            val actualBannerHeight = if (!isDryRun && currentCanvas != null) {
+                drawArabicText(
+                    currentCanvas, bannerText, 25f, textStartY, 545, paintBannerText, Layout.Alignment.ALIGN_CENTER
+                ).toFloat()
             } else {
-                // Dry-run reserves exactly the same adaptive height as the real banner.
-                workingY += PdfReportLayoutSpec.customerBannerAdvance(measuredBannerHeight.toFloat())
+                measuredBannerHeight.toFloat()
             }
+            workingY = textStartY + actualBannerHeight + titleBottomMargin
         }
         if (!isDryRun && currentCanvas != null) {
             drawTableHeader(currentCanvas, workingY, context, customer.originalCustomer.initialType)
