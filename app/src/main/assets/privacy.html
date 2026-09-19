@@ -13,15 +13,18 @@
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
 
     :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --bg: #f5f7fb;
+      /* الهوية اللونية الرسمية لتطبيق الدفتر الذكي */
+      --primary: #4b36a2;          /* الأرجواني الملكي الرئيسي */
+      --primary-light: #8c7cff;    /* البنفسجي المضيء */
+      --primary-dark: #352478;     /* الأرجواني الداكن */
+      --secondary: #00b2fe;        /* الأزرق السماوي المعتمد */
+      --bg: #f8f7fc;               /* خلفية هادئة بلمسة أرجوانية خفيفة */
       --card: #ffffff;
-      --text: #172033;
+      --text: #1e1b2e;             /* نص كحلي أرجواني فاخر */
       --muted: #64748b;
-      --border: #e6eaf0;
-      --success: #16a34a;
-      --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+      --border: #e8e3f5;
+      --success: #10b981;          /* الأخضر المعتمد للمبيعات والمعاملات */
+      --shadow: 0 20px 50px rgba(75, 54, 162, 0.08);
     }
 
     * {
@@ -41,14 +44,14 @@
       line-height: 1.9;
     }
 
-    /* الخلفية العلوية */
+    /* الخلفية العلوية بالهوية اللونية للتطبيق */
     .hero {
       position: relative;
       overflow: hidden;
       background:
-        radial-gradient(circle at 10% 20%, rgba(255,255,255,.16), transparent 25%),
-        radial-gradient(circle at 90% 80%, rgba(255,255,255,.10), transparent 25%),
-        linear-gradient(135deg, #2563eb, #1e40af);
+        radial-gradient(circle at 10% 20%, rgba(140, 124, 255, 0.25), transparent 30%),
+        radial-gradient(circle at 90% 80%, rgba(0, 178, 254, 0.20), transparent 30%),
+        linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
       padding: 70px 20px 125px;
       text-align: center;
@@ -59,7 +62,7 @@
       content: "";
       position: absolute;
       border-radius: 50%;
-      background: rgba(255,255,255,.07);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .hero::before {
@@ -81,13 +84,13 @@
       height: 82px;
       margin: 0 auto 22px;
       border-radius: 24px;
-      background: rgba(255,255,255,.15);
-      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 42px;
-      box-shadow: 0 15px 35px rgba(0,0,0,.12);
+      box-shadow: 0 15px 35px rgba(0,0,0, 0.15);
       backdrop-filter: blur(10px);
     }
 
@@ -98,7 +101,7 @@
     }
 
     .hero p {
-      color: rgba(255,255,255,.85);
+      color: rgba(255, 255, 255, 0.88);
       font-size: 17px;
     }
 
@@ -107,10 +110,10 @@
       align-items: center;
       gap: 8px;
       margin-top: 22px;
-      padding: 8px 16px;
+      padding: 8px 18px;
       border-radius: 999px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.20);
       font-size: 13px;
     }
 
@@ -161,7 +164,7 @@
       height: 42px;
       min-width: 42px;
       border-radius: 13px;
-      background: #eff6ff;
+      background: #f0ebff;
       color: var(--primary);
       display: flex;
       align-items: center;
@@ -189,8 +192,8 @@
     .section li {
       position: relative;
       padding: 14px 18px 14px 18px;
-      background: #f8fafc;
-      border: 1px solid #eef2f7;
+      background: #fbfaff;
+      border: 1px solid #f0ebff;
       border-radius: 13px;
       color: #475569;
     }
@@ -202,13 +205,13 @@
       margin-left: 10px;
     }
 
-    /* بطاقة Google Drive */
+    /* بطاقة Google Drive متناسقة مع ألوان التطبيق */
     .drive-box {
       margin-top: 20px;
       padding: 20px;
       border-radius: 16px;
-      background: linear-gradient(135deg, #f8fbff, #f1f5ff);
-      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #fcfaff, #f3edff);
+      border: 1px solid #e2d5ff;
     }
 
     .drive-title {
@@ -216,6 +219,7 @@
       align-items: center;
       gap: 10px;
       font-weight: 700;
+      color: var(--primary);
       margin-bottom: 8px;
     }
 
@@ -227,17 +231,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 5px 15px rgba(37,99,235,.08);
+      box-shadow: 0 5px 15px rgba(75, 54, 162, 0.10);
     }
 
-    /* التواصل */
+    /* التواصل بدعامة ألوان التطبيق */
     .contact {
       margin: 28px 34px 34px;
-      padding: 26px;
+      padding: 28px;
       border-radius: 20px;
-      background: #172033;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
       color: white;
       text-align: center;
+      box-shadow: 0 10px 30px rgba(75, 54, 162, 0.20);
     }
 
     .contact h2 {
@@ -246,7 +251,7 @@
     }
 
     .contact p {
-      color: #cbd5e1;
+      color: #e2d8ff;
       font-size: 14px;
       margin-bottom: 18px;
     }
@@ -257,16 +262,18 @@
       gap: 9px;
       text-decoration: none;
       background: white;
-      color: #172033;
-      padding: 11px 19px;
+      color: var(--primary);
+      padding: 11px 22px;
       border-radius: 12px;
       font-weight: 700;
       transition: .2s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0, 0.12);
     }
 
     .email-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+      box-shadow: 0 8px 25px rgba(0,0,0, 0.20);
+      background: #fdfcff;
     }
 
     footer {
@@ -487,4 +494,4 @@
   </footer>
 
 </body>
-            </html>
+  </html>
