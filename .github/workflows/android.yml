@@ -44,17 +44,17 @@ jobs:
       - name: Verify Gradle Wrapper
         run: |
           set -euo pipefail
-          test -x ./gradlew
+          test -s ./gradlew
           test -s gradle/wrapper/gradle-wrapper.jar
           jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null
-          ./gradlew --version
+          bash ./gradlew --version
 
       # Release gate: static analysis + the complete JVM unit-test suite must pass
       # before any signed production artifact is built.
       - name: Run lint and complete unit-test suite
         run: |
           set -euo pipefail
-          ./gradlew clean lintDebug testDebugUnitTest --stacktrace --no-parallel --max-workers=1
+          bash ./gradlew clean lintDebug testDebugUnitTest --stacktrace --no-parallel --max-workers=1
 
       # Release gate: execute instrumentation/UI tests on a real Android runtime.
       - name: Run instrumentation/UI tests on API 35
@@ -67,7 +67,7 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --stacktrace --no-parallel --max-workers=1
+          script: bash ./gradlew connectedDebugAndroidTest --stacktrace --no-parallel --max-workers=1
 
       - name: Set up Standard Android Debug Keystore
         run: |
@@ -110,12 +110,7 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          ./gradlew assembleRelease \
-            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
-            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
-            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
-            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
-            --stacktrace --no-parallel --max-workers=1
+          bash ./gradlew assembleRelease             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE"             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD"             --stacktrace --no-parallel --max-workers=1
 
       - name: Verify Release APK signature
         env:
@@ -140,12 +135,7 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          ./gradlew bundleRelease \
-            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
-            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
-            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
-            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
-            --stacktrace --no-parallel --max-workers=1
+          bash ./gradlew bundleRelease             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE"             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD"             --stacktrace --no-parallel --max-workers=1
 
           AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" -type f | head -n 1)
           test -n "$AAB_PATH"
