@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
