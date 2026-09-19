@@ -65,6 +65,9 @@ fun MainAppLayout(
     var showLicenseDialog by remember { mutableStateOf(false) }
     var forceLicenseDialog by remember { mutableStateOf(false) }
     val licenseSnapshot by licenseViewModel.snapshot.collectAsStateWithLifecycle()
+    // Selection is owned by the Habayeb ViewModel so Back can cancel it globally
+    // before the normal navigation/exit behavior is reached.
+    val selectedCustomerIds by habayebViewModel.selectedCustomerIdsState.collectAsStateWithLifecycle()
 
     var isFloatingSearchActive by remember { mutableStateOf(viewModel.isFloatingSearchActive()) }
     var isSearchActive by remember { mutableStateOf(false) }
@@ -92,15 +95,24 @@ fun MainAppLayout(
 
     BackHandler {
         val defaultStart = Screen.HABAYEB
-        if (drawerState.isOpen) {
-            scope.launch { drawerState.close() }
-        } else if (currentScreen != defaultStart) {
-            currentScreen = defaultStart
-        } else {
-            if (settings.doubleCheckExit) {
-                showExitConfirmDialog = true
-            } else {
-                onExit()
+        when {
+            drawerState.isOpen -> {
+                scope.launch { drawerState.close() }
+            }
+            selectedCustomerIds.isNotEmpty() -> {
+                // First Back press always exits customer-selection mode only.
+                // It must not navigate away or show the exit confirmation dialog.
+                habayebViewModel.updateSelectedCustomerIds(emptyList())
+            }
+            currentScreen != defaultStart -> {
+                currentScreen = defaultStart
+            }
+            else -> {
+                if (settings.doubleCheckExit) {
+                    showExitConfirmDialog = true
+                } else {
+                    onExit()
+                }
             }
         }
     }
