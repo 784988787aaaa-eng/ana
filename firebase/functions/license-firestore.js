@@ -170,6 +170,16 @@ async function findLicenseByEmail(env, email) {
 }
 
 async function bindUser(env, uid, email, accountCode) {
+  const license = licenseRef(env, accountCode);
+  const licenseSnap = await license.get();
+  if (!licenseSnap.exists) throw new Error("license_not_found");
+  const currentLicense = licenseSnap.data();
+  const ownerUid = String(currentLicense.ownerUid || "").trim();
+  if (ownerUid && ownerUid !== uid) throw new Error("account_owner_mismatch");
+  if (!ownerUid) {
+    await license.set({ ownerUid: uid, updatedAt: Date.now() }, { merge: true });
+  }
+
   const ref = userRef(env, uid);
   const existing = await ref.get();
   const data = {
@@ -512,7 +522,7 @@ export async function licenseFetch(request, env) {
     const code = String(error?.message || "server_error");
     if (code === "invalid_json") return json(400, { error: code });
     if (code === "trial_expired") return json(403, { error: code });
-    if (code === "license_signing_key_missing") return json(503, { error: code });
+    if (code === "license_signing_key_missing") return json(503, { error: code });  if (code === "account_owner_mismatch") return json(403, { error: "account_owner_mismatch" });
     if (code === "invalid_license_type") return json(400, { error: code });
     if (code === "firestore_license_db_missing") return json(500, { error: code });
     return json(500, { error: "server_error" });
