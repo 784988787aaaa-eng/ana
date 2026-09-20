@@ -1,35 +1,55 @@
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAppCheck } from "firebase-admin/app-check";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
-import worker from "./worker.js";
 import { licenseFetch } from "./license-firestore.js";
-import { FirestoreKV } from "./kv-compat.js";
 
 initializeApp();
 const db = getFirestore();
 
 const LICENSE_PRIVATE_KEY = defineSecret("SMARTLEDGER_ACCOUNT_LICENSE_PRIVATE_KEY");
 const RATE_LIMIT_SALT = defineSecret("SMARTLEDGER_RATE_LIMIT_SALT");
-const ADMIN_SECRET = defineSecret("SMARTLEDGER_ADMIN_SECRET");
-const GOOGLE_CLIENT_ID = defineSecret("GOOGLE_CLIENT_ID");
-const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_CLIENT_SECRET");
-const secrets = [LICENSE_PRIVATE_KEY, RATE_LIMIT_SALT, ADMIN_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET];
+const secrets = [LICENSE_PRIVATE_KEY, RATE_LIMIT_SALT];
 
 function buildEnv() {
   return {
-    SMARTLEDGER_KV: new FirestoreKV(db),
     SMARTLEDGER_LICENSE_DB: db,
     SMARTLEDGER_ACCOUNT_LICENSE_PRIVATE_KEY: LICENSE_PRIVATE_KEY.value(),
-    SMARTLEDGER_RATE_LIMIT_SALT: RATE_LIMIT_SALT.value(),
-    SMARTLEDGER_ADMIN_SECRET: ADMIN_SECRET.value(),
-    GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID.value(),
-    GOOGLE_CLIENT_SECRET: GOOGLE_CLIENT_SECRET.value()
+    SMARTLEDGER_RATE_LIMIT_SALT: RATE_LIMIT_SALT.value()
   };
 }
 
-function toWebRequest(req) {
+async function authenticateRequest(request) {
+  const authorization = String(request.headers.get("Authorization") || "");
+  if (!authorization.startsWith("Bearer ")) {
+    return { response: new Response(JSON.stringify({ error: "auth_required" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+    }) };
+  }
+
+  const idToken = authorization.slice("Bearer ".length).trim();
+  if (!idToken) {
+    return { response: new Response(JSON.stringify({ error: "auth_required" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+    }) };
+  }
+
+  try {
+    const decoded = await getAuth().verifyIdToken(idToken);
+    return { decoded };
+  } catch (_) {
+    return { response: new Response(JSON.stringify({ error: "auth_invalid" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+    }) };
+  }
+}
+
+function toWebRequest(req, auth) {
   const protocol = req.get("x-forwarded-proto") || "https";
   const host = req.get("x-forwarded-host") || req.get("host");
   const url = new URL(req.originalUrl || req.url || "/", protocol + "://" + host);
@@ -38,6 +58,11 @@ function toWebRequest(req) {
     if (Array.isArray(value)) headers.set(name, value.join(", "));
     else if (value != null) headers.set(name, String(value));
   }
+
+  headers.set("X-Firebase-UID", String(auth.uid));
+  headers.set("X-Firebase-Email", String(auth.email || ""));
+  headers.set("X-Firebase-Admin", auth.admin === true ? "true" : "false");
+
   const init = { method: req.method, headers };
   if (req.method !== "GET" && req.method !== "HEAD") {
     init.body = req.rawBody ?? Buffer.from("");
@@ -49,7 +74,11 @@ function toWebRequest(req) {
 async function sendWebResponse(webResponse, res) {
   res.status(webResponse.status);
   webResponse.headers.forEach((value, key) => res.setHeader(key, value));
-  if (!webResponse.body) { res.end(); return; }
+  if (!webResponse.body) {
+    res.end();
+    return;
+  }
+
   const reader = webResponse.body.getReader();
   try {
     while (true) {
@@ -57,7 +86,9 @@ async function sendWebResponse(webResponse, res) {
       if (done) break;
       res.write(Buffer.from(value));
     }
-  } finally { reader.releaseLock(); }
+  } finally {
+    reader.releaseLock();
+  }
   res.end();
 }
 
@@ -74,26 +105,20 @@ export const smartledgerApi = onRequest({
   invoker: "public",
   secrets
 }, async (req, res) => {
-  // Compatibility phase: validate App Check when present; enforcement will be
-  // enabled only after the Android client starts sending the token.
   try {
     await verifyOptionalAppCheck(req);
-  } catch (_) {
-    res.status(401).set("Content-Type", "application/json; charset=utf-8");
-    res.send(JSON.stringify({ error: "app_check_failed" }));
-    return;
-  }
 
-  try {
-    const request = toWebRequest(req);
-    const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
-    const response = (path.startsWith("/license") || path.startsWith("/admin"))
-      ? await licenseFetch(request, buildEnv())
-      : await worker.fetch(request, buildEnv());
+    const auth = await authenticateRequest(toWebRequest(req, { uid: "" }));
+    if (auth.response) {
+      await sendWebResponse(auth.response, res);
+      return;
+    }
+
+    const request = toWebRequest(req, auth.decoded);
+    const response = await licenseFetch(request, buildEnv());
     await sendWebResponse(response, res);
   } catch (error) {
-    const request = toWebRequest(req);
-    const response = worker.errorResponse(error, request);
-    await sendWebResponse(response, res);
+    const body = JSON.stringify({ error: String(error?.message || "server_error") });
+    res.status(500).set("Content-Type", "application/json; charset=utf-8").send(body);
   }
 });
