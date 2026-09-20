@@ -3,7 +3,8 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getAppCheck } from "firebase-admin/app-check";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
-import worker from "./worker.js";\nimport { licenseFetch } from "./license-firestore.js";
+import worker from "./worker.js";
+import { licenseFetch } from "./license-firestore.js";
 import { FirestoreKV } from "./kv-compat.js";
 
 initializeApp();
@@ -18,7 +19,8 @@ const secrets = [LICENSE_PRIVATE_KEY, RATE_LIMIT_SALT, ADMIN_SECRET, GOOGLE_CLIE
 
 function buildEnv() {
   return {
-    SMARTLEDGER_KV: new FirestoreKV(db),\n    SMARTLEDGER_LICENSE_DB: db,
+    SMARTLEDGER_KV: new FirestoreKV(db),
+    SMARTLEDGER_LICENSE_DB: db,
     SMARTLEDGER_ACCOUNT_LICENSE_PRIVATE_KEY: LICENSE_PRIVATE_KEY.value(),
     SMARTLEDGER_RATE_LIMIT_SALT: RATE_LIMIT_SALT.value(),
     SMARTLEDGER_ADMIN_SECRET: ADMIN_SECRET.value(),
@@ -84,7 +86,10 @@ export const smartledgerApi = onRequest({
 
   try {
     const request = toWebRequest(req);
-    const response = await worker.fetch(request, buildEnv());
+    const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
+    const response = (path.startsWith("/license") || path.startsWith("/admin"))
+      ? await licenseFetch(request, buildEnv())
+      : await worker.fetch(request, buildEnv());
     await sendWebResponse(response, res);
   } catch (error) {
     const request = toWebRequest(req);
