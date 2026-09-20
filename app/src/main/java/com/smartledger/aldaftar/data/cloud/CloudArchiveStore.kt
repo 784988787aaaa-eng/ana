@@ -11,7 +11,6 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.FileInputStream
 import java.io.RandomAccessFile
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -110,7 +109,7 @@ class CloudArchiveStore(context: Context) {
 
         val escapedName = folderName.replace("'", "\\'")
         val query = "'$parentId' in parents and name = '$escapedName' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
-        val url = "https://www.googleapis.com/drive/v3/files?q=\${URLEncoder.encode(query, "UTF-8")}&fields=files(id,name)&pageSize=10"
+        val url = "https://www.googleapis.com/drive/v3/files?q=${URLEncoder.encode(query, "UTF-8")}&fields=files(id,name)&pageSize=10"
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $token")
@@ -183,13 +182,13 @@ class CloudArchiveStore(context: Context) {
 
     private fun monthFolderName(name: String): String {
         val match = Regex("""^(?:SNA_|SMN_)(\d{4})-(\d{2})-""").find(name)
-        return if (match != null) "شهر \${match.groupValues[2]}" else "شهر غير محدد"
+        return if (match != null) "شهر ${match.groupValues[2]}" else "شهر غير محدد"
     }
 
     private fun directDriveList(token: String, search: String): List<CloudBackupFile> {
         val rootId = getOrCreateFolderId(token, "root", BACKUP_ROOT_FOLDER_NAME)
         val rootQuery = "'$rootId' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"
-        val rootUrl = "https://www.googleapis.com/drive/v3/files?q=\${URLEncoder.encode(rootQuery, "UTF-8")}&fields=files(id,name)&pageSize=100"
+        val rootUrl = "https://www.googleapis.com/drive/v3/files?q=${URLEncoder.encode(rootQuery, "UTF-8")}&fields=files(id,name)&pageSize=100"
         val rootConn = (URL(rootUrl).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $token")
@@ -214,7 +213,7 @@ class CloudArchiveStore(context: Context) {
         for (folder in folders) {
             val folderId = folder.getString("id")
             val query = "'$folderId' in parents and trashed=false and mimeType != 'application/vnd.google-apps.folder'"
-            val url = "https://www.googleapis.com/drive/v3/files?q=\${URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,size,modifiedTime,createdTime,mimeType)&orderBy=modifiedTime desc&pageSize=100"
+            val url = "https://www.googleapis.com/drive/v3/files?q=${URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,size,modifiedTime,createdTime,mimeType)&orderBy=modifiedTime desc&pageSize=100"
             val conn = (URL(url).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 setRequestProperty("Authorization", "Bearer $token")
@@ -256,7 +255,7 @@ class CloudArchiveStore(context: Context) {
         val monthId = getOrCreateFolderId(token, rootId, monthFolderName(name))
         val escapedName = name.replace("'", "\\'")
         val findQuery = "'$monthId' in parents and trashed=false and name='$escapedName'"
-        val findUrl = "https://www.googleapis.com/drive/v3/files?q=\${URLEncoder.encode(findQuery, "UTF-8")}&fields=files(id,name,mimeType,size,modifiedTime)&pageSize=10"
+        val findUrl = "https://www.googleapis.com/drive/v3/files?q=${URLEncoder.encode(findQuery, "UTF-8")}&fields=files(id,name,mimeType,size,modifiedTime)&pageSize=10"
         val findConn = (URL(findUrl).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $token")
@@ -278,7 +277,7 @@ class CloudArchiveStore(context: Context) {
         val uploadUrl = if (existing != null) {
             initiateResumableUpload(
                 token, "PATCH",
-                "https://www.googleapis.com/upload/drive/v3/files/\${existing.getString("id")}?uploadType=resumable",
+                "https://www.googleapis.com/upload/drive/v3/files/${existing.getString("id")}?uploadType=resumable",
                 file.length(), name, null
             )
         } else {
@@ -414,7 +413,7 @@ class CloudArchiveStore(context: Context) {
     private fun directDriveDownload(token: String, fileId: String): ByteArray {
         require(fileId.isNotBlank()) { "invalid_file" }
         getBackupMetadata(token, fileId)
-        val url = "https://www.googleapis.com/drive/v3/files/\${URLEncoder.encode(fileId, "UTF-8")}?alt=media"
+        val url = "https://www.googleapis.com/drive/v3/files/${URLEncoder.encode(fileId, "UTF-8")}?alt=media"
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $token")
@@ -435,7 +434,7 @@ class CloudArchiveStore(context: Context) {
     }
 
     private fun getBackupMetadata(token: String, fileId: String): JSONObject {
-        val url = "https://www.googleapis.com/drive/v3/files/\${URLEncoder.encode(fileId, "UTF-8")}?fields=id,name,mimeType,parents,trashed"
+        val url = "https://www.googleapis.com/drive/v3/files/${URLEncoder.encode(fileId, "UTF-8")}?fields=id,name,mimeType,parents,trashed"
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $token")
@@ -465,7 +464,7 @@ class CloudArchiveStore(context: Context) {
         var count = 0
         for (fileId in ids.take(100)) {
             if (fileId.isBlank()) continue
-            val conn = (URL("https://www.googleapis.com/drive/v3/files/\${URLEncoder.encode(fileId, "UTF-8")}")
+            val conn = (URL("https://www.googleapis.com/drive/v3/files/${URLEncoder.encode(fileId, "UTF-8")}")
                 .openConnection() as HttpURLConnection).apply {
                 requestMethod = "DELETE"
                 setRequestProperty("Authorization", "Bearer $token")
