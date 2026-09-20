@@ -65,7 +65,7 @@ class BackupSyncViewModel(
     private val _operationState = MutableStateFlow(BackupOperationState.Idle)
     val operationState: StateFlow<BackupOperationState> = _operationState.asStateFlow()
     val isBusy: StateFlow<Boolean> = operationState
-        .map { it != BackupOperationState.Idle && it != BackupOperationState.Success && it != BackupOperationState.Error }
+        .map { it != BackupOperationState.Idle }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _busyMessage = MutableStateFlow<String?>(null)
@@ -243,13 +243,13 @@ class BackupSyncViewModel(
         }
     }
 
-    fun createLocalBackup(onComplete: (File?) -> Unit = {}) = launchBusy(onComplete) {
+    fun createLocalBackup(onComplete: (File?) -> Unit = {}) = launchBusy(onComplete, BackupOperationState.Preparing, "جارٍ تجهيز النسخة المحلية...") {
         val file = engine.createManual()
         publicBackupStore.publish(file)
         file
     }
 
-    fun exportBackupBytes(onComplete: (ByteArray?) -> Unit = {}) = launchBusy(onComplete) {
+    fun exportBackupBytes(onComplete: (ByteArray?) -> Unit = {}) = launchBusy(onComplete, BackupOperationState.Preparing, "جارٍ تجهيز ملف الأرشيف...") {
         engine.createManual().readBytes()
     }
 
@@ -335,11 +335,11 @@ class BackupSyncViewModel(
         }
     }
 
-    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy({ onComplete(it ?: 0) }, BackupOperationState.Deleting) {
+    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy({ onComplete(it ?: 0) }, BackupOperationState.Deleting, "جارٍ حذف النسخة...") {
         ids.chunked(100).sumOf { cloud.delete(it.toSet()) }.also { refreshCloud() }
     }
 
-    fun clearLocalCopyAndWipeMemory(onComplete: (Boolean) -> Unit = {}) = launchBusy({ onComplete(it == true) }, BackupOperationState.Deleting) {
+    fun clearLocalCopyAndWipeMemory(onComplete: (Boolean) -> Unit = {}) = launchBusy({ onComplete(it == true) }, BackupOperationState.Deleting, "جارٍ مسح البيانات...") {
         maintenanceRepository.deleteAllData()
         true
     }
@@ -356,9 +356,10 @@ class BackupSyncViewModel(
     private fun <T> launchBusy(
         onComplete: (T?) -> Unit,
         state: BackupOperationState = BackupOperationState.Preparing,
+        message: String? = null,
         block: suspend () -> T
     ) {
-        if (!tryBeginOperation(state, null)) return
+        if (!tryBeginOperation(state, message)) return
         viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val result = runCatching { block() }
