@@ -464,24 +464,25 @@ class CloudArchiveStore(context: Context) {
         var count = 0
         for (fileId in ids.take(100)) {
             if (fileId.isBlank()) continue
-            val conn = (URL("https://www.googleapis.com/drive/v3/files/${URLEncoder.encode(fileId, "UTF-8")}")
-                .openConnection() as HttpURLConnection).apply {
-                requestMethod = "DELETE"
-                setRequestProperty("Authorization", "Bearer $token")
-                connectTimeout = 15_000
-                readTimeout = 20_000
-            }
             try {
-                val code = conn.responseCode
-                if (code in 200..299) {
-                    runCatching { getBackupMetadata(token, fileId) }
-                    count++
-                } else if (code == 404) {
-                    count++
+                getBackupMetadata(token, fileId)
+                val conn = (URL("https://www.googleapis.com/drive/v3/files/\${URLEncoder.encode(fileId, "UTF-8")}")
+                    .openConnection() as HttpURLConnection).apply {
+                    requestMethod = "DELETE"
+                    setRequestProperty("Authorization", "Bearer $token")
+                    connectTimeout = 15_000
+                    readTimeout = 20_000
                 }
+                try {
+                    val code = conn.responseCode
+                    if (code in 200..299 || code == 404) count++
+                } finally {
+                    conn.disconnect()
+                }
+            } catch (_: CloudOperationException) {
+                // Ignore invalid/missing backup entries and continue deleting valid selections.
             } catch (_: Exception) {
-            } finally {
-                conn.disconnect()
+                // Preserve the old best-effort batch delete behavior.
             }
         }
         return count
