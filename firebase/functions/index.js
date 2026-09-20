@@ -22,7 +22,7 @@ function buildEnv() {
 }
 
 async function authenticateRequest(request) {
-  const authorization = String(request.headers.get("Authorization") || "");
+  const authorization = String(request.get("Authorization") || "");
   if (!authorization.startsWith("Bearer ")) {
     return { response: new Response(JSON.stringify({ error: "auth_required" }), {
       status: 401,
@@ -108,7 +108,7 @@ export const smartledgerApi = onRequest({
   try {
     await verifyOptionalAppCheck(req);
 
-    const auth = await authenticateRequest(toWebRequest(req, { uid: "" }));
+    const auth = await authenticateRequest(req);
     if (auth.response) {
       await sendWebResponse(auth.response, res);
       return;
