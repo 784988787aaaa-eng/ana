@@ -2,7 +2,7 @@ name: Build Mizan Al Dar App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "firebase-license-native-migration" ]
   workflow_dispatch:
 
 permissions:
