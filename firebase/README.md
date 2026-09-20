@@ -7,7 +7,8 @@
 - Firebase Authentication هو مصدر هوية الحساب.
 - Cloud Functions هي واجهة الترخيص.
 - Firestore هو مخزن التراخيص والأجهزة وحالات التحقق.
-- Google Drive يستخدم مباشرة من تطبيق Android عبر Google Sign-In وDrive API.
+- Google Drive يستخدم مباشرة من تطبيق Android عبر Google OAuth وDrive API.
+- مسار هوية Firebase ومسار Google Drive منفصلان: تسجيل الدخول للترخيص لا يطلب نطاق Drive، وربط Drive لا ينشئ جلسة Firebase.
 - لا يوجد Cloudflare أو Worker أو Proxy في مسار الترخيص أو النسخ الاحتياطي.
 
 ## الترخيص
@@ -53,13 +54,13 @@ Android لا يكتب بيانات الترخيص مباشرة إلى Firestore�
 
 Drive مستقل عن الترخيص:
 
-1. Android يسجل الدخول بحساب Google.
-2. Firebase Authentication يستخدم نفس حساب Google لهوية التطبيق.
-3. Android يطلب نطاق `drive.file` فقط للنسخ الاحتياطي.
+1. Android يربط Google Drive من شاشة النسخ الاحتياطي فقط.
+2. عميل Google Drive يطلب نطاق `drive.file` فقط.
+3. مسار Firebase Authentication يستخدم عميل Google منفصلاً ولا يطلب أي نطاق Drive.
 4. Android يحصل على Access Token من Google Play Services محلياً.
 5. Android يتصل مباشرة بـ Google Drive API (`www.googleapis.com/drive/v3`) للرفع والاستعادة والحذف والقائمة.
 
-لا يتم إرسال Access Token أو Refresh Token إلى Firebase أو وسيط خارجي.
+لا يتم إرسال Access Token أو Refresh Token إلى Firebase أو وسيط خارجي، ولا تعتمد عمليات Drive على حالة الترخيص.
 
 ## النشر
 
