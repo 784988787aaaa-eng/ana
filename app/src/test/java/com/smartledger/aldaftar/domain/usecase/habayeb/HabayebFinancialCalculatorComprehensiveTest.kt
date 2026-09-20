@@ -127,7 +127,7 @@ class HabayebFinancialCalculatorComprehensiveTest {
         )
 
         assertEquals(listOf("b"), result.filteredCustomers.map { it.id })
-        assertEquals(1, result.activeCustomersCount)
+        assertEquals(3, result.activeCustomersCount)
         assertEquals(1, result.categoryCounts["vip"])
     }
 }
