@@ -8,7 +8,7 @@
 - Cloud Functions هي واجهة الترخيص.
 - Firestore هو مخزن التراخيص والأجهزة وحالات التحقق.
 - Google Drive يستخدم مباشرة من تطبيق Android عبر Google Sign-In وDrive API.
-- لا يوجد Cloudflare Worker أو Workers KV أو وسيط Cloudflare في المسار.
+- لا يوجد وسيط خارجي Worker أو وسيط خارجي أو وسيط وسيط خارجي في المسار.
 
 ## الترخيص
 
@@ -36,7 +36,7 @@
 - `SMARTLEDGER_ACCOUNT_LICENSE_PRIVATE_KEY`
 - `SMARTLEDGER_RATE_LIMIT_SALT`
 
-صلاحيات الإدارة تعتمد على Firebase custom claim باسم `admin=true`، وليس على مفتاح Cloudflare أو KV.
+صلاحيات الإدارة تعتمد على Firebase custom claim باسم `admin=true`، وليس على مفتاح وسيط خارجي أو KV.
 
 ## Firestore
 
@@ -59,7 +59,7 @@ Drive مستقل عن الترخيص:
 4. Android يحصل على Access Token من Google Play Services.
 5. Android يتصل مباشرة بـ `www.googleapis.com/drive/v3`.
 
-لا يتم إرسال Access Token أو Refresh Token إلى Firebase أو Cloudflare.
+لا يتم إرسال Access Token أو Refresh Token إلى Firebase أو وسيط خارجي.
 
 ## النشر
 
