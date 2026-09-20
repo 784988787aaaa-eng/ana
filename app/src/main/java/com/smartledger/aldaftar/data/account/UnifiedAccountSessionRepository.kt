@@ -1,7 +1,7 @@
 package com.smartledger.aldaftar.data.account
 
 import android.content.Context
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount\nimport com.google.android.gms.tasks.Tasks\nimport com.google.firebase.auth.FirebaseAuth\nimport com.google.firebase.auth.GoogleAuthProvider
 import com.smartledger.aldaftar.data.cloud.CloudArchiveStore
 import com.smartledger.aldaftar.data.cloud.CloudConnectionStore
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
@@ -144,7 +144,7 @@ class UnifiedAccountSessionRepository(
     }
 
     suspend fun signOutUnified() = withContext(Dispatchers.IO) {
-        // 1. تسجيل الخروج من عميل Google
+        // 0. تسجيل الخروج من Firebase Auth\n        FirebaseAuth.getInstance().signOut()\n\n        // 1. تسجيل الخروج من عميل Google
         runCatching {
             googleAuth.client().signOut()
         }
