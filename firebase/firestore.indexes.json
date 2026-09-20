@@ -1,12 +1,4 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "smartledgerKv",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "key", "order": "ASCENDING" }
-      ]
-    }
-  ],
+  "indexes": [],
   "fieldOverrides": []
 }
