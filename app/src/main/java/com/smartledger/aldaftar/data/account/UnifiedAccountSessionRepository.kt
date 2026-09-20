@@ -111,7 +111,6 @@ class UnifiedAccountSessionRepository(
         Tasks.await(FirebaseAuth.getInstance().signInWithCredential(firebaseCredential))
         if (!email.isNullOrBlank()) {
             cloudConnectionStore.saveEmail(email)
-            cloudArchiveStore.saveEmail(email)
         }
 
         // 1. التحقق التلقائي والتفعيل السحابي الفوري بمجرد تسجيل الدخول بنفس الحساب المرخص
@@ -147,35 +146,33 @@ class UnifiedAccountSessionRepository(
         newSession
     }
 
-    suspend fun signOutUnified() = withContext(Dispatchers.IO) {
-        // 0. تسجيل الخروج من Firebase Auth
+    suspend fun signOutAccount() = withContext(Dispatchers.IO) {
         FirebaseAuth.getInstance().signOut()
-
-        // 1. تسجيل الخروج من عميل Google
-        runCatching {
-            googleAuth.client().signOut()
-        }
-
-        // 2. مسح بيانات التخزين السحابي
-        cloudArchiveStore.disconnect()
-        cloudConnectionStore.clear()
-
-        // 3. مسح جلسة ترخيص الحساب إن كانت من نوع ACCOUNT (مع الحفاظ الكامل على الترخيص المحلي LOCAL)
         licenseRepository.signOutAccount()
 
-        // 4. تحديث حالة الجلسة المركزية فوراً
         val currentSnap = licenseRepository.snapshot()
-        val signedOutSession = UnifiedAccountSession(
+        val current = _session.value
+        _session.value = current.copy(
             isSignedIn = false,
             email = null,
             displayName = null,
             photoUrl = null,
             provider = AccountProvider.NONE,
             accountCode = null,
-            isCloudConnected = false,
+            isCloudConnected = cloudArchiveStore.connected(),
             licenseSnapshot = currentSnap
         )
-        _session.value = signedOutSession
+    }
+
+    suspend fun signOutUnified() = withContext(Dispatchers.IO) {
+        signOutAccount()
+        runCatching { googleAuth.client().signOut() }
+        cloudArchiveStore.disconnect()
+        cloudConnectionStore.clear()
+
+        _session.value = _session.value.copy(
+            isCloudConnected = false
+        )
     }
 
     fun updateLicenseSnapshot(snapshot: LicenseSnapshot) {
