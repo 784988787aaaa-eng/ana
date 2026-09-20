@@ -6,7 +6,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 
-/** مصادقة Google Drive مباشرة من التطبيق، بدون Cloudflare أو خادم وسيط. */
+/** مصادقة Google Drive مباشرة من التطبيق، بدون وسيط خارجي أو وسيط خارجي. */
 class GoogleDriveInternalAuth(private val context: Context) {
     companion object {
         val SCOPE_DRIVE_FILE = Scope("https://www.googleapis.com/auth/drive.file")
