@@ -61,8 +61,9 @@ class UnifiedAccountSessionRepository(
 
     suspend fun refreshSession(): UnifiedAccountSession = withContext(Dispatchers.IO) {
         val lastGoogleAccount = googleAuth.getLastSignedInAccount()
-        val storedEmail = cloudConnectionStore.email() ?: lastGoogleAccount?.email
-        val isSignedIn = !storedEmail.isNullOrBlank() || lastGoogleAccount != null
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val storedEmail = firebaseUser?.email?.trim()?.lowercase() ?: cloudConnectionStore.email() ?: lastGoogleAccount?.email
+        val isSignedIn = firebaseUser != null
         var licenseSnap = licenseRepository.snapshot()
 
         // إذا كان المستخدم مسجلاً بحساب Google والترخيص غير مفعل بعد، نحاول التفعيل التلقائي إن كان الحساب مرخصاً في السحابة
