@@ -144,9 +144,13 @@ fun AddTransactionFormFields(
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_tx_desc_optional),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
                     textAlign = TextAlign.Center,
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    softWrap = false,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -168,7 +172,7 @@ fun AddTransactionFormFields(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = formattedSelectedDate,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
@@ -177,7 +181,7 @@ fun AddTransactionFormFields(
                             focusManager.clearFocus()
                             onOpenDatePicker()
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(34.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
@@ -186,7 +190,7 @@ fun AddTransactionFormFields(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
                 }
             },
             shape = fieldShape,
