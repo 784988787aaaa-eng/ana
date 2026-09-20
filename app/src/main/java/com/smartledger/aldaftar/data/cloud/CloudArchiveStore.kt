@@ -29,7 +29,6 @@ class CloudArchiveStore(context: Context) {
 
     companion object {
         private const val BACKUP_FOLDER_NAME = "الدفتر الذكي برو"
-        private const val DRIVE_SCOPE_FULL = "oauth2:https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata"
         private const val DRIVE_SCOPE_FILE = "oauth2:https://www.googleapis.com/auth/drive.file"
     }
 
@@ -67,7 +66,7 @@ class CloudArchiveStore(context: Context) {
             ?: Account(googleAccount.email ?: email() ?: "user@gmail.com", "com.google")
 
         return try {
-            GoogleAuthUtil.getToken(appContext, accountObj, DRIVE_SCOPE_FULL)
+            GoogleAuthUtil.getToken(appContext, accountObj, DRIVE_SCOPE_FILE)
         } catch (e: UserRecoverableAuthException) {
             throw CloudOperationException(401, "auth_recoverable", "يرجى إعادة منح صلاحية Google Drive للحساب.")
         } catch (e: Exception) {
