@@ -7,7 +7,10 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class BackupCryptoSecurityPerformanceTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
