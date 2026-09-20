@@ -302,8 +302,8 @@ async function activate(request, env) {
     await ref.set(license, { merge: true });
   }
   if (license.licenseType === "TRIAL" && license.trialEndsAt && now >= Number(license.trialEndsAt)) return json(403, { error: "trial_expired", message: "انتهت الفترة التجريبية لهذا الترخيص." });
-  await enrollDevice(env, license, fingerprint, publicKey, license.email);
   await bindUser(env, auth.uid, emailInput || license.email, accountCode);
+  await enrollDevice(env, license, fingerprint, publicKey, license.email);
   const token = await issueAccountToken(accountCode, license, fingerprint, env);
   return json(200, { licensed: true, token, accountCode, email: license.email, licenseType: license.licenseType, plan: license.licenseType, active: true, maxDevices: license.maxDevices, trialEndsAt: license.trialEndsAt || null });
 }
@@ -331,8 +331,8 @@ async function verify(request, env) {
   const challengeTime = Number(challenge.split(":", 1)[0]);
   if (!Number.isFinite(challengeTime) || Math.abs(now - challengeTime) > CHALLENGE_TTL_MS) return json(403, { error: "challenge_expired" });
   if (!(await verifyDeviceSignature(String(device.publicKey || ""), challenge, signature))) return json(403, { error: "proof_invalid" });
-  await deviceRef.set({ lastSeenAt: now }, { merge: true });
   await bindUser(env, auth.uid, auth.email || license.email, accountCode);
+  await deviceRef.set({ lastSeenAt: now }, { merge: true });
   const token = await issueAccountToken(accountCode, license, fingerprint, env);
   return json(200, { token, accountCode, email: license.email, licenseType: license.licenseType, plan: license.licenseType, active: true, maxDevices: license.maxDevices, trialEndsAt: license.trialEndsAt || null });
 }
@@ -354,8 +354,8 @@ async function autoActivate(request, env) {
   if (license.licenseType === "TRIAL" && license.trialEndsAt && now >= Number(license.trialEndsAt)) return json(200, { licensed: false, registered: true, expired: true, accountCode: found.id, message: "انتهت الفترة التجريبية." });
   const fingerprint = await hexHash(fromB64(publicKey));
   if (!FINGERPRINT_PATTERN.test(fingerprint)) return json(400, { error: "invalid_device_key" });
-  await enrollDevice(env, license, fingerprint, publicKey, auth.email);
   await bindUser(env, auth.uid, auth.email, found.id);
+  await enrollDevice(env, license, fingerprint, publicKey, auth.email);
   const token = await issueAccountToken(found.id, license, fingerprint, env);
   return json(200, { licensed: true, registered: true, accountCode: found.id, email: license.email, licenseType: license.licenseType, plan: license.licenseType, token, maxDevices: license.maxDevices, trialEndsAt: license.trialEndsAt || null });
 }
