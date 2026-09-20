@@ -1,8 +1,6 @@
 name: Build Mizan Al Dar App
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -128,32 +126,11 @@ jobs:
           test -n "$ACTUAL_SHA256"
           test "$ACTUAL_SHA256" = "$EXPECTED_SHA256_CLEAN"
 
-      - name: Build signed Release AAB
-        env:
-          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          bash ./gradlew bundleRelease             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE"             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD"             --stacktrace --no-parallel --max-workers=1
-
-          AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" -type f | head -n 1)
-          test -n "$AAB_PATH"
-          echo "Release AAB: $AAB_PATH"
-
       - name: Upload verified Release APK
         uses: actions/upload-artifact@v4
         with:
           name: Al-Daftar-Release-APK
           path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-
-      - name: Upload Release AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: Al-Daftar-Release-AAB
-          path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
 
       - name: Upload test reports
