@@ -30,12 +30,15 @@ splashscreen = "1.0.1"
 uiTextGoogleFonts = "1.6.3"
 playServicesAuth = "21.2.0"
 desugarJdkLibs = "2.0.4"
+firebaseBom = "34.19.0"
 
 workManager = "2.10.0"
 pagingRuntime = "3.3.6"
 pagingCompose = "3.3.6"
 
 [libraries]
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
