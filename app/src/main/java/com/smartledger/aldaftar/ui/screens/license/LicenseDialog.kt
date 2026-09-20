@@ -669,7 +669,18 @@ private fun UnifiedAccountLoginSection(
                 singleLine = true,
                 enabled = !busy,
                 label = { Text("رمز التفعيل (من المطور)", fontSize = 11.sp) },
-                placeholder = { Text("أدخل رمز التفعيل هنا...", fontSize = 11.sp) },
+                placeholder = {
+                    Text(
+                        text = "أدخل رمز التفعيل هنا...",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = 10.5.sp,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                },
                 shape = RoundedCornerShape(10.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
