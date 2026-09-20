@@ -22,7 +22,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.smartledger.aldaftar.ui.theme.MizanAnimationTokens
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

@@ -470,7 +470,7 @@ fun ComprehensiveReportDialog(
                         },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(MizanDialogTokens.actionRadius)
                     ) {
                         Text(stringResource(id = R.string.report_booklet_cancel_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
@@ -478,4 +478,5 @@ fun ComprehensiveReportDialog(
             }
         }
     }
+}
 }

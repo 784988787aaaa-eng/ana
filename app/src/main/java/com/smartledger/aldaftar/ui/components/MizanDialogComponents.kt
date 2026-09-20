@@ -163,7 +163,7 @@ fun MizanDialogHeader(
                 IconButton(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onCloseClick()
+                        onCloseClick?.invoke()
                     },
                     modifier = Modifier
                         .align(closeButtonAlignment)
