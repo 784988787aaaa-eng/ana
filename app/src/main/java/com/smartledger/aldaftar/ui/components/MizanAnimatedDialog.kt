@@ -95,8 +95,8 @@ fun MizanAnimatedDialog(
             ) + scaleIn(
                 initialScale = MizanDialogTokens.enterScale,
                 animationSpec = tween(
-                    durationMillis = MizanAnimationTokens.DURATION_DIALOG_ENTER,
-                    easing = LinearOutSlowInEasing
+                    durationMillis = MizanDialogTokens.enterDuration,
+                    easing = FastOutSlowInEasing
                 )
             ),
             exit = fadeOut(
@@ -107,7 +107,7 @@ fun MizanAnimatedDialog(
             ) + scaleOut(
                 targetScale = MizanDialogTokens.exitScale,
                 animationSpec = tween(
-                    durationMillis = MizanAnimationTokens.DURATION_DIALOG_EXIT,
+                    durationMillis = MizanDialogTokens.exitDuration,
                     easing = FastOutLinearInEasing
                 )
             ),
