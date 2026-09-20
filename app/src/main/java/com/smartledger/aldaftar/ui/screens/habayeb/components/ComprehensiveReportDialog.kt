@@ -140,7 +140,7 @@ fun ComprehensiveReportDialog(
             ) {
                 MizanDialogHeader(
                     title = stringResource(id = R.string.drawer_comprehensive_report_label),
-                    icon = Icons.Default.Description,
+                    icon = Icons.Default.Share,
                     iconTint = activeThemeColor,
                     onCloseClick = dismissDialog
                 )
