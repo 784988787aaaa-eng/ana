@@ -171,12 +171,14 @@ async function findLicenseByEmail(env, email) {
 
 async function bindUser(env, uid, email, accountCode) {
   const ref = userRef(env, uid);
-  await ref.set({
+  const existing = await ref.get();
+  const data = {
     email: normalizeEmail(email),
     accountCode,
-    updatedAt: Date.now(),
-    createdAt: (await ref.get()).exists ? undefined : Date.now()
-  }, { merge: true });
+    updatedAt: Date.now()
+  };
+  if (!existing.exists) data.createdAt = Date.now();
+  await ref.set(data, { merge: true });
 }
 
 async function licenseForAuthenticatedUser(env, auth, accountCode = null) {
