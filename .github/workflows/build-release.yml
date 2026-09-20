@@ -28,7 +28,7 @@ jobs:
 
       - name: Prepare public service configuration
         env:
-          LICENSE_ENDPOINT: ${{ vars.LICENSE_ENDPOINT }}
+          LICENSE_ENDPOINT: ${{ vars.LICENSE_ENDPOINT || 'https://al-daftar-android.firebaseapp.com' }}
           ACCOUNT_PUBLIC_KEY: ${{ vars.ACCOUNT_LICENSE_PUBLIC_KEY }}
           LOCAL_PUBLIC_KEY: ${{ vars.LOCAL_LICENSE_PUBLIC_KEY }}
         run: |
