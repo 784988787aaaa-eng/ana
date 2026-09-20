@@ -11,7 +11,6 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${providers.gradleProperty("GOOGLE_CLIENT_ID").orElse(System.getenv("GOOGLE_CLIENT_ID") ?: "").get()}\"")
     applicationId = "com.smartledger.aldaftar"
     minSdk = 24
     targetSdk = 36
