@@ -34,7 +34,7 @@ This is the canonical licensing schema. It does not create collections.
 - issuedAt: timestamp/number
 - updatedAt: timestamp/number
 - notes: string
-All license fields are server controlled.
+All license fields are server controlled. Google Sheets/admin tooling must never write these documents directly from an untrusted client; it must call the secured admin workflow/function using a Firebase Admin identity.
 
 ## licenses/{accountCode}/devices/{fingerprint}
 - fingerprint: string, 64-char uppercase SHA-256
@@ -61,3 +61,32 @@ Internal anti-abuse state only: startedAt, attempts, expiresAt. It is not licens
 6. maxDevices is enforced server-side in a Firestore transaction.
 7. Firebase Auth ID tokens are verified server-side; body email is not trusted as identity.
 8. Google Drive is handled directly by Android and Google; no Drive OAuth/session tokens are stored in Firestore.
+
+
+## Google Sheets administrative contract
+
+The existing administrative sheet can remain the operator-facing table:
+
+1. Account Code → `accountCode`
+2. Email → `email`
+3. License Type → `licenseType`
+4. Active → `active`
+5. Max Devices → `maxDevices`
+6. Trial Days → `trialDays`
+7. Activation Code → generated/admin-only value; only `activationCodeHash` is stored in Firestore
+8. Activated At → `activatedAt`
+9. Trial Ends At → `trialEndsAt`
+10. Remaining Days → computed value, not authoritative storage
+11. Active Devices → computed from `devices` where `revoked == false`
+12. Replace Email → admin update operation
+13. Regenerate Code → admin update operation
+14. Notes → `notes`
+15. License ID → `licenseId`
+16. Sync Status → sheet/workflow state
+17. Last Updated → `updatedAt`
+
+Recommended flow:
+
+`Google Sheets → secured admin workflow → Firebase Function → Firestore`
+
+Do not give the sheet direct Firestore credentials or client-side write access.
