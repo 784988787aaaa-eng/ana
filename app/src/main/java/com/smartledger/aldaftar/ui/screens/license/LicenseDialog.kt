@@ -672,13 +672,12 @@ private fun UnifiedAccountLoginSection(
                 placeholder = {
                     Text(
                         text = "أدخل رمز التفعيل هنا...",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
-                        textAlign = TextAlign.Center,
-                        fontSize = 10.5.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start,
+                        fontSize = 10.sp,
                         maxLines = 1,
-                        softWrap = false
+                        softWrap = false,
+                        overflow = TextOverflow.Clip
                     )
                 },
                 shape = RoundedCornerShape(10.dp),
