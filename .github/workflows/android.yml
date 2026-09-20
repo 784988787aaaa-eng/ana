@@ -50,8 +50,8 @@ jobs:
           set -euo pipefail
           mkdir -p app/src/main/assets
           printf '%s' "$LICENSE_ENDPOINT" > app/src/main/assets/license_endpoint.txt
-          printf '%s\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
-          printf '%s\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
+          printf '%s\\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
+          printf '%s\\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
           test -s app/src/main/assets/license_endpoint.txt
           test -s app/src/main/assets/license_account_public.pem
           test -s app/src/main/assets/license_local_public.pem
@@ -90,3 +90,11 @@ jobs:
             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
             --build-cache --stacktrace --parallel --max-workers=4
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 7
