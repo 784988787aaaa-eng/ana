@@ -31,8 +31,7 @@ jobs:
       - name: Syntax check
         run: |
           node --check index.js
-          node --check worker.js
-          node --check kv-compat.js
+          node --check license-firestore.js
 
       - name: Run backend tests
         run: npm test
