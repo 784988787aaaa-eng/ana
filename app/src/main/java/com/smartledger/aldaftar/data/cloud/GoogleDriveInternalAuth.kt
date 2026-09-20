@@ -6,7 +6,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 
-/** مصادقة Google Drive مباشرة من التطبيق، بدون وسيط خارجي أو وسيط خارجي. */
+/** مصادقة Google Drive مباشرة من التطبيق، بدون خادم وسيط. */
 class GoogleDriveInternalAuth(private val context: Context) {
     companion object {
         val SCOPE_DRIVE_FILE = Scope("https://www.googleapis.com/auth/drive.file")
@@ -14,7 +14,7 @@ class GoogleDriveInternalAuth(private val context: Context) {
 
     fun client(): GoogleSignInClient {
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(com.smartledger.aldaftar.R.string.default_web_client_id))
+            .requestIdToken(context.getString(com.smartledger.aldaftar.R.string.firebase_google_web_client_id))
             .requestEmail()
             .requestScopes(SCOPE_DRIVE_FILE)
         return GoogleSignIn.getClient(context, builder.build())
