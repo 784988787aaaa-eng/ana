@@ -63,9 +63,9 @@ class BackupSyncViewModel(
     init {
         viewModelScope.launch {
             unifiedAccountRepository.session.collect { session ->
-                _cloudConnected.value = session.isSignedIn && session.isCloudConnected
-                _cloudEmail.value = session.email
-                if (session.isSignedIn) {
+                _cloudConnected.value = session.isCloudConnected
+                _cloudEmail.value = session.email ?: cloud.email()
+                if (session.isCloudConnected) {
                     refreshCloud()
                 } else {
                     _cloudBackups.value = emptyList()
