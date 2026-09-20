@@ -1,6 +1,15 @@
 name: Build Mizan Al Dar App
 
 on:
+  push:
+    branches:
+      - main
+      - surgical-ui-clipping-audit-2026-09-21
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
