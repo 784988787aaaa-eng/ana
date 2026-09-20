@@ -6,5 +6,43 @@
   "firestore": {
     "rules": "firebase/firestore.rules",
     "indexes": "firebase/firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "firebase/hosting",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/license",
+        "function": {
+          "functionId": "smartledgerApi",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/license/**",
+        "function": {
+          "functionId": "smartledgerApi",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/admin",
+        "function": {
+          "functionId": "smartledgerApi",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/admin/**",
+        "function": {
+          "functionId": "smartledgerApi",
+          "region": "us-central1"
+        }
+      }
+    ]
   }
 }
