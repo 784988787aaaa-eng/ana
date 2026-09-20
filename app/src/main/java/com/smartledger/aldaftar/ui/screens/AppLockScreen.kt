@@ -35,7 +35,6 @@ import com.smartledger.aldaftar.ui.screens.security.lock.RecoveryPhraseContent
 import com.smartledger.aldaftar.ui.theme.NeutralBackgroundDark
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
