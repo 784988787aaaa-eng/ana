@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SecurityViewModel(
     application: Application,
@@ -43,13 +45,17 @@ class SecurityViewModel(
     fun saveSettings(settings: AppSettings) {
         securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
         viewModelScope.launch {
-            repository.saveSettings(settings)
+            withContext(Dispatchers.IO) {
+                repository.saveSettings(settings)
+            }
         }
     }
 
     suspend fun saveSettingsSync(settings: AppSettings) {
         securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
-        repository.saveSettings(settings)
+        withContext(Dispatchers.IO) {
+            repository.saveSettings(settings)
+        }
     }
 
     fun verifyCredentials(input: String): Boolean {
