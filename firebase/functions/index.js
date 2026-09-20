@@ -72,15 +72,23 @@ export const smartledgerApi = onRequest({
   invoker: "public",
   secrets
 }, async (req, res) => {
+  // Compatibility phase: validate App Check when present; enforcement will be
+  // enabled only after the Android client starts sending the token.
   try {
-    // Compatibility phase: validate App Check when present; enforcement will be
-    // enabled only after the Android client starts sending the token.
     await verifyOptionalAppCheck(req);
+  } catch (_) {
+    res.status(401).set("Content-Type", "application/json; charset=utf-8");
+    res.send(JSON.stringify({ error: "app_check_failed" }));
+    return;
+  }
+
+  try {
     const request = toWebRequest(req);
     const response = await worker.fetch(request, buildEnv());
     await sendWebResponse(response, res);
   } catch (error) {
-    res.status(401).set("Content-Type", "application/json; charset=utf-8");
-    res.send(JSON.stringify({ error: "app_check_failed" }));
+    const request = toWebRequest(req);
+    const response = worker.errorResponse(error, request);
+    await sendWebResponse(response, res);
   }
 });
