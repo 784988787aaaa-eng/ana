@@ -149,7 +149,7 @@ async function rateLimit(env, identity, ip, limit = RATE_LIMIT_DEFAULT) {
 }
 
 function clientIp(request) {
-  return request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() || request.headers.get("X-Real-IP") || "unknown";
 }
 
 async function readJson(request) {
