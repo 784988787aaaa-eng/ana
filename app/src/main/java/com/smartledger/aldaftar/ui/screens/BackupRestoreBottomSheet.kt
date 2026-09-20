@@ -185,7 +185,7 @@ fun BackupRestoreBottomSheet(
     }
 
     val googleClient = remember(googleClientId) {
-        GoogleDriveInternalAuth(context).client(googleClientId)
+        GoogleDriveInternalAuth(context).client()
     }
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
