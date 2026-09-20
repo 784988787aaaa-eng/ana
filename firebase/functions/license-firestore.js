@@ -197,14 +197,17 @@ async function licenseForAuthenticatedUser(env, auth, accountCode = null) {
   if (u.exists && u.data().accountCode) code = normalizeAccountCode(u.data().accountCode);
   if (!code && auth.email) {
     const found = await findLicenseByEmail(env, auth.email);
-    if (found) {
-      code = found.id;
-      await bindUser(env, auth.uid, auth.email, code);
-    }
+    if (found) code = found.id;
   }
   if (!code || !ACCOUNT_PATTERN.test(code)) return null;
+
   const snap = await licenseRef(env, code).get();
-  return snap.exists ? { ref: snap.ref, data: snap.data(), accountCode: code } : null;
+  if (!snap.exists) return null;
+  const license = { ...snap.data(), accountCode: code };
+  const ownerUid = String(license.ownerUid || "").trim();
+  if (ownerUid && ownerUid !== auth.uid) return null;
+  if (!ownerUid) await bindUser(env, auth.uid, auth.email || license.email, code);
+  return { ref: snap.ref, data: license, accountCode: code };
 }
 
 async function issueAccountToken(accountCode, license, fingerprint, env) {
