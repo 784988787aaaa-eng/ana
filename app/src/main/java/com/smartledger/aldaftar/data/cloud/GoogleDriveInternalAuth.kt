@@ -10,13 +10,12 @@ import com.google.android.gms.common.api.Scope
 class GoogleDriveInternalAuth(private val context: Context) {
     companion object {
         val SCOPE_DRIVE_FILE = Scope("https://www.googleapis.com/auth/drive.file")
-        val SCOPE_DRIVE_APPDATA = Scope("https://www.googleapis.com/auth/drive.appdata")
     }
 
     fun client(): GoogleSignInClient {
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(SCOPE_DRIVE_FILE, SCOPE_DRIVE_APPDATA)
+            .requestScopes(SCOPE_DRIVE_FILE)
         return GoogleSignIn.getClient(context, builder.build())
     }
 
