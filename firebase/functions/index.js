@@ -94,8 +94,13 @@ async function sendWebResponse(webResponse, res) {
 
 async function verifyOptionalAppCheck(req) {
   const token = String(req.get("X-Firebase-AppCheck") || "").trim();
-  if (!token) return;
-  await getAppCheck().verifyToken(token);
+  if (!token) return true;
+  try {
+    await getAppCheck().verifyToken(token);
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 export const smartledgerApi = onRequest({
@@ -106,7 +111,13 @@ export const smartledgerApi = onRequest({
   secrets
 }, async (req, res) => {
   try {
-    await verifyOptionalAppCheck(req);
+    if (!(await verifyOptionalAppCheck(req))) {
+      res.status(401)
+        .set("Content-Type", "application/json; charset=utf-8")
+        .set("Cache-Control", "no-store")
+        .send(JSON.stringify({ error: "app_check_invalid" }));
+      return;
+    }
 
     const auth = await authenticateRequest(req);
     if (auth.response) {
