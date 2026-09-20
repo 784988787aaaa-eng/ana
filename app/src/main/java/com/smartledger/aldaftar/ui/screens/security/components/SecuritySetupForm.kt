@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 
@@ -79,14 +80,14 @@ fun SecuritySetupForm(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
+        shape = MizanDialogTokens.innerCardShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(16.dp)
+                shape = MizanDialogTokens.innerCardShape
             )
     ) {
         Column(
@@ -127,7 +128,7 @@ fun SecuritySetupForm(
                     )
                 },
                 trailingIcon = {
-                    IconButton(onClick = { passcodeVisible = !passcodeVisible }) {
+                    IconButton(onClick = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); passcodeVisible = !passcodeVisible }) {
                         Icon(
                             imageVector = if (passcodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = CD_TOGGLE_VISIBILITY,
@@ -144,7 +145,7 @@ fun SecuritySetupForm(
                 visualTransformation = if (passcodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { confirmPasscodeFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = MizanDialogTokens.inputShape,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -180,7 +181,7 @@ fun SecuritySetupForm(
                     )
                 },
                 trailingIcon = {
-                    IconButton(onClick = { confirmPasscodeVisible = !confirmPasscodeVisible }) {
+                    IconButton(onClick = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); confirmPasscodeVisible = !confirmPasscodeVisible }) {
                         Icon(
                             imageVector = if (confirmPasscodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = CD_TOGGLE_VISIBILITY,
@@ -197,7 +198,7 @@ fun SecuritySetupForm(
                 visualTransformation = if (confirmPasscodeVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryPhraseFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = MizanDialogTokens.inputShape,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -247,7 +248,7 @@ fun SecuritySetupForm(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { recoveryHintFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = MizanDialogTokens.inputShape,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -280,7 +281,7 @@ fun SecuritySetupForm(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(12.dp),
+                shape = MizanDialogTokens.inputShape,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -300,11 +301,11 @@ fun SecuritySetupForm(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(MizanDialogTokens.inputShape)
                     .background(ackBg)
-                    .clickable { onCheckAcknowledgedChange(!checkAcknowledged) }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.End,
+                    .clickable { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); onCheckAcknowledgedChange(!checkAcknowledged) }
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -315,17 +316,17 @@ fun SecuritySetupForm(
                     lineHeight = 16.sp,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 8.dp)
                 )
                 Checkbox(
                     checked = checkAcknowledged,
-                    onCheckedChange = onCheckAcknowledgedChange,
+                    onCheckedChange = null,
                     colors = CheckboxDefaults.colors(
                         checkedColor = BrandPrimary,
                         uncheckedColor = checkboxBorderColor
                     ),
                     modifier = Modifier.size(24.dp)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
             }
 
             val isValid = passcode.length == 4 &&
@@ -346,7 +347,7 @@ fun SecuritySetupForm(
                     disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                 ),
                 enabled = isValid,
-                shape = RoundedCornerShape(14.dp),
+                shape = MizanDialogTokens.buttonShape,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)

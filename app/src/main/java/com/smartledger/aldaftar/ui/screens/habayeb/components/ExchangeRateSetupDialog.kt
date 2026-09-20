@@ -28,12 +28,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -72,6 +68,9 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.ConfigureDialogImeWindow
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 
 @Composable
@@ -141,19 +140,22 @@ fun ExchangeRateSetupContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = currencyLabel,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = activeThemeColor,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Text(
+                    text = currencyLabel,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = activeThemeColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1
+                )
+            }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = MizanDialogTokens.inputHeight)
+                    .height(MizanDialogTokens.inputHeight)
                     .border(1.dp, inputBorderColor, MizanDialogTokens.inputShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant, MizanDialogTokens.inputShape)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
@@ -178,7 +180,7 @@ fun ExchangeRateSetupContent(
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(activeThemeColor),
                     textStyle = TextStyle(
                         textAlign = TextAlign.Center,
-                        fontSize = 12.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = activeThemeColor
                     ),
@@ -205,7 +207,9 @@ fun ExchangeRateSetupContent(
                                     textAlign = TextAlign.Center
                                 )
                             }
-                            innerTextField()
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                innerTextField()
+                            }
                         }
                     }
                 )
@@ -271,60 +275,24 @@ fun ExchangeRateSetupContent(
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(MizanDialogTokens.buttonHeight),
-                    shape = MizanDialogTokens.buttonShape,
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {
-                    Text(
-                        stringResource(id = R.string.habayeb_cancel),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        val rateBD = try { BigDecimal(rateStr.trim()) } catch (_: Exception) { null }
-                        if (rateBD == null || rateBD.compareTo(BigDecimal.ZERO) <= 0) {
-                            Toast.makeText(context, validRateToastStr, Toast.LENGTH_SHORT).show()
-                        } else if (!isChecked) {
-                            showUncheckedError = true
-                            Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
-                        } else {
-                            onConfirm(rateBD)
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1.2f)
-                        .height(MizanDialogTokens.buttonHeight),
-                    shape = MizanDialogTokens.buttonShape,
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = statusColor,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text(
-                        stringResource(id = R.string.habayeb_save),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
-                }
-            }
+            MizanDialogActions(
+                confirmText = stringResource(id = R.string.habayeb_save),
+                onConfirm = {
+                    val rateBD = try { BigDecimal(rateStr.trim()) } catch (_: Exception) { null }
+                    if (rateBD == null || rateBD.compareTo(BigDecimal.ZERO) <= 0) {
+                        Toast.makeText(context, validRateToastStr, Toast.LENGTH_SHORT).show()
+                    } else if (!isChecked) {
+                        showUncheckedError = true
+                        Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
+                    } else {
+                        onConfirm(rateBD)
+                    }
+                },
+                confirmColor = activeThemeColor,
+                confirmContainerColor = statusColor,
+                onCancel = onDismiss,
+                cancelText = stringResource(id = R.string.habayeb_cancel)
+            )
         }
     }
 }
@@ -346,16 +314,19 @@ fun ExchangeRateSetupDialog(
         )
     ) {
         ConfigureDialogImeWindow()
-        Surface(
+        MizanDialogCard(
             modifier = Modifier
-                .width(280.dp)
+                .widthIn(min = 280.dp, max = MizanDialogTokens.maxWidth)
                 .wrapContentHeight()
                 .imePadding()
-                .shadow(8.dp, MizanDialogTokens.shape),
-            shape = MizanDialogTokens.shape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.12f))
         ) {
+            MizanDialogHeader(
+                title = stringResource(id = R.string.currency_settings_dialog_title),
+                subtitle = "1 $selectedCurrency = $rateTargetCurrency",
+                icon = Icons.Default.Check,
+                iconTint = activeThemeColor,
+                onCloseClick = onDismiss
+            )
             ExchangeRateSetupContent(
                 selectedCurrency = selectedCurrency,
                 rateTargetCurrency = rateTargetCurrency,
