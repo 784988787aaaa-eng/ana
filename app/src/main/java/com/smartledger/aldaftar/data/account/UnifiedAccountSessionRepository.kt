@@ -2,6 +2,9 @@ package com.smartledger.aldaftar.data.account
 
 import android.content.Context
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.smartledger.aldaftar.data.cloud.CloudArchiveStore
 import com.smartledger.aldaftar.data.cloud.CloudConnectionStore
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
@@ -42,8 +45,9 @@ class UnifiedAccountSessionRepository(
 
     private fun buildInitialSession(): UnifiedAccountSession {
         val lastGoogleAccount = googleAuth.getLastSignedInAccount()
-        val storedEmail = cloudConnectionStore.email() ?: lastGoogleAccount?.email
-        val isSignedIn = !storedEmail.isNullOrBlank() || lastGoogleAccount != null
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val storedEmail = firebaseUser?.email?.trim()?.lowercase() ?: cloudConnectionStore.email() ?: lastGoogleAccount?.email
+        val isSignedIn = firebaseUser != null
         val licenseSnap = licenseRepository.snapshot()
 
         return UnifiedAccountSession(
@@ -60,8 +64,9 @@ class UnifiedAccountSessionRepository(
 
     suspend fun refreshSession(): UnifiedAccountSession = withContext(Dispatchers.IO) {
         val lastGoogleAccount = googleAuth.getLastSignedInAccount()
-        val storedEmail = cloudConnectionStore.email() ?: lastGoogleAccount?.email
-        val isSignedIn = !storedEmail.isNullOrBlank() || lastGoogleAccount != null
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val storedEmail = firebaseUser?.email?.trim()?.lowercase() ?: cloudConnectionStore.email() ?: lastGoogleAccount?.email
+        val isSignedIn = firebaseUser != null
         var licenseSnap = licenseRepository.snapshot()
 
         // إذا كان المستخدم مسجلاً بحساب Google والترخيص غير مفعل بعد، نحاول التفعيل التلقائي إن كان الحساب مرخصاً في السحابة
@@ -101,13 +106,11 @@ class UnifiedAccountSessionRepository(
         serverAuthCode: String? = null
     ): UnifiedAccountSession = withContext(Dispatchers.IO) {
         val email = account.email?.trim()?.lowercase()
+        val googleIdToken = account.idToken ?: throw IllegalStateException("Firebase Google ID token unavailable")
+        val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
+        Tasks.await(FirebaseAuth.getInstance().signInWithCredential(firebaseCredential))
         if (!email.isNullOrBlank()) {
             cloudConnectionStore.saveEmail(email)
-            cloudArchiveStore.saveEmail(email)
-        }
-
-        if (!serverAuthCode.isNullOrBlank()) {
-            runCatching { cloudArchiveStore.connectWithServerAuthCode(serverAuthCode) }
         }
 
         // 1. التحقق التلقائي والتفعيل السحابي الفوري بمجرد تسجيل الدخول بنفس الحساب المرخص
@@ -143,32 +146,33 @@ class UnifiedAccountSessionRepository(
         newSession
     }
 
-    suspend fun signOutUnified() = withContext(Dispatchers.IO) {
-        // 1. تسجيل الخروج من عميل Google
-        runCatching {
-            googleAuth.client().signOut()
-        }
-
-        // 2. مسح بيانات التخزين السحابي
-        cloudArchiveStore.disconnect()
-        cloudConnectionStore.clear()
-
-        // 3. مسح جلسة ترخيص الحساب إن كانت من نوع ACCOUNT (مع الحفاظ الكامل على الترخيص المحلي LOCAL)
+    suspend fun signOutAccount() = withContext(Dispatchers.IO) {
+        FirebaseAuth.getInstance().signOut()
         licenseRepository.signOutAccount()
 
-        // 4. تحديث حالة الجلسة المركزية فوراً
         val currentSnap = licenseRepository.snapshot()
-        val signedOutSession = UnifiedAccountSession(
+        val current = _session.value
+        _session.value = current.copy(
             isSignedIn = false,
             email = null,
             displayName = null,
             photoUrl = null,
             provider = AccountProvider.NONE,
             accountCode = null,
-            isCloudConnected = false,
+            isCloudConnected = cloudArchiveStore.connected(),
             licenseSnapshot = currentSnap
         )
-        _session.value = signedOutSession
+    }
+
+    suspend fun signOutUnified() = withContext(Dispatchers.IO) {
+        signOutAccount()
+        runCatching { googleAuth.client().signOut() }
+        cloudArchiveStore.disconnect()
+        cloudConnectionStore.clear()
+
+        _session.value = _session.value.copy(
+            isCloudConnected = false
+        )
     }
 
     fun updateLicenseSnapshot(snapshot: LicenseSnapshot) {

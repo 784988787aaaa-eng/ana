@@ -130,7 +130,7 @@ Success 200:
 
 ## Admin endpoints
 
-All admin endpoints require the `X-SMARTLEDGER-ADMIN` header.
+All admin endpoints require a verified Firebase Authentication ID token whose custom claim `admin` is `true`. The Android client does not receive or send an admin secret/header.
 
 ### POST /admin/ping
 Checks administrative connectivity.
@@ -198,7 +198,7 @@ Drive uses separate key families:
 - `oauth-connection:<connectionHash>`
 - `session:<tokenHash>`
 
-The key families are therefore logically separable even though the current Cloudflare Worker resolves them through the same KV binding.
+These are historical Cloudflare key families only. The Firebase implementation does not read or migrate them; Firestore is the new source of truth.
 
 ## Signed token contract
 

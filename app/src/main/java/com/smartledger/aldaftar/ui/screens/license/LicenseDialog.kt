@@ -49,7 +49,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.smartledger.aldaftar.data.account.UnifiedAccountSession
-import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
+import com.smartledger.aldaftar.data.cloud.FirebaseGoogleAuth
 import com.smartledger.aldaftar.domain.license.LicensePlan
 import com.smartledger.aldaftar.domain.license.LicenseSnapshot
 import com.smartledger.aldaftar.domain.license.LicenseStatus
@@ -85,7 +85,7 @@ fun LicenseDialog(
     var signedToken by rememberSaveable { mutableStateOf("") }
 
     val googleClient = remember {
-        GoogleDriveInternalAuth(context).client()
+        FirebaseGoogleAuth(context).client()
     }
     val googleSignInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()

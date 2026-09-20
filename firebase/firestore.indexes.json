@@ -1,12 +1,10 @@
 {
-  "indexes": [
+  "indexes": [],
+  "fieldOverrides": [
     {
-      "collectionGroup": "smartledgerKv",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "key", "order": "ASCENDING" }
-      ]
+      "collectionGroup": "rateLimits",
+      "fieldPath": "expiresAt",
+      "ttl": "TTL"
     }
-  ],
-  "fieldOverrides": []
+  ]
 }

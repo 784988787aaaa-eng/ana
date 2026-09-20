@@ -3,6 +3,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
+  alias(libs.plugins.google.services)
 }
 
 android {
@@ -10,7 +11,6 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${providers.gradleProperty("GOOGLE_CLIENT_ID").orElse(System.getenv("GOOGLE_CLIENT_ID") ?: "").get()}\"")
     applicationId = "com.smartledger.aldaftar"
     minSdk = 24
     targetSdk = 36
@@ -101,6 +101,8 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.androidx.security.crypto)
   implementation(libs.androidx.biometric)
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.auth)
   implementation(libs.play.services.auth)
   implementation(libs.androidx.fragment.ktx)
   implementation(libs.androidx.work.runtime.ktx)

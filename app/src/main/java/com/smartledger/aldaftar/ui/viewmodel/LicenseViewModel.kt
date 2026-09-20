@@ -117,7 +117,7 @@ class LicenseViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _busy.value = true
             try {
-                unifiedAccountRepository.signOutUnified()
+                unifiedAccountRepository.signOutAccount()
                 _snapshot.value = repository.snapshot()
                 _message.value = "تم تسجيل الخروج بنجاح"
             } catch (e: Exception) {

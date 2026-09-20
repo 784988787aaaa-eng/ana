@@ -1,6 +1,8 @@
 package com.smartledger.aldaftar.data.license
 
 import android.content.Context
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.FirebaseAuth
 import com.smartledger.aldaftar.domain.license.*
 import com.smartledger.aldaftar.platform.license.DeviceIdentity
 import com.smartledger.aldaftar.platform.license.LicenseCrypto
@@ -367,6 +369,12 @@ class LicenseRepository(private val context: Context) {
         }.getOrNull()
     }
 
+    private fun firebaseIdToken(): String? = runCatching {
+        FirebaseAuth.getInstance().currentUser?.let { user ->
+            Tasks.await(user.getIdToken(false)).token
+        }
+    }.getOrNull()
+
     private fun resolveUrls(path: String): List<String> {
         val bases = endpoints()
         val cleanPath = "/" + path.trimStart('/')
@@ -380,7 +388,7 @@ class LicenseRepository(private val context: Context) {
         context.assets.open("license_endpoint.txt").bufferedReader().use { reader ->
             reader.readLines().map { it.trim().trimEnd('/') }.filter { it.isNotBlank() && !it.startsWith("__") }
         }
-    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: listOf("https://al-daftar-license-api.pages.dev", "https://al-daftar-license-api.mansour-ghawy.workers.dev")
+    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: listOf("https://al-daftar-android.firebaseapp.com")
 
     private fun post(path: String, body: JSONObject): JSONObject {
         val urls = resolveUrls(path)
@@ -396,6 +404,7 @@ class LicenseRepository(private val context: Context) {
                     setRequestProperty("Accept", "application/json")
                     setRequestProperty("Content-Type", "application/json; charset=utf-8")
                     setRequestProperty("Cache-Control", "no-store")
+                    firebaseIdToken()?.let { setRequestProperty("Authorization", "Bearer $it") }
                 }
                 return try {
                     connection.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(body.toString()) }

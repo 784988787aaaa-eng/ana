@@ -63,9 +63,9 @@ class BackupSyncViewModel(
     init {
         viewModelScope.launch {
             unifiedAccountRepository.session.collect { session ->
-                _cloudConnected.value = session.isSignedIn && session.isCloudConnected
-                _cloudEmail.value = session.email
-                if (session.isSignedIn) {
+                _cloudConnected.value = session.isCloudConnected
+                _cloudEmail.value = session.email ?: cloud.email()
+                if (session.isCloudConnected) {
                     refreshCloud()
                 } else {
                     _cloudBackups.value = emptyList()
@@ -94,7 +94,7 @@ class BackupSyncViewModel(
             _busyMessage.value = "جارٍ الاتصال بحساب Google Drive..."
             _error.value = null
             try {
-                unifiedAccountRepository.signInWithGoogle(account, serverAuthCode)
+                cloud.saveEmail(account.email)
                 refreshCloud()
                 withContext(Dispatchers.Main) { onDone(true) }
             } catch (e: Exception) {
@@ -169,7 +169,8 @@ class BackupSyncViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _busy.value = true
             val ok = runCatching {
-                unifiedAccountRepository.signOutUnified()
+                cloud.disconnect()
+                unifiedAccountRepository.refreshSession()
                 true
             }.getOrDefault(false)
             _cloudBackups.value = emptyList()

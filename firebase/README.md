@@ -1,94 +1,79 @@
-# SmartLedger Firebase migration
+# SmartLedger Firebase backend
 
-هذا المجلد هو طبقة Firebase البديلة لخادم Cloudflare الحالي.
+هذه هي طبقة الـ Backend الخاصة بالهوية والترخيص فقط؛ النسخ الاحتياطي السحابي لا يمر عبرها.
 
-## ما تم الحفاظ عليه
+## المسؤوليات
 
-- نفس HTTP paths للترخيص:
-  - /license/activate
-  - /license/verify
-  - /license/auto-activate
-  - /license/check-status
-  - /license/status
-  - /status
-- نفس منطق الحساب والتجربة وعدد الأجهزة واستبدال أقدم جهاز.
-- نفس RSA license-token contract.
-- نفس Google Drive OAuth وعمليات list/upload/download/delete/disconnect.
-- نفس جلسات Drive، لكن تخزينها أصبح Firestore.
-- لا توجد بيانات مالية للتطبيق داخل Firestore؛ الأرشيف الفعلي يبقى في Google Drive كما كان.
+- Firebase Authentication هو مصدر هوية الحساب.
+- Cloud Functions هي واجهة الترخيص.
+- Firestore هو مخزن التراخيص والأجهزة وحالات التحقق.
+- Google Drive يستخدم مباشرة من تطبيق Android عبر Google OAuth وDrive API.
+- مسار هوية Firebase ومسار Google Drive منفصلان: تسجيل الدخول للترخيص لا يطلب نطاق Drive، وربط Drive لا ينشئ جلسة Firebase.
+- لا يوجد Cloudflare أو Worker أو Proxy في مسار الترخيص أو النسخ الاحتياطي.
 
-## بنية Firestore
+## الترخيص
 
-كل مفاتيح KV القديمة توضع في:
+المسارات الأساسية:
 
-smartledgerKv/<base64url(key)>
+- `/license/activate`
+- `/license/verify`
+- `/license/auto-activate`
+- `/license/check-status`
+- `/license/status`
+- `/admin/*`
 
-والحقل key يحتفظ بالمفتاح الأصلي، بينما value يحتفظ بالقيمة النصية الأصلية.
+كل طلب ترخيص يجب أن يحمل Firebase ID token في:
 
-هذا مقصود للحفاظ على عقد Worker الحالي أثناء مرحلة النقل، بدل إعادة كتابة منطق الترخيص دفعة واحدة.
+`Authorization: Bearer <Firebase ID token>`
+
+تتحقق Cloud Functions من الـ ID token باستخدام Firebase Admin SDK، ثم تستخدم UID الموثوق لربط `users/{uid}` بالترخيص.
 
 ## أسرار Firebase
 
-لا تضع أي قيمة سرية في GitHub أو APK.
+لا تضع أي سر في Git أو APK.
 
-يجب إنشاء هذه الأسرار في Secret Manager:
+الأسرار المطلوبة في Firebase Secret Manager:
 
-- SMARTLEDGER_ACCOUNT_LICENSE_PRIVATE_KEY
-- SMARTLEDGER_RATE_LIMIT_SALT
-- SMARTLEDGER_ADMIN_SECRET
-- GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET
+- `SMARTLEDGER_ACCOUNT_LICENSE_PRIVATE_KEY`
+- `SMARTLEDGER_RATE_LIMIT_SALT`
 
-الأمر:
-
-firebase functions:secrets:set SECRET_NAME
-
-ثم النشر:
-
-firebase deploy --only functions:smartledgerApi
-
-## App Check
-
-الـ wrapper يتحقق من X-Firebase-AppCheck إذا أرسله العميل، لكنه لا يفرض وجوده بعد.
-هذا متعمد حتى لا ينكسر الإصدار الحالي قبل إضافة Firebase App Check/Play Integrity إلى Android.
-
-بعد إضافة App Check إلى Android واختبار الترافيك، تصبح المرحلة التالية هي فرض App Check على الـ API.
-
-## ربط المشروع
-
-من داخل مجلد المشروع:
-
-firebase login
-firebase use --add
-
-ثم اختر مشروع Firebase الحقيقي.
-
-لا تنشئ أو تكتب project ID في الكود قبل اختيار مشروعك.
+صلاحيات الإدارة تعتمد على Firebase custom claim باسم `admin=true`، وليس على مفتاح وسيط خارجي أو KV.
 
 ## Firestore
 
-انشر القواعد والفهرس:
+النموذج الأساسي:
 
-firebase deploy --only firestore
+- `users/{uid}`
+- `licenses/{accountCode}`
+- `licenses/{accountCode}/devices/{fingerprint}`
+- `rateLimits/{hash}`
 
-القواعد الحالية تمنع Android من الوصول المباشر إلى بيانات الترخيص والجلسات؛ الوصول يتم من Cloud Functions عبر Admin SDK.
+Android لا يكتب بيانات الترخيص مباشرة إلى Firestore؛ الكتابة تتم عبر Cloud Functions.
 
-## الترحيل من Cloudflare KV
+## Google Drive
 
-لا نحذف Cloudflare.
+Drive مستقل عن الترخيص:
 
-أولاً نأخذ نسخة من KV ونحولها إلى Firestore، ثم نقارن:
+1. Android يربط Google Drive من شاشة النسخ الاحتياطي فقط.
+2. عميل Google Drive يطلب نطاق `drive.file` فقط.
+3. مسار Firebase Authentication يستخدم عميل Google منفصلاً ولا يطلب أي نطاق Drive.
+4. Android يحصل على Access Token من Google Play Services محلياً.
+5. Android يتصل مباشرة بـ Google Drive API (`www.googleapis.com/drive/v3`) للرفع والاستعادة والحذف والقائمة.
 
-- license:<accountCode>
-- email:<email>
-- install:<accountCode>:<fingerprint>
-- rate:*
-- oauth:*
-- oauth-connection:*
-- session:*
+لا يتم إرسال Access Token أو Refresh Token إلى Firebase أو وسيط خارجي، ولا تعتمد عمليات Drive على حالة الترخيص.
 
-بعد التحقق فقط نبدل endpoint داخل Android.
+## النشر
 
-## ملاحظة
+من مجلد `firebase/`:
 
-لا نحتاج نقل ملفات Google Drive نفسها إلى Firebase Storage في هذه المرحلة، لأن Worker الحالي لا يخزن ملفات النسخ في Cloudflare؛ هو وسيط OAuth/API فقط، بينما الملفات موجودة في Google Drive.
+```bash
+firebase deploy --only functions:smartledgerApi,firestore,hosting
+```
+
+قبل نشر Functions، أنشئ أسرار Secret Manager المطلوبة ثم أعد النشر بعد أي تغيير في قيمة سر.
+
+## مبدأ الفصل
+
+نجاح Google Drive لا يفعّل الترخيص، وفشل Drive لا يعطل التحقق من الترخيص.
+
+والترخيص لا يمنح التطبيق صلاحية إضافية على Google Drive.
