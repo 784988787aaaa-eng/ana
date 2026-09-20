@@ -37,8 +37,8 @@ class CloudArchiveStore(context: Context) {
     }
 
     fun connected(): Boolean {
-        val lastAccount = GoogleSignIn.getLastSignedInAccount(appContext)
-        return lastAccount != null && (!lastAccount.email.isNullOrBlank() || lastAccount.account != null)
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(appContext) ?: return false
+        return lastAccount.grantedScopes?.any { it.scopeUri == GoogleDriveInternalAuth.SCOPE_DRIVE_FILE.scopeUri } == true
     }
 
     fun email(): String? {
