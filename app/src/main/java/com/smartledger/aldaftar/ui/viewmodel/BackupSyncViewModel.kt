@@ -352,6 +352,25 @@ class BackupSyncViewModel(
         }
     }
 
+    private fun tryBeginOperation(state: BackupOperationState, message: String? = null): Boolean {
+        if (!_operationState.compareAndSet(BackupOperationState.Idle, state)) return false
+        _error.value = null
+        _busyMessage.value = message
+        return true
+    }
+
+    private fun completeOperation(success: Boolean) {
+        val terminalState = if (success) BackupOperationState.Success else BackupOperationState.Error
+        _operationState.value = terminalState
+        viewModelScope.launch {
+            delay(if (success) 350L else 900L)
+            if (_operationState.value == terminalState) {
+                _operationState.value = BackupOperationState.Idle
+                _busyMessage.value = null
+            }
+        }
+    }
+
     private fun <T> launchBusy(
         onComplete: (T?) -> Unit,
         state: BackupOperationState = BackupOperationState.Preparing,
