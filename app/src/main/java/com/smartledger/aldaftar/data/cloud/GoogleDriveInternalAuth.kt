@@ -14,6 +14,7 @@ class GoogleDriveInternalAuth(private val context: Context) {
 
     fun client(): GoogleSignInClient {
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(com.smartledger.aldaftar.R.string.default_web_client_id))
             .requestEmail()
             .requestScopes(SCOPE_DRIVE_FILE)
         return GoogleSignIn.getClient(context, builder.build())
