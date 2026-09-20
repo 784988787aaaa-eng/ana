@@ -388,7 +388,7 @@ class LicenseRepository(private val context: Context) {
         context.assets.open("license_endpoint.txt").bufferedReader().use { reader ->
             reader.readLines().map { it.trim().trimEnd('/') }.filter { it.isNotBlank() && !it.startsWith("__") }
         }
-    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: listOf("https://al-daftar-license-api.pages.dev", "https://al-daftar-license-api.mansour-ghawy.workers.dev")
+    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: listOf("https://al-daftar-android.firebaseapp.com")
 
     private fun post(path: String, body: JSONObject): JSONObject {
         val urls = resolveUrls(path)
