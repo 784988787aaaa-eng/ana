@@ -6,8 +6,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -103,7 +101,6 @@ fun AppLockScreen(
 
     LaunchedEffect(isBiometricSupported, isBiometricEnabled) {
         if (isBiometricSupported && isBiometricEnabled && !showRecoveryView) {
-            awaitFrame()
             triggerBiometricPrompt()
         }
     }
@@ -199,8 +196,8 @@ fun AppLockScreen(
         AnimatedContent(
             targetState = showRecoveryView,
             transitionSpec = {
-                slideInHorizontally { width -> if (targetState) width else -width } + fadeIn() togetherWith
-                        slideOutHorizontally { width -> if (targetState) -width else width } + fadeOut()
+                fadeIn(animationSpec = tween(120)) togetherWith
+                        fadeOut(animationSpec = tween(90))
             },
             label = "ScreenType"
         ) { isRecovery ->
