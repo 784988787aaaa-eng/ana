@@ -65,6 +65,7 @@ import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -83,6 +84,7 @@ fun BackupRestoreBottomSheet(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarScope = rememberCoroutineScope()
+    val ioScope = rememberCoroutineScope()
     fun showBackupSnackbar(message: String) {
         snackbarScope.launch {
             snackbarHostState.currentSnackbarData?.dismiss()
@@ -103,17 +105,25 @@ fun BackupRestoreBottomSheet(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
         if (uri != null) {
+            VibrationHelper.triggerClickVibration(context)
             backupSyncViewModel.exportBackupBytes { bytes ->
                 if (bytes != null) {
-                    runCatching {
-                        context.contentResolver.openOutputStream(uri)?.use { os ->
-                            os.write(bytes)
-                            os.flush()
+                    ioScope.launch(Dispatchers.IO) {
+                        runCatching {
+                            context.contentResolver.openOutputStream(uri)?.use { os ->
+                                os.write(bytes)
+                                os.flush()
+                            }
+                        }.onSuccess {
+                            launch(Dispatchers.Main) {
+                                VibrationHelper.triggerBackupSuccessVibration(context)
+                                showBackupSnackbar("تم حفظ الأرشيف: ${pendingExportName ?: "SNA"}")
+                            }
+                        }.onFailure {
+                            launch(Dispatchers.Main) {
+                                Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
+                            }
                         }
-                        VibrationHelper.triggerBackupSuccessVibration(context)
-                        showBackupSnackbar("تم حفظ الأرشيف: ${pendingExportName ?: "SNA"}")
-                    }.onFailure {
-                        Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     Toast.makeText(context, context.getString(R.string.toast_backup_export_failed), Toast.LENGTH_SHORT).show()
@@ -126,26 +136,34 @@ fun BackupRestoreBottomSheet(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            runCatching {
-                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                if (bytes != null) {
-                    backupSyncViewModel.restoreFromBytes(bytes) { success, settings, errorMsg ->
-                        if (success) {
-                            VibrationHelper.triggerSuccessVibration(context)
-                            Toast.makeText(context, context.getString(R.string.msg_restore_complete), Toast.LENGTH_SHORT).show()
-                            if (settings != null) {
-                                onRestoreSuccess(settings)
+            VibrationHelper.triggerClickVibration(context)
+            ioScope.launch(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                }.onSuccess { bytes ->
+                    if (bytes != null) {
+                        backupSyncViewModel.restoreFromBytes(bytes) { success, settings, errorMsg ->
+                            if (success) {
+                                VibrationHelper.triggerSuccessVibration(context)
+                                Toast.makeText(context, context.getString(R.string.msg_restore_complete), Toast.LENGTH_SHORT).show()
+                                if (settings != null) {
+                                    onRestoreSuccess(settings)
+                                }
+                                onDismiss()
+                            } else {
+                                Toast.makeText(context, errorMsg ?: context.getString(R.string.backup_toast_delete_failed), Toast.LENGTH_LONG).show()
                             }
-                            onDismiss()
-                        } else {
-                            Toast.makeText(context, errorMsg ?: context.getString(R.string.backup_toast_delete_failed), Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        launch(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
                         }
                     }
-                } else {
-                    Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }.onFailure {
-                Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -253,6 +271,7 @@ fun BackupRestoreBottomSheet(
                         backupSyncViewModel.connectCloud()
                     },
                     onCreateCloudBackup = {
+                        VibrationHelper.triggerClickVibration(context)
                         ensureBackupStorageAccess {
                             backupSyncViewModel.createCloudBackup { remote, file ->
                                 if (remote != null) {
@@ -286,11 +305,13 @@ fun BackupRestoreBottomSheet(
                 LocalBackupCard(
                     busy = busy,
                     onExportLocal = {
+                        VibrationHelper.triggerClickVibration(context)
                         val timestamp = WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US).format(Date()))
                         pendingExportName = context.getString(R.string.backup_export_file_name, timestamp)
                         createDocumentLauncher.launch(pendingExportName!!)
                     },
                     onImportLocal = {
+                        VibrationHelper.triggerClickVibration(context)
                         openDocumentLauncher.launch(arrayOf("*/*"))
                     }
                 )
@@ -1089,7 +1110,7 @@ private fun CloudArchiveBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp)
-                .padding(bottom = 64.dp),
+                .padding(bottom = 92.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (!searchActive) {
@@ -1153,6 +1174,7 @@ private fun CloudArchiveBottomSheet(
                                         restoreItem = item
                                     }
                                 },
+                                onRestore = { restoreItem = item },
                                 onDelete = { deleteItem = item }
                             )
                         }
@@ -1177,6 +1199,7 @@ private fun CloudArchiveBottomSheet(
             } else {
                 Button(
                     onClick = {
+                        VibrationHelper.triggerClickVibration(context)
                         ensureBackupStorageAccess { vm.createCloudBackup { remote, file ->
                             if (remote != null) {
                                 VibrationHelper.triggerBackupSuccessVibration(context)
@@ -1207,6 +1230,7 @@ private fun CloudArchiveBottomSheet(
             file = item,
             onDismiss = { restoreItem = null },
             onConfirmRestore = {
+                VibrationHelper.triggerClickVibration(context)
                 vm.restoreCloud(item) { ok, settings, err ->
                     restoreItem = null
                     if (ok) {
@@ -1475,20 +1499,25 @@ private fun CloudBackupRow(
     selection: Boolean,
     checked: Boolean,
     onClick: () -> Unit,
+    onRestore: () -> Unit,
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current
-    val formattedDateTime = remember(item.modifiedTime) {
-        runCatching {
-            WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.ENGLISH).format(Date(item.modifiedTime)))
-        }.getOrElse {
-            WesternDigits.normalize(SimpleDateFormat("yyyy-MM-dd | hh:mm a", Locale.ENGLISH).format(Date(item.modifiedTime)))
-        }
+    val dateText = remember(item.modifiedTime) {
+        WesternDigits.normalize(SimpleDateFormat("dd-MM-yyyy", Locale.US).format(Date(item.modifiedTime)))
+    }
+    val timeText = remember(item.modifiedTime) {
+        SimpleDateFormat("hh:mm a", Locale.US).format(Date(item.modifiedTime))
+            .replace("AM", "ص")
+            .replace("PM", "م")
+            .let(WesternDigits::normalize)
     }
     val sizeText = remember(item.size) {
         val kb = item.size / 1024.0
-        WesternDigits.normalize("${"%.1f".format(Locale.US, kb)} ${context.getString(R.string.backup_unit_kb)}")
+        val value = java.lang.String.format(Locale.US, "%.1f", kb)
+        WesternDigits.normalize(value + " " + context.getString(R.string.backup_unit_kb))
     }
+    var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -1499,11 +1528,7 @@ private fun CloudBackupRow(
                 RoundedCornerShape(12.dp)
             ),
         colors = CardDefaults.cardColors(
-            containerColor = if (checked) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            containerColor = if (checked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp),
         onClick = onClick
@@ -1515,24 +1540,35 @@ private fun CloudBackupRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(horizontalAlignment = Alignment.Start) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start
+            ) {
                 Text(
-                    text = formattedDateTime,
-                    fontSize = 12.sp,
+                    text = dateText,
+                    fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = sizeText,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    text = timeText,
+                    fontSize = 10.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                Text(
+                    text = sizeText,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
                 if (selection) {
                     Surface(
                         modifier = Modifier
@@ -1544,30 +1580,47 @@ private fun CloudBackupRow(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (checked) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
+                                Icon(Icons.Default.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimary)
                             }
                         }
                     }
                 } else {
-                    Surface(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .clickable(onClick = onDelete),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
+                    Box {
+                        IconButton(
+                            onClick = {
+                                VibrationHelper.triggerClickVibration(context)
+                                menuExpanded = true
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Default.DeleteOutline,
-                                contentDescription = stringResource(R.string.backup_delete_title),
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.error
+                                Icons.Default.MoreVert,
+                                contentDescription = "خيارات النسخة",
+                                modifier = Modifier.size(19.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.dialog_btn_restore), fontSize = 12.sp) },
+                                leadingIcon = { Icon(Icons.Default.CloudDownload, null, tint = MaterialTheme.colorScheme.primary) },
+                                onClick = {
+                                    VibrationHelper.triggerClickVibration(context)
+                                    menuExpanded = false
+                                    onRestore()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.backup_btn_delete_confirm), fontSize = 12.sp) },
+                                leadingIcon = { Icon(Icons.Default.DeleteOutline, null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    VibrationHelper.triggerClickVibration(context)
+                                    menuExpanded = false
+                                    onDelete()
+                                }
                             )
                         }
                     }
