@@ -66,7 +66,7 @@ Drive مستقل عن الترخيص:
 من مجلد `firebase/`:
 
 ```bash
-firebase deploy --only functions,firestore,hosting
+firebase deploy --only functions:smartledgerApi,firestore,hosting
 ```
 
 قبل نشر Functions، أنشئ أسرار Secret Manager المطلوبة ثم أعد النشر بعد أي تغيير في قيمة سر.
