@@ -5,6 +5,7 @@
     <!-- ============================================================================== -->
 
     <string name="app_name">الدفتر الذكي</string>
+    <string name="firebase_google_web_client_id" translatable="false">512516697236-ule2iivfcqp8vjicrb4rgksjk0uppqa0.apps.googleusercontent.com</string>
     <string name="app_name_main">الدفتر الذكي</string>
     <string name="drawer_app_subtitle">الإدارة المالية الكاملة</string>
     <string name="drawer_trash_label">سلة المحذوفات</string>
