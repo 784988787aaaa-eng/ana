@@ -114,10 +114,6 @@ class UnifiedAccountSessionRepository(
             cloudArchiveStore.saveEmail(email)
         }
 
-        if (!serverAuthCode.isNullOrBlank()) {
-            runCatching { cloudArchiveStore.connectWithServerAuthCode(serverAuthCode) }
-        }
-
         // 1. التحقق التلقائي والتفعيل السحابي الفوري بمجرد تسجيل الدخول بنفس الحساب المرخص
         var finalSnap = licenseRepository.snapshot()
         if (!email.isNullOrBlank()) {
