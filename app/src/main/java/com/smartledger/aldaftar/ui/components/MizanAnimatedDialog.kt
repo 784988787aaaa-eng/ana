@@ -3,7 +3,7 @@ package com.smartledger.aldaftar.ui.components
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,12 +23,13 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.ui.theme.MizanAnimationTokens
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
  * Common animated dialog wrapper implementing Mizan Motion Tokens:
- * Enter: 160ms (Fade In + Subtle Scale 0.98 -> 1.0)
+ * Enter: 120ms (Fade In + Scale 0.92 -> 1.0)
  * Exit: 90ms (Fade Out + Subtle Scale 1.0 -> 0.98)
  * Ensures exit animation completes gracefully before dismissing composition.
  */
@@ -54,7 +55,7 @@ fun MizanAnimatedDialog(
             isDismissing = true
             isVisible = false
             scope.launch {
-                delay(90L)
+                delay(MizanDialogTokens.exitDuration.toLong())
                 onDismissRequest()
             }
         }
@@ -89,11 +90,11 @@ fun MizanAnimatedDialog(
             visible = isVisible,
             enter = fadeIn(
                 animationSpec = tween(
-                    durationMillis = MizanAnimationTokens.DURATION_DIALOG_ENTER,
-                    easing = LinearOutSlowInEasing
+                    durationMillis = MizanDialogTokens.enterDuration,
+                    easing = FastOutSlowInEasing
                 )
             ) + scaleIn(
-                initialScale = 0.98f,
+                initialScale = MizanDialogTokens.enterScale,
                 animationSpec = tween(
                     durationMillis = MizanAnimationTokens.DURATION_DIALOG_ENTER,
                     easing = LinearOutSlowInEasing
@@ -101,11 +102,11 @@ fun MizanAnimatedDialog(
             ),
             exit = fadeOut(
                 animationSpec = tween(
-                    durationMillis = MizanAnimationTokens.DURATION_DIALOG_EXIT,
+                    durationMillis = MizanDialogTokens.exitDuration,
                     easing = FastOutLinearInEasing
                 )
             ) + scaleOut(
-                targetScale = 0.98f,
+                targetScale = MizanDialogTokens.exitScale,
                 animationSpec = tween(
                     durationMillis = MizanAnimationTokens.DURATION_DIALOG_EXIT,
                     easing = FastOutLinearInEasing

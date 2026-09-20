@@ -57,6 +57,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.components.MizanDialogInnerCard
 import com.smartledger.aldaftar.data.serialization.PdfReportGenerator
 import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
 import com.smartledger.aldaftar.data.serialization.pdf.MasterBookletPdfEngine
@@ -125,47 +129,21 @@ fun ComprehensiveReportDialog(
         com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
             onDismissRequest = onDismiss
         ) { dismissDialog ->
-            Surface(
-                modifier = modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(max = 480.dp)
-                    .heightIn(max = 620.dp)
-                    .padding(horizontal = 4.dp, vertical = 12.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+            MizanDialogCard(
+                modifier = modifier.padding(horizontal = 4.dp, vertical = 12.dp),
+                maxWidth = 480.dp,
+                maxHeight = 620.dp,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = MizanDialogTokens.dialogHorizontal,
+                    vertical = MizanDialogTokens.dialogVertical
+                )
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.drawer_comprehensive_report_label),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeThemeColor
-                        )
-                        IconButton(
-                            onClick = dismissDialog,
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(id = R.string.report_btn_close),
-                                tint = textSecondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                MizanDialogHeader(
+                    title = stringResource(id = R.string.drawer_comprehensive_report_label),
+                    icon = Icons.Default.Assessment,
+                    iconTint = activeThemeColor,
+                    onCloseClick = dismissDialog
+                )
 
                     val netPrimaryColor = if (netPrimary.compareTo(BigDecimal.ZERO) > 0) {
                         if (isDark) com.smartledger.aldaftar.ui.theme.CreditGreen else MaterialTheme.colorScheme.primary
@@ -182,36 +160,47 @@ fun ComprehensiveReportDialog(
                         stringResource(id = R.string.report_status_balanced)
                     }
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = activeThemeColor.copy(alpha = 0.05f)),
-                        shape = RoundedCornerShape(12.dp)
+                    MizanDialogInnerCard(
+                        containerColor = activeThemeColor.copy(alpha = 0.05f)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
                                 Text(
                                     text = stringResource(id = R.string.report_net_total_pattern, netStatus),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = textSecondary
                                 )
-                                Text(
-                                    text = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(netPrimary.abs()) + " " + currencySymbol,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = netPrimaryColor
-                                )
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(netPrimary.abs()),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = netPrimaryColor
+                                        )
+                                        Text(
+                                            text = currencySymbol,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = netPrimaryColor
+                                        )
+                                    }
+                                }
                             }
-                            
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(MizanDialogTokens.actionRadius))
                                     .background(activeThemeColor.copy(alpha = 0.12f))
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                             ) {
@@ -219,14 +208,18 @@ fun ComprehensiveReportDialog(
                                     text = stringResource(id = R.string.report_active_accounts_count, customers.size),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = activeThemeColor
+                                    color = activeThemeColor,
+                                    maxLines = 1
                                 )
                             }
                         }
                     }
 
                     if (nonZeroForeign.isNotEmpty()) {
-                        Row(
+                        MizanDialogInnerCard(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f)
+                        ) {
+                            Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -265,14 +258,18 @@ fun ComprehensiveReportDialog(
                                             .background(badgeBg)
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
-                                        Text(
-                                            text = "$curr: ${com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(bd.abs())} ($status)",
+                                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                            Text(
+                                                text = "$curr: ${com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(bd.abs())} ($status)",
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = badgeTextColor
-                                        )
+                                                color = badgeTextColor,
+                                                maxLines = 1
+                                            )
+                                        }
                                     }
                                 }
+                            }
                             }
                         }
                     }
@@ -294,130 +291,79 @@ fun ComprehensiveReportDialog(
 
                     val bookletErrorToastStr = stringResource(id = R.string.report_booklet_error_toast)
                     val bookletCancelledToastStr = stringResource(id = R.string.report_booklet_cancelled_toast)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(
-                            onClick = {
-                                if (!isGeneratingPdf && !isGeneratingBooklet) {
-                                    isGeneratingPdf = true
-                                    val targetCustomers = if (selectedCustomerIds.isNotEmpty()) {
-                                        customers.filter { selectedIdsSet.contains(it.id) }
-                                    } else {
-                                        customers
-                                    }
-                                    generalPdfJob = PdfReportGenerator.generateAndHandleAllCustomersPdfReportAsync(
-                                        context = context,
-                                        scope = reportCoroutineScope,
-                                        customers = targetCustomers,
-                                        businessProfile = businessProfile,
-                                        currencySymbol = currencySymbol,
-                                        action = PdfAction.SHARE,
-                                        onFinished = {
-                                            isGeneratingPdf = false
-                                            generalPdfJob = null
-                                        }
-                                    )
+                    MizanDialogActions(
+                        extraActionText = stringResource(id = R.string.report_type_general),
+                        onExtraAction = {
+                            if (!isGeneratingPdf && !isGeneratingBooklet) {
+                                isGeneratingPdf = true
+                                val targetCustomers = if (selectedCustomerIds.isNotEmpty()) {
+                                    customers.filter { selectedIdsSet.contains(it.id) }
+                                } else {
+                                    customers
                                 }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(MizanDialogTokens.buttonHeight),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = activeThemeColor.copy(alpha = 0.12f),
-                                contentColor = activeThemeColor
-                            ),
-                            shape = MizanDialogTokens.buttonShape,
-                            enabled = !isGeneratingPdf && !isGeneratingBooklet
-                        ) {
-                            if (isGeneratingPdf) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    color = activeThemeColor,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(id = R.string.report_type_general),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
+                                generalPdfJob = PdfReportGenerator.generateAndHandleAllCustomersPdfReportAsync(
+                                    context = context,
+                                    scope = reportCoroutineScope,
+                                    customers = targetCustomers,
+                                    businessProfile = businessProfile,
+                                    currencySymbol = currencySymbol,
+                                    action = PdfAction.SHARE,
+                                    onFinished = {
+                                        isGeneratingPdf = false
+                                        generalPdfJob = null
+                                    }
                                 )
                             }
-                        }
-
-                        Button(
-                            onClick = {
-                                val job = reportCoroutineScope.launch {
-                                    isGeneratingBooklet = true
-                                    bookletProgress = 0
-                                    bookletTotal = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds.size else customers.size
-
-                                    val hexColor = "#" + Integer.toHexString(activeThemeColor.toArgb()).substring(2)
-                                    val targetIds = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds else customers.map { it.id }
-                                    val transactionsByCustomer = loadTransactionsForReport(targetIds)
-                                    MasterBookletPdfEngine.generateBookletPdfAsync(
-                                        context = context,
-                                        allCustomers = customers,
-                                        selectedIds = selectedCustomerIds,
-                                        onlySelected = selectedCustomerIds.isNotEmpty(),
-                                        currencySymbol = currencySymbol,
-                                        primaryColorHex = hexColor,
-                                        businessProfile = businessProfile,
-                                        transactionsByCustomer = transactionsByCustomer,
-                                        onProgress = { processed, total ->
-                                            bookletProgress = processed
-                                            bookletTotal = total
-                                        },
-                                        onFinished = { file ->
-                                            isGeneratingBooklet = false
-                                            bookletJob = null
-                                            if (file != null) {
-                                                PdfReportGenerator.triggerShareOrViewIntent(context, file, PdfAction.SHARE)
-                                            } else {
-                                                Toast.makeText(context, bookletErrorToastStr, Toast.LENGTH_LONG).show()
-                                            }
-                                        },
-                                        onCancelled = {
-                                            isGeneratingBooklet = false
-                                            bookletJob = null
-                                            Toast.makeText(context, bookletCancelledToastStr, Toast.LENGTH_SHORT).show()
+                        },
+                        extraActionColor = activeThemeColor,
+                        confirmText = stringResource(id = R.string.report_type_detailed),
+                        onConfirm = {
+                            val job = reportCoroutineScope.launch {
+                                isGeneratingBooklet = true
+                                bookletProgress = 0
+                                bookletTotal = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds.size else customers.size
+                                val hexColor = "#" + Integer.toHexString(activeThemeColor.toArgb()).substring(2)
+                                val targetIds = if (selectedCustomerIds.isNotEmpty()) selectedCustomerIds else customers.map { it.id }
+                                val transactionsByCustomer = loadTransactionsForReport(targetIds)
+                                MasterBookletPdfEngine.generateBookletPdfAsync(
+                                    context = context,
+                                    allCustomers = customers,
+                                    selectedIds = selectedCustomerIds,
+                                    onlySelected = selectedCustomerIds.isNotEmpty(),
+                                    currencySymbol = currencySymbol,
+                                    primaryColorHex = hexColor,
+                                    businessProfile = businessProfile,
+                                    transactionsByCustomer = transactionsByCustomer,
+                                    onProgress = { processed, total ->
+                                        bookletProgress = processed
+                                        bookletTotal = total
+                                    },
+                                    onFinished = { file ->
+                                        isGeneratingBooklet = false
+                                        bookletJob = null
+                                        if (file != null) {
+                                            PdfReportGenerator.triggerShareOrViewIntent(context, file, PdfAction.SHARE)
+                                        } else {
+                                            Toast.makeText(context, bookletErrorToastStr, Toast.LENGTH_LONG).show()
                                         }
-                                    )
-                                }
-                                bookletJob = job
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(MizanDialogTokens.buttonHeight),
-                            colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
-                            shape = MizanDialogTokens.buttonShape,
-                            enabled = !isGeneratingBooklet && !isGeneratingPdf
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(id = R.string.report_type_detailed),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                }
-            }
+                                    },
+                                    onCancelled = {
+                                        isGeneratingBooklet = false
+                                        bookletJob = null
+                                        Toast.makeText(context, bookletCancelledToastStr, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            }
+                            bookletJob = job
+                        },
+                        confirmColor = activeThemeColor,
+                        confirmContainerColor = activeThemeColor,
+                        confirmContentColor = MaterialTheme.colorScheme.onPrimary,
+                        confirmIcon = Icons.Default.Share,
+                        confirmEnabled = !isGeneratingPdf && !isGeneratingBooklet,
+                        isConfirmLoading = isGeneratingBooklet
+                    )
+
         }
     }
 
@@ -430,7 +376,7 @@ fun ComprehensiveReportDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .wrapContentHeight(),
-                shape = MizanDialogTokens.shape,
+                shape = RoundedCornerShape(MizanDialogTokens.dialogRadius),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp
             ) {
@@ -461,7 +407,7 @@ fun ComprehensiveReportDialog(
                         },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(MizanDialogTokens.actionRadius)
                     ) {
                         Text(stringResource(id = R.string.report_booklet_cancel_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
