@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 /**
  * Common animated dialog wrapper implementing Mizan Motion Tokens:
  * Enter: 160ms (Fade In + Subtle Scale 0.98 -> 1.0)
- * Exit: 120ms (Fade Out + Subtle Scale 1.0 -> 0.98)
+ * Exit: 90ms (Fade Out + Subtle Scale 1.0 -> 0.98)
  * Ensures exit animation completes gracefully before dismissing composition.
  */
 @Composable
@@ -54,7 +54,7 @@ fun MizanAnimatedDialog(
             isDismissing = true
             isVisible = false
             scope.launch {
-                delay(MizanAnimationTokens.DURATION_DIALOG_EXIT.toLong())
+                delay(90L)
                 onDismissRequest()
             }
         }
