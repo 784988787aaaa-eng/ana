@@ -1444,7 +1444,7 @@ function routeNotFound() {
   return json(404, { error: "not_found" });
 }
 
-function errorResponse(error, request) {
+export function errorResponse(error, request) {
   const code = String(error?.message || "server_error");
 
   if (code === "invalid_session") return withCors(json(401, { error: "invalid_session" }), request);
