@@ -51,7 +51,7 @@ function b64Url(bytes) {
   const input = bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : bytes;
   let binary = "";
   for (let i = 0; i < input.length; i += 32768) binary += String.fromCharCode(...input.subarray(i, i + 32768));
-  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function fromB64(value) {
