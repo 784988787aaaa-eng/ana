@@ -151,9 +151,8 @@ class BackupSyncViewModel(
 
     fun connectCloudWithServerAuthCode(code: String, email: String?, onComplete: (Boolean) -> Unit = {}) {
         if (connectJob?.isActive == true) return
+        if (!tryBeginOperation(BackupOperationState.Preparing, "جارٍ تأكيد حساب Google...")) return
         connectJob = viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
-            _busyMessage.value = "جارٍ تأكيد حساب Google..."
             _error.value = null
             val ok = runCatching {
                 val success = cloud.connectWithServerAuthCode(code)
@@ -169,8 +168,7 @@ class BackupSyncViewModel(
             if (ok) {
                 refreshCloud()
             }
-            _busy.value = false
-            _busyMessage.value = null
+            completeOperation(ok)
             withContext(Dispatchers.Main) { onComplete(ok) }
         }
     }
@@ -178,19 +176,19 @@ class BackupSyncViewModel(
     fun cancelConnectCloud() {
         connectJob?.cancel()
         connectJob = null
-        _busy.value = false
+        _operationState.value = BackupOperationState.Idle
         _busyMessage.value = null
     }
 
     fun disconnectCloud(onComplete: (Boolean) -> Unit = {}) {
+        if (!tryBeginOperation(BackupOperationState.Preparing, "جارٍ فصل حساب Google...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
             val ok = runCatching {
                 unifiedAccountRepository.signOutUnified()
                 true
             }.getOrDefault(false)
             _cloudBackups.value = emptyList()
-            _busy.value = false
+            completeOperation(ok)
             withContext(Dispatchers.Main) { onComplete(ok) }
         }
     }
@@ -209,13 +207,16 @@ class BackupSyncViewModel(
             _cloudBackups.value = emptyList()
             return
         }
-        if (!tryBeginOperation(BackupOperationState.Refreshing, "جارٍ تحميل قائمة النسخ من السحابة...")) return
         viewModelScope.launch(Dispatchers.IO) {
+            _busyMessage.value = "جارٍ تحميل قائمة النسخ من السحابة..."
             val result = runCatching { cloud.list(_cloudSearch.value) }
             result.exceptionOrNull()?.let { _error.value = it.message ?: "تعذر تحميل النسخ السحابية" }
             _cloudBackups.value = result.getOrDefault(emptyList())
-            _busyMessage.value = null
-            completeOperation(result.isSuccess)
+            if (_operationState.value == BackupOperationState.Refreshing) {
+                completeOperation(result.isSuccess)
+            } else if (_operationState.value == BackupOperationState.Idle) {
+                _busyMessage.value = null
+            }
         }
     }
 
@@ -257,11 +258,11 @@ class BackupSyncViewModel(
         recoveryCode: String? = null,
         onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }
     ) {
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جارٍ استعادة النسخة...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
             _error.value = null
             val result = runCatching { engine.restoreBytes(bytes, recoveryCode) }
-            _busy.value = false
+            completeOperation(result.isSuccess)
             withContext(Dispatchers.Main) {
                 onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message)
             }
@@ -273,11 +274,11 @@ class BackupSyncViewModel(
         recoveryCode: String? = null,
         onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }
     ) {
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جارٍ استعادة النسخة...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
             _error.value = null
             val result = runCatching { engine.restoreBytes(file.readBytes(), recoveryCode) }
-            _busy.value = false
+            completeOperation(result.isSuccess)
             withContext(Dispatchers.Main) {
                 onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message)
             }
@@ -288,8 +289,8 @@ class BackupSyncViewModel(
         onConfirmationRequired: (CloudBackupFile) -> Unit,
         onError: (Int) -> Unit
     ) {
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جاري البحث عن أحدث نسخة سحابية...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
             _busyMessage.value = "جاري البحث عن أحدث نسخة سحابية..."
             _error.value = null
             val currentList = _cloudBackups.value
@@ -305,9 +306,6 @@ class BackupSyncViewModel(
             } else {
                 emptyList()
             }
-            _busy.value = false
-            _busyMessage.value = null
-
             val latest = list.maxByOrNull { it.modifiedTime } ?: list.firstOrNull()
             completeOperation(latest != null)
             withContext(Dispatchers.Main) {
@@ -325,13 +323,12 @@ class BackupSyncViewModel(
         recoveryCode: String? = null,
         onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }
     ) {
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جاري تنزيل النسخة وفك التشفير واستعادة السجلات...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
             _busyMessage.value = "جاري تنزيل النسخة وفك التشفير واستعادة السجلات..."
             _error.value = null
             val result = runCatching { engine.restoreBytes(cloud.download(item.id), recoveryCode) }
-            _busy.value = false
-            _busyMessage.value = null
+            completeOperation(result.isSuccess)
             withContext(Dispatchers.Main) {
                 onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message)
             }
@@ -356,12 +353,18 @@ class BackupSyncViewModel(
         }
     }
 
-    private fun <T> launchBusy(onComplete: (T?) -> Unit, block: suspend () -> T) {
+    private fun <T> launchBusy(
+        onComplete: (T?) -> Unit,
+        state: BackupOperationState = BackupOperationState.Preparing,
+        block: suspend () -> T
+    ) {
+        if (!tryBeginOperation(state, null)) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
             _error.value = null
-            val result = runCatching { block() }.onFailure { _error.value = it.message ?: "تعذر تنفيذ العملية" }.getOrNull()
-            _busy.value = false
+            val result = runCatching { block() }
+                .onFailure { _error.value = it.message ?: "تعذر تنفيذ العملية" }
+                .getOrNull()
+            completeOperation(result != null)
             withContext(Dispatchers.Main) { onComplete(result) }
         }
     }
