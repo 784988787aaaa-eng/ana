@@ -108,7 +108,7 @@ function requireAdmin(request, env) {
   const auth = authContext(request);
   const legacySecret = String(env.SMARTLEDGER_ADMIN_SECRET || "").trim();
   const supplied = String(request.headers.get("X-SMARTLEDGER-ADMIN") || "").trim();
-  if (auth.admin || (legacySecret && supplied && supplied === legacySecret)) return auth;
+  if (auth?.admin || (legacySecret && supplied && supplied === legacySecret)) return auth || { uid: "legacy-admin", email: "", admin: true };
   return json(401, { error: "unauthorized" });
 }
 
@@ -261,7 +261,7 @@ async function enrollDevice(env, license, fingerprint, publicKey, email) {
 }
 
 async function activate(request, env) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (auth instanceof Response) return auth;
   const body = await readJson(request);
   let accountCode = normalizeAccountCode(body.accountCode);
@@ -366,7 +366,7 @@ async function status(request, env) {
 }
 
 async function adminCreate(request, env) {
-  const admin = requireAdmin(request, env);
+  const admin = await requireAdmin(request, env);
   if (admin instanceof Response) return admin;
   const body = await readJson(request);
   const email = normalizeEmail(body.email);
@@ -502,7 +502,7 @@ export async function licenseFetch(request, env) {
     if (path === "/license/auto-activate" || path === "/auto-activate") return autoActivate(request, env);
     if (path === "/license/check-status" || path === "/license/status" || path === "/status") return status(request, env);
     if (path === "/admin/ping") {
-      const a = requireAdmin(request, env); if (a instanceof Response) return a;
+      const a = await requireAdmin(request, env); if (a instanceof Response) return a;
       return json(200, { ok: true, status: "connected", service: "smartledger-firebase-license-api", version: 1 });
     }
     if (path === "/admin/licenses/issue") return adminCreate(request, env);
