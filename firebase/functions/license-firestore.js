@@ -1,5 +1,3 @@
-import { getAuth } from "firebase-admin/auth";
-
 const ACCOUNT_PATTERN = /^SL-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FINGERPRINT_PATTERN = /^[A-F0-9]{64}$/;
@@ -104,11 +102,9 @@ function requireAuth(request) {
   return auth;
 }
 
-function requireAdmin(request, env) {
+function requireAdmin(request) {
   const auth = authContext(request);
-  const legacySecret = String(env.SMARTLEDGER_ADMIN_SECRET || "").trim();
-  const supplied = String(request.headers.get("X-SMARTLEDGER-ADMIN") || "").trim();
-  if (auth?.admin || (legacySecret && supplied && supplied === legacySecret)) return auth || { uid: "legacy-admin", email: "", admin: true };
+  if (auth?.admin === true) return auth;
   return json(401, { error: "unauthorized" });
 }
 
