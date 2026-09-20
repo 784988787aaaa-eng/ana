@@ -375,7 +375,7 @@ class CloudArchiveStore(context: Context) {
                         code in 429..599 && retries < MAX_UPLOAD_RETRIES -> {
                             retries++
                             Thread.sleep((500L * (1L shl (retries - 1))).coerceAtMost(8_000L))
-                            offset = queryResumableOffset(sessionUrl, token, offset)
+                            offset = queryResumableOffset(sessionUrl, token, total, offset)
                         }
                         else -> throw createExceptionFromResponse(code, body)
                     }
@@ -392,19 +392,19 @@ class CloudArchiveStore(context: Context) {
         return if (value != null) value + 1 else fallback
     }
 
-    private fun queryResumableOffset(sessionUrl: String, token: String, currentOffset: Long): Long {
+    private fun queryResumableOffset(sessionUrl: String, token: String, total: Long, fallback: Long): Long {
         val conn = (URL(sessionUrl).openConnection() as HttpURLConnection).apply {
             requestMethod = "PUT"
             doOutput = true
             setRequestProperty("Authorization", "Bearer $token")
             setRequestProperty("Content-Length", "0")
-            setRequestProperty("Content-Range", "bytes */$currentOffset")
+            setRequestProperty("Content-Range", "bytes */$total")
             connectTimeout = 20_000
             readTimeout = 30_000
         }
         return try {
             val code = conn.responseCode
-            if (code == 308) parseUploadedRange(conn.getHeaderField("Range"), currentOffset) else currentOffset
+            if (code == 308) parseUploadedRange(conn.getHeaderField("Range"), fallback) else fallback
         } finally {
             conn.disconnect()
         }
