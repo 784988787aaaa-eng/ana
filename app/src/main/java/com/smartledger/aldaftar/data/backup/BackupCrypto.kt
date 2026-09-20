@@ -46,7 +46,7 @@ class BackupCrypto(context: Context) {
     }
 
     fun decrypt(salt: ByteArray, iv: ByteArray, cipherText: ByteArray, recoveryCode: String? = null): ByteArray {
-        val code = recoveryCode?.trim()?.uppercase() ?: localRecoveryCode()
+        val code = recoveryCode?.trim() ?: localRecoveryCode()
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, deriveKey(code, salt), GCMParameterSpec(TAG_BITS, iv))
         return cipher.doFinal(cipherText)
