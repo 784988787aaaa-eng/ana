@@ -18,10 +18,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+
+enum class BackupOperationState {
+    Idle,
+    Preparing,
+    Uploading,
+    Restoring,
+    Deleting,
+    Refreshing,
+    Success,
+    Error
+}
 
 class BackupSyncViewModel(
     application: Application,
@@ -48,8 +62,11 @@ class BackupSyncViewModel(
     private val _cloudEmail = MutableStateFlow<String?>(null)
     val cloudEmail: StateFlow<String?> = _cloudEmail.asStateFlow()
 
-    private val _busy = MutableStateFlow(false)
-    val isBusy: StateFlow<Boolean> = _busy.asStateFlow()
+    private val _operationState = MutableStateFlow(BackupOperationState.Idle)
+    val operationState: StateFlow<BackupOperationState> = _operationState.asStateFlow()
+    val isBusy: StateFlow<Boolean> = operationState
+        .map { it != BackupOperationState.Idle && it != BackupOperationState.Success && it != BackupOperationState.Error }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _busyMessage = MutableStateFlow<String?>(null)
     val busyMessage: StateFlow<String?> = _busyMessage.asStateFlow()
@@ -90,7 +107,7 @@ class BackupSyncViewModel(
         onDone: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
+            _operationState.value = BackupOperationState.Preparing
             _busyMessage.value = "جارٍ الاتصال بحساب Google Drive..."
             _error.value = null
             try {
@@ -101,7 +118,7 @@ class BackupSyncViewModel(
                 _error.value = e.message ?: "تعذر ربط حساب Google"
                 withContext(Dispatchers.Main) { onDone(false) }
             } finally {
-                _busy.value = false
+                _operationState.value = BackupOperationState.Idle
                 _busyMessage.value = null
             }
         }
@@ -110,7 +127,7 @@ class BackupSyncViewModel(
     fun connectCloud(onComplete: (Boolean) -> Unit = {}) {
         if (connectJob?.isActive == true) return
         connectJob = viewModelScope.launch(Dispatchers.IO) {
-            _busy.value = true
+            _operationState.value = BackupOperationState.Preparing
             _busyMessage.value = "جارٍ الاتصال بحساب Google..."
             _error.value = null
             val ok = runCatching {
@@ -123,7 +140,7 @@ class BackupSyncViewModel(
                 _error.value = it.message ?: "تعذر ربط Google Drive"
                 false
             }
-            _busy.value = false
+            _operationState.value = BackupOperationState.Idle
             _busyMessage.value = null
             if (ok) {
                 refreshCloud()
@@ -192,31 +209,35 @@ class BackupSyncViewModel(
             _cloudBackups.value = emptyList()
             return
         }
+        if (!tryBeginOperation(BackupOperationState.Refreshing, "جارٍ تحميل قائمة النسخ من السحابة...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busyMessage.value = "جارٍ تحميل قائمة النسخ من السحابة..."
             val result = runCatching { cloud.list(_cloudSearch.value) }
             result.exceptionOrNull()?.let { _error.value = it.message ?: "تعذر تحميل النسخ السحابية" }
             _cloudBackups.value = result.getOrDefault(emptyList())
             _busyMessage.value = null
+            completeOperation(result.isSuccess)
         }
     }
 
     fun createCloudBackup(onComplete: (CloudBackupFile?, File?) -> Unit = { _, _ -> }) {
         launchBusy({ pair -> onComplete(pair?.first, pair?.second) }) {
-            _busyMessage.value = "جاري إنشاء النسخة الاحتياطية ورفعها إلى Google Drive..."
+            _busyMessage.value = "جارٍ تجهيز النسخة..."
+            _operationState.value = BackupOperationState.Preparing
             val file = engine.createManual()
             val publicUri = publicBackupStore.publish(file)
             if (!cloud.connected()) {
                 _error.value = "يرجى ربط حساب Google Drive أولاً"
                 return@launchBusy null to file
             }
+            _operationState.value = BackupOperationState.Uploading
+            _busyMessage.value = "جارٍ الرفع إلى Google Drive..."
             val remote = cloud.upload(file, file.name)
+            _cloudBackups.value = listOf(remote) + _cloudBackups.value.filterNot { it.id == remote.id }
             backupNotifications.show(
                 "تم رفع النسخة إلى Google Drive",
                 "تم حفظ الأرشيف: ${file.name} في Google Drive / الدفتر الذكي برو.",
                 publicUri
             )
-            refreshCloud()
             remote to file
         }
     }
@@ -288,6 +309,7 @@ class BackupSyncViewModel(
             _busyMessage.value = null
 
             val latest = list.maxByOrNull { it.modifiedTime } ?: list.firstOrNull()
+            completeOperation(latest != null)
             withContext(Dispatchers.Main) {
                 if (latest != null) {
                     onConfirmationRequired(latest)
@@ -316,11 +338,11 @@ class BackupSyncViewModel(
         }
     }
 
-    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy({ onComplete(it ?: 0) }) {
+    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy({ onComplete(it ?: 0) }, BackupOperationState.Deleting) {
         ids.chunked(100).sumOf { cloud.delete(it.toSet()) }.also { refreshCloud() }
     }
 
-    fun clearLocalCopyAndWipeMemory(onComplete: (Boolean) -> Unit = {}) = launchBusy({ onComplete(it == true) }) {
+    fun clearLocalCopyAndWipeMemory(onComplete: (Boolean) -> Unit = {}) = launchBusy({ onComplete(it == true) }, BackupOperationState.Deleting) {
         maintenanceRepository.deleteAllData()
         true
     }
