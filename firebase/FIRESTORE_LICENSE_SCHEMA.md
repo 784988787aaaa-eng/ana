@@ -51,8 +51,6 @@ All device fields are server controlled.
 ## rateLimits/{hash}
 Internal anti-abuse state only: startedAt, attempts, expiresAt. It is not license data.
 
-## smartledgerKv/{base64url(key)}
-Retained only for the independent Google Drive/OAuth compatibility layer. License endpoints must not read or write license:* or email:* KV keys.
 
 ## Security invariants
 1. Android never writes Firestore licensing documents directly.
@@ -62,4 +60,4 @@ Retained only for the independent Google Drive/OAuth compatibility layer. Licens
 5. Device private keys remain in Android Keystore; only public keys are stored.
 6. maxDevices is enforced server-side in a Firestore transaction.
 7. Firebase Auth ID tokens are verified server-side; body email is not trusted as identity.
-8. Google Drive sessions/tokens remain separate from license documents.
+8. Google Drive is handled directly by Android and Google; no Drive OAuth/session tokens are stored in Firestore.
