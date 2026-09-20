@@ -473,7 +473,12 @@ class CloudArchiveStore(context: Context) {
             }
             try {
                 val code = conn.responseCode
-                if (code in 200..299 || code == 404) count++
+                if (code in 200..299) {
+                    runCatching { getBackupMetadata(token, fileId) }
+                    count++
+                } else if (code == 404) {
+                    count++
+                }
             } catch (_: Exception) {
             } finally {
                 conn.disconnect()
