@@ -5,18 +5,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.onAllNodes
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
+import com.smartledger.aldaftar.ui.screens.habayeb.components.AddTransactionFormFields
 import org.junit.Rule
 import org.junit.Test
 
@@ -65,6 +64,7 @@ class KeyboardImeRuntimeContractTest {
         composeRule.onAllNodes(hasSetTextAction()).onLast().performImeAction()
         composeRule.runOnIdle { check(saved) { "IME Done must invoke the transaction save callback" } }
     }
+
     @Test
     fun transactionFormRequestsInitialFocusWithoutUserTap() {
         composeRule.setContent {
@@ -98,5 +98,4 @@ class KeyboardImeRuntimeContractTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("transaction_amount_input").assertIsFocused()
     }
-
 }
