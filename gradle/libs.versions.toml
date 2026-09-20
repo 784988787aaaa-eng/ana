@@ -31,6 +31,7 @@ uiTextGoogleFonts = "1.6.3"
 playServicesAuth = "21.2.0"
 desugarJdkLibs = "2.0.4"
 firebaseBom = "34.19.0"
+googleServices = "4.4.4"
 
 workManager = "2.10.0"
 pagingRuntime = "3.3.6"
@@ -88,3 +89,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "googleDevtoolsKsp" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
