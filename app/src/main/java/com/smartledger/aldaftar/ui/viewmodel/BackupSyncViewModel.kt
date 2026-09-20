@@ -227,8 +227,7 @@ class BackupSyncViewModel(
             val file = engine.createManual()
             val publicUri = publicBackupStore.publish(file)
             if (!cloud.connected()) {
-                _error.value = "يرجى ربط حساب Google Drive أولاً"
-                return@launchBusy null to file
+                throw IllegalStateException("يرجى ربط حساب Google Drive أولاً")
             }
             _operationState.value = BackupOperationState.Uploading
             _busyMessage.value = "جارٍ الرفع إلى Google Drive..."
