@@ -16,18 +16,79 @@ object ExchangeRateHelper {
         val rateDirect = overrideRate ?: getRateBigDecimal(jsonStr, currencyA, currencyB)
         if (rateDirect.compareTo(BigDecimal.ZERO) <= 0) return ""
 
-        val rateReciprocal = runCatching { BigDecimal.ONE.divide(rateDirect, 12, RoundingMode.HALF_EVEN) }.getOrDefault(BigDecimal.ZERO)
-
-        val (largerCur, smallerCur, displayRate) = if (rateDirect >= BigDecimal.ONE) {
-            Triple(currencyA, currencyB, rateDirect)
-        } else if (rateReciprocal >= BigDecimal.ONE) {
-            Triple(currencyB, currencyA, rateReciprocal)
+        val (canonicalBase, canonicalTarget) = getCanonicalPairOrder(currencyA, currencyB, jsonStr)
+        val canonicalRate = if (currencyA == canonicalBase && currencyB == canonicalTarget) {
+            rateDirect
         } else {
-            Triple(currencyA, currencyB, rateDirect)
+            runCatching {
+                BigDecimal.ONE.divide(rateDirect, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+            }.getOrDefault(rateDirect)
         }
 
-        val formattedRateStr = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(displayRate)
-        return context.getString(com.smartledger.aldaftar.R.string.currency_approved_rate_pattern, largerCur, formattedRateStr, smallerCur)
+        val formattedRateStr = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(canonicalRate)
+        return context.getString(com.smartledger.aldaftar.R.string.currency_approved_rate_pattern, canonicalBase, formattedRateStr, canonicalTarget)
+    }
+
+    /**
+     * Returns a concise, single-line badge string (e.g. "1 $ = 550 ر.ي" or "1 ر.س = 140 ر.ي")
+     * strictly formatted without redundant prefixes to prevent multi-line wrapping in popup dialogs.
+     */
+    fun formatCompactRateBadge(
+        jsonStr: String,
+        currencyA: String,
+        currencyB: String,
+        overrideRate: BigDecimal? = null
+    ): String {
+        val rateDirect = overrideRate ?: getRateBigDecimal(jsonStr, currencyA, currencyB)
+        if (rateDirect.compareTo(BigDecimal.ZERO) <= 0) return ""
+
+        val (canonicalBase, canonicalTarget) = getCanonicalPairOrder(currencyA, currencyB, jsonStr)
+        val canonicalRate = if (currencyA == canonicalBase && currencyB == canonicalTarget) {
+            rateDirect
+        } else {
+            runCatching {
+                BigDecimal.ONE.divide(rateDirect, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+            }.getOrDefault(rateDirect)
+        }
+
+        val formattedRateStr = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(canonicalRate)
+        return "1 $canonicalBase = $formattedRateStr $canonicalTarget"
+    }
+
+    /**
+     * Determines the canonical / market-standard base currency for a pair.
+     * In Yemen & Arab market finance:
+     * USD ($) > SAR (ر.س) > YER (ر.ي).
+     * The higher-valued currency is the canonical base of quotation (e.g., 1 $ = 550 ر.ي).
+     */
+    fun getCanonicalPairOrder(currencyA: String, currencyB: String, jsonStr: String = ""): Pair<String, String> {
+        val normA = CurrencyConfig.getBySymbol(currencyA)?.symbol ?: currencyA
+        val normB = CurrencyConfig.getBySymbol(currencyB)?.symbol ?: currencyB
+        if (normA == normB) return Pair(normA, normB)
+
+        fun rank(curr: String): Int = when (curr) {
+            "$", "USD" -> 3
+            "ر.س", "SAR" -> 2
+            "ر.ي", "YER" -> 1
+            else -> 0
+        }
+
+        val rankA = rank(normA)
+        val rankB = rank(normB)
+
+        return when {
+            rankA > rankB -> Pair(normA, normB)
+            rankB > rankA -> Pair(normB, normA)
+            else -> {
+                val rateAB = getRateBigDecimal(jsonStr, normA, normB)
+                if (rateAB >= BigDecimal.ONE) Pair(normA, normB)
+                else {
+                    val rateBA = getRateBigDecimal(jsonStr, normB, normA)
+                    if (rateBA >= BigDecimal.ONE) Pair(normB, normA)
+                    else Pair(normA, normB)
+                }
+            }
+        }
     }
 
     fun getCurrencyPair(jsonStr: String, sourceCurrencySymbol: String, targetCurrencySymbol: String): CurrencyPair {
@@ -101,18 +162,36 @@ object ExchangeRateHelper {
         if (sourceNorm == targetNorm) return jsonStr
         if (rate.compareTo(BigDecimal.ZERO) <= 0) return jsonStr
 
+        val (canonicalBase, canonicalTarget) = getCanonicalPairOrder(sourceNorm, targetNorm, jsonStr)
+
+        // Determine the canonical rate (1 canonicalBase = canonicalRate canonicalTarget)
+        val canonicalRate = if (sourceNorm == canonicalBase && targetNorm == canonicalTarget) {
+            if (rate < BigDecimal.ONE) {
+                runCatching { BigDecimal.ONE.divide(rate, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN) }.getOrDefault(rate)
+            } else {
+                rate
+            }
+        } else {
+            if (rate >= BigDecimal.ONE) {
+                // User entered market quote from the canonical perspective (e.g. 1 USD = 550 YER)
+                rate
+            } else {
+                // User entered fractional inverse (e.g. 0.00181818), canonical reciprocal is 550
+                runCatching { BigDecimal.ONE.divide(rate, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN) }.getOrDefault(rate)
+            }
+        }
+
         val updatedJson = try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
-            // The entered rate is authoritative and directional: 1 source = rate target.
-            val sourceObj = if (root.has(sourceNorm) && root.get(sourceNorm) is JSONObject) {
-                root.getJSONObject(sourceNorm)
+            val baseObj = if (root.has(canonicalBase) && root.get(canonicalBase) is JSONObject) {
+                root.getJSONObject(canonicalBase)
             } else {
                 JSONObject()
             }
-            sourceObj.put(targetNorm, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(rate).toPlainString())
-            root.put(sourceNorm, sourceObj)
-            // One authoritative entry per pair; the reverse is derived mathematically.
-            root.optJSONObject(targetNorm)?.remove(sourceNorm)
+            baseObj.put(canonicalTarget, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(canonicalRate).toPlainString())
+            root.put(canonicalBase, baseObj)
+            // One authoritative entry per pair; clean up inverse
+            root.optJSONObject(canonicalTarget)?.remove(canonicalBase)
             root.toString()
         } catch (_: Exception) {
             jsonStr

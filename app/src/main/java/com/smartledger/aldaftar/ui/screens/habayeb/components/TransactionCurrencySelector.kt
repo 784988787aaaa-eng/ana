@@ -187,8 +187,7 @@ fun TransactionCurrencySelector(
                         val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency) || isEditingHistoricalRate
                         val overrideRate = if (isEditingHistoricalRate) editingTransaction.exchangeRate else null
                         val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency).toString()
-                        val displayText = ExchangeRateHelper.formatApprovedRateForDisplay(
-                            context = context,
+                        val displayText = ExchangeRateHelper.formatCompactRateBadge(
                             jsonStr = exchangeRatesJson,
                             currencyA = selectedTransactionCurrency,
                             currencyB = rateBaseCurrency,

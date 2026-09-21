@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import android.widget.Toast
 import java.math.BigDecimal
+import java.math.RoundingMode
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -58,6 +60,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
+import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
@@ -80,11 +84,36 @@ fun ExchangeRateSetupContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var rateTfv by remember(initialRateStr) {
+    val canonicalPair = remember(selectedCurrency, rateTargetCurrency) {
+        ExchangeRateHelper.getCanonicalPairOrder(selectedCurrency, rateTargetCurrency)
+    }
+    val canonicalBase = canonicalPair.first
+    val canonicalTarget = canonicalPair.second
+    var isEquationFlipped by remember { mutableStateOf(false) }
+    val displayBase = if (!isEquationFlipped) canonicalBase else canonicalTarget
+    val displayTarget = if (!isEquationFlipped) canonicalTarget else canonicalBase
+
+    val computedInitialRate = remember(initialRateStr, displayBase, selectedCurrency) {
+        val bd = initialRateStr.trim().toBigDecimalOrNull()
+        if (bd != null && bd > BigDecimal.ZERO) {
+            val rateForDisplay = if (selectedCurrency == displayBase) {
+                bd
+            } else {
+                runCatching {
+                    BigDecimal.ONE.divide(bd, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+                }.getOrDefault(bd)
+            }
+            HabayebMathHelper.formatActiveRateBadge(rateForDisplay)
+        } else {
+            initialRateStr
+        }
+    }
+
+    var rateTfv by remember(computedInitialRate) {
         mutableStateOf(
             androidx.compose.ui.text.input.TextFieldValue(
-                text = initialRateStr,
-                selection = androidx.compose.ui.text.TextRange(initialRateStr.length)
+                text = computedInitialRate,
+                selection = androidx.compose.ui.text.TextRange(computedInitialRate.length)
             )
         )
     }
@@ -92,6 +121,21 @@ fun ExchangeRateSetupContent(
     var isChecked by remember { mutableStateOf(false) }
     var showUncheckedError by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
+
+    fun toggleDirection() {
+        val currentBd = rateStr.trim().toBigDecimalOrNull()
+        isEquationFlipped = !isEquationFlipped
+        if (currentBd != null && currentBd > BigDecimal.ZERO) {
+            val flippedBd = runCatching {
+                BigDecimal.ONE.divide(currentBd, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+            }.getOrNull()
+            val newText = if (flippedBd != null) HabayebMathHelper.formatActiveRateBadge(flippedBd) else ""
+            rateTfv = androidx.compose.ui.text.input.TextFieldValue(
+                text = newText,
+                selection = androidx.compose.ui.text.TextRange(newText.length)
+            )
+        }
+    }
 
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -137,16 +181,16 @@ fun ExchangeRateSetupContent(
                             color = if (isFocused) activeThemeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Surface(
                         shape = RoundedCornerShape(5.dp),
                         color = activeThemeColor.copy(alpha = 0.10f)
                     ) {
                         Text(
-                            text = "1 $selectedCurrency =",
+                            text = "1 $displayBase =",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = activeThemeColor,
@@ -219,11 +263,23 @@ fun ExchangeRateSetupContent(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                     ) {
                         Text(
-                            text = rateTargetCurrency,
+                            text = displayTarget,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { toggleDirection() },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Sync,
+                            contentDescription = "تبديل الاتجاه",
+                            tint = activeThemeColor,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -326,7 +382,14 @@ fun ExchangeRateSetupContent(
                             showUncheckedError = true
                             Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
                         } else {
-                            onConfirm(rateBD)
+                            val canonicalRate = if (displayBase == canonicalBase && displayTarget == canonicalTarget) {
+                                rateBD
+                            } else {
+                                runCatching {
+                                    BigDecimal.ONE.divide(rateBD, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+                                }.getOrDefault(rateBD)
+                            }
+                            onConfirm(canonicalRate)
                         }
                     },
                     shape = RoundedCornerShape(10.dp),

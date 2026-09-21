@@ -1,10 +1,6 @@
 name: Build Mizan Al Dar App
 
 on:
-<<<<<<< HEAD
-  workflow_dispatch:
-
-=======
   push:
     branches:
       - main
@@ -20,7 +16,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
->>>>>>> 504a805 (Update files)
 permissions:
   contents: read
 
@@ -29,11 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-<<<<<<< HEAD
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3584m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy="in-process"
-=======
       GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process
->>>>>>> 504a805 (Update files)
 
     steps:
       - name: Checkout Code
@@ -44,15 +35,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-<<<<<<< HEAD
-          cache: gradle
-=======
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
->>>>>>> 504a805 (Update files)
 
       - name: Prepare public service configuration
         env:
@@ -63,57 +50,13 @@ jobs:
           set -euo pipefail
           mkdir -p app/src/main/assets
           printf '%s' "$LICENSE_ENDPOINT" > app/src/main/assets/license_endpoint.txt
-<<<<<<< HEAD
-          printf '%s\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
-          printf '%s\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
-=======
           printf '%s\\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
           printf '%s\\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
->>>>>>> 504a805 (Update files)
           test -s app/src/main/assets/license_endpoint.txt
           test -s app/src/main/assets/license_account_public.pem
           test -s app/src/main/assets/license_local_public.pem
 
       - name: Verify Gradle Wrapper
-<<<<<<< HEAD
-        run: |
-          set -euo pipefail
-          test -s ./gradlew
-          test -s gradle/wrapper/gradle-wrapper.jar
-          jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null
-          bash ./gradlew --version
-
-      # Release gate: static analysis + the complete JVM unit-test suite must pass
-      # before any signed production artifact is built.
-      - name: Run lint and complete unit-test suite
-        run: |
-          set -euo pipefail
-          bash ./gradlew clean lintDebug testDebugUnitTest --stacktrace --no-parallel --max-workers=1
-
-      # Release gate: execute instrumentation/UI tests on a real Android runtime.
-      - name: Run instrumentation/UI tests on API 35
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: Nexus 6
-          force-avd-creation: true
-          emulator-boot-timeout: 1200
-          emulator-options: -no-window -gpu off -no-snapshot -noaudio -no-boot-anim
-          disable-animations: true
-          script: bash ./gradlew connectedDebugAndroidTest --stacktrace --no-parallel --max-workers=1
-
-      - name: Set up Standard Android Debug Keystore
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.android
-          if [ ! -f ~/.android/debug.keystore ]; then
-            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android               -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048               -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          fi
-
-      - name: Setup and Verify Release Keystore from GitHub Secret
-=======
         run: |
           set -euo pipefail
           test -s ./gradlew
@@ -122,7 +65,6 @@ jobs:
           bash ./gradlew --version
 
       - name: Setup Release Keystore
->>>>>>> 504a805 (Update files)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
@@ -131,27 +73,10 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_BASE64"
           test -n "$STORE_PASSWORD"
-<<<<<<< HEAD
-          test -n "$KEY_PASSWORD"
-          test -n "$EXPECTED_SHA256"
-
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_DEST"
-          test -s "$KEYSTORE_DEST"
-
-          CERT_OUTPUT=$(keytool -list -v -keystore "$KEYSTORE_DEST" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" 2>&1)
-          EXTRACTED_SHA256=$(printf '%s\n' "$CERT_OUTPUT" | grep -i "SHA256:" | head -n 1 | sed 's/.*SHA256:[[:space:]]*//' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          EXPECTED_SHA256_CLEAN=$(printf '%s' "$EXPECTED_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-
-          test -n "$EXTRACTED_SHA256"
-          test "$EXTRACTED_SHA256" = "$EXPECTED_SHA256_CLEAN"
-
-      - name: Build signed Release APK
-=======
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_DEST"
           test -s "$KEYSTORE_DEST"
 
       - name: Build Release APK
->>>>>>> 504a805 (Update files)
         env:
           RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
@@ -159,26 +84,6 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-<<<<<<< HEAD
-          bash ./gradlew assembleRelease             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE"             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD"             --stacktrace --no-parallel --max-workers=1
-
-      - name: Verify Release APK signature
-        env:
-          EXPECTED_SHA256: ${{ secrets.RELEASE_CERT_SHA256 }}
-        run: |
-          set -euo pipefail
-          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" -type f | head -n 1)
-          test -n "$APK_PATH"
-
-          APKSIGNER_BIN=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -n 1)
-          SIGN_VERIFY_OUTPUT=$("$APKSIGNER_BIN" verify --verbose --print-certs "$APK_PATH" 2>&1)
-          ACTUAL_SHA256=$(printf '%s\n' "$SIGN_VERIFY_OUTPUT" | grep -iE "SHA-256 digest|SHA256:" | head -n 1 | sed -E 's/.*SHA-256 digest:[[:space:]]*//I; s/.*SHA256:[[:space:]]*//I' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          EXPECTED_SHA256_CLEAN=$(printf '%s' "$EXPECTED_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          test -n "$ACTUAL_SHA256"
-          test "$ACTUAL_SHA256" = "$EXPECTED_SHA256_CLEAN"
-
-      - name: Upload verified Release APK
-=======
           bash ./gradlew assembleRelease \
             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
@@ -187,23 +92,9 @@ jobs:
             --build-cache --stacktrace --parallel --max-workers=4
 
       - name: Upload Release APK
->>>>>>> 504a805 (Update files)
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
-<<<<<<< HEAD
-
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Al-Daftar-Test-Reports
-          path: |
-            app/build/reports/**
-            app/build/test-results/**
-          if-no-files-found: warn
-=======
           retention-days: 7
->>>>>>> 504a805 (Update files)

@@ -143,19 +143,9 @@ fun AddTransactionFormFields(
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_tx_desc_optional),
-<<<<<<< HEAD
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    textAlign = TextAlign.Center,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    softWrap = false,
-=======
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
                     fontSize = 11.sp,
->>>>>>> 504a805 (Update files)
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },

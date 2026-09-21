@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import java.math.BigDecimal
 
@@ -161,6 +162,7 @@ fun CurrencySettingsDialog(
                                 currenciesToDisplay = state.currenciesToDisplay,
                                 localDefaultCurrency = state.localDefaultCurrency,
                                 selectedTargetCurrency = state.selectedTargetCurrency,
+                                displayPair = state.displayPair,
                                 rateInputStr = state.rateInputStr,
                                 currentRateValue = state.currentRateValue,
                                 rateFocusRequester = rateFocusRequester,
@@ -169,6 +171,7 @@ fun CurrencySettingsDialog(
                                 currencyUsd = currencyUsd,
                                 onTargetCurrencyChange = { newTarget -> state.onTargetCurrencyChange(newTarget) },
                                 onRateInputChange = { newInput -> state.onRateInputChange(newInput) },
+                                onToggleDirection = { state.toggleEquationDirection() },
                                 haptic = haptic
                             )
 
@@ -368,6 +371,7 @@ private fun CompactExchangeRateCard(
     currenciesToDisplay: List<String>,
     localDefaultCurrency: String,
     selectedTargetCurrency: String,
+    displayPair: Pair<String, String>,
     rateInputStr: String,
     currentRateValue: BigDecimal,
     rateFocusRequester: FocusRequester,
@@ -376,6 +380,7 @@ private fun CompactExchangeRateCard(
     currencyUsd: String,
     onTargetCurrencyChange: (String) -> Unit,
     onRateInputChange: (String) -> Unit,
+    onToggleDirection: () -> Unit,
     haptic: HapticFeedback
 ) {
     val availableTargets = remember(currenciesToDisplay, localDefaultCurrency) {
@@ -462,16 +467,16 @@ private fun CompactExchangeRateCard(
                     color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Surface(
                 shape = RoundedCornerShape(5.dp),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
             ) {
                 Text(
-                    text = "1 $selectedTargetCurrency =",
+                    text = "1 ${displayPair.first} =",
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -532,11 +537,26 @@ private fun CompactExchangeRateCard(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
             ) {
                 Text(
-                    text = localDefaultCurrency,
+                    text = displayPair.second,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onToggleDirection()
+                },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Sync,
+                    contentDescription = "تبديل الاتجاه",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -545,17 +565,12 @@ private fun CompactExchangeRateCard(
 
         // Status note showing direct rate and reciprocal market equivalent
         val currentRateFormatted = if (currentRateValue > BigDecimal.ZERO) {
-            val directStr = stringResource(
-                R.string.currency_current_rate_display,
-                selectedTargetCurrency,
-                HabayebMathHelper.formatRate(currentRateValue),
-                localDefaultCurrency
-            )
+            val directStr = "1 ${displayPair.first} = ${HabayebMathHelper.formatActiveRateBadge(currentRateValue)} ${displayPair.second}"
             val reciprocal = runCatching {
                 BigDecimal.ONE.divide(currentRateValue, 6, java.math.RoundingMode.HALF_EVEN).stripTrailingZeros()
             }.getOrNull()
-            if (reciprocal != null && reciprocal.compareTo(BigDecimal.ONE) > 0) {
-                "$directStr (أي: 1 $localDefaultCurrency = ${HabayebMathHelper.formatRate(reciprocal)} $selectedTargetCurrency)"
+            if (reciprocal != null && reciprocal > BigDecimal.ZERO) {
+                "$directStr (أي: 1 ${displayPair.second} = ${HabayebMathHelper.formatActiveRateBadge(reciprocal)} ${displayPair.first})"
             } else {
                 directStr
             }
@@ -645,6 +660,21 @@ private fun CompactCurrencyRevalueConfirmContent(
         )
 
         // Ultra-compact rate banner
+        val canonicalPair = remember(targetCurrency, baseCurrency) {
+            ExchangeRateHelper.getCanonicalPairOrder(targetCurrency, baseCurrency)
+        }
+        val canonicalBase = canonicalPair.first
+        val canonicalTarget = canonicalPair.second
+        val canonicalDisplayRate = remember(canonicalBase, canonicalTarget, targetCurrency, baseCurrency, newRate) {
+            if (targetCurrency == canonicalBase && baseCurrency == canonicalTarget) {
+                newRate
+            } else {
+                runCatching {
+                    BigDecimal.ONE.divide(newRate, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, java.math.RoundingMode.HALF_EVEN)
+                }.getOrDefault(newRate)
+            }
+        }
+
         MizanDialogInnerCard(
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp),
             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
@@ -655,19 +685,19 @@ private fun CompactCurrencyRevalueConfirmContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "1 $targetCurrency = ",
+                    text = "1 $canonicalBase = ",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = HabayebMathHelper.formatRate(newRate),
+                    text = HabayebMathHelper.formatActiveRateBadge(canonicalDisplayRate),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = " $baseCurrency",
+                    text = " $canonicalTarget",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

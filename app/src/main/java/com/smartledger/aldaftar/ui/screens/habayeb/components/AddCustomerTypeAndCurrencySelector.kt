@@ -201,8 +201,7 @@ fun AddCustomerTypeAndCurrencySelector(
                     val rateState = remember(exchangeRatesJson, currencySymbol, selectedTransactionCurrency, context) {
                         val has = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
                         val rate = ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
-                        val displayText = ExchangeRateHelper.formatApprovedRateForDisplay(
-                            context = context,
+                        val displayText = ExchangeRateHelper.formatCompactRateBadge(
                             jsonStr = exchangeRatesJson,
                             currencyA = selectedTransactionCurrency,
                             currencyB = currencySymbol

@@ -27,14 +27,27 @@ class CurrencySettingsState(
         if (localDefaultCurrency == currencyYer) currencySar else currencyYer
     )
 
+    var isEquationInverted by mutableStateOf(false)
+
+    val displayPair: Pair<String, String>
+        get() {
+            val (base, target) = ExchangeRateHelper.getCanonicalPairOrder(selectedTargetCurrency, localDefaultCurrency, localExchangeRatesJson)
+            return if (!isEquationInverted) Pair(base, target) else Pair(target, base)
+        }
+
     val currentRateValue: BigDecimal
-        get() = ExchangeRateHelper.getRate(localExchangeRatesJson, selectedTargetCurrency, localDefaultCurrency)
+        get() = ExchangeRateHelper.getRate(localExchangeRatesJson, displayPair.first, displayPair.second)
 
     var rateInputStr by mutableStateOf(
-        if (currentRateValue.compareTo(BigDecimal.ZERO) > 0) HabayebMathHelper.formatRate(currentRateValue) else ""
+        if (currentRateValue.compareTo(BigDecimal.ZERO) > 0) HabayebMathHelper.formatActiveRateBadge(currentRateValue) else ""
     )
 
     var activeDialogState by mutableStateOf<CurrencyDialogState>(CurrencyDialogState.None)
+
+    fun toggleEquationDirection() {
+        isEquationInverted = !isEquationInverted
+        refreshRateInput()
+    }
 
     fun onDefaultCurrencyChange(newDefault: String) {
         val oldDefault = localDefaultCurrency
@@ -42,6 +55,7 @@ class CurrencySettingsState(
         if (selectedTargetCurrency == newDefault) {
             selectedTargetCurrency = if (newDefault == currencyYer) currencySar else currencyYer
         }
+        isEquationInverted = false
         localExchangeRatesJson = ExchangeRateHelper.migrateRates(
             localExchangeRatesJson,
             oldDefault,
@@ -52,6 +66,7 @@ class CurrencySettingsState(
 
     fun onTargetCurrencyChange(newTarget: String) {
         selectedTargetCurrency = newTarget
+        isEquationInverted = false
         refreshRateInput()
     }
 
@@ -60,21 +75,21 @@ class CurrencySettingsState(
         rateInputStr = cleaned
         if (cleaned.isBlank()) {
             localExchangeRatesJson = ExchangeRateHelper.clearRate(
-                localExchangeRatesJson, selectedTargetCurrency, localDefaultCurrency
+                localExchangeRatesJson, displayPair.first, displayPair.second
             )
             return
         }
         val parsed = cleaned.toBigDecimalOrNull() ?: return
         if (parsed > BigDecimal.ZERO) {
             localExchangeRatesJson = ExchangeRateHelper.setRate(
-                localExchangeRatesJson, selectedTargetCurrency, localDefaultCurrency, parsed
+                localExchangeRatesJson, displayPair.first, displayPair.second, parsed
             )
         }
     }
 
     private fun refreshRateInput() {
         val rate = currentRateValue
-        rateInputStr = if (rate.compareTo(BigDecimal.ZERO) > 0) HabayebMathHelper.formatRate(rate) else ""
+        rateInputStr = if (rate.compareTo(BigDecimal.ZERO) > 0) HabayebMathHelper.formatActiveRateBadge(rate) else ""
     }
 
     fun handleSave(
@@ -84,6 +99,18 @@ class CurrencySettingsState(
     ) {
         val finalRate = rateInputStr.trim().toBigDecimalOrNull() ?: currentRateValue
         if (finalRate.compareTo(BigDecimal.ZERO) > 0) {
+            val updatedExchangeRatesJson = ExchangeRateHelper.setRate(
+                localExchangeRatesJson,
+                displayPair.first,
+                displayPair.second,
+                finalRate
+            )
+            val effectiveTargetToDefaultRate = ExchangeRateHelper.getRate(
+                updatedExchangeRatesJson,
+                selectedTargetCurrency,
+                localDefaultCurrency
+            )
+
             val migratedOriginalJson = ExchangeRateHelper.migrateRates(
                 settings.exchangeRatesJson,
                 settings.currencySymbol,
@@ -99,22 +126,16 @@ class CurrencySettingsState(
                 selectedTargetCurrency,
                 localDefaultCurrency
             )
-            val rateChanged = existingRate.compareTo(BigDecimal.ZERO) > 0 && existingRate.compareTo(finalRate) != 0
+            val rateChanged = existingRate.compareTo(BigDecimal.ZERO) > 0 && existingRate.compareTo(effectiveTargetToDefaultRate) != 0
 
             if (alreadyHasRate && rateChanged) {
-                activeDialogState = CurrencyDialogState.RevalueConfirm(selectedTargetCurrency, finalRate)
+                activeDialogState = CurrencyDialogState.RevalueConfirm(selectedTargetCurrency, effectiveTargetToDefaultRate)
             } else {
-                val updatedExchangeRatesJson = ExchangeRateHelper.setRate(
-                    localExchangeRatesJson,
-                    selectedTargetCurrency,
-                    localDefaultCurrency,
-                    finalRate
-                )
                 val updatedSettings = settings.copy(
                     currencySymbol = localDefaultCurrency,
                     exchangeRatesJson = updatedExchangeRatesJson
                 )
-                onSaveSettings(updatedSettings, selectedTargetCurrency, finalRate, false)
+                onSaveSettings(updatedSettings, selectedTargetCurrency, effectiveTargetToDefaultRate, false)
                 onDismiss()
             }
         } else {

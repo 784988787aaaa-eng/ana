@@ -61,19 +61,26 @@ object HabayebMathHelper {
 
     /**
      * Formats rate specifically for badges in transaction rows and cards.
-     * If rate is < 1 (reciprocal fractional quote like 0.00714286), it computes
-     * the reciprocal (e.g. 140) so the badge remains compact and matches the market quote.
+     * If rate is < 1 (reciprocal fractional quote like 0.00714286 or 0.00181818),
+     * it computes the reciprocal (e.g. 140 or 550) so the badge remains compact,
+     * beautiful, single-line, and matches the market quote.
      */
     fun formatActiveRateBadge(value: BigDecimal): String {
         return try {
             if (value.compareTo(BigDecimal.ZERO) <= 0) return "0"
-            if (value >= BigDecimal.ONE) {
-                value.setScale(4, RoundingMode.HALF_EVEN)
-                    .stripTrailingZeros()
-                    .toPlainString()
+            val effective = if (value < BigDecimal.ONE) {
+                runCatching {
+                    BigDecimal.ONE.divide(value, 8, RoundingMode.HALF_EVEN)
+                }.getOrDefault(value)
             } else {
-                val reciprocal = BigDecimal.ONE.divide(value, 4, RoundingMode.HALF_EVEN).stripTrailingZeros()
-                reciprocal.toPlainString()
+                value
+            }
+            val stripped = effective.setScale(4, RoundingMode.HALF_EVEN).stripTrailingZeros()
+            if (stripped.scale() <= 0) {
+                stripped.toBigInteger().toString()
+            } else {
+                // Max 2 decimal digits for fractions like 3.75
+                stripped.setScale(2, RoundingMode.HALF_EVEN).stripTrailingZeros().toPlainString()
             }
         } catch (e: Exception) {
             formatRate(value)
