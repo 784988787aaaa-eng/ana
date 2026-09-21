@@ -229,7 +229,7 @@ fun BackupRestoreBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
             dragHandle = {
                 Box(
                     modifier = Modifier
@@ -248,9 +248,9 @@ fun BackupRestoreBottomSheet(
                         .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
                     .padding(horizontal = 12.dp)
-                    .padding(bottom = 10.dp)
+                    .padding(bottom = 12.dp)
                     .imePadding(),
-                verticalArrangement = Arrangement.spacedBy(7.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Header with Title and Connection Pill Badge
                 BackupMainHeader(connected = connected)
@@ -447,7 +447,7 @@ private fun BackupMainHeader(connected: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 0.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -465,7 +465,6 @@ private fun BackupMainHeader(connected: Boolean) {
             Text(
                 text = stringResource(R.string.backup_screen_title),
                 fontSize = 14.sp,
-                lineHeight = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -473,25 +472,21 @@ private fun BackupMainHeader(connected: Boolean) {
 
         // Left side (RTL End): Connection status pill
         Surface(
-            shape = RoundedCornerShape(50),
+            shape = RoundedCornerShape(8.dp),
             color = if (connected) {
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            },
-            border = BorderStroke(
-                0.8.dp,
-                if (connected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-            )
+            }
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
+                         .size(5.dp)
                         .clip(CircleShape)
                         .background(
                             if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -499,8 +494,8 @@ private fun BackupMainHeader(connected: Boolean) {
                 )
                 Text(
                     text = stringResource(if (connected) R.string.backup_status_connected else R.string.backup_status_disconnected),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
                     color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -524,7 +519,7 @@ private fun CloudSyncCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
@@ -785,7 +780,7 @@ private fun DirectCloudRestoreDialog(
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Details Box
                 Surface(
@@ -1109,8 +1104,8 @@ private fun CloudArchiveBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp)
-                .padding(bottom = 92.dp),
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (!searchActive) {
@@ -1351,10 +1346,10 @@ private fun ArchiveHeader(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.CloudSync, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.CloudSync, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
             Text(
                 text = stringResource(R.string.history_sheet_title),
-                fontSize = 14.5.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -1463,7 +1458,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                 focusManager.clearFocus()
             }),
             textStyle = TextStyle(
-                fontSize = 12.5.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             ),
@@ -1472,7 +1467,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                 if (search.isBlank()) {
                     Text(
                         text = stringResource(R.string.backup_search_hint),
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
