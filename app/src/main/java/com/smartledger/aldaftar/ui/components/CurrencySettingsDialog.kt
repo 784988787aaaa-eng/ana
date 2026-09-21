@@ -111,6 +111,7 @@ fun CurrencySettingsDialog(
     MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
+        ConfigureDialogImeWindow()
         MizanDialogCard(
             maxWidth = MizanDialogTokens.compactMaxWidth
         ) {

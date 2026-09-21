@@ -213,9 +213,7 @@ fun TransactionRowDetailsSection(
                 }
             }
 
-            val targetCurrency = currencySymbol
-            val isSelfConversion = (cached.displayCurrency == targetCurrency)
-            val showToggle = !isSelfConversion && ((tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.currencyCode.isNotBlank()) || cached.isTxForeign || cached.isCalculated)
+            val showToggle = cached.isTxForeign || cached.isCalculated
             if (showToggle) {
                 val isCalculated = cached.isCalculated
                 Row(
