@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens.business
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -74,7 +75,7 @@ fun BusinessProfileInfoSection(
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("biz_name_input")
@@ -107,11 +108,13 @@ fun BusinessProfileInfoSection(
                         textAlign = TextAlign.Start
                     )
                 },
-                singleLine = true,
-                maxLines = 1,
-                shape = RoundedCornerShape(14.dp),
+                singleLine = false,
+                minLines = 2,
+                maxLines = 3,
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 72.dp)
                     .testTag("biz_desc_input"),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = activeThemeColor,
