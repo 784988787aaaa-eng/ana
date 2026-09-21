@@ -10,8 +10,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -99,8 +97,6 @@ fun FloatingSearchBubble(
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
-    val navigationBottomPx = WindowInsets.navigationBars.getBottom(density)
-    val safeBottomPx = maxOf(navigationBottomPx + with(density) { 24.dp.toPx() }, with(density) { 84.dp.toPx() })
 
     val initialSizeLevel = persisted.sizeLevel
     val initialRatioX = persisted.ratioX.coerceIn(0f, 1f)
@@ -139,8 +135,8 @@ fun FloatingSearchBubble(
                 .zIndex(25f)
         ) {
             val maxX = remember(screenWidthPx, bubbleSizePx) { (screenWidthPx - bubbleSizePx).coerceAtLeast(0f) }
-            val maxY = remember(screenHeightPx, bubbleSizePx, safeBottomPx) { (screenHeightPx - bubbleSizePx - safeBottomPx).coerceAtLeast(0f) }
-            
+            val maxY = remember(screenHeightPx, bubbleSizePx) { (screenHeightPx - bubbleSizePx).coerceAtLeast(0f) }
+
             val clampedX = (ratioX * screenWidthPx).coerceIn(0f, maxX)
             val clampedY = (ratioY * screenHeightPx).coerceIn(0f, maxY)
 
@@ -184,12 +180,12 @@ fun FloatingSearchBubble(
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 isInteracting = true
-                                
+
                                 val currentX = ratioX * screenWidthPx
                                 val currentY = ratioY * screenHeightPx
                                 val newX = (currentX + dragAmount.x).coerceIn(0f, maxX)
                                 val newY = (currentY + dragAmount.y).coerceIn(0f, maxY)
-                                
+
                                 ratioX = if (screenWidthPx > 0) newX / screenWidthPx else ratioX
                                 ratioY = if (screenHeightPx > 0) newY / screenHeightPx else ratioY
                             }
