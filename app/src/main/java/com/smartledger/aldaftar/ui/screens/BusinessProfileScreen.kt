@@ -270,7 +270,11 @@ private fun BusinessProfileForm(
             .fillMaxWidth()
             .then(
                 if (isDialog) {
-                    Modifier.verticalScroll(rememberScrollState())
+                    Modifier
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 12.dp)
                 } else {
                     Modifier
                         .fillMaxSize()
@@ -278,6 +282,7 @@ private fun BusinessProfileForm(
                         .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .padding(bottom = 12.dp)
                 }
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
