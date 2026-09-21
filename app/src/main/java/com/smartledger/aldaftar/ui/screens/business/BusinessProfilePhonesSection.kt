@@ -77,7 +77,7 @@ fun BusinessProfilePhonesSection(
                 .fillMaxWidth()
                 .animateContentSize()
                 .clickable { phonesExpanded = !phonesExpanded },
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             color = activeThemeColor.copy(alpha = 0.055f),
             border = BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.16f))
         ) {
@@ -171,7 +171,7 @@ fun BusinessProfilePhonesSection(
                             label = { Text(text = phoneLabel, fontSize = 12.sp) },
                             placeholder = { Text(text = placeholderText, fontSize = 12.sp) },
                             singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .focusRequester(focusRequester),
