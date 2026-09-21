@@ -250,9 +250,8 @@ fun CustomerHistoryDialogsManager(
             },
             onConfirmRateSetup = { targetCurrency, newRate ->
                 val settings = viewModel.settingsState.value
-                val targetCurr = txToModify.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
                 val newSettings = settings.copy(
-                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, targetCurrency, targetCurr, newRate)
+                    exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, targetCurrency, currencySymbol, newRate)
                 )
                 viewModel.saveSettings(newSettings)
                 val rateBigDecimal = newRate
@@ -264,12 +263,10 @@ fun CustomerHistoryDialogsManager(
                 updateState { it.copy(showRateModifyDialog = false, exchangeTxToModify = null) }
             },
             hasStoredRateForCurrency = { curr ->
-                val historicalBase = txToModify.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
-                ExchangeRateHelper.hasRate(viewModel.settingsState.value.exchangeRatesJson, curr, historicalBase)
+                ExchangeRateHelper.hasRate(viewModel.settingsState.value.exchangeRatesJson, curr, currencySymbol)
             },
             getStoredRateForCurrency = { curr ->
-                val historicalBase = txToModify.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
-                ExchangeRateHelper.getRate(viewModel.settingsState.value.exchangeRatesJson, curr, historicalBase)
+                ExchangeRateHelper.getRate(viewModel.settingsState.value.exchangeRatesJson, curr, currencySymbol)
             }
         )
     }

@@ -748,7 +748,7 @@
     <string name="currency_settings_dialog_cancel">إلغاء</string>
     <string name="currency_primary_section_title">العملة الأساسية (الحساب الرئيسي)</string>
     <string name="currency_primary_section_hint">العملة الرئيسية لاحتساب إجمالي الأرصدة والتقارير</string>
-    <string name="currency_exchange_section_title">سعر الصرف مقابل العملة الأساسية</string>
+    <string name="currency_exchange_section_title">أسعار الصرف</string>
     <string name="currency_update_past_future_title">تطبيق على جميع المعاملات</string>
     <string name="currency_update_past_future_desc">إعادة تقييم كافة الحسابات والديون السابقة والحالية بالسعر الجديد</string>
     <string name="currency_update_future_only_title">المعاملات الجديدة فقط</string>

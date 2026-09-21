@@ -123,7 +123,7 @@ fun ExchangeRateModifyDialog(
                                                 onConfirmRateSetup(txCurrency, storedRate)
                                             } else {
                                                 setupOverlayCurrency = txCurrency
-                                                setupOverlayTargetCurrency = tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
+                                                setupOverlayTargetCurrency = currencySymbol
                                                 setupOverlayInitialRate = ""
                                                 showRateSetupOverlay = true
                                             }

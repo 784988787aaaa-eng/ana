@@ -293,16 +293,40 @@ private fun CompactPrimaryCurrencyCard(
     haptic: HapticFeedback
 ) {
     MizanDialogInnerCard(
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 7.dp)
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
     ) {
-        Text(
-            text = stringResource(R.string.currency_primary_section_title),
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.currency_primary_section_title),
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+            ) {
+                Text(
+                    text = "العملة الرئيسية",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(5.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -324,12 +348,12 @@ private fun CompactPrimaryCurrencyCard(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(34.dp),
                     shape = RoundedCornerShape(8.dp),
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                     border = BorderStroke(
-                        width = 1.dp,
+                        width = if (isSelected) 1.5.dp else 1.dp,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
                 ) {
@@ -344,7 +368,7 @@ private fun CompactPrimaryCurrencyCard(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                modifier = Modifier.size(11.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                         }
@@ -357,7 +381,7 @@ private fun CompactPrimaryCurrencyCard(
                         Text(
                             text = currencyName,
                             fontSize = 9.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             maxLines = 1
                         )
                     }
@@ -392,67 +416,84 @@ private fun CompactExchangeRateCard(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     MizanDialogInnerCard(
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 7.dp)
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
     ) {
-        // Header row with title on the start and currency tabs on the end!
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = stringResource(R.string.currency_exchange_section_title),
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
+            // Header row with section title and target currency tabs
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                availableTargets.forEach { symbol ->
-                    val isSelected = selectedTargetCurrency == symbol
-                    val currencyName = when (symbol) {
-                        currencyYer -> stringResource(R.string.currency_name_yer)
-                        currencySar -> stringResource(R.string.currency_name_sar)
-                        currencyUsd -> stringResource(R.string.currency_name_usd)
-                        else -> symbol
-                    }
+                Text(
+                    text = stringResource(R.string.currency_exchange_section_title),
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onTargetCurrencyChange(symbol)
-                        },
-                        modifier = Modifier.height(26.dp),
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "تعديل سعر:",
+                        fontSize = 9.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+
+                    availableTargets.forEach { symbol ->
+                        val isSelected = selectedTargetCurrency == symbol
+                        val currencyName = when (symbol) {
+                            currencyYer -> stringResource(R.string.currency_name_yer)
+                            currencySar -> stringResource(R.string.currency_name_sar)
+                            currencyUsd -> stringResource(R.string.currency_name_usd)
+                            else -> symbol
+                        }
+
+                        Surface(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onTargetCurrencyChange(symbol)
+                            },
+                            modifier = Modifier.height(26.dp),
+                            shape = RoundedCornerShape(13.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.secondary else Color.Transparent
+                            )
                         ) {
-                            Text(
-                                text = symbol,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "($currencyName)",
-                                fontSize = 9.sp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Sync,
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(11.dp)
+                                )
+                                Text(
+                                    text = symbol,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "($currencyName)",
+                                    fontSize = 8.5.sp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
         Spacer(modifier = Modifier.height(5.dp))
 
@@ -586,6 +627,7 @@ private fun CompactExchangeRateCard(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
+        }
     }
 }
 
