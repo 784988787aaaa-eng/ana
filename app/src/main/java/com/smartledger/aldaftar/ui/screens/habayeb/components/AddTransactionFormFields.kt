@@ -70,7 +70,7 @@ fun AddTransactionFormFields(
         autoShow = true
     )
 
-    val fieldShape = remember { RoundedCornerShape(10.dp) }
+    val fieldShape = remember { RoundedCornerShape(8.dp) }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -88,7 +88,6 @@ fun AddTransactionFormFields(
             onValueChange = onAmountChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
                 .focusRequester(amountFocusRequester)
                     .testTag("transaction_amount_input"),
             placeholder = {
@@ -96,7 +95,7 @@ fun AddTransactionFormFields(
                     text = stringResource(id = R.string.habayeb_amount_required),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -146,9 +145,7 @@ fun AddTransactionFormFields(
                     text = stringResource(id = R.string.habayeb_tx_desc_optional),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
-                    fontSize = 9.5.sp,
-                    maxLines = 1,
-                    softWrap = false,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -192,10 +189,10 @@ fun AddTransactionFormFields(
                 }
             },
             shape = fieldShape,
-            singleLine = true,
+            singleLine = false,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .heightIn(min = 40.dp, max = 56.dp)
                 .focusRequester(descFocusRequester)
                     .testTag("transaction_description_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
