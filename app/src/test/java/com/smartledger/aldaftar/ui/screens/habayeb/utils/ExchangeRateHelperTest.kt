@@ -52,5 +52,41 @@ class ExchangeRateHelperTest {
         assertEquals(0, BigDecimal("0.007142857143").compareTo(reverse))
     }
 
+    @Test
+    fun testCanonicalPairOrderPrioritizesStandardMarketOrder() {
+        val pair1 = ExchangeRateHelper.getCanonicalPairOrder("ر.ي", "$")
+        assertEquals("$", pair1.first)
+        assertEquals("ر.ي", pair1.second)
+
+        val pair2 = ExchangeRateHelper.getCanonicalPairOrder("ر.ي", "ر.س")
+        assertEquals("ر.س", pair2.first)
+        assertEquals("ر.ي", pair2.second)
+
+        val pair3 = ExchangeRateHelper.getCanonicalPairOrder("ر.س", "$")
+        assertEquals("$", pair3.first)
+        assertEquals("ر.س", pair3.second)
+    }
+
+    @Test
+    fun testFormatCompactRateBadgeProducesSingleLineText() {
+        val json = ExchangeRateHelper.setRate("{}", "$", "ر.ي", BigDecimal("550"))
+        val badge = ExchangeRateHelper.formatCompactRateBadge(json, "ر.ي", "$")
+        assertEquals("1 $ = 550 ر.ي", badge)
+
+        val badgeDirect = ExchangeRateHelper.formatCompactRateBadge(json, "$", "ر.ي")
+        assertEquals("1 $ = 550 ر.ي", badgeDirect)
+    }
+
+    @Test
+    fun testFormatActiveRateBadgeFormatsCleanWholeAndDecimalNumbers() {
+        assertEquals("550", com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(BigDecimal("550.000000000000")))
+        assertEquals("140", com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(BigDecimal("140")))
+        // Reciprocal fraction is inverted into the market integer quote
+        assertEquals("550", com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(BigDecimal("0.001818181818")))
+        assertEquals("140", com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(BigDecimal("0.007142857143")))
+        // Clean decimal rate
+        assertEquals("3.75", com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(BigDecimal("3.7500")))
+    }
+
 }
 

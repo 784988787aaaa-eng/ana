@@ -382,14 +382,14 @@ fun ExchangeRateSetupContent(
                             showUncheckedError = true
                             Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
                         } else {
-                            val canonicalRate = if (displayBase == canonicalBase && displayTarget == canonicalTarget) {
+                            val effectiveRate = if (displayBase == selectedCurrency && displayTarget == rateTargetCurrency) {
                                 rateBD
                             } else {
                                 runCatching {
                                     BigDecimal.ONE.divide(rateBD, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
                                 }.getOrDefault(rateBD)
                             }
-                            onConfirm(canonicalRate)
+                            onConfirm(effectiveRate)
                         }
                     },
                     shape = RoundedCornerShape(10.dp),

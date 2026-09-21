@@ -162,36 +162,18 @@ object ExchangeRateHelper {
         if (sourceNorm == targetNorm) return jsonStr
         if (rate.compareTo(BigDecimal.ZERO) <= 0) return jsonStr
 
-        val (canonicalBase, canonicalTarget) = getCanonicalPairOrder(sourceNorm, targetNorm, jsonStr)
-
-        // Determine the canonical rate (1 canonicalBase = canonicalRate canonicalTarget)
-        val canonicalRate = if (sourceNorm == canonicalBase && targetNorm == canonicalTarget) {
-            if (rate < BigDecimal.ONE) {
-                runCatching { BigDecimal.ONE.divide(rate, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN) }.getOrDefault(rate)
-            } else {
-                rate
-            }
-        } else {
-            if (rate >= BigDecimal.ONE) {
-                // User entered market quote from the canonical perspective (e.g. 1 USD = 550 YER)
-                rate
-            } else {
-                // User entered fractional inverse (e.g. 0.00181818), canonical reciprocal is 550
-                runCatching { BigDecimal.ONE.divide(rate, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN) }.getOrDefault(rate)
-            }
-        }
-
         val updatedJson = try {
             val root = JSONObject(if (jsonStr.isBlank()) "{}" else jsonStr)
-            val baseObj = if (root.has(canonicalBase) && root.get(canonicalBase) is JSONObject) {
-                root.getJSONObject(canonicalBase)
+            // The entered rate is authoritative and directional: 1 source = rate target.
+            val sourceObj = if (root.has(sourceNorm) && root.get(sourceNorm) is JSONObject) {
+                root.getJSONObject(sourceNorm)
             } else {
                 JSONObject()
             }
-            baseObj.put(canonicalTarget, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(canonicalRate).toPlainString())
-            root.put(canonicalBase, baseObj)
-            // One authoritative entry per pair; clean up inverse
-            root.optJSONObject(canonicalTarget)?.remove(canonicalBase)
+            sourceObj.put(targetNorm, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(rate).toPlainString())
+            root.put(sourceNorm, sourceObj)
+            // One authoritative entry per pair; the reverse is derived mathematically.
+            root.optJSONObject(targetNorm)?.remove(sourceNorm)
             root.toString()
         } catch (_: Exception) {
             jsonStr
