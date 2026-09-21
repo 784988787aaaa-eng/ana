@@ -24,7 +24,7 @@ class CurrencySettingsState(
     val currenciesToDisplay = listOf(currencyYer, currencySar, currencyUsd)
 
     var selectedTargetCurrency by mutableStateOf(
-        if (localDefaultCurrency == currencyYer) currencyUsd else currencyYer
+        if (localDefaultCurrency == currencyYer) currencySar else currencyYer
     )
 
     val currentRateValue: BigDecimal
@@ -40,7 +40,7 @@ class CurrencySettingsState(
         val oldDefault = localDefaultCurrency
         localDefaultCurrency = newDefault
         if (selectedTargetCurrency == newDefault) {
-            selectedTargetCurrency = if (newDefault == currencyYer) currencyUsd else currencyYer
+            selectedTargetCurrency = if (newDefault == currencyYer) currencySar else currencyYer
         }
         localExchangeRatesJson = ExchangeRateHelper.migrateRates(
             localExchangeRatesJson,

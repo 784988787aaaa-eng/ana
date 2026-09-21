@@ -70,7 +70,7 @@ fun AddTransactionFormFields(
         autoShow = true
     )
 
-    val fieldShape = remember { RoundedCornerShape(10.dp) }
+    val fieldShape = remember { RoundedCornerShape(8.dp) }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -88,15 +88,14 @@ fun AddTransactionFormFields(
             onValueChange = onAmountChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
                 .focusRequester(amountFocusRequester)
-                    .testTag("transaction_amount_input"),
+                .testTag("transaction_amount_input"),
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_amount_required),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
-                    fontSize = 11.5.sp,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -144,6 +143,7 @@ fun AddTransactionFormFields(
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_tx_desc_optional),
+<<<<<<< HEAD
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp),
@@ -151,6 +151,11 @@ fun AddTransactionFormFields(
                     fontSize = 10.sp,
                     maxLines = 1,
                     softWrap = false,
+=======
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                    fontSize = 11.sp,
+>>>>>>> 504a805 (Update files)
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -158,7 +163,7 @@ fun AddTransactionFormFields(
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                fontSize = 12.5.sp
+                fontSize = 13.sp
             ),
             leadingIcon = {
                 Icon(
@@ -194,12 +199,12 @@ fun AddTransactionFormFields(
                 }
             },
             shape = fieldShape,
-            singleLine = true,
+            singleLine = false,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .heightIn(min = 40.dp, max = 56.dp)
                 .focusRequester(descFocusRequester)
-                    .testTag("transaction_description_input"),
+                .testTag("transaction_description_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {
                 focusManager.clearFocus()

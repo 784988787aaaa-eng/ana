@@ -136,7 +136,7 @@ fun FloatingSearchBubble(
         ) {
             val maxX = remember(screenWidthPx, bubbleSizePx) { (screenWidthPx - bubbleSizePx).coerceAtLeast(0f) }
             val maxY = remember(screenHeightPx, bubbleSizePx) { (screenHeightPx - bubbleSizePx).coerceAtLeast(0f) }
-            
+
             val clampedX = (ratioX * screenWidthPx).coerceIn(0f, maxX)
             val clampedY = (ratioY * screenHeightPx).coerceIn(0f, maxY)
 
@@ -180,12 +180,12 @@ fun FloatingSearchBubble(
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 isInteracting = true
-                                
+
                                 val currentX = ratioX * screenWidthPx
                                 val currentY = ratioY * screenHeightPx
                                 val newX = (currentX + dragAmount.x).coerceIn(0f, maxX)
                                 val newY = (currentY + dragAmount.y).coerceIn(0f, maxY)
-                                
+
                                 ratioX = if (screenWidthPx > 0) newX / screenWidthPx else ratioX
                                 ratioY = if (screenHeightPx > 0) newY / screenHeightPx else ratioY
                             }

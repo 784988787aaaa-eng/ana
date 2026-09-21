@@ -1,8 +1,26 @@
 name: Build Mizan Al Dar App
 
 on:
+<<<<<<< HEAD
   workflow_dispatch:
 
+=======
+  push:
+    branches:
+      - main
+      - surgical-ui-clipping-audit-2026-09-21
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+>>>>>>> 504a805 (Update files)
 permissions:
   contents: read
 
@@ -11,7 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+<<<<<<< HEAD
       GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3584m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy="in-process"
+=======
+      GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process
+>>>>>>> 504a805 (Update files)
 
     steps:
       - name: Checkout Code
@@ -22,7 +44,15 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+<<<<<<< HEAD
           cache: gradle
+=======
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+>>>>>>> 504a805 (Update files)
 
       - name: Prepare public service configuration
         env:
@@ -33,13 +63,19 @@ jobs:
           set -euo pipefail
           mkdir -p app/src/main/assets
           printf '%s' "$LICENSE_ENDPOINT" > app/src/main/assets/license_endpoint.txt
+<<<<<<< HEAD
           printf '%s\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
           printf '%s\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
+=======
+          printf '%s\\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
+          printf '%s\\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
+>>>>>>> 504a805 (Update files)
           test -s app/src/main/assets/license_endpoint.txt
           test -s app/src/main/assets/license_account_public.pem
           test -s app/src/main/assets/license_local_public.pem
 
       - name: Verify Gradle Wrapper
+<<<<<<< HEAD
         run: |
           set -euo pipefail
           test -s ./gradlew
@@ -77,17 +113,25 @@ jobs:
           fi
 
       - name: Setup and Verify Release Keystore from GitHub Secret
+=======
+        run: |
+          set -euo pipefail
+          test -s ./gradlew
+          test -s gradle/wrapper/gradle-wrapper.jar
+          jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null
+          bash ./gradlew --version
+
+      - name: Setup Release Keystore
+>>>>>>> 504a805 (Update files)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
-          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          EXPECTED_SHA256: ${{ secrets.RELEASE_CERT_SHA256 }}
           KEYSTORE_DEST: "app/aldaftar.keystore"
         run: |
           set -euo pipefail
           test -n "$KEYSTORE_BASE64"
           test -n "$STORE_PASSWORD"
+<<<<<<< HEAD
           test -n "$KEY_PASSWORD"
           test -n "$EXPECTED_SHA256"
 
@@ -102,6 +146,12 @@ jobs:
           test "$EXTRACTED_SHA256" = "$EXPECTED_SHA256_CLEAN"
 
       - name: Build signed Release APK
+=======
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_DEST"
+          test -s "$KEYSTORE_DEST"
+
+      - name: Build Release APK
+>>>>>>> 504a805 (Update files)
         env:
           RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
@@ -109,6 +159,7 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
+<<<<<<< HEAD
           bash ./gradlew assembleRelease             -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE"             -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD"             --stacktrace --no-parallel --max-workers=1
 
       - name: Verify Release APK signature
@@ -127,11 +178,22 @@ jobs:
           test "$ACTUAL_SHA256" = "$EXPECTED_SHA256_CLEAN"
 
       - name: Upload verified Release APK
+=======
+          bash ./gradlew assembleRelease \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            --build-cache --stacktrace --parallel --max-workers=4
+
+      - name: Upload Release APK
+>>>>>>> 504a805 (Update files)
         uses: actions/upload-artifact@v4
         with:
-          name: Al-Daftar-Release-APK
+          name: release-apk
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+<<<<<<< HEAD
 
       - name: Upload test reports
         if: always()
@@ -142,3 +204,6 @@ jobs:
             app/build/reports/**
             app/build/test-results/**
           if-no-files-found: warn
+=======
+          retention-days: 7
+>>>>>>> 504a805 (Update files)

@@ -503,6 +503,17 @@
     <string name="backup_status_connected">متصل</string>
     <string name="backup_status_disconnected">غير متصل</string>
     <string name="backup_status_local">غير متصل</string>
+    <string name="backup_subtitle">إدارة الحفظ السحابي والمحلي وتأمين السجلات المالية</string>
+    <string name="backup_cloud_hero_desc">مزامنة آمنة ومشفرة مع Google Drive لحماية سجلاتك من الضياع والتلف.</string>
+    <string name="backup_cloud_active_status">مزامنة سحابية نشطة ومحمية</string>
+    <string name="backup_history_nav_title">أرشيف النسخ السحابية</string>
+    <string name="backup_history_nav_desc">استعراض جميع النسخ المحفوظة، التنزيل، أو الحذف المخصص</string>
+    <string name="backup_local_section_title">النسخ الاحتياطي المحلي</string>
+    <string name="backup_local_section_desc">تصدير أرشيف مشفر (.sna) لذاكرة الهاتف أو استيراده ومشاركته</string>
+    <string name="backup_reset_section_title">تصفير السجلات والبيانات</string>
+    <string name="backup_reset_section_desc">حذف جميع الحسابات والمعاملات محلياً للبدء من جديد (محمي)</string>
+    <string name="backup_reset_action_btn">إعادة ضبط</string>
+    <string name="backup_manual_fallback_link">واجهت صعوبة في الربط التلقائي؟ تجربة الربط اليدوي</string>
 
     <string name="backup_cloud_title">Google Drive</string>
     <string name="backup_cloud_desc">مزامنة السجلات مع حساب التخزين السحابي.</string>
@@ -735,6 +746,15 @@
     <string name="currency_settings_dialog_unit_rate_prefix">1 %1$s =</string>
     <string name="currency_settings_dialog_save">حفظ</string>
     <string name="currency_settings_dialog_cancel">إلغاء</string>
+    <string name="currency_primary_section_title">العملة الأساسية (الحساب الرئيسي)</string>
+    <string name="currency_primary_section_hint">العملة الرئيسية لاحتساب إجمالي الأرصدة والتقارير</string>
+    <string name="currency_exchange_section_title">سعر الصرف مقابل العملة الأساسية</string>
+    <string name="currency_update_past_future_title">تطبيق على جميع المعاملات</string>
+    <string name="currency_update_past_future_desc">إعادة تقييم كافة الحسابات والديون السابقة والحالية بالسعر الجديد</string>
+    <string name="currency_update_future_only_title">المعاملات الجديدة فقط</string>
+    <string name="currency_update_future_only_desc">تطبيق السعر الجديد على المعاملات اللاحقة والاحتفاظ بالسابقة دون تغيير</string>
+    <string name="currency_current_rate_display">السعر الحالي: 1 %1$s = %2$s %3$s</string>
+    <string name="currency_no_rate_set">لم يتم ضبط سعر الصرف بعد</string>
     <string name="calc_close_desc">إغلاق</string>
     <string name="calc_title">الحاسبة</string>
     <string name="calc_invalid_expression">المعادلة غير مكتملة</string>

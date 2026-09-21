@@ -40,21 +40,21 @@ object LockHapticHelper {
                         vib.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
                     }
                     LockHapticType.ERROR -> {
-                        vib.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 45, 60, 45), intArrayOf(0, 255, 0, 255), -1))
+                        vib.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK))
                     }
                 }
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 when (type) {
                     LockHapticType.KEYPRESS -> vib.vibrate(VibrationEffect.createOneShot(10, 90))
                     LockHapticType.SUCCESS -> vib.vibrate(VibrationEffect.createOneShot(35, 180))
-                    LockHapticType.ERROR -> vib.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 45, 60, 45), -1))
+                    LockHapticType.ERROR -> vib.vibrate(VibrationEffect.createOneShot(25, 120))
                 }
             } else {
                 @Suppress("DEPRECATION")
                 when (type) {
                     LockHapticType.KEYPRESS -> vib.vibrate(10)
                     LockHapticType.SUCCESS -> vib.vibrate(35)
-                    LockHapticType.ERROR -> vib.vibrate(longArrayOf(0, 45, 60, 45), -1)
+                    LockHapticType.ERROR -> vib.vibrate(25)
                 }
             }
         } catch (_: Exception) {

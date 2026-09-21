@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,8 +39,8 @@ fun MizanDialogCard(
     maxWidth: Dp = MizanDialogTokens.maxWidth,
     maxHeight: Dp = Dp.Unspecified,
     contentPadding: PaddingValues = PaddingValues(
-        horizontal = MizanDialogTokens.outerPadding,
-        vertical = MizanDialogTokens.outerPadding
+        horizontal = MizanDialogTokens.dialogHorizontal,
+        vertical = MizanDialogTokens.dialogVertical
     ),
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -58,7 +60,7 @@ fun MizanDialogCard(
             modifier = sizeModifier
                 .navigationBarsPadding()
                 .imePadding(),
-            shape = MizanDialogTokens.shape,
+            shape = RoundedCornerShape(MizanDialogTokens.dialogRadius),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(
                 1.dp,
@@ -96,11 +98,13 @@ fun MizanDialogHeader(
     closeButtonAlignment: Alignment = Alignment.TopEnd,
     endAction: (@Composable () -> Unit)? = null
 ) {
+    val haptic = LocalHapticFeedback.current
+
     if (isCentered) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(vertical = 2.dp)
+                .padding(bottom = MizanDialogTokens.headerContentGap - MizanDialogTokens.verticalGap)
         ) {
             Column(
                 modifier = Modifier
@@ -157,7 +161,10 @@ fun MizanDialogHeader(
                 }
             } else if (onCloseClick != null) {
                 IconButton(
-                    onClick = onCloseClick,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onCloseClick?.invoke()
+                    },
                     modifier = Modifier
                         .align(closeButtonAlignment)
                         .size(34.dp)
@@ -230,7 +237,10 @@ fun MizanDialogHeader(
                 endAction()
             } else if (onCloseClick != null) {
                 IconButton(
-                    onClick = onCloseClick,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onCloseClick()
+                    },
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
@@ -245,6 +255,29 @@ fun MizanDialogHeader(
                 }
             }
         }
+    }
+}
+
+/**
+ * Standard inner content card.
+ */
+@Composable
+fun MizanDialogInnerCard(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(12.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MizanDialogTokens.innerCardShape,
+        color = containerColor,
+        tonalElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(contentPadding),
+            content = content
+        )
     }
 }
 

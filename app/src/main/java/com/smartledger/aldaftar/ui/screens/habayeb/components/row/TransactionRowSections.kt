@@ -245,7 +245,7 @@ fun TransactionRowDetailsSection(
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = if (isCalculated) {
-                            stringResource(id = R.string.habayeb_rate_active, com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatRate(tx.exchangeRate))
+                            stringResource(id = R.string.habayeb_rate_active, com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(tx.exchangeRate))
                         } else {
                             stringResource(id = R.string.habayeb_rate_inactive_clean)
                         },

@@ -6,8 +6,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -37,7 +35,6 @@ import com.smartledger.aldaftar.ui.screens.security.lock.RecoveryPhraseContent
 import com.smartledger.aldaftar.ui.theme.NeutralBackgroundDark
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -103,7 +100,6 @@ fun AppLockScreen(
 
     LaunchedEffect(isBiometricSupported, isBiometricEnabled) {
         if (isBiometricSupported && isBiometricEnabled && !showRecoveryView) {
-            awaitFrame()
             triggerBiometricPrompt()
         }
     }
@@ -199,8 +195,8 @@ fun AppLockScreen(
         AnimatedContent(
             targetState = showRecoveryView,
             transitionSpec = {
-                slideInHorizontally { width -> if (targetState) width else -width } + fadeIn() togetherWith
-                        slideOutHorizontally { width -> if (targetState) -width else width } + fadeOut()
+                fadeIn(animationSpec = tween(120)) togetherWith
+                        fadeOut(animationSpec = tween(90))
             },
             label = "ScreenType"
         ) { isRecovery ->

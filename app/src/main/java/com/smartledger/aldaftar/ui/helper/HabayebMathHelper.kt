@@ -44,11 +44,39 @@ object HabayebMathHelper {
 
     fun formatRate(value: BigDecimal): String {
         return try {
-            value.setScale(2, RoundingMode.HALF_EVEN)
-                .stripTrailingZeros()
-                .toPlainString()
+            if (value.compareTo(BigDecimal.ZERO) <= 0) return "0"
+            if (value >= BigDecimal.ONE) {
+                value.setScale(4, RoundingMode.HALF_EVEN)
+                    .stripTrailingZeros()
+                    .toPlainString()
+            } else {
+                value.setScale(8, RoundingMode.HALF_EVEN)
+                    .stripTrailingZeros()
+                    .toPlainString()
+            }
         } catch (e: Exception) {
             value.toString()
+        }
+    }
+
+    /**
+     * Formats rate specifically for badges in transaction rows and cards.
+     * If rate is < 1 (reciprocal fractional quote like 0.00714286), it computes
+     * the reciprocal (e.g. 140) so the badge remains compact and matches the market quote.
+     */
+    fun formatActiveRateBadge(value: BigDecimal): String {
+        return try {
+            if (value.compareTo(BigDecimal.ZERO) <= 0) return "0"
+            if (value >= BigDecimal.ONE) {
+                value.setScale(4, RoundingMode.HALF_EVEN)
+                    .stripTrailingZeros()
+                    .toPlainString()
+            } else {
+                val reciprocal = BigDecimal.ONE.divide(value, 4, RoundingMode.HALF_EVEN).stripTrailingZeros()
+                reciprocal.toPlainString()
+            }
+        } catch (e: Exception) {
+            formatRate(value)
         }
     }
 }

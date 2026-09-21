@@ -20,8 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +28,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +57,8 @@ fun PasscodeKeypadContent(
     onBiometricClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -150,7 +152,10 @@ fun PasscodeKeypadContent(
                     color = BrandSecondary,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { onForgotClick() }
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onForgotClick()
+                        }
                         .padding(8.dp)
                         .testTag("lock_forgot_pin_btn"),
                     textAlign = TextAlign.Center

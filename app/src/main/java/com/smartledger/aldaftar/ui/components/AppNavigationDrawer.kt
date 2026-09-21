@@ -132,9 +132,9 @@ fun AppNavigationDrawer(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(10.dp))
-                    
+
                     Text(
                         text = stringResource(id = R.string.app_name_main),
                         fontFamily = CairoFontFamily,
@@ -157,9 +157,9 @@ fun AppNavigationDrawer(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -181,21 +181,21 @@ fun AppNavigationDrawer(
                 label = stringResource(id = R.string.drawer_comprehensive_report_label),
                 onClick = onComprehensiveReportClick
             )
-            
+
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.MonetizationOn,
                 label = stringResource(id = R.string.drawer_currency_label),
                 onClick = onCurrencySettingsClick
             )
-            
+
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Lock,
                 label = stringResource(id = R.string.drawer_security_label),
                 onClick = onSecurityClick
             )
-            
+
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Verified,
@@ -217,7 +217,7 @@ fun AppNavigationDrawer(
                 onClick = onBackupClick
             )
         }
-        
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -227,7 +227,7 @@ fun AppNavigationDrawer(
         ) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), thickness = 1.dp)
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = stringResource(id = R.string.drawer_app_version, versionName),
                 fontSize = 11.sp,
@@ -235,9 +235,9 @@ fun AppNavigationDrawer(
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(3.dp))
-            
+
             Text(
                 text = stringResource(id = R.string.developer_credit),
                 fontSize = 11.sp,
@@ -245,9 +245,9 @@ fun AppNavigationDrawer(
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -259,7 +259,7 @@ fun AppNavigationDrawer(
                         dialPhoneNumber(context, supportPhoneNumber)
                     }
                 )
-                
+
                 ContactIcon(
                     icon = Icons.Default.Share,
                     contentDescription = stringResource(id = R.string.whatsapp_contact_msg),

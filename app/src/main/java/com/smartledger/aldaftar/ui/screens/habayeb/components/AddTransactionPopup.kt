@@ -272,15 +272,14 @@ fun AddTransactionPopup(
     ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
-                shape = MizanDialogTokens.shape,
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier
-                    .widthIn(max = MizanDialogTokens.compactMaxWidth)
-                    .fillMaxWidth(0.92f)
+                    .fillMaxWidth()
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
                 Crossfade(
                     targetState = showRateSetupOverlay,
@@ -415,8 +414,8 @@ fun AddTransactionPopup(
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = mizanColors.onDebt),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = MizanDialogTokens.buttonShape,
-                                    modifier = Modifier.weight(1f).height(MizanDialogTokens.buttonHeight)
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f).height(42.dp)
                                 ) {
                                     Text(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),

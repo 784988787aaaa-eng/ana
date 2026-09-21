@@ -39,16 +39,16 @@ fun DrawerItem(
     Surface(
         onClick = onClick,
         color = containerColor,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(MizanTouchTarget.standardButtonHeight)
+            .height(48.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
@@ -58,7 +58,7 @@ fun DrawerItem(
                     tint = primaryColor,
                     modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = label,
                     fontSize = 14.sp,
