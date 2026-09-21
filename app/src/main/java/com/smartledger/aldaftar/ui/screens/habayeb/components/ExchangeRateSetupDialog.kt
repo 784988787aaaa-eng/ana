@@ -258,10 +258,13 @@ fun ExchangeRateSetupContent(
                 
                 Text(
                     text = stringResource(id = R.string.habayeb_confirm_exchange_rate_question),
-                    fontSize = 10.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = statusColor,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Center,
+                    softWrap = true,
+                    maxLines = 3,
+                    modifier = Modifier.weight(1f)
                 )
             }
 
@@ -326,7 +329,8 @@ fun ExchangeRateSetupDialog(
                 subtitle = "1 $selectedCurrency = $rateTargetCurrency",
                 icon = Icons.Default.Check,
                 iconTint = activeThemeColor,
-                onCloseClick = onDismiss
+                onCloseClick = onDismiss,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
             ExchangeRateSetupContent(
                 selectedCurrency = selectedCurrency,
