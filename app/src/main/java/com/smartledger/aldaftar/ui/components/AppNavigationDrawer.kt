@@ -8,8 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -109,26 +107,34 @@ fun AppNavigationDrawer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 18.dp, vertical = 16.dp),
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.12f))
-                            .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape),
+                            .background(
+                                color = Color(0xFF8B5CF6).copy(alpha = 0.20f),
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.30f),
+                                shape = CircleShape
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_splash_logo),
-                            contentDescription = stringResource(id = R.string.app_name_main),
-                            modifier = Modifier.size(34.dp)
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(10.dp))
-                    
+
                     Text(
                         text = stringResource(id = R.string.app_name_main),
                         fontFamily = CairoFontFamily,
@@ -151,9 +157,9 @@ fun AppNavigationDrawer(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -175,21 +181,21 @@ fun AppNavigationDrawer(
                 label = stringResource(id = R.string.drawer_comprehensive_report_label),
                 onClick = onComprehensiveReportClick
             )
-            
+
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.MonetizationOn,
                 label = stringResource(id = R.string.drawer_currency_label),
                 onClick = onCurrencySettingsClick
             )
-            
+
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Lock,
                 label = stringResource(id = R.string.drawer_security_label),
                 onClick = onSecurityClick
             )
-            
+
             DrawerItem(
                 selected = false,
                 icon = Icons.Default.Verified,
@@ -211,17 +217,17 @@ fun AppNavigationDrawer(
                 onClick = onBackupClick
             )
         }
-        
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), thickness = 1.dp)
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = stringResource(id = R.string.drawer_app_version, versionName),
                 fontSize = 11.sp,
@@ -229,9 +235,9 @@ fun AppNavigationDrawer(
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(3.dp))
-            
+
             Text(
                 text = stringResource(id = R.string.developer_credit),
                 fontSize = 11.sp,
@@ -239,11 +245,11 @@ fun AppNavigationDrawer(
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ContactIcon(
@@ -253,7 +259,7 @@ fun AppNavigationDrawer(
                         dialPhoneNumber(context, supportPhoneNumber)
                     }
                 )
-                
+
                 ContactIcon(
                     icon = Icons.Default.Share,
                     contentDescription = stringResource(id = R.string.whatsapp_contact_msg),
