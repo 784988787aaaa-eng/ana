@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -68,8 +66,6 @@ fun HabayebFab(
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
-    val navigationBottomPx = WindowInsets.navigationBars.getBottom(density)
-    val safeBottomPx = maxOf(navigationBottomPx + with(density) { 24.dp.toPx() }, with(density) { 84.dp.toPx() })
 
     val initialSizeLevel = persisted.sizeLevel
     val hasSavedRatio = persisted.hasPosition
@@ -121,7 +117,8 @@ fun HabayebFab(
             }
             val defaultDockY = remember(screenHeightPx, bubbleSizePx) {
                 if (screenHeightPx > 0) {
-                    (screenHeightPx - safeBottomPx - bubbleSizePx).coerceIn(0f, maxY)
+                    val capsuleBottomOffset = with(density) { 72.dp.toPx() }
+                    (screenHeightPx - capsuleBottomOffset - (bubbleSizePx / 2f)).coerceIn(0f, maxY)
                 } else 0f
             }
 
