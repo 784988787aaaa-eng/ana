@@ -89,12 +89,12 @@ fun AddTransactionFormFields(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(amountFocusRequester)
-                    .testTag("transaction_amount_input"),
+                .testTag("transaction_amount_input"),
             placeholder = {
                 Text(
                     text = stringResource(id = R.string.habayeb_amount_required),
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Start,
+                    textAlign = TextAlign.Center,
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -153,7 +153,7 @@ fun AddTransactionFormFields(
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                fontSize = 12.5.sp
+                fontSize = 13.sp
             ),
             leadingIcon = {
                 Icon(
@@ -194,7 +194,7 @@ fun AddTransactionFormFields(
                 .fillMaxWidth()
                 .heightIn(min = 40.dp, max = 56.dp)
                 .focusRequester(descFocusRequester)
-                    .testTag("transaction_description_input"),
+                .testTag("transaction_description_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {
                 focusManager.clearFocus()
