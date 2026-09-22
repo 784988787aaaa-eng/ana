@@ -53,7 +53,7 @@ fun TrashEmptyView(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 32.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -62,32 +62,41 @@ fun TrashEmptyView(
         ) {
             Box(
                 modifier = Modifier
-                    .size(76.dp)
+                    .size(88.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.DeleteSweep,
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.DeleteSweep,
+                        contentDescription = null,
+                        modifier = Modifier.size(34.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = stringResource(id = R.string.trash_empty_message),
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 17.sp,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = stringResource(id = R.string.trash_clean_empty_subtitle),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                textAlign = TextAlign.Center
+                fontSize = 12.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
             )
         }
     }

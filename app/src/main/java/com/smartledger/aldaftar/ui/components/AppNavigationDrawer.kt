@@ -1,6 +1,7 @@
 package com.smartledger.aldaftar.ui.components
 
 import java.math.BigDecimal
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -56,6 +57,7 @@ fun AppNavigationDrawer(
     onBusinessProfileClick: () -> Unit,
     onCurrencySettingsClick: () -> Unit,
     onSecurityClick: () -> Unit,
+    onPrivacyPolicyClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -268,6 +270,43 @@ fun AppNavigationDrawer(
                         openWhatsAppChat(context, supportPhoneNumber, msg)
                     }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onPrivacyPolicyClick()
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(38.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Security,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(id = R.string.drawer_privacy_policy_label),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

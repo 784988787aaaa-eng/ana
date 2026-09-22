@@ -49,6 +49,7 @@ fun MainAppLayout(
     var showCurrencySettingsDialog by remember { mutableStateOf(false) }
     var showBusinessProfileDialog by remember { mutableStateOf(false) }
     var showSecurityDialog by remember { mutableStateOf(false) }
+    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
 
@@ -161,6 +162,10 @@ fun MainAppLayout(
                 onSecurityClick = {
                     scope.launch { drawerState.close() }
                     showSecurityDialog = true
+                },
+                onPrivacyPolicyClick = {
+                    scope.launch { drawerState.close() }
+                    showPrivacyPolicyDialog = true
                 }
             )
         }
@@ -299,6 +304,12 @@ fun MainAppLayout(
             settings = settings,
             viewModel = securityViewModel,
             onDismiss = { showSecurityDialog = false }
+        )
+    }
+
+    if (showPrivacyPolicyDialog) {
+        com.smartledger.aldaftar.ui.components.PrivacyPolicyDialog(
+            onDismiss = { showPrivacyPolicyDialog = false }
         )
     }
 }

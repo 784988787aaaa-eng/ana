@@ -126,8 +126,10 @@ object CustomerShareHelper {
                 if (fNetBd.compareTo(java.math.BigDecimal.ZERO) != 0) {
                     val foreignTotalPrefix = if (fNetBd.compareTo(java.math.BigDecimal.ZERO) > 0) {
                         context.getString(R.string.msg_foreign_total_against)
-                    } else {
+                    } else if (fNetBd.compareTo(java.math.BigDecimal.ZERO) < 0) {
                         context.getString(R.string.msg_foreign_total_for)
+                    } else {
+                        context.getString(R.string.msg_foreign_total_balanced)
                     }
                     val formattedForeignNet = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(fNetBd.abs())
                     lines.add("$foreignTotalPrefix $formattedForeignNet $fSymbol")
@@ -140,7 +142,7 @@ object CustomerShareHelper {
         } else if (netDebt.compareTo(java.math.BigDecimal.ZERO) < 0) {
             context.getString(R.string.msg_total_for)
         } else {
-            context.getString(R.string.msg_total_against)
+            context.getString(R.string.msg_total_balanced)
         }
         val formattedNetDebt = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(netDebt.abs())
         lines.add("$totalPrefix $formattedNetDebt $currencySymbol")

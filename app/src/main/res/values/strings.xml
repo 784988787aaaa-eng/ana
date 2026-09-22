@@ -420,8 +420,10 @@
     <string name="msg_statement_prefix">◀ البيان:</string>
     <string name="msg_total_against">◀ الإجمالي عليكم:</string>
     <string name="msg_total_for">◀ الإجمالي لكم:</string>
+    <string name="msg_total_balanced">◀ الإجمالي:</string>
     <string name="msg_foreign_total_against">◀ إجمالي أجنبي عليكم:</string>
     <string name="msg_foreign_total_for">◀ إجمالي أجنبي لكم:</string>
+    <string name="msg_foreign_total_balanced">◀ إجمالي أجنبي:</string>
     <string name="habayeb_statement_header">كشف حساب: %1$s\n</string>
     <string name="habayeb_statement_status_owed_by_them">المبلغ الإجمالي عليكم: %1$s</string>
     <string name="habayeb_statement_status_owed_to_them">المبلغ الإجمالي لكم: %1$s</string>
@@ -701,7 +703,8 @@
     <string name="trash_restore_single_tx_desc">استعادة المعاملة الفردية</string>
     <string name="trash_bundle_transactions_label">المعاملات المحذوفة بالحزمة:</string>
     <string name="trash_exchange_rate_label">صرف:</string>
-    <string name="trash_clean_empty_subtitle">ًلا توجد محذوفات</string>
+    <string name="trash_clean_empty_subtitle">سلة المحذوفات فارغة، المعاملات والحسابات المحذوفة ستظهر هنا مع إمكانية استعادتها بأمان في أي وقت.</string>
+    <string name="trash_filter_type_label">التصنيف: %1$s</string>
     <string name="trash_filter_all_label">الكل</string>
     <string name="trash_filter_transactions">العمليات</string>
     <string name="trash_filter_customers">الحسابات والعملاء</string>
@@ -836,8 +839,10 @@
     <string name="toast_sync_decrypt_failed">فشل فك تشفير البيانات أو الاستيراد</string>
     <string name="dialog_exit_title">إغلاق التطبيق</string>
     <string name="dialog_exit_message">هل تود إغلاق التطبيق والخروج الآن؟</string>
-    <string name="dialog_exit_dont_show_again">عدم إظهار الرسالة مجدداً</string>
+    <string name="dialog_exit_subtitle">كافة معاملاتك وسجلاتك المالية محفوظة بأمان تام.</string>
+    <string name="dialog_exit_dont_show_again">عدم إظهار هذه الرسالة مجدداً</string>
     <string name="dialog_exit_confirm">خروج</string>
+    <string name="dialog_exit_confirm_btn">تأكيد</string>
     <string name="dialog_title_add_account">حساب جديد</string>
     <string name="btn_save">تأكيد وحفظ</string>
     <string name="btn_new_debt">دين</string>
@@ -886,6 +891,10 @@
     <string name="settings_signature_unavailable">غير متوفر</string>
     <string name="drawer_license_active">✓ الترخيص مفعل</string>
     <string name="drawer_license_label">الترخيص والتفعيل</string>
+    <string name="drawer_privacy_policy_label">سياسة الخصوصية</string>
+    <string name="privacy_policy_title">سياسة الخصوصية</string>
+    <string name="privacy_policy_offline_badge">متاح محلياً بدون إنترنت 🔒</string>
+    <string name="privacy_policy_close">إغلاق</string>
     <string name="license_whatsapp_request_help">طلب ترخيص أو مساعدة عبر واتساب</string>
     <string name="report_scope_display_icon">📋 %1$s</string>
 
