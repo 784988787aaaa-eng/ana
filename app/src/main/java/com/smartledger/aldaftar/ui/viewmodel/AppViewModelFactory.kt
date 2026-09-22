@@ -18,6 +18,7 @@ class AppViewModelFactory(
         BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance, container.backupEngine, container.unifiedAccount, container.cloudArchiveStore) as T
         BusinessProfileViewModel::class.java -> BusinessProfileViewModel(container.businessProfile) as T
         LicenseViewModel::class.java -> LicenseViewModel(application, container.license, container.unifiedAccount, container.habayeb) as T
+        AdminLicenseViewModel::class.java -> AdminLicenseViewModel(application, container.adminLicense, container.license) as T
         else -> throw IllegalArgumentException("Unsupported ViewModel: ${modelClass.name}")
     }
 }

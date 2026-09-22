@@ -13,10 +13,6 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,18 +20,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.components.PrivacyPolicyDialog
 
 @Composable
 fun SettingsDeveloperFooter(
     context: Context
 ) {
-    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -57,24 +49,6 @@ fun SettingsDeveloperFooter(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(3.dp))
-
-        Surface(
-            onClick = { showPrivacyPolicyDialog = true },
-            shape = CircleShape,
-            color = Color.Transparent
-        ) {
-            Text(
-                text = stringResource(id = R.string.drawer_privacy_policy_label),
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                textDecoration = TextDecoration.Underline,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-            )
-        }
-
         Spacer(modifier = Modifier.height(8.dp))
         
         Row(
@@ -119,11 +93,5 @@ fun SettingsDeveloperFooter(
                 )
             }
         }
-    }
-
-    if (showPrivacyPolicyDialog) {
-        PrivacyPolicyDialog(
-            onDismiss = { showPrivacyPolicyDialog = false }
-        )
     }
 }

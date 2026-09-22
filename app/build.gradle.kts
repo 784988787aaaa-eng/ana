@@ -11,6 +11,13 @@ android {
 
   defaultConfig {
     buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${providers.gradleProperty("GOOGLE_CLIENT_ID").orElse(System.getenv("GOOGLE_CLIENT_ID") ?: "").get()}\"")
+    val rawLocalPrivKey = providers.gradleProperty("SMARTLEDGER_LOCAL_LICENSE_PRIVATE").orElse(System.getenv("SMARTLEDGER_LOCAL_LICENSE_PRIVATE") ?: "").get()
+    val escapedPrivKey = rawLocalPrivKey.replace("\r", "").replace("\n", "\\n").replace("\"", "\\\"")
+    buildConfigField("String", "SMARTLEDGER_LOCAL_LICENSE_PRIVATE", "\"$escapedPrivKey\"")
+
+    val rawAdminSecret = providers.gradleProperty("SMARTLEDGER_ADMIN_SECRET").orElse(System.getenv("SMARTLEDGER_ADMIN_SECRET") ?: "Mansour#2100\$Samar#2100\$Montasirr#2100\$").get()
+    val escapedAdminSecret = rawAdminSecret.replace("\r", "").replace("\n", "\\n").replace("\"", "\\\"")
+    buildConfigField("String", "SMARTLEDGER_ADMIN_SECRET", "\"$escapedAdminSecret\"")
     applicationId = "com.smartledger.aldaftar"
     minSdk = 24
     targetSdk = 36
