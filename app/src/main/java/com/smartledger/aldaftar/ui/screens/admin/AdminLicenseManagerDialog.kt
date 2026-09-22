@@ -74,7 +74,7 @@ fun AdminLicenseManagerDialog(
                 subtitle = stringResource(R.string.admin_manager_subtitle),
                 icon = Icons.Default.AdminPanelSettings,
                 iconTint = MaterialTheme.colorScheme.primary,
-                onClose = onDismiss
+                onCloseClick = onDismiss
             )
 
             // Tabs Selector
