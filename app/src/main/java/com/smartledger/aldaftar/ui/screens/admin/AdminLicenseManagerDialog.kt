@@ -55,18 +55,23 @@ fun AdminLicenseManagerDialog(
 
     val accountCode by viewModel.accountOrDeviceCode.collectAsState()
     val email by viewModel.customerEmail.collectAsState()
+    val phone by viewModel.customerPhone.collectAsState()
+    val name by viewModel.customerName.collectAsState()
     val licenseType by viewModel.selectedLicenseType.collectAsState()
+    val plan by viewModel.selectedPlan.collectAsState()
+    val trialDays by viewModel.trialDays.collectAsState()
+    val maxDevices by viewModel.maxDevices.collectAsState()
 
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
 
     MizanAnimatedDialog(onDismissRequest = onDismiss) {
         MizanDialogCard(
-            maxWidth = 500.dp,
-            maxHeight = 520.dp,
+            maxWidth = 520.dp,
+            maxHeight = 580.dp,
             contentPadding = PaddingValues(12.dp)
         ) {
-            // Compact Header (No heavy top banner)
+            // Header Bar (Compact & Clean)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -85,7 +90,7 @@ fun AdminLicenseManagerDialog(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "إدارة التراخيص",
+                        text = "إدارة وإصدار التراخيص",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -154,25 +159,32 @@ fun AdminLicenseManagerDialog(
                         .imePadding(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 1. Email field
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { viewModel.customerEmail.value = it },
+                    // 1. License Type Selector (Local vs Cloud)
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("البريد الإلكتروني للعميل", fontSize = 12.sp) },
-                        placeholder = { Text("customer@example.com", fontSize = 11.sp) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        shape = MizanDialogTokens.inputShape
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        FilterChip(
+                            selected = licenseType == "LOCAL",
+                            onClick = { viewModel.selectedLicenseType.value = "LOCAL" },
+                            label = { Text("💻 محلي (أوفلاين)", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = licenseType == "ACCOUNT",
+                            onClick = { viewModel.selectedLicenseType.value = "ACCOUNT" },
+                            label = { Text("☁️ سحابي (24 خانة)", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
                     // 2. Account / Device Code field with Paste & Current Device buttons
                     OutlinedTextField(
                         value = accountCode,
                         onValueChange = { viewModel.accountOrDeviceCode.value = it },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("كود الجهاز أو الحساب", fontSize = 12.sp) },
-                        placeholder = { Text("SLD-XXXX-XXXX / SL-XXXX", fontSize = 11.sp) },
+                        label = { Text(if (licenseType == "ACCOUNT") "كود الحساب (SLD-...)" else "معرف الجهاز (SLD-...)", fontSize = 12.sp) },
+                        placeholder = { Text("SLD-L7XY-P7DX-DR", fontSize = 11.sp) },
                         singleLine = true,
                         trailingIcon = {
                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -181,7 +193,7 @@ fun AdminLicenseManagerDialog(
                                         val clip = clipboard.getText()?.text
                                         if (!clip.isNullOrBlank()) {
                                             viewModel.accountOrDeviceCode.value = clip.trim()
-                                            Toast.makeText(context, "تم لصق كود الجهاز", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "تم لصق الكود", Toast.LENGTH_SHORT).show()
                                         }
                                     },
                                     modifier = Modifier.size(32.dp)
@@ -202,26 +214,102 @@ fun AdminLicenseManagerDialog(
                         shape = MizanDialogTokens.inputShape
                     )
 
-                    // 3. Local vs Cloud Type Toggle Buttons
+                    // 3. Customer Phone & Email Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        FilterChip(
-                            selected = licenseType == "LOCAL",
-                            onClick = { viewModel.selectedLicenseType.value = "LOCAL" },
-                            label = { Text("💻 تفعيل محلي (أوفلاين)", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                            modifier = Modifier.weight(1f)
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { viewModel.customerPhone.value = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("رقم الواتساب", fontSize = 11.sp) },
+                            placeholder = { Text("966500000000", fontSize = 10.sp) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            leadingIcon = {
+                                Icon(Icons.Default.Phone, null, Modifier.size(15.dp), tint = Color(0xFF25D366))
+                            },
+                            shape = MizanDialogTokens.inputShape
                         )
-                        FilterChip(
-                            selected = licenseType == "ACCOUNT",
-                            onClick = { viewModel.selectedLicenseType.value = "ACCOUNT" },
-                            label = { Text("☁️ تفعيل سحابي (حساب)", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                            modifier = Modifier.weight(1f)
+
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { viewModel.customerEmail.value = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("البريد الإلكتروني", fontSize = 11.sp) },
+                            placeholder = { Text("user@gmail.com", fontSize = 10.sp) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            shape = MizanDialogTokens.inputShape
                         )
                     }
 
-                    // 4. Generate & Activate Button
+                    // 4. Customer Name & Plan Selection
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { viewModel.customerName.value = it },
+                            modifier = Modifier.weight(1.2f),
+                            label = { Text("اسم العميل / النشاط", fontSize = 11.sp) },
+                            placeholder = { Text("مؤسسة الوفاق", fontSize = 10.sp) },
+                            singleLine = true,
+                            shape = MizanDialogTokens.inputShape
+                        )
+
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FilterChip(
+                                selected = plan == "LIFETIME",
+                                onClick = { viewModel.selectedPlan.value = "LIFETIME" },
+                                label = { Text("دائم", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = plan == "TRIAL",
+                                onClick = { viewModel.selectedPlan.value = "TRIAL" },
+                                label = { Text("تجربة", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    // 5. If Trial: Days & Max Devices Row
+                    if (plan == "TRIAL") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = trialDays,
+                                onValueChange = { viewModel.trialDays.value = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("أيام التجربة", fontSize = 11.sp) },
+                                placeholder = { Text("30", fontSize = 10.sp) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = MizanDialogTokens.inputShape
+                            )
+                            OutlinedTextField(
+                                value = maxDevices,
+                                onValueChange = { viewModel.maxDevices.value = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("عدد الأجهزة", fontSize = 11.sp) },
+                                placeholder = { Text("1", fontSize = 10.sp) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = MizanDialogTokens.inputShape
+                            )
+                        }
+                    }
+
+                    // 6. Generate & Activate Button
                     Button(
                         onClick = { viewModel.generateLicense() },
                         modifier = Modifier
@@ -237,18 +325,22 @@ fun AdminLicenseManagerDialog(
                         } else {
                             Icon(Icons.Default.FlashOn, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("توليد وتوقيع الترخيص ⚡", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(
+                                text = if (licenseType == "ACCOUNT") "توليد كود التفعيل السحابي (24 خانة) ⚡" else "توليد وتوقيع الترخيص المحلي ⚡",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
                         }
                     }
 
-                    // 5. Display Token Result from DB / Signer
+                    // 7. Display Token Result from DB / Signer
                     if (lastIssued != null) {
-                        CompactIssuedTokenCard(
+                        IssuedLicenseResultCard(
                             license = lastIssued!!,
                             onActivateLocal = {
                                 viewModel.activateCurrentDeviceWithIssued(lastIssued!!.activationToken) { ok ->
                                     if (ok) {
-                                        Toast.makeText(context, "تم تفعيل الترخيص على جهازك الحاضر!", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, "تم تفعيل الترخيص على هذا الجهاز بنجاح!", Toast.LENGTH_LONG).show()
                                     }
                                 }
                             }
@@ -277,18 +369,19 @@ fun AdminLicenseManagerDialog(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 360.dp),
+                                .heightIn(max = 400.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             items(licenses, key = { it.licenseId }) { lic ->
-                                CompactLicenseRegistryItem(
+                                LicenseRegistryItemCard(
                                     license = lic,
                                     onCopyToken = {
-                                        clipboard.setText(AnnotatedString(lic.activationToken))
-                                        Toast.makeText(context, "تم نسخ رمز التفعيل المشفر", Toast.LENGTH_SHORT).show()
+                                        val toCopy = if (lic.licenseType == "ACCOUNT") lic.shortActivationCode else lic.activationToken
+                                        clipboard.setText(AnnotatedString(toCopy))
+                                        Toast.makeText(context, "تم نسخ كود التفعيل", Toast.LENGTH_SHORT).show()
                                     },
                                     onShareWhatsApp = {
-                                        shareLicenseWhatsAppCompact(context, lic)
+                                        shareLicenseWhatsApp(context, lic)
                                     },
                                     onToggleStatus = { viewModel.toggleLicenseStatus(lic) },
                                     onDelete = { viewModel.deleteLicense(lic) }
@@ -303,12 +396,13 @@ fun AdminLicenseManagerDialog(
 }
 
 @Composable
-private fun CompactIssuedTokenCard(
+private fun IssuedLicenseResultCard(
     license: AdminIssuedLicense,
     onActivateLocal: () -> Unit
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val isCloud = license.licenseType == "ACCOUNT"
 
     Surface(
         modifier = Modifier
@@ -327,30 +421,63 @@ private fun CompactIssuedTokenCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "رمز التفعيل المشفر (${license.licenseId}):",
+                    text = if (isCloud) "كود التفعيل السحابي (24 خانة):" else "رمز التفعيل المشفر (محلي):",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = if (license.licenseType == "ACCOUNT") "سحابي ☁️" else "محلي 💻",
+                    text = if (isCloud) "☁️ سحابي" else "💻 محلي أوفلاين",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            // Raw Token Display
-            Text(
-                text = license.activationToken,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(4.dp))
-                    .padding(6.dp)
-            )
+            if (isCloud) {
+                // Cloud 24-character code display
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = license.shortActivationCode,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        IconButton(
+                            onClick = {
+                                clipboard.setText(AnnotatedString(license.shortActivationCode))
+                                Toast.makeText(context, "تم نسخ كود التفعيل السحابي", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(26.dp)
+                        ) {
+                            Icon(Icons.Default.ContentCopy, "نسخ", Modifier.size(15.dp))
+                        }
+                    }
+                }
+            } else {
+                // Local RSA signed token display
+                Text(
+                    text = license.activationToken,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(4.dp))
+                        .padding(6.dp)
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -358,8 +485,9 @@ private fun CompactIssuedTokenCard(
             ) {
                 OutlinedButton(
                     onClick = {
-                        clipboard.setText(AnnotatedString(license.activationToken))
-                        Toast.makeText(context, "تم نسخ الرمز المشفر للحافظة", Toast.LENGTH_SHORT).show()
+                        val toCopy = if (isCloud) license.shortActivationCode else license.activationToken
+                        clipboard.setText(AnnotatedString(toCopy))
+                        Toast.makeText(context, "تم نسخ الرمز للحافظة", Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier.weight(1f).height(34.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp)
@@ -380,12 +508,14 @@ private fun CompactIssuedTokenCard(
                 }
 
                 Button(
-                    onClick = { shareLicenseWhatsAppCompact(context, license) },
+                    onClick = { shareLicenseWhatsApp(context, license) },
                     modifier = Modifier.height(34.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Icon(Icons.Default.Share, null, Modifier.size(14.dp), tint = Color.White)
+                    Spacer(Modifier.width(4.dp))
+                    Text("واتساب", fontSize = 11.sp, color = Color.White)
                 }
             }
         }
@@ -393,7 +523,7 @@ private fun CompactIssuedTokenCard(
 }
 
 @Composable
-private fun CompactLicenseRegistryItem(
+private fun LicenseRegistryItemCard(
     license: AdminIssuedLicense,
     onCopyToken: () -> Unit,
     onShareWhatsApp: () -> Unit,
@@ -402,6 +532,7 @@ private fun CompactLicenseRegistryItem(
 ) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
     val dateStr = remember(license.issuedAt) { dateFormat.format(Date(license.issuedAt)) }
+    val isCloud = license.licenseType == "ACCOUNT"
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -428,23 +559,34 @@ private fun CompactLicenseRegistryItem(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = if (license.licenseType == "ACCOUNT") "☁️ سحابي" else "💻 محلي",
+                        text = if (isCloud) "☁️ سحابي" else "💻 محلي",
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Box(
                         modifier = Modifier
-                            .size(6.dp)
+                            .size(7.dp)
                             .clip(CircleShape)
                             .background(if (license.isActive) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error)
                             .clickable { onToggleStatus() }
                     )
                 }
 
+                if (isCloud && license.shortActivationCode.isNotBlank()) {
+                    Text(
+                        text = "الكود: ${license.shortActivationCode}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
                 Text(
-                    text = "كود: ${license.accountCode} | $dateStr",
+                    text = "${license.customerName} | ${license.accountCode} | $dateStr",
                     fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -454,7 +596,7 @@ private fun CompactLicenseRegistryItem(
                     Icon(Icons.Default.ContentCopy, "نسخ", Modifier.size(15.dp))
                 }
                 IconButton(onClick = onShareWhatsApp, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Share, "مشاركة", Modifier.size(15.dp), tint = Color(0xFF25D366))
+                    Icon(Icons.Default.Share, "واتساب", Modifier.size(15.dp), tint = Color(0xFF25D366))
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Default.DeleteOutline, "حذف", Modifier.size(15.dp), tint = MaterialTheme.colorScheme.error)
@@ -464,19 +606,31 @@ private fun CompactLicenseRegistryItem(
     }
 }
 
-private fun shareLicenseWhatsAppCompact(context: Context, license: AdminIssuedLicense) {
+private fun shareLicenseWhatsApp(context: Context, license: AdminIssuedLicense) {
+    val isCloud = license.licenseType == "ACCOUNT"
+    val codeToSend = if (isCloud) license.shortActivationCode else license.activationToken
+
     val message = buildString {
-        appendLine("رمز ترخيص البرنامج الخاص بك:")
-        appendLine("نوع الترخيص: ${if (license.licenseType == "ACCOUNT") "سحابي" else "محلي أوفلاين"}")
-        appendLine("كود الجهاز/الحساب: ${license.accountCode}")
-        appendLine("رمز التفعيل المشفر:")
-        appendLine(license.activationToken)
+        appendLine("مرحباً ${license.customerName.ifBlank { "عميلنا الكريم" }}،")
+        appendLine("تم إصدار ترخيص برنامج الدفتر الذكي الخاص بك:")
+        appendLine("• نوع الترخيص: ${if (isCloud) "سحابي (مرتبط بالحساب)" else "محلي (أوفلاين)"}")
+        appendLine("• الخطة: ${if (license.plan == "LIFETIME") "مدى الحياة (دائم)" else "تجريبي (${license.trialDays} يوم)"}")
+        appendLine("• كود الحساب / الجهاز: ${license.accountCode}")
+        appendLine("• كود التفعيل:")
+        appendLine(codeToSend)
+        appendLine("\nطريقة التفعيل: افتح التطبيق -> القائمة الجانبية -> تفعيل الترخيص -> الصق الكود واضغط تفعيل.")
     }
 
+    // Clean phone number (digits only)
+    val phoneClean = license.customerPhone.filter { it.isDigit() }
+
     try {
-        val sendIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encode(message)}")
+        val url = if (phoneClean.isNotBlank()) {
+            "https://api.whatsapp.com/send?phone=$phoneClean&text=${Uri.encode(message)}"
+        } else {
+            "https://api.whatsapp.com/send?text=${Uri.encode(message)}"
         }
+        val sendIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(sendIntent)
     } catch (e: Exception) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {

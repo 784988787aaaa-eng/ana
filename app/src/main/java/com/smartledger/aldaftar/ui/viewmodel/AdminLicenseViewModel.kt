@@ -1,25 +1,18 @@
 package com.smartledger.aldaftar.ui.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.data.license.LicenseRepository
 import com.smartledger.aldaftar.domain.admin.AdminAuthValidator
 import com.smartledger.aldaftar.domain.admin.AdminIssuedLicense
 import com.smartledger.aldaftar.domain.admin.AdminLicenseRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class AdminLicenseViewModel(
-    application: Application,
     private val adminRepository: AdminLicenseRepository,
     private val licenseRepository: LicenseRepository
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
     private val _isAuthorized = MutableStateFlow(false)
     val isAuthorized: StateFlow<Boolean> = _isAuthorized.asStateFlow()
@@ -30,8 +23,9 @@ class AdminLicenseViewModel(
     // Form inputs
     val accountOrDeviceCode = MutableStateFlow("")
     val customerEmail = MutableStateFlow("")
+    val customerPhone = MutableStateFlow("")
     val customerName = MutableStateFlow("")
-    val selectedLicenseType = MutableStateFlow("FULL") // FULL, LOCAL, ACCOUNT
+    val selectedLicenseType = MutableStateFlow("LOCAL") // LOCAL, ACCOUNT
     val selectedPlan = MutableStateFlow("LIFETIME")    // LIFETIME, TRIAL
     val trialDays = MutableStateFlow("30")
     val maxDevices = MutableStateFlow("1")
@@ -62,8 +56,10 @@ class AdminLicenseViewModel(
             list.filter {
                 it.customerName.lowercase().contains(q) ||
                 it.customerEmail.lowercase().contains(q) ||
+                it.customerPhone.lowercase().contains(q) ||
                 it.accountCode.lowercase().contains(q) ||
                 it.licenseId.lowercase().contains(q) ||
+                it.shortActivationCode.lowercase().contains(q) ||
                 it.notes.lowercase().contains(q)
             }
         }
@@ -102,6 +98,7 @@ class AdminLicenseViewModel(
     fun generateLicense() {
         val code = accountOrDeviceCode.value.trim()
         val email = customerEmail.value.trim()
+        val phone = customerPhone.value.trim()
         val name = customerName.value.trim()
         val type = selectedLicenseType.value
         val plan = selectedPlan.value
@@ -121,6 +118,7 @@ class AdminLicenseViewModel(
                 val result = adminRepository.issueLicense(
                     deviceOrAccountCode = code,
                     email = email,
+                    customerPhone = phone,
                     customerName = if (name.isNotBlank()) name else "مشترك جديد",
                     licenseType = type,
                     plan = plan,
@@ -138,19 +136,15 @@ class AdminLicenseViewModel(
         }
     }
 
-    fun activateCurrentDeviceWithIssued(token: String, onComplete: (Boolean) -> Unit) {
+    fun activateCurrentDeviceWithIssued(token: String, onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
-            _isProcessing.value = true
-            _errorMessage.value = null
             try {
                 licenseRepository.applySignedToken(token)
-                _successMessage.value = "تم تفعيل الترخيص على هذا الجهاز بنجاح!"
-                onComplete(true)
+                _successMessage.value = "تم تفعيل الترخيص بنجاح على هذا الجهاز"
+                onResult(true)
             } catch (e: Exception) {
                 _errorMessage.value = "تعذر تفعيل هذا الجهاز: ${e.message}"
-                onComplete(false)
-            } finally {
-                _isProcessing.value = false
+                onResult(false)
             }
         }
     }
@@ -160,7 +154,7 @@ class AdminLicenseViewModel(
             try {
                 adminRepository.toggleStatus(license)
             } catch (e: Exception) {
-                _errorMessage.value = "تعذر تحديث الحالة: ${e.message}"
+                _errorMessage.value = "تعذر تعديل حالة الترخيص: ${e.message}"
             }
         }
     }

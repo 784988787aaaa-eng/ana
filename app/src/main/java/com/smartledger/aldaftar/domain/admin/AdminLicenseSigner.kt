@@ -66,6 +66,14 @@ jOo/0FTtnUwuMztcE76EhZu2
         return "SL-$rand"
     }
 
+    /**
+     * يولد كود سحابي بطول 24 خانة مثل: MSMU92MJWW45427UTZJYUQUR
+     */
+    fun generateCloudActivationCode(): String {
+        val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        return (1..24).map { chars.random() }.joinToString("")
+    }
+
     fun generateShortActivationCode(): String {
         val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         fun randomChunk(len: Int) = (1..len).map { chars.random() }.joinToString("")
@@ -75,15 +83,20 @@ jOo/0FTtnUwuMztcE76EhZu2
     fun signLicense(
         deviceOrAccountCode: String,
         email: String,
+        customerPhone: String = "",
         customerName: String,
-        licenseType: String, // "LOCAL", "ACCOUNT", "FULL"
+        licenseType: String, // "LOCAL", "ACCOUNT"
         plan: String,        // "LIFETIME", "TRIAL"
         maxDevices: Int = 1,
         trialDays: Int = 0,
         notes: String = ""
     ): AdminIssuedLicense {
         val licenseId = generateLicenseId()
-        val shortCode = generateShortActivationCode()
+        val shortCode = if (licenseType == "ACCOUNT") {
+            generateCloudActivationCode()
+        } else {
+            generateShortActivationCode()
+        }
         val now = System.currentTimeMillis()
 
         // 1. Build Header
@@ -97,7 +110,6 @@ jOo/0FTtnUwuMztcE76EhZu2
         val code = deviceOrAccountCode.trim()
         val bodyJson = JSONObject().apply {
             put("product", "SMARTLEDGER")
-            // Even if marked as FULL, local verification requires type LOCAL
             val resolvedType = if (licenseType == "ACCOUNT") "ACCOUNT" else "LOCAL"
             put("type", resolvedType)
             put("plan", plan)
@@ -105,8 +117,12 @@ jOo/0FTtnUwuMztcE76EhZu2
             put("licenseId", licenseId)
             put("deviceCode", code)
             put("accountCode", code)
+            put("activationCode", shortCode)
             if (email.isNotBlank()) {
                 put("email", email.trim().lowercase())
+            }
+            if (customerPhone.isNotBlank()) {
+                put("phone", customerPhone.trim())
             }
             put("customerName", customerName.trim())
             put("maxDevices", maxDevices.coerceAtLeast(1))
@@ -137,6 +153,7 @@ jOo/0FTtnUwuMztcE76EhZu2
             licenseId = licenseId,
             accountCode = code,
             customerEmail = email.trim(),
+            customerPhone = customerPhone.trim(),
             customerName = customerName.trim(),
             licenseType = licenseType,
             plan = plan,

@@ -11,9 +11,14 @@ class AdminLicenseRepository(context: Context) {
 
     fun getAllLicenses(): Flow<List<AdminIssuedLicense>> = dao.getAllLicenses()
 
+    suspend fun findByCode(code: String): AdminIssuedLicense? = withContext(Dispatchers.IO) {
+        dao.findByCode(code.trim().uppercase())
+    }
+
     suspend fun issueLicense(
         deviceOrAccountCode: String,
         email: String,
+        customerPhone: String = "",
         customerName: String,
         licenseType: String,
         plan: String,
@@ -24,6 +29,7 @@ class AdminLicenseRepository(context: Context) {
         val issued = AdminLicenseSigner.signLicense(
             deviceOrAccountCode = deviceOrAccountCode,
             email = email,
+            customerPhone = customerPhone,
             customerName = customerName,
             licenseType = licenseType,
             plan = plan,
