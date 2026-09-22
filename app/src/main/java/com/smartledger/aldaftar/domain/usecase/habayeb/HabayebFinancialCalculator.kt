@@ -55,34 +55,34 @@ object HabayebFinancialCalculator {
     ): CustomersUiState {
         val defaultCurrency = settings.currencySymbol
         val normDefaultCurrency = com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.getBySymbol(defaultCurrency)?.symbol ?: defaultCurrency
-        val balancesByCustomer = customerBalances.groupBy { it.customerId }
+
+        class CustomerAggregatedData(
+            val netDebtBDMap: MutableMap<String, BigDecimal> = HashMap(2),
+            var maxTimestamp: Long = 0L,
+            var totalTxs: Int = 0
+        )
+        val aggBalancesMap = HashMap<String, CustomerAggregatedData>(customerBalances.size)
+        for (bal in customerBalances) {
+            val agg = aggBalancesMap.getOrPut(bal.customerId) { CustomerAggregatedData() }
+            val rawCurr = bal.currencyCode.ifBlank { normDefaultCurrency }
+            val curr = CurrencyConfig.getBySymbol(rawCurr)?.symbol ?: rawCurr
+            val amount = bal.netAmount.setScale(4, RoundingMode.HALF_EVEN)
+            agg.netDebtBDMap[curr] = (agg.netDebtBDMap[curr] ?: BigDecimal.ZERO).add(amount)
+            if (bal.lastTimestamp > agg.maxTimestamp) {
+                agg.maxTimestamp = bal.lastTimestamp
+            }
+            agg.totalTxs += bal.txCount
+        }
 
         var globalTotalOwedByThem = BigDecimal.ZERO
         var globalTotalOwedToThem = BigDecimal.ZERO
 
         val customerStates = ArrayList<CustomerUiState>(customers.size)
         for (customer in customers) {
-            val custBalances = balancesByCustomer[customer.id] ?: emptyList()
-            
-            // Reconstruct netDebtBigDecimalMap from DB aggregations
-            val netDebtBDMap = mutableMapOf<String, BigDecimal>()
-            var maxTimestamp = customer.createdAt
-            var totalTxs = 0
-            
-            for (bal in custBalances) {
-                // If it's the default currency, or no exchange rates given, use netEquivalentAmount or netAmount
-                // The actual logic is we use the aggregated netAmount.
-                // Wait, netAmount is per currency.
-                val rawCurr = bal.currencyCode.ifBlank { normDefaultCurrency }
-                val curr = CurrencyConfig.getBySymbol(rawCurr)?.symbol ?: rawCurr
-                val amount = bal.netAmount.setScale(4, RoundingMode.HALF_EVEN)
-                netDebtBDMap[curr] = (netDebtBDMap[curr] ?: BigDecimal.ZERO).add(amount)
-                
-                if (bal.lastTimestamp > maxTimestamp) {
-                    maxTimestamp = bal.lastTimestamp
-                }
-                totalTxs += bal.txCount
-            }
+            val agg = aggBalancesMap[customer.id]
+            val netDebtBDMap = agg?.netDebtBDMap ?: emptyMap()
+            val maxTimestamp = if (agg != null && agg.maxTimestamp > customer.createdAt) agg.maxTimestamp else customer.createdAt
+            val totalTxs = agg?.totalTxs ?: 0
 
             val defaultCurrencyTotal = netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO
             val defaultCurrencyTotalAbs = defaultCurrencyTotal.abs()

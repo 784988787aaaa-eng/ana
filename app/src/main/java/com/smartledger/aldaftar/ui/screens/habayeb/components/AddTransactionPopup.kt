@@ -223,8 +223,13 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
+                // Provide instant feedback and dismiss immediately to eliminate any delay
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                onTransactionSaved()
+                onDismiss()
+
                 scope.launch {
-                    val saved = viewModel.addHabayebTransaction(
+                    viewModel.addHabayebTransaction(
                         customerId = customer.id,
                         type = finalActionType,
                         amount = saveAmountBd,
@@ -239,13 +244,6 @@ fun AddTransactionPopup(
                         equivalentAmount = finalEquivalentAmountBd,
                         baseCurrencySymbol = rateBaseCurrency
                     )
-                    if (saved) {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        onTransactionSaved()
-                        onDismiss()
-                    } else {
-                        isSaving = false
-                    }
                 }
             }
         }

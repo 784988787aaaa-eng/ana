@@ -156,11 +156,11 @@ class HabayebFinanceViewModel(
         habayebRepository.getTransactionsForCustomerPaged(customerId, limit, offset)
 
     fun resetFiltersToDefault(resetCategory: Boolean = true) {
-        searchQuery.value = ""
-        selectedFilterTab.value = 0
-        financialSortMode.value = 0
-        historicalSortMode.value = 1
-        if (resetCategory) {
+        if (searchQuery.value.isNotEmpty()) searchQuery.value = ""
+        if (selectedFilterTab.value != 0) selectedFilterTab.value = 0
+        if (financialSortMode.value != 0) financialSortMode.value = 0
+        if (historicalSortMode.value != 1) historicalSortMode.value = 1
+        if (resetCategory && selectedCategoryFilter.value != null) {
             selectedCategoryFilter.value = null
         }
     }
@@ -263,14 +263,6 @@ class HabayebFinanceViewModel(
         HabayebFilterParameters(g1.query, g1.tab, g1.finSort, g1.histSort, g2.hiddenIds, g2.selectedCat, g2.pinnedIds)
     }
 
-    private val filteredResultFlow: Flow<FilteredResult> = combine(
-        customersUiState,
-        filterParametersFlow,
-        categoryUseCase.categoryMapFlow
-    ) { ui, params, categoryMap ->
-        HabayebFinancialCalculator.calculateFilteredResult(ui, params, categoryMap)
-    }.flowOn(Dispatchers.Default)
-
     private data class CategoryUiData(
         val customCategories: List<CustomCategory>,
         val orderedCategories: List<String>,
@@ -287,11 +279,16 @@ class HabayebFinanceViewModel(
 
     val uiState: StateFlow<HabayebUiState> = combine(
         customersUiState,
-        filteredResultFlow,
-        categoryUiDataFlow,
         filterParametersFlow,
+        categoryUseCase.categoryMapFlow,
+        categoryUiDataFlow,
         selectedCustomerIdsState
-    ) { currentCustomersUi, filteredRes, categoryData, filterParams, selectedIds ->
+    ) { currentCustomersUi, filterParams, categoryMap, categoryData, selectedIds ->
+        val filteredRes = HabayebFinancialCalculator.calculateFilteredResult(
+            currentCustomersUi,
+            filterParams,
+            categoryMap
+        )
         HabayebUiState(
             customers = currentCustomersUi.customers,
             filteredCustomers = filteredRes.filteredCustomers,
@@ -351,13 +348,12 @@ class HabayebFinanceViewModel(
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
         exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
     ): Boolean = withContext(Dispatchers.IO) {
-        resetFiltersToDefault(resetCategory = true)
-
         val created = transactionUseCase.saveHabayebCustomer(
             customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
             foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
         )
         if (!created) return@withContext false
+        resetFiltersToDefault(resetCategory = false)
         VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customer.id)
         true
@@ -370,15 +366,14 @@ class HabayebFinanceViewModel(
         exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO,
         baseCurrencySymbol: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
-        resetFiltersToDefault(resetCategory = true)
-
         val historicalOrCurrentBase = baseCurrencySymbol?.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: settingsState.value.currencySymbol
         val isEditing = editingTxId != null
         if (isEditing) {
-            transactionUseCase.addHabayebTransaction(
+            val updated = transactionUseCase.addHabayebTransaction(
                 customerId, type, amount, desc, timestamp, editingTxId, linkedMainTxId, isForeign, currencyCode,
                 foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, historicalOrCurrentBase
             )
+            if (!updated) return@withContext false
             VibrationHelper.triggerSuccessVibration(getApplication())
             emitScrollToAccount(customerId)
             return@withContext true
@@ -388,6 +383,7 @@ class HabayebFinanceViewModel(
             foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, historicalOrCurrentBase
         )
         if (!created) return@withContext false
+        resetFiltersToDefault(resetCategory = false)
         VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customerId)
         true

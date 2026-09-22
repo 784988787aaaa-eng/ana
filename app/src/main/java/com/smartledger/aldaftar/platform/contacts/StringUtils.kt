@@ -15,23 +15,26 @@ import java.util.Locale
 object StringUtils {
 
     private val PHONE_CLEANUP_REGEX = Regex("[^0-9+]")
+    private val normalizedCache = java.util.concurrent.ConcurrentHashMap<String, String>(256)
 
     @JvmStatic
     fun normalizeArabic(text: String): String {
         if (text.isEmpty()) return text
-        val trimmed = text.trim()
-        val len = trimmed.length
-        val sb = StringBuilder(len)
-        for (i in 0 until len) {
-            when (val char = trimmed[i]) {
-                '\u0622', '\u0623', '\u0625', '\u0671' -> sb.append('ا')
-                '\u0629' -> sb.append('ه')
-                '\u0649' -> sb.append('ي')
-                '\u064B', '\u064C', '\u064D', '\u064E', '\u064F', '\u0650', '\u0651', '\u0652', '\u0653', '\u0654', '\u0655', '\u0670' -> {}
-                else -> sb.append(char)
+        return normalizedCache.getOrPut(text) {
+            val trimmed = text.trim()
+            val len = trimmed.length
+            val sb = StringBuilder(len)
+            for (i in 0 until len) {
+                when (val char = trimmed[i]) {
+                    '\u0622', '\u0623', '\u0625', '\u0671' -> sb.append('ا')
+                    '\u0629' -> sb.append('ه')
+                    '\u0649' -> sb.append('ي')
+                    '\u064B', '\u064C', '\u064D', '\u064E', '\u064F', '\u0650', '\u0651', '\u0652', '\u0653', '\u0654', '\u0655', '\u0670' -> {}
+                    else -> sb.append(char)
+                }
             }
+            sb.toString()
         }
-        return sb.toString()
     }
 
     @JvmStatic

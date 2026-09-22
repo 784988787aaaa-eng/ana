@@ -108,13 +108,11 @@ fun BusinessProfileInfoSection(
                         textAlign = TextAlign.Start
                     )
                 },
-                singleLine = false,
-                minLines = 2,
-                maxLines = 3,
+                singleLine = true,
+                maxLines = 1,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 72.dp)
                     .testTag("biz_desc_input"),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = activeThemeColor,
