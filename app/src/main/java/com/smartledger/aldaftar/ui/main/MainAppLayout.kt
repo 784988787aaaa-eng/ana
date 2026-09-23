@@ -22,7 +22,10 @@ import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
+import com.smartledger.aldaftar.ui.viewmodel.AdminLicenseViewModel
 import com.smartledger.aldaftar.ui.screens.license.LicenseDialog
+import com.smartledger.aldaftar.ui.screens.admin.AdminAuthDialog
+import com.smartledger.aldaftar.ui.screens.admin.AdminLicenseManagerDialog
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +38,8 @@ fun MainAppLayout(
     businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
     licenseViewModel: LicenseViewModel,
     settings: AppSettings,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    adminLicenseViewModel: AdminLicenseViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
     val versionName = remember(context) {
@@ -50,6 +54,8 @@ fun MainAppLayout(
     var showBusinessProfileDialog by remember { mutableStateOf(false) }
     var showSecurityDialog by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
+    var showAdminAuthDialog by remember { mutableStateOf(false) }
+    var showAdminLicenseManagerDialog by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
     var hasInitializedStartScreen by remember { mutableStateOf(false) }
 
@@ -166,6 +172,14 @@ fun MainAppLayout(
                 onPrivacyPolicyClick = {
                     scope.launch { drawerState.close() }
                     showPrivacyPolicyDialog = true
+                },
+                onAdminLicensesClick = {
+                    scope.launch { drawerState.close() }
+                    if (adminLicenseViewModel.isAuthorized.value) {
+                        showAdminLicenseManagerDialog = true
+                    } else {
+                        showAdminAuthDialog = true
+                    }
                 }
             )
         }
@@ -310,6 +324,24 @@ fun MainAppLayout(
     if (showPrivacyPolicyDialog) {
         com.smartledger.aldaftar.ui.components.PrivacyPolicyDialog(
             onDismiss = { showPrivacyPolicyDialog = false }
+        )
+    }
+
+    if (showAdminAuthDialog) {
+        AdminAuthDialog(
+            viewModel = adminLicenseViewModel,
+            onDismiss = { showAdminAuthDialog = false },
+            onSuccess = {
+                showAdminAuthDialog = false
+                showAdminLicenseManagerDialog = true
+            }
+        )
+    }
+
+    if (showAdminLicenseManagerDialog) {
+        AdminLicenseManagerDialog(
+            viewModel = adminLicenseViewModel,
+            onDismiss = { showAdminLicenseManagerDialog = false }
         )
     }
 }

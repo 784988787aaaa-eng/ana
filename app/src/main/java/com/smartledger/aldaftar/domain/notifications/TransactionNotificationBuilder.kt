@@ -131,7 +131,7 @@ object TransactionNotificationBuilder {
 
         // Line 1: Header
         if (isRichText) {
-            lines.add("$headerEmoji **$headerTitle**")
+            lines.add("$headerEmoji *$headerTitle*")
         } else {
             lines.add("$headerEmoji $headerTitle")
         }
@@ -146,8 +146,8 @@ object TransactionNotificationBuilder {
             val rateText = "$sourceUnit = $rateFormatted $targetCurrency"
 
             if (isRichText) {
-                lines.add("💱 **سعر الصرف:** $rateText")
-                lines.add("💰 **ما يعادل:** ${formatCurrencyAmount(tx.equivalentAmount, targetCurrency)}")
+                lines.add("💱 *سعر الصرف:* $rateText")
+                lines.add("💰 *ما يعادل:* ${formatCurrencyAmount(tx.equivalentAmount, targetCurrency)}")
             } else {
                 lines.add("💱 سعر الصرف: $rateText")
                 lines.add("💰 ما يعادل: ${formatCurrencyAmount(tx.equivalentAmount, targetCurrency)}")
@@ -235,21 +235,21 @@ object TransactionNotificationBuilder {
         return when {
             isZero -> {
                 if (isRichText) {
-                    "◀ **الرصيد: $formattedAmount**"
+                    "◀ *الرصيد:* $formattedAmount"
                 } else {
                     "◀ الرصيد: $formattedAmount"
                 }
             }
             isDebtAgainst -> {
                 if (isRichText) {
-                    "◀ **$prefixWord عليكم:** $formattedAmount"
+                    "◀ *$prefixWord عليكم:* $formattedAmount"
                 } else {
                     "◀ $prefixWord عليكم: $formattedAmount"
                 }
             }
             else -> { // isDebtFor (balance is in customer's favor)
                 if (isRichText) {
-                    "◀ **$prefixWord لكم:** $formattedAmount"
+                    "◀ *$prefixWord لكم:* $formattedAmount"
                 } else {
                     "◀ $prefixWord لكم: $formattedAmount"
                 }

@@ -39,9 +39,9 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🟢 **سداد لكم**
+            🟢 *سداد لكم*
             💰 10,000 ر.ي
-            ◀ **المتبقي لكم:** 15,000 ر.ي
+            ◀ *المتبقي لكم:* 15,000 ر.ي
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -66,10 +66,10 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🟢 **استلام منكم**
+            🟢 *استلام منكم*
             💰 1,000 ر.ي
             📝 دفعة نقدية
-            ◀ **المتبقي عليكم:** 500 ر.ي
+            ◀ *المتبقي عليكم:* 500 ر.ي
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -95,10 +95,10 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🔴 **دين عليكم**
+            🔴 *دين عليكم*
             💰 1,500 ر.س
             📝 قيمة المشتريات
-            ◀ **الإجمالي عليكم:** 4,500 ر.س
+            ◀ *الإجمالي عليكم:* 4,500 ر.س
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -124,9 +124,9 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🔴 **دين لكم**
+            🔴 *دين لكم*
             💰 $500
-            ◀ **الإجمالي لكم:** $1,200
+            ◀ *الإجمالي لكم:* $1,200
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -150,9 +150,9 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🟢 **استلام منكم**
+            🟢 *استلام منكم*
             💰 5,000 ر.ي
-            ◀ **الرصيد: 0 ر.ي**
+            ◀ *الرصيد:* 0 ر.ي
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -178,9 +178,9 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🟢 **سداد لكم**
+            🟢 *سداد لكم*
             💰 10,000 ر.ي
-            ◀ **المتبقي عليكم:** 5,000 ر.ي
+            ◀ *المتبقي عليكم:* 5,000 ر.ي
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -211,11 +211,11 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🟢 **سداد لكم**
+            🟢 *سداد لكم*
             💰 $100
-            💱 **سعر الصرف:** 1$ = 550 ر.ي
-            💰 **ما يعادل:** 55,000 ر.ي
-            ◀ **المتبقي لكم:** 55,000 ر.ي
+            💱 *سعر الصرف:* 1$ = 550 ر.ي
+            💰 *ما يعادل:* 55,000 ر.ي
+            ◀ *المتبقي لكم:* 55,000 ر.ي
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -246,12 +246,12 @@ class TransactionNotificationBuilderTest {
         )
 
         val expected = """
-            🔴 **دين عليكم**
+            🔴 *دين عليكم*
             💰 1,000 ر.س
-            💱 **سعر الصرف:** 1 ر.س = 140 ر.ي
-            💰 **ما يعادل:** 140,000 ر.ي
+            💱 *سعر الصرف:* 1 ر.س = 140 ر.ي
+            💰 *ما يعادل:* 140,000 ر.ي
             📝 قيمة المشتريات
-            ◀ **الإجمالي عليكم:** 140,000 ر.ي
+            ◀ *الإجمالي عليكم:* 140,000 ر.ي
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -282,7 +282,7 @@ class TransactionNotificationBuilderTest {
         """.trimIndent()
 
         assertEquals(expected, msg)
-        assertFalse(msg.contains("**"))
+        assertFalse(msg.contains("*"))
     }
 
     @Test

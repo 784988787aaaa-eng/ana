@@ -49,6 +49,7 @@ fun SmartLedgerApp(
     val backupSyncViewModel: BackupSyncViewModel = viewModel(factory = viewModelFactory)
     val businessProfileViewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel = viewModel(factory = viewModelFactory)
     val licenseViewModel: LicenseViewModel = viewModel(factory = viewModelFactory)
+    val adminLicenseViewModel: com.smartledger.aldaftar.ui.viewmodel.AdminLicenseViewModel = viewModel(factory = viewModelFactory)
 
     val settings by financeViewModel.settingsState.collectAsStateWithLifecycle()
     val settingsLoaded by financeViewModel.isSettingsLoaded.collectAsStateWithLifecycle()
@@ -160,6 +161,7 @@ fun SmartLedgerApp(
                     backupSyncViewModel = backupSyncViewModel,
                     businessProfileViewModel = businessProfileViewModel,
                     licenseViewModel = licenseViewModel,
+                    adminLicenseViewModel = adminLicenseViewModel,
                     settings = settings,
                     onExit = onExit
                 )
