@@ -6,6 +6,7 @@ import android.net.Uri
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.notifications.TransactionNotificationBuilder
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 
 object CustomerShareHelper {
@@ -63,91 +64,13 @@ object CustomerShareHelper {
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ): String {
-        val header = when (tx.type) {
-            "OWED_BY_THEM" -> context.getString(R.string.msg_header_debt_against)
-            "PAYMENT_BY_THEM" -> context.getString(R.string.msg_header_payment_against)
-            "OWED_TO_THEM" -> context.getString(R.string.msg_header_debt_for)
-            "PAYMENT_TO_THEM" -> context.getString(R.string.msg_header_payment_for)
-            else -> context.getString(R.string.msg_header_debt_against)
-        }
-
-        val bullet = context.getString(R.string.msg_bullet)
-
-        val isExchangeTx = tx.isForeign && tx.isRateCalculated
-        val amountLine = if (isExchangeTx) {
-            val foreignSymbol = if (tx.currencyCode != "DEFAULT" && tx.currencyCode.isNotBlank()) tx.currencyCode else ""
-            val foreignAmtFormatted = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(tx.foreignAmount)
-            val arrow = context.getString(R.string.msg_exchange_arrow)
-            val equivAmtFormatted = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(tx.equivalentAmount)
-            val ratePrefix = context.getString(R.string.msg_rate_prefix)
-            val rateFormatted = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatRate(tx.exchangeRate)
-            "$bullet $foreignAmtFormatted $foreignSymbol $arrow $equivAmtFormatted $currencySymbol $ratePrefix $rateFormatted"
-        } else if (tx.isForeign) {
-            val foreignSymbol = if (tx.currencyCode != "DEFAULT" && tx.currencyCode.isNotBlank()) tx.currencyCode else ""
-            val foreignAmtFormatted = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(
-                if (tx.foreignAmount.compareTo(java.math.BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
-            )
-            "$bullet $foreignAmtFormatted $foreignSymbol"
-        } else {
-            val amtFormatted = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(tx.amount)
-            "$bullet $amtFormatted $currencySymbol"
-        }
-
-        val lines = mutableListOf<String>()
-        lines.add(header)
-        lines.add(amountLine)
-
-        val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
-        if (cleanDetails.isNotBlank()) {
-            val statementPrefix = context.getString(R.string.msg_statement_prefix)
-            lines.add("$statementPrefix $cleanDetails")
-        }
-
-        if (allCustomerTxs.isNotEmpty()) {
-            val foreignMap = mutableMapOf<String, java.math.BigDecimal>()
-            for (t in allCustomerTxs) {
-                val (tCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(t, currencySymbol)
-                val normCurrency = CurrencyConfig.getBySymbol(tCurrency)?.symbol ?: tCurrency
-                val normDefault = CurrencyConfig.getBySymbol(currencySymbol)?.symbol ?: currencySymbol
-
-                if (normCurrency != normDefault) {
-                    val safeBd = bdAmount.setScale(4, java.math.RoundingMode.HALF_EVEN)
-                    val currVal = foreignMap[normCurrency] ?: java.math.BigDecimal.ZERO
-                    when (t.type) {
-                        "OWED_BY_THEM" -> foreignMap[normCurrency] = currVal.add(safeBd)
-                        "PAYMENT_BY_THEM" -> foreignMap[normCurrency] = currVal.subtract(safeBd)
-                        "OWED_TO_THEM" -> foreignMap[normCurrency] = currVal.subtract(safeBd)
-                        "PAYMENT_TO_THEM" -> foreignMap[normCurrency] = currVal.add(safeBd)
-                    }
-                }
-            }
-
-            for ((fSymbol, fNetBd) in foreignMap) {
-                if (fNetBd.compareTo(java.math.BigDecimal.ZERO) != 0) {
-                    val foreignTotalPrefix = if (fNetBd.compareTo(java.math.BigDecimal.ZERO) > 0) {
-                        context.getString(R.string.msg_foreign_total_against)
-                    } else if (fNetBd.compareTo(java.math.BigDecimal.ZERO) < 0) {
-                        context.getString(R.string.msg_foreign_total_for)
-                    } else {
-                        context.getString(R.string.msg_foreign_total_balanced)
-                    }
-                    val formattedForeignNet = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(fNetBd.abs())
-                    lines.add("$foreignTotalPrefix $formattedForeignNet $fSymbol")
-                }
-            }
-        }
-
-        val totalPrefix = if (netDebt.compareTo(java.math.BigDecimal.ZERO) > 0) {
-            context.getString(R.string.msg_total_against)
-        } else if (netDebt.compareTo(java.math.BigDecimal.ZERO) < 0) {
-            context.getString(R.string.msg_total_for)
-        } else {
-            context.getString(R.string.msg_total_balanced)
-        }
-        val formattedNetDebt = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(netDebt.abs())
-        lines.add("$totalPrefix $formattedNetDebt $currencySymbol")
-
-        return lines.joinToString("\n")
+        return TransactionNotificationBuilder.buildWhatsAppNotification(
+            tx = tx,
+            customer = customer,
+            netDebt = netDebt,
+            currencySymbol = currencySymbol,
+            allCustomerTxs = allCustomerTxs
+        )
     }
 
     fun buildStatementShareBody(
@@ -243,7 +166,13 @@ object CustomerShareHelper {
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ) {
-        val body = buildSingleTxShareBody(context, tx, customer, netDebt, currencySymbol, allCustomerTxs)
+        val body = TransactionNotificationBuilder.buildSmsNotification(
+            tx = tx,
+            customer = customer,
+            netDebt = netDebt,
+            currencySymbol = currencySymbol,
+            allCustomerTxs = allCustomerTxs
+        )
         sendSmsReliably(context, customer.phone, body, R.string.habayeb_tx_send_notice)
     }
 
@@ -255,7 +184,13 @@ object CustomerShareHelper {
         currencySymbol: String,
         allCustomerTxs: List<HabayebTransaction> = emptyList()
     ) {
-        val body = buildSingleTxShareBody(context, tx, customer, netDebt, currencySymbol, allCustomerTxs)
+        val body = TransactionNotificationBuilder.buildWhatsAppNotification(
+            tx = tx,
+            customer = customer,
+            netDebt = netDebt,
+            currencySymbol = currencySymbol,
+            allCustomerTxs = allCustomerTxs
+        )
         try {
             val waUrl = "https://wa.me/${customer.phone.replace("+", "").replace(" ", "")}?text=${Uri.encode(body)}"
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(waUrl))

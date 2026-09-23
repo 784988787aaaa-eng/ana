@@ -60,7 +60,6 @@ fun AppNavigationDrawer(
     onCurrencySettingsClick: () -> Unit,
     onSecurityClick: () -> Unit,
     onPrivacyPolicyClick: () -> Unit = {},
-    onAdminLicensesClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -220,13 +219,6 @@ fun AppNavigationDrawer(
                 icon = Icons.Default.Refresh,
                 label = stringResource(id = R.string.drawer_backup_label1),
                 onClick = onBackupClick
-            )
-
-            DrawerItem(
-                selected = false,
-                icon = Icons.Default.AdminPanelSettings,
-                label = stringResource(id = R.string.drawer_admin_licenses_label),
-                onClick = onAdminLicensesClick
             )
         }
 
