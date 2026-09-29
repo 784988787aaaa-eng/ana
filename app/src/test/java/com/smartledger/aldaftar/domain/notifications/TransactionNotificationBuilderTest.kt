@@ -152,7 +152,7 @@ class TransactionNotificationBuilderTest {
         val expected = """
             🟢 *استلام منكم*
             💰 5,000 ر.ي
-            ◀ *الرصيد:* 0 ر.ي
+            ◀ *الرصيد: 0 ر.ي*
         """.trimIndent()
 
         assertEquals(expected, msg)
@@ -304,5 +304,38 @@ class TransactionNotificationBuilderTest {
 
         assertFalse(msg.contains("📝"))
         assertFalse(msg.contains("\n\n"))
+    }
+
+    @Test
+    fun testCase11_UserExampleExactMatch() {
+        // Verification of the user request's exact example:
+        // 🟢 استلام منكم
+        // 💰 700 ر.ي
+        // 📝 استلام جوالي
+        // ◀ المتبقي عليكم: 7,165 ر.ي
+        val tx = HabayebTransaction(
+            id = "tx_user",
+            customerId = "c1",
+            type = TransactionType.PAYMENT_BY_THEM.value,
+            amount = BigDecimal("700"),
+            timestamp = 1000L,
+            description = "استلام جوالي"
+        )
+        val msg = TransactionNotificationBuilder.buildWhatsAppNotification(
+            tx = tx,
+            customer = sampleCustomer,
+            netDebt = BigDecimal("7165"),
+            currencySymbol = "ر.ي"
+        )
+
+        val expected = """
+            🟢 *استلام منكم*
+            💰 700 ر.ي
+            📝 استلام جوالي
+            ◀ *المتبقي عليكم:* 7,165 ر.ي
+        """.trimIndent()
+
+        assertEquals(expected, msg)
+        assertFalse(msg.contains("**"))
     }
 }

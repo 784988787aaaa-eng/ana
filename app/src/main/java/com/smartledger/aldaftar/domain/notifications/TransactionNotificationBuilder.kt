@@ -235,7 +235,7 @@ object TransactionNotificationBuilder {
         return when {
             isZero -> {
                 if (isRichText) {
-                    "◀ *الرصيد:* $formattedAmount"
+                    "◀ *الرصيد: $formattedAmount*"
                 } else {
                     "◀ الرصيد: $formattedAmount"
                 }
