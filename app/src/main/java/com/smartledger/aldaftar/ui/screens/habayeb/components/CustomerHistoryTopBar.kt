@@ -1,0 +1,304 @@
+package com.smartledger.aldaftar.ui.screens.habayeb.components
+
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+
+@Composable
+fun CustomerHistoryTopBar(
+    customerName: String,
+    customerPhone: String,
+    isSearchActive: Boolean,
+    txSearchQuery: String,
+    activeThemeColor: Color,
+    isPdfExporting: Boolean,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchClose: () -> Unit,
+    onSearchOpen: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onFilterClick: () -> Unit,
+    hasActiveFilters: Boolean = false,
+    onShareClick: () -> Unit,
+    onDismiss: () -> Unit,
+    isPhoneAvailable: Boolean = false,
+    onPdfExportClick: () -> Unit = {},
+    onCsvExportClick: () -> Unit = {},
+    onWhatsAppClick: () -> Unit = {},
+    onSmsClick: () -> Unit = {}
+) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    RequestFocusAndShowKeyboard(focusRequester = focusRequester, enabled = isSearchActive, key = isSearchActive, autoShow = true)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .height(56.dp)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(id = R.string.habayeb_back),
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        if (isSearchActive) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = stringResource(id = R.string.habayeb_search_tx_hint),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                BasicTextField(
+                    value = txSearchQuery,
+                    onValueChange = onSearchQueryChange,
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    cursorBrush = SolidColor(activeThemeColor),
+                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        keyboardController?.hide()
+                    }),
+                    decorationBox = { innerTextField ->
+                        if (txSearchQuery.isEmpty()) {
+                            Text(
+                                text = stringResource(id = R.string.habayeb_search_tx_hint),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontSize = 13.sp
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+                if (txSearchQuery.isNotEmpty()) {
+                    IconButton(
+                        onClick = { onSearchQueryChange("") },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(id = R.string.habayeb_clear_search),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+            IconButton(
+                onClick = onSearchClose,
+                modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(id = R.string.habayeb_cancel_search),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onEditClick() }
+                            .padding(vertical = 2.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = if (customerPhone.isNotBlank()) "$customerName : $customerPhone" else customerName,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(id = R.string.habayeb_edit_name_desc),
+                            tint = activeThemeColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                IconButton(
+                    onClick = onFilterClick,
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = stringResource(id = R.string.habayeb_smart_filter),
+                            tint = if (hasActiveFilters) activeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        if (hasActiveFilters) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .align(Alignment.TopEnd)
+                                    .background(activeThemeColor, CircleShape)
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = onSearchOpen,
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(id = R.string.habayeb_search_tx_hint),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = onShareClick,
+                    modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                ) {
+                    if (isPdfExporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = activeThemeColor,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = stringResource(id = R.string.habayeb_share_options),
+                            tint = activeThemeColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Box {
+                    IconButton(
+                        onClick = { isMenuExpanded = true },
+                        modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(id = R.string.habayeb_more_options),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false },
+                        shape = RoundedCornerShape(12.dp),
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.habayeb_search_tx_hint)) },
+                            onClick = {
+                                isMenuExpanded = false
+                                onSearchOpen()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.context_menu_delete_customer)) },
+                            onClick = {
+                                isMenuExpanded = false
+                                onDeleteClick()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,355 @@
+package com.smartledger.aldaftar.ui.screens.habayeb.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DateTimeArabicHelper
+import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomerHistoryFilterSheet(
+    dateFilterMode: Int,
+    onDateFilterModeChange: (Int) -> Unit,
+    customStartDate: Long?,
+    onCustomStartDateChange: (Long?) -> Unit,
+    customEndDate: Long?,
+    onCustomEndDateChange: (Long?) -> Unit,
+    typeFilterMode: Int,
+    onTypeFilterModeChange: (Int) -> Unit,
+    activeThemeColor: Color,
+    onDismissRequest: () -> Unit,
+    onResetFilters: () -> Unit = {}
+) {
+    var showRangePicker by remember { mutableStateOf(false) }
+    var selectedRangeTab by remember { mutableStateOf(RangeTab.START) }
+
+    val strAllTime = stringResource(id = R.string.habayeb_filter_all_time)
+    val strToday = stringResource(id = R.string.habayeb_filter_today)
+    val strMonth = stringResource(id = R.string.habayeb_filter_month)
+    val strCustom = stringResource(id = R.string.habayeb_filter_custom)
+
+    val dateModes = remember(strAllTime, strToday, strMonth, strCustom) {
+        listOf(
+            0 to strAllTime,
+            1 to strToday,
+            2 to strMonth,
+            3 to strCustom
+        )
+    }
+
+    val strAll = stringResource(id = R.string.habayeb_filter_all)
+    val strDebts = stringResource(id = R.string.habayeb_filter_type_debts)
+    val strPayments = stringResource(id = R.string.habayeb_filter_type_payments)
+
+    val typeModes = remember(strAll, strDebts, strPayments) {
+        listOf(
+            0 to strAll,
+            1 to strDebts,
+            2 to strPayments
+        )
+    }
+
+    val defaultFromLabel = stringResource(id = R.string.datetime_picker_from_date)
+    val defaultToLabel = stringResource(id = R.string.datetime_picker_to_date)
+    val (startStr, endStr) = remember(customStartDate, customEndDate, defaultFromLabel, defaultToLabel) {
+        val start = customStartDate?.let {
+            val cal = Calendar.getInstance().apply { timeInMillis = it }
+            DateTimeArabicHelper.formatArabicDateFull(cal)
+        } ?: defaultFromLabel
+        val end = customEndDate?.let {
+            val cal = Calendar.getInstance().apply { timeInMillis = it }
+            DateTimeArabicHelper.formatArabicDateFull(cal)
+        } ?: defaultToLabel
+        Pair(start, end)
+    }
+
+    val filterDurationLabel = remember(customStartDate, customEndDate) {
+        if (customStartDate != null && customEndDate != null) {
+            val s = Calendar.getInstance().apply { timeInMillis = customStartDate }
+            val e = Calendar.getInstance().apply { timeInMillis = customEndDate }
+            val days = DateTimeArabicHelper.calculateDaysBetween(s, e)
+            DateTimeArabicHelper.formatDaysCountArabic(days)
+        } else null
+    }
+
+    if (showRangePicker) {
+        val now = System.currentTimeMillis()
+        val initStart = customStartDate ?: now
+        val initEnd = customEndDate ?: (initStart + 30L * 24 * 60 * 60 * 1000)
+        CustomDateRangePickerDialog(
+            initialStartMillis = initStart,
+            initialEndMillis = initEnd,
+            includeTime = false,
+            initialSelectedTab = selectedRangeTab,
+            onDismiss = { showRangePicker = false },
+            onRangeSelected = { start, end, _, _ ->
+                onCustomStartDateChange(start)
+                onCustomEndDateChange(end)
+                onDateFilterModeChange(3)
+                showRangePicker = false
+            }
+        )
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = MizanDialogTokens.sheetTopRadius, topEnd = MizanDialogTokens.sheetTopRadius),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.habayeb_smart_filter),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
+
+            Text(
+                text = stringResource(id = R.string.habayeb_filter_date),
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                dateModes.forEach { (mode, label) ->
+                    val isSelected = dateFilterMode == mode
+                    val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minHeight = 36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(chipBg)
+                            .clickable {
+                                onDateFilterModeChange(mode)
+                                if (mode == 3 && customStartDate == null) {
+                                    selectedRangeTab = RangeTab.START
+                                    showRangePicker = true
+                                }
+                            }
+                            .padding(vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)
+                    }
+                }
+            }
+
+            if (dateFilterMode == 3) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    selectedRangeTab = RangeTab.START
+                                    showRangePicker = true
+                                },
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (customStartDate != null) activeThemeColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(15.dp))
+                                Text(
+                                    text = startStr,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (customStartDate != null) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (customStartDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = stringResource(id = R.string.habayeb_to_text),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    selectedRangeTab = RangeTab.END
+                                    showRangePicker = true
+                                },
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (customEndDate != null) activeThemeColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(Icons.Default.Event, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(15.dp))
+                                Text(
+                                    text = endStr,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (customEndDate != null) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (customEndDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+
+                    if (filterDurationLabel != null) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = activeThemeColor.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.25f)),
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Event,
+                                    contentDescription = null,
+                                    tint = activeThemeColor,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "المدة المحددة: $filterDurationLabel",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = activeThemeColor
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Text(
+                text = stringResource(id = R.string.habayeb_filter_by_type),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                typeModes.forEach { (mode, label) ->
+                    val isSelected = typeFilterMode == mode
+                    val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
+                    val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(chipBg)
+                            .clickable { onTypeFilterModeChange(mode) }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onResetFilters,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(MizanDialogTokens.buttonHeight),
+                    shape = MizanDialogTokens.buttonShape
+                ) {
+                    Text(
+                        stringResource(id = R.string.habayeb_filter_reset),
+                        fontSize = 13.sp,
+                        maxLines = 1
+                    )
+                }
+                Button(
+                    onClick = onDismissRequest,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(MizanDialogTokens.buttonHeight),
+                    colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
+                    shape = MizanDialogTokens.buttonShape
+                ) {
+                    Text(
+                        stringResource(id = R.string.habayeb_filter_apply),
+                        fontSize = 13.sp,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}

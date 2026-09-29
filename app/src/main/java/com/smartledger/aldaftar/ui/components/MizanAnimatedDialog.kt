@@ -1,0 +1,119 @@
+package com.smartledger.aldaftar.ui.components
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/**
+ * Common animated dialog wrapper implementing Mizan Motion Tokens:
+ * Enter: 120ms (Fade In + Scale 0.92 -> 1.0)
+ * Exit: 90ms (Fade Out + Subtle Scale 1.0 -> 0.98)
+ * Ensures exit animation completes gracefully before dismissing composition.
+ */
+@Composable
+fun MizanAnimatedDialog(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    properties: DialogProperties = DialogProperties(
+        usePlatformDefaultWidth = false,
+        decorFitsSystemWindows = true
+    ),
+    content: @Composable (dismissWithAnimation: () -> Unit) -> Unit
+) {
+    var isVisible by remember { mutableStateOf(false) }
+    var isDismissing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val dismissWithAnimation: () -> Unit = {
+        hideKeyboardAndClearFocus(focusManager, keyboardController)
+        if (!isDismissing) {
+            isDismissing = true
+            isVisible = false
+            scope.launch {
+                delay(MizanDialogTokens.exitDuration.toLong())
+                onDismissRequest()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            hideKeyboardAndClearFocus(focusManager, keyboardController)
+        }
+    }
+
+    Dialog(
+        onDismissRequest = {
+            dismissWithAnimation()
+        },
+        properties = properties
+    ) {
+        // A Compose Dialog owns a separate Android Window. Configure it
+        // explicitly with SOFT_INPUT_ADJUST_RESIZE and SOFT_INPUT_STATE_UNSPECIFIED
+        // so IME resize is deterministic.
+        ConfigureDialogImeWindow()
+
+        BackHandler(enabled = true) {
+            dismissWithAnimation()
+        }
+
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn(
+                animationSpec = tween(
+                    durationMillis = MizanDialogTokens.enterDuration,
+                    easing = FastOutSlowInEasing
+                )
+            ) + scaleIn(
+                initialScale = MizanDialogTokens.enterScale,
+                animationSpec = tween(
+                    durationMillis = MizanDialogTokens.enterDuration,
+                    easing = FastOutSlowInEasing
+                )
+            ),
+            exit = fadeOut(
+                animationSpec = tween(
+                    durationMillis = MizanDialogTokens.exitDuration,
+                    easing = FastOutLinearInEasing
+                )
+            ) + scaleOut(
+                targetScale = MizanDialogTokens.exitScale,
+                animationSpec = tween(
+                    durationMillis = MizanDialogTokens.exitDuration,
+                    easing = FastOutLinearInEasing
+                )
+            ),
+            modifier = modifier
+        ) {
+            content(dismissWithAnimation)
+        }
+    }
+}

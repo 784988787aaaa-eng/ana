@@ -1,0 +1,107 @@
+name: Build Mizan Al Dar App
+
+on:
+  push:
+    branches:
+      - main
+      - surgical-ui-clipping-audit-2026-09-21
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      GRADLE_OPTS: >-
+        -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC"
+        -Dkotlin.compiler.execution.strategy=in-process
+        -Dorg.gradle.parallel=true
+        -Dorg.gradle.caching=true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          gradle-home-cache-cleanup: true
+
+      - name: Prepare public service configuration
+        env:
+          LICENSE_ENDPOINT: ${{ vars.LICENSE_ENDPOINT }}
+          ACCOUNT_PUBLIC_KEY: ${{ vars.ACCOUNT_LICENSE_PUBLIC_KEY }}
+          LOCAL_PUBLIC_KEY: ${{ vars.LOCAL_LICENSE_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets
+          printf '%s' "$LICENSE_ENDPOINT" > app/src/main/assets/license_endpoint.txt
+          printf '%s\\n' "$ACCOUNT_PUBLIC_KEY" > app/src/main/assets/license_account_public.pem
+          printf '%s\\n' "$LOCAL_PUBLIC_KEY" > app/src/main/assets/license_local_public.pem
+          test -s app/src/main/assets/license_endpoint.txt
+          test -s app/src/main/assets/license_account_public.pem
+          test -s app/src/main/assets/license_local_public.pem
+
+      - name: Verify Gradle Wrapper
+        run: |
+          set -euo pipefail
+          test -s ./gradlew
+          test -s gradle/wrapper/gradle-wrapper.jar
+          jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null
+          bash ./gradlew --version
+
+      - name: Setup Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          KEYSTORE_DEST: "app/aldaftar.keystore"
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          test -n "$STORE_PASSWORD"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_DEST"
+          test -s "$KEYSTORE_DEST"
+
+      - name: Build Release APK
+        env:
+          RELEASE_STORE_FILE: ${{ secrets.RELEASE_STORE_FILE || 'aldaftar.keystore' }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'aldaftar' }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew assembleRelease \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            --build-cache --stacktrace --parallel --max-workers=4 --no-daemon
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 7

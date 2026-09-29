@@ -1,0 +1,414 @@
+package com.smartledger.aldaftar.data.serialization
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.pdf.PdfDocument
+import android.text.Layout
+import android.util.Log
+import android.widget.Toast
+import androidx.core.content.FileProvider
+import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.data.local.entities.BusinessProfile
+import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
+import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.data.serialization.pdf.BusinessHeaderData
+import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
+import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
+import com.smartledger.aldaftar.data.serialization.pdf.PdfColors
+import com.smartledger.aldaftar.data.serialization.pdf.PdfDrawingUtils
+import com.smartledger.aldaftar.data.serialization.pdf.PdfIntentLauncher
+import com.smartledger.aldaftar.data.serialization.pdf.PdfPageRenderer
+import com.smartledger.aldaftar.data.serialization.pdf.PdfReportCalculator
+import com.smartledger.aldaftar.data.serialization.pdf.PdfReportLayoutSpec
+import com.smartledger.aldaftar.data.serialization.pdf.PdfRowRenderer
+import com.smartledger.aldaftar.ui.state.CustomerUiState
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.math.BigDecimal
+import java.util.Date
+
+object PdfReportGenerator {
+
+    private const val TAG = "PdfReportGenerator"
+    private const val MIME_TYPE_PDF = "application/pdf"
+
+    private fun generatePdfFileInternal(
+        context: Context,
+        customer: HabayebCustomer,
+        transactions: List<HabayebTransaction>,
+        businessProfile: BusinessProfile,
+        currencySymbol: String,
+        primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
+        exchangeRatesJson: String? = null
+    ): File? {
+        val summary = PdfReportCalculator.calculateSingleCustomerReport(transactions, currencySymbol, exchangeRatesJson)
+        val customerUiState = CustomerUiState(
+            id = customer.id.toString(),
+            name = customer.name,
+            phone = customer.phone,
+            originalCustomer = customer
+        )
+
+        var totalPages = 1
+        val headerData = BusinessProfileLoader.load(context, businessProfile)
+        val headerBottomYCalc = PdfPageRenderer.calculateHeaderBottomY(
+            headerData.displayedName, headerData.displayedDesc, headerData.phonesStr, headerData.hasLogo, headerData.logoH
+        )
+
+        var dryPageCount = 1
+        // Customer banner removed: table starts directly after statement title area.
+        val customerStatementStartY = headerBottomYCalc + 30f
+        PdfPageRenderer.drawCustomerStatementSheet(
+            canvas = null,
+            context = context,
+            customer = customerUiState,
+            summary = summary,
+            startY = customerStatementStartY,
+            primaryColorHex = primaryColorHex,
+            currencySymbol = currencySymbol,
+            isDryRun = true,
+            includeCustomerHeaderBanner = false,
+            onPageBreakNeeded = { _ ->
+                dryPageCount++
+                null
+            }
+        )
+        totalPages = dryPageCount
+
+        val pdfDocument = PdfDocument()
+        val pageWidth = 595
+        val pageHeight = 842
+
+        return try {
+            var currentPageNumber = 1
+            var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
+            var page = pdfDocument.startPage(pageInfo)
+            var canvas = page.canvas
+
+            val now = Date()
+            val headerBottomY = PdfPageRenderer.drawBusinessHeader(
+                canvas = canvas,
+                displayedName = headerData.displayedName,
+                displayedDesc = headerData.displayedDesc,
+                phonesStr = headerData.phonesStr,
+                hasLogo = headerData.hasLogo,
+                scaledLogo = headerData.scaledLogo,
+                logoW = headerData.logoW,
+                logoH = headerData.logoH,
+                docDateText = context.getString(R.string.pdf_doc_date, PdfPageRenderer.formatDayAr(now), PdfPageRenderer.formatDateEn(now)),
+                docTimeText = context.getString(R.string.pdf_doc_time, PdfPageRenderer.formatTimeAr(now))
+            )
+
+            val paintTitle = Paint().apply {
+                color = Color.parseColor(PdfColors.TEXT_DARK)
+                textSize = 17.5f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_statement_title, customer.name), 25f, headerBottomY + 2f, 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+
+            // Customer intro banner removed. Keep the financial table close to the title.
+            val customerStatementStartY = headerBottomY + 30f
+
+            PdfPageRenderer.drawCustomerStatementSheet(
+                canvas = canvas,
+                context = context,
+                customer = customerUiState,
+                summary = summary,
+                startY = customerStatementStartY,
+                primaryColorHex = primaryColorHex,
+                currencySymbol = currencySymbol,
+                isDryRun = false,
+                includeCustomerHeaderBanner = false,
+                onPageBreakNeeded = { newHeader ->
+                    PdfPageRenderer.drawFooter(canvas, currentPageNumber, totalPages, primaryColorHex, context)
+                    pdfDocument.finishPage(page)
+
+                    currentPageNumber++
+                    pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
+                    page = pdfDocument.startPage(pageInfo)
+                    canvas = page.canvas
+
+                    if (newHeader) {
+                        PdfPageRenderer.drawSubsequentPageHeader(canvas, customer.name, primaryColorHex, context)
+                        PdfPageRenderer.drawTableHeader(canvas, 32f, context, customer.initialType)
+                    }
+                    canvas
+                }
+            )
+
+            PdfPageRenderer.drawFooter(canvas, currentPageNumber, totalPages, primaryColorHex, context)
+            pdfDocument.finishPage(page)
+
+            val sanitizedName = customer.name.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+            val fileName = "habayeb_${sanitizedName}_${System.currentTimeMillis() % 100000}.pdf"
+            val file = File(context.cacheDir, fileName)
+            FileOutputStream(file).use { outputStream ->
+                pdfDocument.writeTo(outputStream)
+                outputStream.flush()
+            }
+            file
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error generating customer PDF", e)
+            null
+        } finally {
+            pdfDocument.close()
+            PdfIntentLauncher.recycleBitmapsSafely(headerData.rawBitmap, headerData.scaledLogo)
+        }
+    }
+
+    private suspend fun generateAllCustomersPdfFileInternal(
+        context: Context,
+        customers: List<CustomerUiState>,
+        businessProfile: BusinessProfile,
+        currencySymbol: String,
+        primaryColorHex: String = PdfColors.PRIMARY_EMERALD
+    ): File? {
+        val summary = PdfReportCalculator.calculateComprehensiveReport(customers)
+        val totalItems = customers.size
+
+        val header = BusinessProfileLoader.load(context, businessProfile)
+        val headerBottomYCalc = PdfPageRenderer.calculateHeaderBottomY(
+            header.displayedName, header.displayedDesc, header.phonesStr, header.hasLogo, header.logoH
+        )
+
+        var totalPages = 1
+        run {
+            val drySummary = PdfReportCalculator.calculateComprehensiveReport(customers)
+            val dryCardHeight = PdfReportLayoutSpec.comprehensiveSummaryCardHeight(
+                drySummary.foreignBalances.count { it.value.owedByThem.compareTo(BigDecimal.ZERO) != 0 || it.value.owedToThem.compareTo(BigDecimal.ZERO) != 0 }
+            )
+            val summaryStartY = headerBottomYCalc + 8f
+            var dryY = summaryStartY +
+                dryCardHeight +
+                10f +
+                PdfReportLayoutSpec.tableHeaderHeight() +
+                PdfReportLayoutSpec.tableFirstRowOffset()
+            var dryPages = 1
+            for (c in customers) {
+                val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
+                if (dryY + rowHeight > 760f) {
+                    dryPages++
+                    dryY = 76f
+                }
+                dryY += rowHeight
+            }
+            totalPages = dryPages
+        }
+
+        val pdfDocument = PdfDocument()
+        val pageWidth = 595
+        val pageHeight = 842
+
+        return try {
+            var currentPageNumber = 1
+            var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
+            var page = pdfDocument.startPage(pageInfo)
+            var canvas = page.canvas
+
+            val now = Date()
+            val docDateText = context.getString(R.string.pdf_doc_date, PdfPageRenderer.formatDayAr(now), PdfPageRenderer.formatDateEn(now))
+            val docTimeText = context.getString(R.string.pdf_doc_time, PdfPageRenderer.formatTimeAr(now))
+
+            val headerBottomY = PdfPageRenderer.drawBusinessHeader(
+                canvas = canvas,
+                displayedName = header.displayedName,
+                displayedDesc = header.displayedDesc,
+                phonesStr = header.phonesStr,
+                hasLogo = header.hasLogo,
+                scaledLogo = header.scaledLogo,
+                logoW = header.logoW,
+                logoH = header.logoH,
+                docDateText = docDateText,
+                docTimeText = docTimeText
+            )
+
+            val paintTitle = Paint().apply {
+                color = Color.parseColor(PdfColors.TEXT_DARK)
+                textSize = 14f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                isAntiAlias = true
+            }
+            PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_title), 25f, (headerBottomY - 4f).coerceAtLeast(65f), 545, paintTitle, Layout.Alignment.ALIGN_CENTER)
+
+            val summaryEndY = PdfRowRenderer.drawComprehensiveSummaryCard(
+                canvas = canvas,
+                context = context,
+                primaryColorHex = primaryColorHex,
+                summary = summary,
+                totalItems = totalItems,
+                currencySymbol = currencySymbol,
+                startY = headerBottomY + 8f
+            )
+            val tableHeaderY = summaryEndY + 10f
+            PdfPageRenderer.drawAllCustomersTableHeader(canvas, tableHeaderY, context)
+
+            var currentY = tableHeaderY + PdfReportLayoutSpec.tableFirstRowOffset()
+
+            for ((index, c) in customers.withIndex()) {
+                kotlin.coroutines.coroutineContext.ensureActive()
+                val rowHeight = PdfRowRenderer.calculateCustomerSummaryRowHeight(context, c)
+                if (currentY + rowHeight > 760f) {
+                    PdfPageRenderer.drawFooter(canvas, currentPageNumber, totalPages, primaryColorHex, context)
+                    pdfDocument.finishPage(page)
+
+                    currentPageNumber++
+                    pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
+                    page = pdfDocument.startPage(pageInfo)
+                    canvas = page.canvas
+
+                    val paintMiniHeader = Paint().apply {
+                        color = Color.parseColor(primaryColorHex)
+                        textSize = 9f
+                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                        isAntiAlias = true
+                    }
+                    PdfDrawingUtils.drawArabicText(canvas, context.getString(R.string.pdf_comprehensive_report_subpage, currentPageNumber), 25f, 22f, 545, paintMiniHeader, Layout.Alignment.ALIGN_NORMAL)
+
+                    val paintMiniLine = Paint().apply {
+                        color = Color.parseColor(PdfColors.HEADER_BORDER)
+                        strokeWidth = 0.5f
+                        style = Paint.Style.STROKE
+                    }
+                    canvas.drawLine(25f, 34f, 570f, 34f, paintMiniLine)
+
+                    currentY = 46f
+                    PdfPageRenderer.drawAllCustomersTableHeader(canvas, currentY, context)
+                    currentY += PdfReportLayoutSpec.tableFirstRowOffset()
+                }
+
+                PdfRowRenderer.drawCustomerSummaryRow(canvas, context, index, c, currentY, rowHeight, currencySymbol)
+                currentY += rowHeight
+            }
+
+            PdfPageRenderer.drawFooter(canvas, currentPageNumber, totalPages, primaryColorHex, context)
+            pdfDocument.finishPage(page)
+
+            val dir = File(context.cacheDir, "documents")
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val file = File(dir, "Statement_Comprehensive_${System.currentTimeMillis()}.pdf")
+            FileOutputStream(file).use { outputStream ->
+                pdfDocument.writeTo(outputStream)
+                outputStream.flush()
+            }
+
+            file
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error generating all customers PDF", e)
+            null
+        } finally {
+            pdfDocument.close()
+            PdfIntentLauncher.recycleBitmapsSafely(header.rawBitmap, header.scaledLogo)
+        }
+    }
+
+    fun triggerShareOrViewIntent(context: Context, file: File?, action: PdfAction) {
+        PdfIntentLauncher.triggerShareOrViewIntent(context, file, action)
+    }
+
+    fun generateAndHandleCustomerPdfReportAsync(
+        context: Context,
+        scope: CoroutineScope,
+        customer: HabayebCustomer,
+        transactions: List<HabayebTransaction>,
+        businessProfile: BusinessProfile,
+        currencySymbol: String,
+        action: PdfAction,
+        primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
+        exchangeRatesJson: String? = null,
+        onFinished: () -> Unit = {}
+    ) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val file = generatePdfFileInternal(context, customer, transactions, businessProfile, currencySymbol, primaryColorHex, exchangeRatesJson)
+                withContext(Dispatchers.Main) {
+                    if (action == PdfAction.SAVE_LOCAL) {
+                        if (file != null) {
+                            com.smartledger.aldaftar.ui.helper.LocalFileSaver.saveAndShowToast(
+                                context = context,
+                                cachedFile = file,
+                                mimeType = MIME_TYPE_PDF,
+                                displayName = file.name
+                            )
+                        } else {
+                            Toast.makeText(context, context.getString(R.string.toast_operation_failed), Toast.LENGTH_SHORT).show()
+                        }
+                    } else if (action == PdfAction.WHATSAPP_DIRECT) {
+                        if (file != null) {
+                            com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper.triggerWhatsAppDirectFile(
+                                context = context,
+                                customer = customer,
+                                file = file,
+                                mimeType = MIME_TYPE_PDF
+                            )
+                        } else {
+                            Toast.makeText(context, context.getString(R.string.toast_operation_failed), Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        triggerShareOrViewIntent(context, file, action)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Error generating customer PDF async", e)
+            } finally {
+                withContext(NonCancellable + Dispatchers.Main.immediate) {
+                    onFinished()
+                }
+            }
+        }
+    }
+
+    fun generateAndHandleAllCustomersPdfReportAsync(
+        context: Context,
+        scope: CoroutineScope,
+        customers: List<CustomerUiState>,
+        businessProfile: BusinessProfile,
+        currencySymbol: String,
+        action: PdfAction,
+        primaryColorHex: String = PdfColors.PRIMARY_EMERALD,
+        onFinished: () -> Unit = {}
+    ): Job {
+        return scope.launch(Dispatchers.IO) {
+            try {
+                val file = generateAllCustomersPdfFileInternal(context, customers, businessProfile, currencySymbol, primaryColorHex)
+                coroutineContext.ensureActive()
+                withContext(Dispatchers.Main) {
+                    triggerShareOrViewIntent(context, file, action)
+                }
+            } catch (e: CancellationException) {
+                Log.i(TAG, "All customers PDF generation cancelled")
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Error generating all customers PDF async", e)
+            } finally {
+                withContext(NonCancellable + Dispatchers.Main.immediate) {
+                    onFinished()
+                }
+            }
+        }
+    }
+
+
+}
+
+
