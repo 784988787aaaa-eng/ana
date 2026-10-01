@@ -44,9 +44,6 @@ interface HabayebDao {
     @Query("DELETE FROM habayeb_customers")
     suspend fun clearAllCustomers()
 
-    @Query("DELETE FROM pinned_habayeb_customers")
-    suspend fun clearAllPins()
-
 
 
 
@@ -161,6 +158,14 @@ interface HabayebDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: HabayebTransaction)
 
+    /**
+     * Updates only an existing transaction. Returning the affected-row count is
+     * important for concurrent delete/edit races: @Insert(REPLACE) would
+     * resurrect a transaction deleted after the editor read it.
+     */
+    @Update
+    suspend fun updateTransaction(transaction: HabayebTransaction): Int
+
     @Delete
     suspend fun deleteTransaction(transaction: HabayebTransaction)
 
@@ -265,4 +270,3 @@ interface HabayebDao {
         }
     }
 }
-
