@@ -1,0 +1,5 @@
+MISSION 007 — PENDING SPECIALIST EXECUTION
+
+This report file is reserved for the next specialist audit.
+Scope: Financial precision runtime/source validation and authoritative calculation-path review, prioritizing AUDIT-FIN-001 and AUDIT-FIN-002 from MISSION_005 and incorporating the recurring lifecycle fixes reported by MISSION_006.
+Status: HANDOFF READY
