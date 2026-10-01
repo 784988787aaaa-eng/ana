@@ -16,6 +16,7 @@ class HabayebCategoryDataRepository(
     private val categories: CategoryRepository
 ) {
     private val dao = database.habayebDao()
+    private val recurring = database.recurringConfigDao()
     val categoryMapFlow: Flow<Map<String, String>> = combine(dao.getAllCustomersFlow(), categories.customCategoriesFlow) { customers, list ->
         val names = list.associate { it.id to it.name }
         customers.mapNotNull { c -> c.categoryId?.let { id -> names[id]?.let { c.id to it } } }.toMap()
@@ -48,14 +49,16 @@ class HabayebCategoryDataRepository(
             linked.forEach { customer ->
                 val transactions = dao.getTransactionsForCustomerDirect(customer.id)
                 val pins = dao.getPinScopeCategoryIdsForCustomer(customer.id).toSet()
+                val recurringConfigs = recurring.byCustomer(customer.id)
                 database.trashDao().insertDeletedItem(
                     DeletedItemEntity(
                         id = "bundle_${customer.id}",
                         sourceSystem = "الحبايب",
                         originalTableName = "habayeb_bundle",
-                        jsonData = TrashJsonSerializer.serializeHabayebBundle(customer, transactions, category.name, pins)
+                        jsonData = TrashJsonSerializer.serializeHabayebBundle(customer, transactions, category.name, pins, recurringConfigs)
                     )
                 )
+                recurring.deleteForCustomer(customer.id)
                 dao.deleteTransactionsByCustomer(customer.id)
                 dao.deletePinsForCustomer(customer.id)
                 dao.deleteCustomerById(customer.id)
