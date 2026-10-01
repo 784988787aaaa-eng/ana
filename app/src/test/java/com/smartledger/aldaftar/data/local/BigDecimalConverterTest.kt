@@ -72,11 +72,28 @@ class BigDecimalConverterTest {
 
     @Test
     fun testFromString_malformedValue() {
-        // السلاسل التالفة يجب ألا تتحول بصمت إلى صفر بل ترجع null
+        // السلاسل التالفة يجب ألا تتحول بصمت إلى صفر أو إلى قيمة أخرى
         assertNull(converter.fromString("invalid_text"))
         assertNull(converter.fromString("!@#$%^"))
         assertNull(converter.fromString("-"))
         assertNull(converter.fromString("."))
+    }
+
+    @Test
+    fun testFromString_rejectsSilentNumericCorruption() {
+        // Previously, permissive character stripping could turn these into
+        // different valid monetary values.
+        assertNull(converter.fromString("1abc2"))
+        assertNull(converter.fromString("12,34,56"))
+        assertNull(converter.fromString("1,234.56"))
+        assertNull(converter.fromString("1 234"))
+        assertNull(converter.fromString("1E+3"))
+    }
+
+    @Test
+    fun testFromString_acceptsSingleLegacyDecimalSeparator() {
+        assertEquals(BigDecimal("1234.50"), converter.fromString("1234,50"))
+        assertEquals(BigDecimal("1234.50"), converter.fromString("١٢٣٤٫٥٠"))
     }
 
     @Test
