@@ -1,0 +1,415 @@
+MISSION 004 — PRINCIPAL TRANSACTION, CONCURRENCY & LATENCY ENGINEER
+Repository: 784988787aaaa-eng/ana
+Branch: main
+Audit mode: DISCOVER -> AUDIT -> RISK ANALYSIS -> SAFE IMPLEMENTATION -> VALIDATION -> RE-AUDIT
+Audit date: 2026-10-01
+
+1. EXECUTIVE SUMMARY
+
+The current implementation has several strong transaction-safety mechanisms: the production AppContainer supplies a singleton Room database and a non-null LicenseRepository; financial creation is serialized by LicenseRepository.creationMutex; customer creation with an opening transaction is a Room @Transaction; recurring execution is enclosed in a Room transaction and checks occurrence identity before insert; backup snapshotting is performed inside a Room transaction; and restore writes are performed inside a single destructive Room transaction.
+
+One confirmed concurrency/data-integrity defect was found and fixed: transaction edit used INSERT(REPLACE), so an edit based on a stale transaction object could recreate a transaction after another coroutine/user action had deleted it. The fix changes edit persistence to Room @Update, returns the affected-row count, and propagates failure to the use case instead of reporting success.
+
+A second important risk remains unresolved by design review: restore replaces the live database after creating a safety backup, but there is no application-wide mutation lock spanning the interval between the safety snapshot and the destructive restore transaction. A user write committed in that interval can be overwritten by restore and is not necessarily included in the safety snapshot. This requires a cross-cutting backup/restore + mutation coordination decision and was not changed blindly.
+
+Dynamic performance and race execution were not available in this environment. No latency numbers are claimed. The repository's current GitHub Actions workflow builds the release APK but does not define a test execution step; the latest direct commits had no completed workflow/status evidence available at audit time.
+
+2. TRANSACTION ARCHITECTURE MAP
+
+UI/ViewModel
+  -> HabayebTransactionUseCase
+  -> HabayebRepository / HabayebMutationRepository
+  -> AppDatabase / HabayebDao / TrashDao / RecurringConfigDao
+  -> Room transaction where the mutation is composite
+  -> Flow-driven UI refresh
+
+Production dependency wiring confirms HabayebRepository receives the singleton AppDatabase/HabayebDao and the application LicenseRepository. The ViewModel dispatches create/edit through Dispatchers.IO, while Room suspend operations remain database-executor backed. Source: AppContainer.kt, HabayebFinanceViewModel.kt.
+
+3. CRITICAL MUTATION INVENTORY
+
+CREATE TRANSACTION:
+- Entry: HabayebFinanceViewModel.addHabayebTransaction()
+- Domain: HabayebTransactionUseCase.addHabayebTransaction()
+- New transaction: HabayebRepository.insertHabayebTransaction()
+- Production quota path: LicenseRepository.runAuthorizedCreation()
+- Idempotency/serialization: process-local Mutex around authorized creation
+
+CREATE CUSTOMER + OPENING TRANSACTION:
+- HabayebRepository.insertCustomerWithOpeningTransaction()
+- DAO @Transaction method inserts both records atomically
+- License reservation/check surrounds the mutation in the production process
+
+EDIT TRANSACTION:
+- ViewModel -> use case -> repository -> DAO @Update after this mission
+- Missing-row result is now propagated as false
+
+DELETE TRANSACTION:
+- HabayebMutationRepository.deleteTransactionToTrash()
+- Entire trash serialization + recurring deletion + transaction deletion is one Room transaction
+
+DELETE CUSTOMER:
+- Trash bundle creation + recurring deletion + transaction deletion + pin deletion + customer deletion is one Room transaction
+
+RESTORE:
+- TrashDao.restoreDeletedItem() and restoreSingleTransactionFromBundle() use @Transaction
+- BackupEngine.rootToDatabase() uses one destructive Room transaction
+
+RECURRING EXECUTION:
+- RecurringRepository.executeDue() uses database.withTransaction
+- occurrenceAlreadyGenerated(templateId,timestamp) is checked before insert
+
+BACKUP:
+- BackupEngine.snapshot() uses database.withTransaction
+- AutomaticBackupCoordinator prevents duplicate in-process daily runs with AtomicBoolean
+
+4. CREATE TRANSACTION TRACE
+
+UI action -> suspend ViewModel method on Dispatchers.IO -> use case validation/link resolution -> repository normalization -> LicenseRepository.runAuthorizedCreation() -> HabayebDao.insertTransaction().
+
+The production quota gate is serialized by a Mutex and uses a live database count rather than only the cached trial counter. The mutation is executed while the Mutex is held and the cached counter is reconciled from the database afterward.
+
+Finding: double-submit protection is strong within the single application process for production creation paths that use the injected LicenseRepository. It is not a database-level idempotency key, and no cross-process guarantee was proven.
+
+5. EDIT TRANSACTION TRACE
+
+Before fix:
+edit -> HabayebRepository.updateHabayebTransaction() -> HabayebDao.insertTransaction(REPLACE) -> true.
+
+This allowed:
+read existing transaction -> delete transaction -> stale edit -> INSERT(REPLACE) -> deleted transaction reappears.
+
+After fix:
+edit -> HabayebDao.updateTransaction(@Update): Int -> repository returns affectedRows > 0 -> use case returns that Boolean.
+
+A stale edit after deletion now affects zero rows and reports failure; it cannot resurrect the deleted transaction.
+
+6. DELETE TRACE
+
+Transaction deletion is atomic with trash serialization and recurring-config deletion. Customer deletion is atomic with bundle serialization, recurring cleanup, transaction deletion, pin deletion and customer deletion. This materially reduces partial-state risk.
+
+7. RESTORE TRACE
+
+Trash restore operations are Room transactions. Individual transaction restore from a bundle is also transactional and removes or rewrites the remaining bundle atomically.
+
+The major unresolved race is full-database restore: BackupEngine creates a safety backup, then performs the replacement restore in a separate transaction. There is no shared lock with ordinary financial writes across those two phases.
+
+8. ATOMICITY AUDIT
+
+PASS:
+- Customer + opening transaction
+- Transaction-to-trash delete
+- Customer-to-trash delete
+- Recurring due generation
+- Backup snapshot
+- Full database restore write phase
+
+RISK:
+- Restore safety snapshot -> destructive restore is not one cross-component critical section.
+
+9. TRANSACTION BOUNDARY AUDIT
+
+The main financial mutation boundaries are appropriately database-scoped. Recurring execution is more expensive: schedule calculation, live operation-count calculation, license authorization and multiple inserts occur inside a Room transaction. This is a static latency/lock-duration risk, not a measured defect.
+
+10. IDEMPOTENCY AUDIT
+
+CREATE:
+Production in-process serialization exists through LicenseRepository.creationMutex, but no business idempotency key exists.
+
+RECURRING:
+Occurrence identity is based on originalTxId + timestamp and is checked inside the same Room transaction as insertion. This is a strong idempotency design under the single Room database writer model.
+
+BACKUP:
+AutomaticBackupCoordinator has an AtomicBoolean preventing overlapping daily runs in one process. WorkManager policy details should still be verified at scheduling call sites.
+
+RESTORE:
+Semantics are replace/overwrite rather than merge. This is not idempotent in the same sense as creation, but repeated restore of the same backup converges to the same logical database contents for the included tables.
+
+11. DOUBLE SUBMISSION
+
+Static result: PROBABLY_SAFE for production financial creation in one app process because runAuthorizedCreation is Mutex-protected and the actual creation is executed while the lock is held. A UI button alone is not the safety mechanism.
+
+Remaining limitation: no dynamic rapid-tap test was executed in this environment.
+
+12. TOCTOU / QUOTA RACE
+
+The production creation gate closes the observed check/use race inside the app process: live count is read while creationMutex is held, then the DB mutation executes before the lock is released. The cached trial counter is reconciled after mutation/failure.
+
+Cross-process quota safety is not proven because the Mutex is process-local. The app is not configured here as a multi-process database architecture, so this is a boundary limitation rather than a confirmed current production defect.
+
+13. CONCURRENT EDIT
+
+The new @Update fix prevents resurrection after delete. Concurrent edits to the same existing transaction remain last-writer-wins because there is no optimistic version predicate/version column. This can cause a legitimate edit to overwrite another legitimate edit. It is classified as a P2 architectural risk requiring a product/UX conflict policy before schema changes.
+
+14. DELETE VS EDIT RACE
+
+CONFIRMED BEFORE FIX: stale edit could resurrect a deleted transaction.
+AFTER FIX: stale edit affects zero rows and is reported as failure.
+
+15. DELETE VS CUSTOMER MUTATION
+
+HabayebTransaction has a foreign key to HabayebCustomer with ON DELETE CASCADE. Customer deletion therefore removes dependent transactions atomically at the database level. The edit fix additionally prevents stale transaction updates from recreating deleted rows.
+
+16. RECURRING CONCURRENCY
+
+executeDue() is wrapped in database.withTransaction. Each due occurrence is checked with occurrenceAlreadyGenerated() and only then inserted. The generated transaction is linked by linkedMainTxId and timestamp. This is a strong idempotency pattern under Room's transaction serialization.
+
+Remaining risk: there is no database UNIQUE constraint on (linkedMainTxId,timestamp), so the invariant is enforced by transactional application logic rather than a hard database constraint. This should be revisited if multi-process access is ever introduced.
+
+17. COROUTINE / LIFECYCLE AUDIT
+
+Financial create/edit entry points in the ViewModel use Dispatchers.IO. Recurring execution is launched from viewModelScope. Delete operations are launched from viewModelScope and call suspend Room operations. No GlobalScope usage was found in the directly inspected critical paths.
+
+Dynamic cancellation/process-death behavior was not executed. A save that is cancelled before Room commit is expected to fail/stop; post-commit UI feedback depends on the caller remaining alive.
+
+18. WORKMANAGER AUDIT
+
+TrashCleanupWorker is a CoroutineWorker and handles CancellationException separately. DailyBackupWorker distinguishes temporary cloud failures from permanent failures and caps retry attempts. AutomaticBackupCoordinator has an AtomicBoolean against overlapping daily runs in-process.
+
+A complete scheduling-policy inventory was not certifiable from the inspected artifacts; exact enqueueUniqueWork call sites were not available through the disabled code-search index.
+
+19. BACKUP / WRITE RACE
+
+BackupEngine.snapshot() is transactionally consistent: all included tables are read inside database.withTransaction. This prevents a backup snapshot from containing an interleaving of independently committed table states.
+
+20. RESTORE / WRITE RACE — HIGH PRIORITY UNRESOLVED
+
+Scenario:
+1. Backup safety copy is created.
+2. A user write commits.
+3. restore transaction starts and clears/replaces the database.
+
+The user write can be lost because the safety copy was created before the write. The restore transaction itself is atomic, but the interval before it is not coordinated with all writers.
+
+Classification: TX-002, P1, CROSS-DOMAIN (Backup/Restore + Transaction Coordination).
+
+21. LATENCY BREAKDOWN
+
+Static waterfall:
+T0 UI event
+T1 ViewModel suspend entry
+T2 domain validation/calculation
+T3 quota/live-count work
+T4 Room transaction begin
+T5 DB mutations
+T6 commit
+T7 repository return
+T8 ViewModel/UI state refresh
+
+No dynamic timing values were produced. The current workflow does not execute the test suite, and this environment cannot run the Android application/device benchmark. Therefore P50/P95/P99 are UNMEASURED.
+
+22. MAIN THREAD
+
+Create/edit transaction entry points in HabayebFinanceViewModel use withContext(Dispatchers.IO). Room suspend DAO calls are not treated as proof of arbitrary heavy work being harmless, but the directly inspected financial mutation path is not deliberately performing blocking file/network I/O on Main.
+
+23. DATABASE LOCK / CONTENTION
+
+Recurring execution is the main static contention candidate because schedule calculation, license gate and batch writes are inside one transaction. Backup snapshotting is also transaction-scoped by design, which is correct for consistency but can hold a read transaction over serialization of all included data.
+
+No lock-duration measurement was possible.
+
+24. CACHE / PAGING CONSISTENCY
+
+Customer balances are derived directly from habayeb_transactions via a Room Flow, so mutations naturally invalidate the query. Customer history uses PagingSource ordered by timestamp. No dynamic paging mutation test was executed.
+
+25. FAILURE MATRIX
+
+Create: quota failure -> no DB write; DB exception -> exception propagates and quota mirror reconciles.
+Edit: missing row -> affectedRows=0 -> false after fix.
+Delete: trash/recurring/delete are atomic.
+Restore trash item: restore and trash-item deletion are atomic.
+Recurring: transaction failure rolls back the transaction; license mirror reconciles on exception.
+Backup: local file uses temp + atomic move where supported; cloud failure leaves local backup available.
+Full restore: DB replacement is atomic once transaction begins, but the pre-restore safety snapshot is not coordinated with all writers.
+
+26. RETRY SAFETY MATRIX
+
+Create: safe only under the production authorization/serialization path; no universal business idempotency key.
+Edit: retrying @Update is safe with respect to resurrection; repeated update converges to the supplied row values.
+Delete: trash insert uses REPLACE and delete is transactional; repeated delete after first removal becomes a no-op if source row is absent.
+Recurring: occurrence check provides retry safety for the same occurrence.
+Backup: local create replaces the target file; daily coordinator prevents overlap in-process.
+Restore: repeat restore is replace semantics, not merge semantics.
+
+27. RACE SCENARIO MATRIX
+
+Double save: serialized in production creation gate; dynamic proof missing.
+Concurrent quota checks: protected by creationMutex in one process.
+Edit + delete: DEFECT CONFIRMED before fix; fixed.
+Edit + edit: last writer wins; P2 risk.
+Recurring worker + manual trigger: transaction + occurrence check strongly protects duplicate occurrence; dynamic proof missing.
+Backup + write: snapshot is internally consistent; restore window remains risky.
+Restore + write: P1 unresolved.
+
+28. CONFIRMED DEFECTS
+
+TX-001
+DOMAIN: Transaction / Concurrency / Data Integrity
+TYPE: DEFECT
+SEVERITY: P1
+CONFIDENCE: DEFECT_CONFIRMED
+FILE: HabayebDao.kt / DomainRepositories.kt / HabayebTransactionUseCase.kt
+SCENARIO: Delete transaction, then execute a stale edit.
+BEFORE: INSERT(REPLACE) recreated the deleted row and use case always returned true.
+ROOT CAUSE: Edit persistence used insert semantics instead of update semantics.
+FIX: @Update returning affected-row count; repository returns rows > 0; use case propagates Boolean.
+IMPLEMENTED: YES
+
+29. SUSPICIOUS / RISK FINDINGS
+
+TX-002
+TYPE: RISK
+SEVERITY: P1
+CONFIDENCE: PROBABLY_CORRECT
+RESTORE can overwrite a user write that commits between the safety backup snapshot and the destructive restore transaction. Requires cross-domain coordination; not blindly changed.
+
+TX-003
+TYPE: RISK
+SEVERITY: P2
+CONFIDENCE: PROVEN
+Concurrent edits are last-writer-wins with no optimistic version check. A later stale editor can overwrite an earlier edit.
+
+TX-004
+TYPE: PERFORMANCE RISK
+SEVERITY: P2
+CONFIDENCE: PROBABLY_CORRECT
+Recurring execution holds the DB transaction while calculating due occurrences and running license/count logic. Actual lock duration is unmeasured.
+
+TX-005
+TYPE: EVIDENCE GAP
+SEVERITY: P2
+CONFIDENCE: PROVEN
+No dynamic race/latency execution was available. Repository code-search indexing is disabled, preventing a mechanically exhaustive whole-repository symbol inventory.
+
+30. IMPROVEMENTS IMPLEMENTED
+
+1. Transaction edit now uses @Update instead of INSERT(REPLACE).
+2. Repository exposes update success based on affected-row count.
+3. Domain use case no longer reports success when an edit lost a delete race.
+4. Added Robolectric Room regression tests for deleted-row update and normal update behavior.
+
+31. BEFORE / AFTER PROOF
+
+BEFORE:
+DELETE tx(id=t1)
+EDIT stale tx(id=t1)
+INSERT(REPLACE) -> row exists again
+UI result -> true
+
+EXPECTED:
+DELETE tx(id=t1)
+EDIT stale tx(id=t1)
+-> zero affected rows
+-> transaction remains deleted
+-> caller receives failure
+
+AFTER:
+DAO @Update returns 0; row remains absent.
+
+32. TESTS ADDED
+
+app/src/test/java/com/smartledger/aldaftar/data/local/HabayebTransactionConcurrencyTest.kt
+- updateAfterDeleteMustNotResurrectTransaction
+- updateExistingTransactionReportsOneAffectedRow
+
+33. TESTS EXECUTED
+
+NOT EXECUTED in the audit environment.
+Reason: no local Android/Gradle execution environment with the repository checkout was available. A direct network clone was unavailable, and the GitHub Actions status for the latest audit commit did not expose a completed run.
+
+Expected commands for project environment:
+./gradlew testDebugUnitTest
+./gradlew connectedDebugAndroidTest
+
+At minimum, the new Robolectric test should run under the unit-test task.
+
+34. MEASUREMENTS
+
+Dynamic latency: UNMEASURED.
+P50/P90/P95/P99: UNMEASURED.
+DB transaction duration: UNMEASURED.
+Rapid-tap duplicate count: UNMEASURED.
+Concurrent edit race reproduction: statically reproduced by operation ordering; runtime reproduction not executed.
+
+35. REGRESSION VALIDATION
+
+Static re-audit after changes confirms:
+- DAO edit path is @Update.
+- Repository no longer inserts on edit.
+- Use case returns repository update result.
+- Normal insertion paths remain INSERT(REPLACE).
+- Recurring and trash insertion paths were not changed.
+
+Runtime regression status: NOT EXECUTED.
+
+36. CROSS-DOMAIN FINDINGS
+
+TX-002 -> Backup/Restore Engineer + Transaction/Concurrency Engineer.
+Required review: define a global restore-vs-write contract, including whether restore must block all financial writes from safety snapshot through commit and how in-flight writes are surfaced to the user.
+
+TX-003 -> Concurrency/Architecture Engineer.
+Required review: decide whether last-writer-wins is acceptable; if not, introduce an explicit version/conflict contract without changing financial data silently.
+
+TX-004 -> Performance Engineer.
+Required review: measure recurring transaction lock duration and split non-DB work from the transaction only if atomicity remains intact.
+
+37. EVIDENCE GAPS
+
+- No device/runtime benchmark.
+- No executed unit/instrumentation results.
+- No dynamic rapid-tap test.
+- No dynamic process-death test.
+- No dynamic restore-vs-write race test.
+- GitHub repository code-search index is disabled, so exhaustive symbol search cannot be certified from GitHub indexing alone.
+- Exact WorkManager enqueue policy call sites were not exhaustively enumerated.
+
+38. COVERAGE
+
+Critical mutation paths: 7 / 7 structurally inspected
+Create: inspected
+Edit: inspected and fixed
+Delete: inspected
+Restore: inspected
+Recurring: inspected
+Backup: inspected
+Quota gate: inspected
+
+Coroutine/lifecycle: partial static coverage
+Worker paths: partial static coverage
+Dynamic measurements: 0 / required scenarios executed
+
+39. REMAINING RISKS
+
+1. Restore/write race can overwrite a user write unless global coordination is introduced.
+2. Concurrent edits have last-writer-wins semantics.
+3. Recurring transaction lock duration is unmeasured.
+4. Cross-process guarantees are not established.
+5. Runtime test execution remains outstanding.
+
+40. FINAL CERTIFICATION
+
+LEVEL C — Important concurrency and restore-coordination risks remain; one confirmed edit/delete integrity defect has been fixed, but dynamic validation is incomplete and restore-vs-write coordination remains unresolved.
+
+This is not a claim that the application is unsafe in all scenarios. It is a bounded certification based on available static evidence and the implemented fix.
+
+41. HANDOFF
+
+NEXT ENGINEER: Backup/Restore Engineer
+RELEVANT FINDING: TX-002
+REQUIRED REVIEW: Coordinate safety snapshot, restore transaction, and user financial writes; define replace semantics and recovery for writes arriving during restore.
+
+NEXT ENGINEER: Concurrency/Architecture Engineer
+RELEVANT FINDING: TX-003
+REQUIRED REVIEW: Decide whether optimistic concurrency/versioning is required for transaction edits.
+
+NEXT ENGINEER: Performance Engineer
+RELEVANT FINDING: TX-004
+REQUIRED REVIEW: Measure recurring execution transaction duration and contention under realistic datasets.
+
+NEXT ENGINEER: QA/Automation Engineer
+RELEVANT FINDING: TX-005
+REQUIRED REVIEW: Execute unit, instrumentation, controlled race, rapid-submit, cancellation, process-death, and restore/write race suites.
+
+MISSION STATUS:
+SAFE IMPLEMENTATION COMPLETED FOR CONFIRMED EDIT/DELETE DEFECT.
+DYNAMIC VALIDATION BLOCKED BY ENVIRONMENT.
+FULL CERTIFICATION NOT GRANTED.
