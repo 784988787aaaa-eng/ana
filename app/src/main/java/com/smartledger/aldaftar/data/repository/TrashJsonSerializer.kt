@@ -44,8 +44,7 @@ object TrashJsonSerializer {
     }
 
     fun serializeHabayebTransaction(tx: HabayebTransaction, recurringConfig: RecurringConfigEntity? = null): String {
-        return JSONObject().apply {
-            put("transaction", serializeHabayebTransactionJsonObject(tx))
+        return JSONObject(serializeHabayebTransactionJsonObject(tx).toString()).apply {
             recurringConfig?.let { put("recurringConfig", serializeRecurringConfigJsonObject(it)) }
         }.toString()
     }
