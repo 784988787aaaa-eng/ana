@@ -4,28 +4,93 @@ Repository: 784988787aaaa-eng/ana
 Base: main
 Branch: mission-003-data-integrity-fix
 Mode: OBSERVE + TRACE + ANALYZE + VERIFY + IMPLEMENT
-Repository modification: YES (branch only; main unchanged)
+Main branch modification: NONE
 
-STATUS: VALIDATION IN PROGRESS
+MISSION STATUS: IMPLEMENTED ON BRANCH / NOT MERGED
 
-Confirmed findings addressed:
-1. AUDIT-DB-001 — category-linked customer deletion now snapshots and deletes recurring configurations atomically.
-2. AUDIT-DB-002 — trash snapshots now preserve recurring configuration state and restore it atomically.
+SPECIALIST SCOPE
+- Data Integrity Engineer
+- Recurring Lifecycle Engineer
+- Trash/Restore Engineer
 
-Implementation scope:
-- RecurringConfigDao: customer-scoped query.
-- HabayebCategoryDataRepository: recurring lifecycle cleanup + trash snapshot preservation.
-- HabayebMutationRepository: recurring snapshot preservation for customer/transaction trash deletion.
-- TrashJsonSerializer: backward-compatible recurringConfig / recurringConfigs fields.
-- TrashDao: atomic recurring restoration.
-- Regression tests: category deletion and transaction trash restore.
+OBJECTIVES
+1. Close AUDIT-DB-001.
+2. Close AUDIT-DB-002.
+3. Trace the recurring lifecycle across category deletion, customer deletion, transaction deletion, trash snapshot, and restore.
+4. Add regression coverage.
+5. Keep main unchanged.
 
-Validation pending:
-- targeted Mission 003 regression tests
-- release build
+CONFIRMED FINDINGS ADDRESSED
 
-Known unrelated baseline test failure from the first full test run:
+AUDIT-DB-001 — Orphaned recurring persistence
+Status before: CONFIRMED P2 DEFECT
+Cause: category deletion with deleteLinkedAccounts=true removed customer/transactions/pins but did not remove recurring_configs rows.
+Implementation:
+- RecurringConfigDao now supports byCustomer(customerId).
+- HabayebCategoryDataRepository loads recurring configs before deletion.
+- The same Room transaction snapshots recurring state, deletes recurring state, then deletes customer data.
+Result: the inspected category-linked deletion path no longer leaves recurring configs behind.
+
+AUDIT-DB-002 — Trash restore contract loss
+Status before: CONFIRMED P2 DEFECT
+Cause: recurring configs were deleted during trash deletion but were absent from the trash JSON snapshot.
+Implementation:
+- TrashJsonSerializer now stores recurringConfigs for customer bundles.
+- Standalone transaction trash stores recurringConfig when one exists.
+- TrashDao restores recurring configs inside the existing @Transaction restore boundary.
+- Existing transaction JSON shape remains backward-compatible; the recurring field is additive.
+Result: recurring configuration is preserved across the inspected transaction/customer trash lifecycle.
+
+IMPLEMENTED FILES
+- app/src/main/java/com/smartledger/aldaftar/data/local/RecurringConfigDao.kt
+- app/src/main/java/com/smartledger/aldaftar/data/local/TrashDao.kt
+- app/src/main/java/com/smartledger/aldaftar/data/repository/HabayebCategoryDataRepository.kt
+- app/src/main/java/com/smartledger/aldaftar/data/repository/HabayebMutationRepository.kt
+- app/src/main/java/com/smartledger/aldaftar/data/repository/TrashJsonSerializer.kt
+- app/src/test/java/com/smartledger/aldaftar/data/local/TrashRestorePersistenceTest.kt
+- app/src/test/java/com/smartledger/aldaftar/data/repository/HabayebCategoryDataRepositoryTest.kt
+
+TEST EVIDENCE
+A GitHub Actions full unit-test run executed on the implementation branch.
+Production and test Kotlin compilation completed successfully.
+The test task executed 262 tests.
+Result: 261 passed / 1 failed.
+The single failure was:
 KeyboardInputSurfaceMatrixContractTest.inputSurfaceInventoryIsExplicitAndComplete
-262 tests completed, 1 failed. The failure was not in the Mission 003 tests.
+Assertion location: KeyboardInputSurfaceMatrixContractTest.kt:61
+This failure is outside the Mission 003 implementation scope and was independent of the recurring lifecycle changes.
+The Mission 003 regression tests were compiled as part of the same test task and did not appear among the failures.
 
-Do not merge until targeted regression tests and release build are green.
+Therefore:
+- Mission 003 test compilation: PROVEN.
+- Mission 003 tests individually isolated to a green run: NOT PROVEN.
+- Full test suite: NOT GREEN because of one unrelated existing failure.
+
+BUILD VALIDATION
+Several PR release-build runs were cancelled by GitHub Actions concurrency as newer commits superseded earlier runs. No final release APK build is certified by this mission.
+
+CUSTOM CI CLEANUP
+A temporary Mission 003 test workflow and temporary PR test step were used only for validation and were removed afterward.
+The production Android workflow was restored to its pre-mission form.
+
+UNRESOLVED FOLLOW-UPS
+1. AUDIT-DB-003 — CustomerBalanceDao caller inventory remains unresolved. Authority/obsolete status is not certified.
+2. AUDIT-DB-004 — AdminLicenseDatabase destructive migration impact remains unverified against production history.
+3. AUDIT-DB-005 — recurring_configs.customerId still has no database FK. The application lifecycle is now better protected in the inspected paths, but structural FK hardening requires a separate migration review.
+4. Runtime process-death and runtime concurrency validation remain unperformed.
+
+REPOSITORY SAFETY
+- main: unchanged.
+- Implementation branch: mission-003-data-integrity-fix.
+- Pull request: #2, not merged.
+- No issue created.
+- No release created.
+
+NEXT SPECIALIST RECOMMENDATION
+Proceed with Database/Data Integrity specialist for AUDIT-DB-003:
+complete all CustomerBalanceDao production caller inventory first, then determine whether the table is authoritative, derived, or dead schema before changing backup/restore behavior.
+
+FINAL MISSION 003 CLASSIFICATION
+IMPLEMENTED — PARTIALLY VERIFIED
+
+Reason: the two confirmed recurring lifecycle defects were implemented with regression tests and the implementation compiled; however, the full suite is not green due to one unrelated existing test failure, final release build was not certified, and CustomerBalance authority remains unresolved.
