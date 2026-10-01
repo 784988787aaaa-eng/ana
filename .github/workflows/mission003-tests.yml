@@ -31,6 +31,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
-          gradle-home-cache-cleanup: true
-      - name: Run unit tests
-        run: bash ./gradlew testDebugUnitTest --no-daemon --stacktrace --parallel --max-workers=4
+          cache-cleanup: true
+      - name: Run Mission 003 regression tests
+        run: >-
+          bash ./gradlew testDebugUnitTest
+          --tests com.smartledger.aldaftar.data.local.TrashRestorePersistenceTest
+          --tests com.smartledger.aldaftar.data.repository.HabayebCategoryDataRepositoryTest
+          --no-daemon --stacktrace --parallel --max-workers=4
