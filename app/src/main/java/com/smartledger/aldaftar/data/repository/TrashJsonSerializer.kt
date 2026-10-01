@@ -2,6 +2,7 @@ package com.smartledger.aldaftar.data.repository
 
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -11,7 +12,8 @@ object TrashJsonSerializer {
         customer: HabayebCustomer,
         transactions: List<HabayebTransaction>,
         categoryLink: String?,
-        pinnedCategories: Set<Int>
+        pinnedCategories: Set<Int>,
+        recurringConfigs: List<RecurringConfigEntity> = emptyList()
     ): String {
         val pinnedCats = JSONArray(); pinnedCategories.forEach(pinnedCats::put)
         return JSONObject().apply {
@@ -24,6 +26,7 @@ object TrashJsonSerializer {
                 if (pinnedCats.length() > 0) put("pinnedScopeCategoryIds", pinnedCats)
             })
             put("transactions", JSONArray().apply { transactions.forEach { put(serializeHabayebTransactionJsonObject(it)) } })
+            put("recurringConfigs", JSONArray().apply { recurringConfigs.forEach { put(serializeRecurringConfigJsonObject(it)) } })
             put("totalTransactions", transactions.size); put("name", customer.name)
         }.toString()
     }
@@ -40,8 +43,10 @@ object TrashJsonSerializer {
         }.toString()
     }
 
-    fun serializeHabayebTransaction(tx: HabayebTransaction): String {
-        return serializeHabayebTransactionJsonObject(tx).toString()
+    fun serializeHabayebTransaction(tx: HabayebTransaction, recurringConfig: RecurringConfigEntity? = null): String {
+        return JSONObject(serializeHabayebTransactionJsonObject(tx).toString()).apply {
+            recurringConfig?.let { put("recurringConfig", serializeRecurringConfigJsonObject(it)) }
+        }.toString()
     }
 
     private fun serializeHabayebTransactionJsonObject(tx: HabayebTransaction): JSONObject {
@@ -62,6 +67,36 @@ object TrashJsonSerializer {
             put("base_currency_code", tx.baseCurrencyCode)
             put("snapshot_version", tx.snapshotVersion)
             put("rate_context", tx.rateContext)
+        }
+    }
+
+    private fun serializeRecurringConfigJsonObject(config: RecurringConfigEntity): JSONObject {
+        return JSONObject().apply {
+            put("id", config.id)
+            put("originalTxId", config.originalTxId)
+            put("customerId", config.customerId)
+            put("customerName", config.customerName)
+            put("amount", config.amount.toPlainString())
+            put("type", config.type)
+            put("description", config.description)
+            put("frequency", config.frequency)
+            put("daysOfWeek", JSONArray().apply { config.daysOfWeek.forEach(::put) })
+            put("daysOfMonth", JSONArray().apply { config.daysOfMonth.forEach(::put) })
+            put("timeHour", config.timeHour)
+            put("timeMinute", config.timeMinute)
+            put("startDateMillis", config.startDateMillis)
+            put("endDateMillis", config.endDateMillis)
+            put("lastExecutedTimestamp", config.lastExecutedTimestamp)
+            put("isActive", config.isActive)
+            put("isForeign", config.isForeign)
+            put("currencyCode", config.currencyCode)
+            put("foreignAmount", config.foreignAmount.toPlainString())
+            put("exchangeRate", config.exchangeRate.toPlainString())
+            put("isRateCalculated", config.isRateCalculated)
+            put("equivalentAmount", config.equivalentAmount.toPlainString())
+            put("baseCurrencyCode", config.baseCurrencyCode)
+            put("snapshotVersion", config.snapshotVersion)
+            put("rateContext", config.rateContext)
         }
     }
 }

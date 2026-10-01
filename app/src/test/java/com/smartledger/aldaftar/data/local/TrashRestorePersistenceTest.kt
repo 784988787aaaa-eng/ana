@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 import com.smartledger.aldaftar.data.repository.TrashJsonSerializer
 import java.math.BigDecimal
 import kotlinx.coroutines.test.runTest
@@ -37,6 +38,39 @@ class TrashRestorePersistenceTest {
             val persisted = db.trashDao().getDeletedItemByIdDirect(item.id)!!
             db.trashDao().restoreDeletedItem(persisted)
             assertEquals(original, db.habayebDao().getTransactionById(original.id))
+            assertNull(db.trashDao().getDeletedItemByIdDirect(item.id))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test fun persistedDeletedTransactionRestoresItsRecurringConfiguration() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
+        try {
+            val customer = HabayebCustomer(id = "c2", name = "عميل recurring", phone = "", notes = "", createdAt = 2L, initialType = "OWED_BY_THEM")
+            val tx = HabayebTransaction("t2", "c2", "OWED_BY_THEM", BigDecimal("14000"), 2L, "قسط")
+            val recurring = RecurringConfigEntity(
+                id = "r2", originalTxId = "t2", customerId = "c2", customerName = customer.name,
+                amount = BigDecimal("14000"), type = "OWED_BY_THEM", description = "قسط", frequency = "DAILY",
+                daysOfWeek = listOf(1, 3), daysOfMonth = listOf(5, 20), timeHour = 10, timeMinute = 30,
+                startDateMillis = 2L, endDateMillis = 100L, lastExecutedTimestamp = 0L, isActive = true
+            )
+            db.habayebDao().insertCustomer(customer)
+            db.habayebDao().insertTransaction(tx)
+            val item = DeletedItemEntity(
+                id = "trash2", sourceSystem = "HABAYEB", originalTableName = TrashDao.TABLE_HABAYEB_TRANSACTIONS,
+                jsonData = TrashJsonSerializer.serializeHabayebTransaction(tx, recurring), deletedAt = 2L
+            )
+            db.trashDao().insertDeletedItem(item)
+            db.recurringConfigDao().deleteForTransaction(tx.id)
+            db.habayebDao().deleteTransactionById(tx.id)
+
+            val persisted = db.trashDao().getDeletedItemByIdDirect(item.id)!!
+            db.trashDao().restoreDeletedItem(persisted)
+
+            assertEquals(tx, db.habayebDao().getTransactionById(tx.id))
+            assertEquals(listOf(recurring), db.recurringConfigDao().byCustomer(customer.id))
             assertNull(db.trashDao().getDeletedItemByIdDirect(item.id))
         } finally {
             db.close()

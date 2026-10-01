@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
  @Query("SELECT * FROM recurring_configs ORDER BY startDateMillis") fun allFlow(): Flow<List<RecurringConfigEntity>>
  @Query("SELECT * FROM recurring_configs") suspend fun all(): List<RecurringConfigEntity>
  @Query("SELECT * FROM recurring_configs WHERE originalTxId=:transactionId LIMIT 1") suspend fun byOriginalTransaction(transactionId:String): RecurringConfigEntity?
+ @Query("SELECT * FROM recurring_configs WHERE customerId=:customerId") suspend fun byCustomer(customerId:String): List<RecurringConfigEntity>
  @Insert(onConflict=OnConflictStrategy.REPLACE) suspend fun save(config:RecurringConfigEntity)
  @Query("DELETE FROM recurring_configs WHERE id=:id") suspend fun delete(id:String)
  @Query("DELETE FROM recurring_configs WHERE originalTxId=:id") suspend fun deleteForTransaction(id:String)

@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.data.local.entities.RecurringConfigEntity
 import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
 import kotlinx.coroutines.flow.Flow
 import org.json.JSONArray
@@ -22,7 +23,6 @@ abstract class TrashDao {
         const val TABLE_HABAYEB_CUSTOMERS = "habayeb_customers"
         const val BUNDLE_HABAYEB = "habayeb_bundle"
     }
-
 
     @Query("SELECT * FROM deleted_items WHERE (:query = '' OR searchableText LIKE '%' || :query || '%') AND (:tableFilter = '' OR originalTableName = :tableFilter OR (:tableFilter = 'habayeb_transactions' AND originalTableName = 'habayeb_bundle')) ORDER BY deletedAt DESC")
     abstract fun getDeletedItemsPagingSource(query: String, tableFilter: String): androidx.paging.PagingSource<Int, DeletedItemEntity>
@@ -66,26 +66,28 @@ abstract class TrashDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertPinnedCustomer(pin: com.smartledger.aldaftar.data.local.entities.PinnedCustomer)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertRecurringConfig(config: RecurringConfigEntity)
 
     @Transaction
     open suspend fun restoreSingleTransactionFromBundle(itemId: String, txId: String) {
         val item = getDeletedItemByIdDirect(itemId) ?: return
         if (item.originalTableName != BUNDLE_HABAYEB) return
-        
+
         val root = JSONObject(item.jsonData)
         val custData = root.getJSONObject("customer")
         val customerId = custData.getString("id")
-        
+
         val customerExists = checkCustomerExists(customerId) > 0
         if (!customerExists) {
             val customer = TrashItemParser.parseHabayebCustomer(custData)
             insertHabayebCustomer(customer)
         }
-        
+
         val txsArray = root.getJSONArray("transactions")
         var targetTxObj: JSONObject? = null
         val remainingTxs = JSONArray()
-        
+
         for (i in 0 until txsArray.length()) {
             val txObj = txsArray.getJSONObject(i)
             if (txObj.getString("id") == txId) {
@@ -94,11 +96,11 @@ abstract class TrashDao {
                 remainingTxs.put(txObj)
             }
         }
-        
+
         if (targetTxObj != null) {
             val tx = TrashItemParser.parseHabayebTransaction(targetTxObj)
             insertHabayebTransaction(tx)
-            
+
             if (remainingTxs.length() == 0) {
                 deleteItem(item)
             } else {
@@ -116,6 +118,7 @@ abstract class TrashDao {
             TABLE_HABAYEB_TRANSACTIONS -> {
                 val tx = TrashItemParser.parseHabayebTransaction(root)
                 insertHabayebTransaction(tx)
+                root.optJSONObject("recurringConfig")?.let { insertRecurringConfig(parseRecurringConfig(it)) }
             }
             TABLE_HABAYEB_CUSTOMERS -> {
                 val customer = TrashItemParser.parseHabayebCustomer(root)
@@ -142,10 +145,50 @@ abstract class TrashDao {
                     val tx = TrashItemParser.parseHabayebTransaction(txObj)
                     insertHabayebTransaction(tx)
                 }
+
+                root.optJSONArray("recurringConfigs")?.let { configs ->
+                    for (i in 0 until configs.length()) {
+                        insertRecurringConfig(parseRecurringConfig(configs.getJSONObject(i)))
+                    }
+                }
             }
         }
         deleteItem(item)
     }
-}
 
+    private fun parseRecurringConfig(obj: JSONObject): RecurringConfigEntity {
+        fun intList(key: String): List<Int> {
+            val array = obj.optJSONArray(key) ?: return emptyList()
+            return buildList(array.length()) { for (i in 0 until array.length()) add(array.optInt(i)) }
+        }
+
+        return RecurringConfigEntity(
+            id = obj.getString("id"),
+            originalTxId = obj.getString("originalTxId"),
+            customerId = obj.getString("customerId"),
+            customerName = obj.optString("customerName", ""),
+            amount = TrashItemParser.parseBigDecimal(obj, "amount"),
+            type = obj.optString("type", ""),
+            description = obj.optString("description", ""),
+            frequency = obj.optString("frequency", ""),
+            daysOfWeek = intList("daysOfWeek"),
+            daysOfMonth = intList("daysOfMonth"),
+            timeHour = obj.optInt("timeHour", 0),
+            timeMinute = obj.optInt("timeMinute", 0),
+            startDateMillis = obj.optLong("startDateMillis", 0L),
+            endDateMillis = obj.optLong("endDateMillis", 0L),
+            lastExecutedTimestamp = obj.optLong("lastExecutedTimestamp", 0L),
+            isActive = obj.optBoolean("isActive", true),
+            isForeign = obj.optBoolean("isForeign", false),
+            currencyCode = obj.optString("currencyCode", "DEFAULT"),
+            foreignAmount = TrashItemParser.parseBigDecimal(obj, "foreignAmount"),
+            exchangeRate = TrashItemParser.parseBigDecimal(obj, "exchangeRate"),
+            isRateCalculated = obj.optBoolean("isRateCalculated", false),
+            equivalentAmount = TrashItemParser.parseBigDecimal(obj, "equivalentAmount"),
+            baseCurrencyCode = obj.optString("baseCurrencyCode", "DEFAULT"),
+            snapshotVersion = obj.optInt("snapshotVersion", 1),
+            rateContext = obj.optString("rateContext", "FIXED_SNAPSHOT")
+        )
+    }
+}
 
