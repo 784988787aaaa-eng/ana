@@ -14,7 +14,15 @@ class HabayebMutationRepository(private val database: AppDatabase) {
         val customer = habayeb.getCustomerByIdDirect(customerId) ?: return@withTransaction
         val txs = habayeb.getTransactionsForCustomerDirect(customerId)
         val pins = habayeb.getPinScopeCategoryIdsForCustomer(customerId).toSet()
-        trash.insertDeletedItem(DeletedItemEntity("bundle_${customer.id}", "الحبايب", "habayeb_bundle", TrashJsonSerializer.serializeHabayebBundle(customer, txs, null, pins)))
+        val recurringConfigs = recurring.all().filter { it.customerId == customerId }
+        trash.insertDeletedItem(
+            DeletedItemEntity(
+                "bundle_${customer.id}",
+                "الحبايب",
+                "habayeb_bundle",
+                TrashJsonSerializer.serializeHabayebBundle(customer, txs, null, pins, recurringConfigs)
+            )
+        )
         recurring.deleteForCustomer(customerId)
         habayeb.deleteTransactionsByCustomer(customerId)
         habayeb.deletePinsForCustomer(customerId)
@@ -23,7 +31,17 @@ class HabayebMutationRepository(private val database: AppDatabase) {
 
     suspend fun deleteTransactionToTrash(transactionId: String, saveToTrash: Boolean) = database.withTransaction {
         val tx = habayeb.getTransactionById(transactionId) ?: return@withTransaction
-        if (saveToTrash) trash.insertDeletedItem(DeletedItemEntity(tx.id, "الحبايب", "habayeb_transactions", TrashJsonSerializer.serializeHabayebTransaction(tx)))
+        val recurringConfig = recurring.byOriginalTransaction(transactionId)
+        if (saveToTrash) {
+            trash.insertDeletedItem(
+                DeletedItemEntity(
+                    tx.id,
+                    "الحبايب",
+                    "habayeb_transactions",
+                    TrashJsonSerializer.serializeHabayebTransaction(tx, recurringConfig)
+                )
+            )
+        }
         recurring.deleteForTransaction(transactionId)
         habayeb.deleteTransactionById(transactionId)
     }
