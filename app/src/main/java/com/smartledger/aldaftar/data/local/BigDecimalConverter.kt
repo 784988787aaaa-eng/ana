@@ -27,32 +27,61 @@ class BigDecimalConverter {
     fun toString(value: BigDecimal?): String? = value?.toPlainString()
 
     companion object {
+        /**
+         * Parses persisted decimal text without changing its financial meaning.
+         * Room writes canonical values with '.' via [BigDecimal.toPlainString], so
+         * comma is intentionally treated as a grouping separator rather than a
+         * decimal separator. Arabic-Indic digits and Arabic decimal separator are
+         * accepted for legacy/imported values.
+         *
+         * Unexpected characters are rejected instead of being silently stripped;
+         * silently turning malformed financial text into a different number is
+         * unsafe at a persistence boundary.
+         */
         fun cleanNumberString(input: String): String {
             val trimmed = input.trim()
             if (trimmed.isEmpty()) return ""
 
-            val len = trimmed.length
-            val sb = StringBuilder(len)
-            var seenDot = false
+            val sb = StringBuilder(trimmed.length)
+            var seenDecimal = false
+            var seenDigit = false
+            var signAllowed = true
 
-            for (i in 0 until len) {
-                val ch = trimmed[i]
+            for (ch in trimmed) {
                 when {
-                    ch in '0'..'9' -> sb.append(ch)
-                    ch in '٠'..'٩' -> sb.append((ch - '٠' + '0'.code).toChar())
-                    ch in '۰'..'۹' -> sb.append((ch - '۰' + '0'.code).toChar())
-                    ch == '.' || ch == ',' || ch == '٫' -> {
-                        if (!seenDot) {
-                            sb.append('.')
-                            seenDot = true
-                        }
+                    ch in '0'..'9' -> {
+                        sb.append(ch)
+                        seenDigit = true
+                        signAllowed = false
                     }
-                    ch == '-' && sb.isEmpty() -> sb.append('-')
+                    ch in '٠'..'٩' -> {
+                        sb.append((ch - '٠' + '0'.code).toChar())
+                        seenDigit = true
+                        signAllowed = false
+                    }
+                    ch in '۰'..'۹' -> {
+                        sb.append((ch - '۰' + '0'.code).toChar())
+                        seenDigit = true
+                        signAllowed = false
+                    }
+                    (ch == '.' || ch == '٫') && !seenDecimal -> {
+                        sb.append('.')
+                        seenDecimal = true
+                        signAllowed = false
+                    }
+                    (ch == ',' || ch == '،') && !seenDecimal -> {
+                        // Grouping separators are never decimal separators here.
+                    }
+                    ch == '-' && signAllowed && !seenDigit -> {
+                        sb.append('-')
+                        signAllowed = false
+                    }
+                    else -> return ""
                 }
             }
+
             val result = sb.toString()
-            if (result == "-" || result == "." || result == "-.") return ""
-            return result
+            return if (!seenDigit || result == "-" || result == "." || result == "-.") "" else result
         }
     }
 }

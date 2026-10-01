@@ -5,11 +5,9 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.BigDecimalConverter
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import java.math.BigDecimal
-import java.math.MathContext
 import java.math.RoundingMode
 import java.util.Collections
 import java.util.LinkedHashMap
-import java.util.Locale
 
 data class Currency(
     val code: String,
@@ -19,13 +17,11 @@ data class Currency(
 )
 
 object CurrencyConfig {
-    
-    private val converter = BigDecimalConverter()
 
     fun parseBigDecimalOrNull(value: String): BigDecimal? {
-        val normalized = normalizeDigits(value).trim()
-        if (normalized.isBlank()) return null
-        return try { BigDecimal(normalized) } catch (_: Exception) { null }
+        val cleaned = BigDecimalConverter.cleanNumberString(value)
+        if (cleaned.isBlank()) return null
+        return runCatching { BigDecimal(cleaned) }.getOrNull()
     }
 
     fun parseBigDecimal(value: String): BigDecimal =
@@ -126,7 +122,7 @@ object CurrencyConfig {
     fun getOriginalAmount(tx: HabayebTransaction): BigDecimal {
         return tx.foreignAmount
     }
-    
+
     fun convertWithCurrencyPair(
         amount: BigDecimal,
         currencyPair: com.smartledger.aldaftar.domain.model.CurrencyPair
@@ -226,4 +222,3 @@ object CurrencyConfig {
 
     fun normalizeDigits(input: String): String = com.smartledger.aldaftar.platform.contacts.StringUtils.normalizeDigits(input)
 }
-
