@@ -27,31 +27,73 @@ class BigDecimalConverter {
     fun toString(value: BigDecimal?): String? = value?.toPlainString()
 
     companion object {
+        /**
+         * Parses persisted decimal text without changing its financial meaning.
+         * Room writes canonical values with '.' via [BigDecimal.toPlainString], so
+         * comma is intentionally treated as a grouping separator rather than a
+         * decimal separator. Arabic-Indic digits and Arabic decimal separator are
+         * accepted for legacy/imported values.
+         *
+         * Unexpected characters are rejected instead of being silently stripped;
+         * silently turning malformed financial text into a different number is
+         * unsafe at a persistence boundary.
+         */
         fun cleanNumberString(input: String): String {
             val trimmed = input.trim()
             if (trimmed.isEmpty()) return ""
 
-            val len = trimmed.length
-            val sb = StringBuilder(len)
-            var seenDot = false
+            val sb = StringBuilder(trimmed.length)
+            var seenDecimal = false
+            var seenDigit = false
+            var seenGrouping = false
+            var fractional = false
+            var signAllowed = true
 
-            for (i in 0 until len) {
-                val ch = trimmed[i]
+            for (ch in trimmed) {
                 when {
-                    ch in '0'..'9' -> sb.append(ch)
-                    ch in '٠'..'٩' -> sb.append((ch - '٠' + '0'.code).toChar())
-                    ch in '۰'..'۹' -> sb.append((ch - '۰' + '0'.code).toChar())
-                    ch == '.' || ch == ',' || ch == '٫' -> {
-                        if (!seenDot) {
-                            sb.append('.')
-                            seenDot = true
-                        }
+                    ch in '0'..'9' -> {
+                        sb.append(ch)
+                        seenDigit = true
+                        signAllowed = false
+                        if (seenDecimal) fractional = true
                     }
-                    ch == '-' && sb.isEmpty() -> sb.append('-')
+                    ch in '٠'..'٩' -> {
+                        sb.append((ch - '٠' + '0'.code).toChar())
+                        seenDigit = true
+                        signAllowed = false
+                        if (seenDecimal) fractional = true
+                    }
+                    ch in '۰'..'۹' -> {
+                        sb.append((ch - '۰' + '0'.code).toChar())
+                        seenDigit = true
+                        signAllowed = false
+                        if (seenDecimal) fractional = true
+                    }
+                    (ch == '.' || ch == '٫') && !seenDecimal -> {
+                        sb.append('.')
+                        seenDecimal = true
+                        signAllowed = false
+                    }
+                    (ch == ',' || ch == '،') && !seenDecimal -> {
+                        // Grouping separators are never decimal separators here.
+                        seenGrouping = true
+                    }
+                    ch == '-' && signAllowed && !seenDigit -> {
+                        sb.append('-')
+                        signAllowed = false
+                    }
+                    ch.isWhitespace() -> Unit
+                    else -> return ""
                 }
             }
+
             val result = sb.toString()
-            if (result == "-" || result == "." || result == "-.") return ""
+            if (!seenDigit || result == "-" || result == "." || result == "-.") return ""
+
+            // A grouping separator is valid only before the decimal point; the
+            // parser above already rejects it in the fractional part.
+            @Suppress("UNUSED_VARIABLE")
+            val ignored = seenGrouping || fractional
             return result
         }
     }
