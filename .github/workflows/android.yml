@@ -98,6 +98,13 @@ jobs:
             -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
             --build-cache --stacktrace --parallel --max-workers=4 --no-daemon
 
+      - name: Run Mission 003 regression tests
+        run: >-
+          bash ./gradlew testDebugUnitTest
+          --tests com.smartledger.aldaftar.data.local.TrashRestorePersistenceTest
+          --tests com.smartledger.aldaftar.data.repository.HabayebCategoryDataRepositoryTest
+          --no-daemon --stacktrace --parallel --max-workers=4
+
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
