@@ -52,14 +52,19 @@ abstract class TrashDao {
     @Query("DELETE FROM deleted_items")
     abstract suspend fun clearAllDeletedItems()
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertHabayebTransaction(tx: HabayebTransaction)
+    /**
+     * Restore must never overwrite a live row with an archived snapshot that
+     * happens to reuse the same primary key. IGNORE preserves the current live
+     * row and makes restore idempotent for duplicate/conflicting restores.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertHabayebTransactionForRestore(tx: HabayebTransaction): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertHabayebCustomer(customer: HabayebCustomer)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertHabayebCustomerForRestore(customer: HabayebCustomer): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertRecurringConfig(config: RecurringConfigEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertRecurringConfigForRestore(config: RecurringConfigEntity): Long
 
     @Query("SELECT COUNT(*) FROM habayeb_customers WHERE id = :customerId")
     abstract suspend fun checkCustomerExists(customerId: String): Int
@@ -80,7 +85,7 @@ abstract class TrashDao {
         val customerId = custData.getString("id")
 
         if (checkCustomerExists(customerId) == 0) {
-            insertHabayebCustomer(TrashItemParser.parseHabayebCustomer(custData))
+            insertHabayebCustomerForRestore(TrashItemParser.parseHabayebCustomer(custData))
         }
 
         val txsArray = root.getJSONArray("transactions")
@@ -93,7 +98,7 @@ abstract class TrashDao {
         }
 
         if (targetTxObj != null) {
-            insertHabayebTransaction(TrashItemParser.parseHabayebTransaction(targetTxObj))
+            insertHabayebTransactionForRestore(TrashItemParser.parseHabayebTransaction(targetTxObj))
             restoreRecurringForTransaction(root, txId)
             if (remainingTxs.length() == 0) {
                 deleteItem(item)
@@ -112,18 +117,18 @@ abstract class TrashDao {
             TABLE_HABAYEB_TRANSACTIONS -> {
                 val txRoot = root.optJSONObject("transaction") ?: root
                 val tx = TrashItemParser.parseHabayebTransaction(txRoot)
-                insertHabayebTransaction(tx)
-                root.optJSONObject("recurringConfig")?.let { insertRecurringConfig(parseRecurringConfig(it)) }
+                insertHabayebTransactionForRestore(tx)
+                root.optJSONObject("recurringConfig")?.let { insertRecurringConfigForRestore(parseRecurringConfig(it)) }
             }
             TABLE_HABAYEB_CUSTOMERS -> {
                 val customer = TrashItemParser.parseHabayebCustomer(root)
-                insertHabayebCustomer(customer)
+                insertHabayebCustomerForRestore(customer)
             }
             BUNDLE_HABAYEB -> {
                 val custData = root.getJSONObject("customer")
                 val parsed = TrashItemParser.parseHabayebCustomer(custData)
                 val customer = parsed.copy(categoryId = parsed.categoryId?.takeIf { checkCategoryExists(it) > 0 })
-                insertHabayebCustomer(customer)
+                insertHabayebCustomerForRestore(customer)
                 if (custData.has("pinnedScopeCategoryIds")) {
                     val scopes = custData.getJSONArray("pinnedScopeCategoryIds")
                     for (i in 0 until scopes.length()) {
@@ -136,12 +141,12 @@ abstract class TrashDao {
 
                 val txsArray = root.getJSONArray("transactions")
                 for (i in 0 until txsArray.length()) {
-                    insertHabayebTransaction(TrashItemParser.parseHabayebTransaction(txsArray.getJSONObject(i)))
+                    insertHabayebTransactionForRestore(TrashItemParser.parseHabayebTransaction(txsArray.getJSONObject(i)))
                 }
                 val recurringArray = root.optJSONArray("recurringConfigs")
                 if (recurringArray != null) {
                     for (i in 0 until recurringArray.length()) {
-                        insertRecurringConfig(parseRecurringConfig(recurringArray.getJSONObject(i)))
+                        insertRecurringConfigForRestore(parseRecurringConfig(recurringArray.getJSONObject(i)))
                     }
                 }
             }
@@ -153,7 +158,7 @@ abstract class TrashDao {
         val recurringArray = root.optJSONArray("recurringConfigs") ?: return
         for (i in 0 until recurringArray.length()) {
             val config = parseRecurringConfig(recurringArray.getJSONObject(i))
-            if (config.originalTxId == txId) insertRecurringConfig(config)
+            if (config.originalTxId == txId) insertRecurringConfigForRestore(config)
         }
     }
 
