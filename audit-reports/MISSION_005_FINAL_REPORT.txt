@@ -1,0 +1,238 @@
+MISSION 005 — FINANCIAL CALCULATION & MONEY PRECISION FORENSIC AUDIT
+Repository: 784988787aaaa-eng/ana
+Branch: main
+Mode: OBSERVE + TRACE + ANALYZE + VERIFY + REPORT
+Source modification: NONE
+Report artifact: audit-reports/MISSION_005_FINAL_REPORT.txt
+Runtime/test execution: NOT PERFORMED
+
+A. OBJECTIVE
+
+Audit the authoritative financial calculation path, precision policy, currency conversion, persisted monetary representation, transaction-derived balance SQL, and relevant tests. Determine whether financial rules are centralized and whether the active SQL projection can preserve BigDecimal precision.
+
+B. PRIMARY CONCLUSION
+
+The application has an explicit FinancialPolicy using monetary scale 4, rate scale 12, and HALF_EVEN rounding. Currency conversion also delegates rate normalization to FinancialPolicy.
+
+However, the active customer-balance SQL projection performs SUM() over persisted BigDecimal-backed columns and explicitly casts foreign_amount to REAL. HabayebTransaction stores monetary values as BigDecimal and BigDecimalConverter persists them as text. The query result is mapped back into BigDecimal.
+
+This creates a PROVEN precision-boundary risk in the architecture: the persistence representation is decimal/text-oriented, while the active aggregation query relies on SQLite numeric coercion and REAL for at least one branch. Static evidence alone does not prove an observed monetary error for a particular dataset, but it does prove that the canonical BigDecimal precision policy is not preserved end-to-end by the SQL aggregation implementation.
+
+C. INSPECTED COMPONENTS
+
+1. FinancialPolicy.kt
+   - monetary scale = 4
+   - rate scale = 12
+   - HALF_EVEN
+   - normalize() and normalizeRate()
+
+2. HabayebTransaction.kt
+   - amount, foreignAmount, exchangeRate, equivalentAmount are BigDecimal
+   - historical rate/base-currency snapshot fields are persisted
+
+3. BigDecimalConverter.kt
+   - BigDecimal -> plain String for storage
+   - String -> BigDecimal on read
+   - Double -> BigDecimal.valueOf(Double)
+   - malformed values return null
+
+4. HabayebDao.kt
+   - getAllCustomerBalancesFlow() derives active balances directly from habayeb_transactions
+   - SUM(net amount) and SUM(equivalent amount)
+   - foreign_amount branch explicitly uses CAST(foreign_amount AS REAL)
+
+5. CustomerCurrencyBalance.kt
+   - projection fields netAmount and netEquivalentAmount are BigDecimal
+
+6. HabayebFinancialCalculator.kt
+   - consumes CustomerCurrencyBalance projection
+   - rounds amounts to scale 4 with HALF_EVEN
+   - performs display/aggregation/filtering after SQL projection
+   - imports UI-layer financial utilities
+
+7. CurrencyConfig.kt
+   - conversion path uses FinancialPolicy.normalizeRate()
+   - multiplication/division is followed by scale-4 HALF_EVEN rounding
+
+8. HabayebFinancialCalculatorComprehensiveTest.kt
+   - covers local aggregation, direction separation, foreign-only display, filtering and sorting
+   - source inspected only; not executed
+
+D. FINANCIAL AUTHORITY PATH
+
+Persisted transaction facts
+  -> habayeb_transactions
+  -> HabayebDao.getAllCustomerBalancesFlow()
+  -> CustomerCurrencyBalance
+  -> HabayebRepository.customerBalancesFlow()
+  -> HabayebFinanceViewModel
+  -> HabayebFinancialCalculator
+  -> CustomersUiState/UI
+
+The active customer balance authority is therefore transaction-derived SQL, not CustomerBalanceDao.
+
+E. POSITIVE FINDINGS
+
+FIN-001
+FinancialPolicy centralizes intended precision rules.
+Status: PROVEN.
+
+FIN-002
+Transaction monetary values use BigDecimal rather than primitive floating-point fields at the Kotlin entity boundary.
+Status: PROVEN.
+
+FIN-003
+Currency conversion uses explicit rate direction and rejects non-positive rates.
+Status: PROVEN.
+
+FIN-004
+Historical exchange-related fields are persisted on HabayebTransaction, reducing dependence on a future live exchange-rate lookup for historical transactions.
+Status: PROVEN.
+
+FIN-005
+Comprehensive calculator tests exist for important customer-balance semantics.
+Status: TEST SOURCE PRESENT; EXECUTION UNPROVEN.
+
+F. CONFIRMED ARCHITECTURAL / PRECISION FINDING
+
+AUDIT-FIN-001
+TYPE: Financial precision boundary risk
+SEVERITY: HIGH
+CONFIDENCE: PROVEN STRUCTURAL RISK
+STATUS: CONFIRMED FOR ARCHITECTURAL REVIEW; RUNTIME IMPACT UNPROVEN
+
+Observation
+HabayebTransaction monetary fields are BigDecimal and are stored through BigDecimalConverter.toString() as decimal text. The active balance query in HabayebDao then performs SQL SUM() over these values and explicitly performs CAST(foreign_amount AS REAL) in one branch.
+
+The query result is then mapped back into BigDecimal through Room conversion.
+
+Expected invariant
+Financial aggregation should preserve the application's canonical decimal precision policy without passing through binary floating-point arithmetic.
+
+Actual implementation
+BigDecimal/text persistence
+  -> SQLite SUM/numeric coercion
+  -> REAL cast for foreign_amount branch
+  -> BigDecimal projection
+
+Impact
+Large or high-precision decimal values can be rounded or represented differently before Kotlin's FinancialPolicy normalization is applied. The risk is especially material for foreign_amount aggregation because the SQL explicitly requests REAL conversion.
+
+This is not a claim that every normal transaction produces a visible error. It is a confirmed loss of the guarantee that the canonical BigDecimal/HALF_EVEN policy governs the aggregation arithmetic itself.
+
+Required validation
+Golden-data runtime test comparing SQL projection against exact BigDecimal aggregation for:
+- 4-decimal monetary values
+- >4 decimal historical values
+- very large magnitudes
+- many repeated rows
+- foreign_amount values
+- mixed positive/negative transactions
+- equivalent_amount values
+
+Owner
+Financial Calculation Engineer + Database Engineer.
+
+G. SECONDARY FINDING
+
+AUDIT-FIN-002
+TYPE: Financial-rule duplication / boundary leakage
+SEVERITY: MEDIUM
+CONFIDENCE: PROVEN
+STATUS: CONFIRMED
+
+HabayebFinancialCalculator imports CurrencyConfig and CustomerHistoryCalculator from UI packages and FinanceConstants from the UI ViewModel package. CurrencyConfig also contains production financial conversion logic.
+
+This confirms that financial semantics are split between domain and UI packages. The same boundary concern was previously identified as AUDIT-ARCH-001. This mission confirms that the leakage is directly on the financial calculation path, not merely incidental UI dependency.
+
+Impact
+- financial-rule ownership is ambiguous;
+- independent domain testing is reduced;
+- future refactoring of UI utilities can affect financial compilation;
+- duplicated normalization/conversion semantics can drift.
+
+Required follow-up
+Inventory every financial calculation implementation and establish one authoritative financial service/module.
+
+H. CONVERTER FINDING
+
+AUDIT-FIN-003
+TYPE: Malformed persisted monetary value handling
+SEVERITY: MEDIUM
+CONFIDENCE: PROVEN
+STATUS: SUSPICIOUS / CONTRACT-DEPENDENT
+
+BigDecimalConverter.fromString() returns null for malformed or empty numeric strings. This is safe as a parser behavior but potentially unsafe if any non-null BigDecimal entity field receives a malformed stored value and Room maps it to null at runtime.
+
+No executed database corruption scenario was available, so production impact is unverified.
+
+Required test
+Inject malformed historical numeric storage into all BigDecimal-backed columns and verify deterministic failure/recovery semantics.
+
+I. SQL SEMANTICS REVIEW
+
+The active balance query calculates:
+- netAmount by transaction type
+- netEquivalentAmount by transaction type
+- lastTimestamp
+- txCount
+- grouping by customer and effective currency
+
+For rate-calculated transactions it uses equivalent_amount and base_currency_code.
+For non-rate-calculated foreign transactions it may use foreign_amount.
+For default currency it uses amount.
+
+The query therefore contains financial business semantics, not merely data retrieval.
+
+This strengthens the need for a single authoritative financial calculation layer.
+
+J. TEST GAP ANALYSIS
+
+Existing source tests cover HabayebFinancialCalculator behavior but do not, from the inspected test source, prove exact equivalence between:
+1. SQL aggregation arithmetic, and
+2. canonical BigDecimal arithmetic performed in Kotlin.
+
+No runtime test was executed.
+
+Required new invariant
+For every representative transaction set:
+SQL(CustomerCurrencyBalance)
+==
+ExactBigDecimalReferenceCalculator(transactions)
+
+with numerical equality checked using BigDecimal.compareTo().
+
+K. FINDINGS SUMMARY
+
+AUDIT-FIN-001 — HIGH — confirmed structural precision risk in SQL aggregation / REAL coercion.
+AUDIT-FIN-002 — MEDIUM — confirmed financial logic boundary leakage from domain into UI utilities.
+AUDIT-FIN-003 — MEDIUM — malformed BigDecimal storage maps to null; runtime impact unverified.
+
+L. EVIDENCE GAPS
+
+1. No runtime execution.
+2. No instrumented SQLite query with high-precision values.
+3. No generated Room adapter inspection for the projection conversion.
+4. No complete repository-wide inventory of all financial calculation implementations beyond inspected core paths.
+5. No release-history validation of historical numeric storage formats.
+
+M. REQUIRED FOLLOW-UP MISSIONS
+
+1. Financial Runtime Precision Mission
+Execute exact BigDecimal-vs-SQL golden-data comparisons, including extreme precision and magnitude.
+
+2. Financial Source-of-Truth Mission
+Inventory all financial calculators/converters and designate one authoritative calculation layer.
+
+3. Database Numeric Representation Mission
+Determine whether changing SQL aggregation strategy or persisted numeric representation is required without breaking existing backup/restore data.
+
+N. MISSION STATUS
+
+PARTIALLY COMPLETE — STATIC FORENSIC AUDIT
+
+No production source files were modified.
+Only this audit report artifact was added.
+No runtime tests were executed.
+
+FINAL FINANCIAL STATUS: C — SIGNIFICANT FINANCIAL PRECISION / OWNERSHIP RISKS FOUND
