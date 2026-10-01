@@ -12,6 +12,7 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.PinnedCustomer
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Dao
 interface HabayebDao {
@@ -80,65 +81,19 @@ interface HabayebDao {
     @Query("DELETE FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope")
     suspend fun deletePinsForScope(scope: Int)
 
-    @Query("""
-        SELECT
-            customerId,
-            CASE
-                WHEN is_rate_calculated = 1 THEN
-                    CASE
-                        WHEN base_currency_code IS NULL OR base_currency_code = '' OR base_currency_code = 'DEFAULT'
-                            THEN :defaultCurrencySymbol
-                        ELSE base_currency_code
-                    END
-                WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                    THEN :defaultCurrencySymbol
-                ELSE currency_code
-            END AS currencyCode,
-            SUM(
-                CASE
-                    WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN
-                        CASE
-                            WHEN is_rate_calculated = 1 THEN equivalent_amount
-                            WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                                THEN amount
-                            WHEN is_foreign = 1 AND CAST(foreign_amount AS REAL) > 0 THEN foreign_amount
-                            ELSE amount
-                        END
-                    WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN
-                        -CASE
-                            WHEN is_rate_calculated = 1 THEN equivalent_amount
-                            WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                                THEN amount
-                            WHEN is_foreign = 1 AND CAST(foreign_amount AS REAL) > 0 THEN foreign_amount
-                            ELSE amount
-                        END
-                    ELSE 0
-                END
-            ) AS netAmount,
-            SUM(
-                CASE
-                    WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN equivalent_amount
-                    WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN -equivalent_amount
-                    ELSE 0
-                END
-            ) AS netEquivalentAmount,
-            MAX(timestamp) AS lastTimestamp,
-            COUNT(*) AS txCount
-        FROM habayeb_transactions
-        GROUP BY customerId,
-            CASE
-                WHEN is_rate_calculated = 1 THEN
-                    CASE
-                        WHEN base_currency_code IS NULL OR base_currency_code = '' OR base_currency_code = 'DEFAULT'
-                            THEN :defaultCurrencySymbol
-                        ELSE base_currency_code
-                    END
-                WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                    THEN :defaultCurrencySymbol
-                ELSE currency_code
-            END
-    """)
-    fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>>
+    /**
+     * Balance arithmetic is intentionally performed in Kotlin with BigDecimal.
+     * The persisted representation is decimal text, and SQLite SUM() would
+     * coerce it through floating-point numeric affinity before Room maps it back
+     * to BigDecimal. That would break the exact-decimal financial invariant.
+     */
+    @Query("SELECT * FROM habayeb_transactions")
+    fun getTransactionsForBalanceFlow(): Flow<List<HabayebTransaction>>
+
+    fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>> =
+        getTransactionsForBalanceFlow().map { transactions ->
+            aggregateCustomerCurrencyBalances(transactions, defaultCurrencySymbol)
+        }
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>>
