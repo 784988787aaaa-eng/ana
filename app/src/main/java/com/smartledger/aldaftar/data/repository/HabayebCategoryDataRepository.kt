@@ -16,6 +16,7 @@ class HabayebCategoryDataRepository(
     private val categories: CategoryRepository
 ) {
     private val dao = database.habayebDao()
+    private val recurring = database.recurringConfigDao()
     val categoryMapFlow: Flow<Map<String, String>> = combine(dao.getAllCustomersFlow(), categories.customCategoriesFlow) { customers, list ->
         val names = list.associate { it.id to it.name }
         customers.mapNotNull { c -> c.categoryId?.let { id -> names[id]?.let { c.id to it } } }.toMap()
@@ -56,6 +57,9 @@ class HabayebCategoryDataRepository(
                         jsonData = TrashJsonSerializer.serializeHabayebBundle(customer, transactions, category.name, pins)
                     )
                 )
+                // recurring_configs has no FK to customers, so it must be explicitly
+                // removed in this aggregate deletion transaction.
+                recurring.deleteForCustomer(customer.id)
                 dao.deleteTransactionsByCustomer(customer.id)
                 dao.deletePinsForCustomer(customer.id)
                 dao.deleteCustomerById(customer.id)
