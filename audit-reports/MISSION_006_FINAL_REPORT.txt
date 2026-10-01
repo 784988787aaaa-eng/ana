@@ -1,0 +1,82 @@
+MISSION 006 — RECURRING LIFECYCLE DATA-INTEGRITY FIX
+Repository: 784988787aaaa-eng/ana
+Branch: main
+Mode: OBSERVE + TRACE + IMPLEMENT + VERIFY + REPORT
+Execution: Static implementation + source verification
+Runtime/test execution: NOT PERFORMED
+
+A. OBJECTIVE
+
+Resolve the two confirmed defects from MISSION 002:
+- AUDIT-DB-001: category-linked customer deletion can leave orphan recurring_configs.
+- AUDIT-DB-002: trash deletion removes recurring configuration without preserving it for restore.
+
+B. IMPLEMENTED CHANGES
+
+1. HabayebCategoryDataRepository.kt
+Added recurringConfigDao access.
+During deleteCategory(deleteLinkedAccounts=true), recurring configurations for each linked customer are now read and then deleted inside the existing database.withTransaction() boundary.
+
+2. HabayebMutationRepository.kt
+Customer-to-trash deletion now captures all recurring configs belonging to the customer before deletion and includes them in the trash bundle.
+Transaction-to-trash deletion now captures the recurring config associated with the transaction before deleting it.
+
+3. TrashJsonSerializer.kt
+Trash bundle serialization now supports recurringConfigs.
+Transaction trash serialization now supports an optional recurringConfig while retaining compatibility with older raw transaction JSON.
+All recurring monetary fields are serialized as decimal strings rather than floating-point values.
+
+4. TrashDao.kt
+Added transactional restoration of recurring configurations for:
+- full customer bundle restore
+- single transaction restore from a bundle
+- standalone transaction restore
+
+Added parsing of RecurringConfigEntity from the persisted JSON snapshot.
+Legacy trash records without recurringConfig/recurringConfigs remain readable.
+
+C. DATA-INTEGRITY CONTRACT AFTER FIX
+
+Customer deletion with linked accounts:
+customer
++ transactions
++ pins
++ recurring configs
++ trash snapshot
+are handled inside the same Room transaction.
+
+Transaction deletion to trash:
+transaction + associated recurring configuration are captured before deletion.
+
+Restore:
+transaction/customer state is restored together with the recurring configuration that was part of the deletion contract.
+
+D. STATIC VERIFICATION
+
+Verified source-level call chains:
+- category deletion reads recurring.all(), serializes matching customer configs, deletes them, then deletes customer data.
+- customer trash deletion captures recurring configs before recurring.deleteForCustomer().
+- transaction trash deletion captures recurring.byOriginalTransaction() before recurring.deleteForTransaction().
+- TrashDao restores recurring configurations within @Transaction methods.
+- recurring monetary fields use decimal-string JSON representation and BigDecimal reconstruction.
+- backward compatibility path remains for old standalone transaction trash JSON.
+
+E. REMAINING VALIDATION GAP
+
+No runtime tests were executed because the connected GitHub environment does not provide an Android build/device execution session.
+GitHub workflow runs for the final commit were not present at audit time.
+
+Required runtime tests:
+1. customer + recurring -> category delete -> restore -> recurring equality.
+2. transaction + recurring -> trash -> restore -> recurring equality.
+3. customer bundle with multiple recurring configs -> restore -> all configs restored.
+4. legacy trash JSON restore without recurring fields.
+5. rollback when any restore insert fails.
+
+F. STATUS
+
+IMPLEMENTATION STATUS: APPLIED TO main
+SOURCE DEFECTS ADDRESSED: AUDIT-DB-001, AUDIT-DB-002
+RUNTIME CERTIFICATION: PENDING
+
+No unrelated source changes were made.
