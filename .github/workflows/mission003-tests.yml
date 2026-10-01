@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - mission-003-data-integrity-fix
+      - mission-003-validation
   workflow_dispatch:
 
 permissions:
