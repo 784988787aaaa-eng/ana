@@ -88,8 +88,8 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
                 dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money()))
             } != null
         }
-    suspend fun updateHabayebTransaction(v:HabayebTransaction) =
-        dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money()))
+    suspend fun updateHabayebTransaction(v:HabayebTransaction): Boolean =
+        dao.updateTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money())) > 0
     suspend fun deleteHabayebTransaction(v:HabayebTransaction)=dao.deleteTransaction(v); suspend fun deleteHabayebTransactionById(id:String)=dao.deleteTransactionById(id)
     suspend fun getHabayebTransactionById(id:String)=dao.getTransactionById(id); suspend fun getCustomerByIdDirect(id:String)=dao.getCustomerByIdDirect(id)
     suspend fun revalueHistoricalTransactions(baseCurrencyCode: String, targetCurrencyCode: String, newRate: BigDecimal) = database.withTransaction {
