@@ -18,8 +18,6 @@ data class Currency(
 
 object CurrencyConfig {
 
-    private val converter = BigDecimalConverter()
-
     fun parseBigDecimalOrNull(value: String): BigDecimal? {
         val cleaned = BigDecimalConverter.cleanNumberString(value)
         if (cleaned.isBlank()) return null
@@ -54,7 +52,7 @@ object CurrencyConfig {
                 )
                 "SAR" -> defaultCurr.copy(
                     symbol = sarSym.ifEmpty { defaultCurr.symbol },
-                    arabicName = yerName.ifEmpty { defaultCurr.arabicName }
+                    arabicName = sarName.ifEmpty { defaultCurr.arabicName }
                 )
                 "USD" -> defaultCurr.copy(
                     symbol = usdSym.ifEmpty { defaultCurr.symbol },
