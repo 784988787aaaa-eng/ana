@@ -45,8 +45,6 @@ class BigDecimalConverter {
             val sb = StringBuilder(trimmed.length)
             var seenDecimal = false
             var seenDigit = false
-            var seenGrouping = false
-            var fractional = false
             var signAllowed = true
 
             for (ch in trimmed) {
@@ -55,19 +53,16 @@ class BigDecimalConverter {
                         sb.append(ch)
                         seenDigit = true
                         signAllowed = false
-                        if (seenDecimal) fractional = true
                     }
                     ch in '٠'..'٩' -> {
                         sb.append((ch - '٠' + '0'.code).toChar())
                         seenDigit = true
                         signAllowed = false
-                        if (seenDecimal) fractional = true
                     }
                     ch in '۰'..'۹' -> {
                         sb.append((ch - '۰' + '0'.code).toChar())
                         seenDigit = true
                         signAllowed = false
-                        if (seenDecimal) fractional = true
                     }
                     (ch == '.' || ch == '٫') && !seenDecimal -> {
                         sb.append('.')
@@ -76,25 +71,17 @@ class BigDecimalConverter {
                     }
                     (ch == ',' || ch == '،') && !seenDecimal -> {
                         // Grouping separators are never decimal separators here.
-                        seenGrouping = true
                     }
                     ch == '-' && signAllowed && !seenDigit -> {
                         sb.append('-')
                         signAllowed = false
                     }
-                    ch.isWhitespace() -> Unit
                     else -> return ""
                 }
             }
 
             val result = sb.toString()
-            if (!seenDigit || result == "-" || result == "." || result == "-.") return ""
-
-            // A grouping separator is valid only before the decimal point; the
-            // parser above already rejects it in the fractional part.
-            @Suppress("UNUSED_VARIABLE")
-            val ignored = seenGrouping || fractional
-            return result
+            return if (!seenDigit || result == "-" || result == "." || result == "-.") "" else result
         }
     }
 }
