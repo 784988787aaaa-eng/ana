@@ -34,7 +34,6 @@ class HabayebTransactionUseCase(
         val tx = HabayebTransaction(txId,customerId,type,amount,timestamp,desc,link,isForeign,currencyCode,foreignAmount,exchangeRate,isRateCalculated,equivalentAmount,baseCurrencySymbol)
         return if (editingTxId != null) {
             habayeb.updateHabayebTransaction(tx)
-            true
         } else {
             habayeb.insertHabayebTransaction(tx)
         }
