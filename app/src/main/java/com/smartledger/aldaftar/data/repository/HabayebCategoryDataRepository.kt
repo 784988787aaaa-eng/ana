@@ -49,16 +49,15 @@ class HabayebCategoryDataRepository(
             linked.forEach { customer ->
                 val transactions = dao.getTransactionsForCustomerDirect(customer.id)
                 val pins = dao.getPinScopeCategoryIdsForCustomer(customer.id).toSet()
+                val recurringConfigs = recurring.all().filter { it.customerId == customer.id }
                 database.trashDao().insertDeletedItem(
                     DeletedItemEntity(
                         id = "bundle_${customer.id}",
                         sourceSystem = "الحبايب",
                         originalTableName = "habayeb_bundle",
-                        jsonData = TrashJsonSerializer.serializeHabayebBundle(customer, transactions, category.name, pins)
+                        jsonData = TrashJsonSerializer.serializeHabayebBundle(customer, transactions, category.name, pins, recurringConfigs)
                     )
                 )
-                // recurring_configs has no FK to customers, so it must be explicitly
-                // removed in this aggregate deletion transaction.
                 recurring.deleteForCustomer(customer.id)
                 dao.deleteTransactionsByCustomer(customer.id)
                 dao.deletePinsForCustomer(customer.id)
