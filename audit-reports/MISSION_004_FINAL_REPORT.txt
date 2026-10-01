@@ -1,0 +1,394 @@
+MISSION 004 — CUSTOMER BALANCE AUTHORITY & BACKUP COMPLETENESS FORENSIC AUDIT
+Repository: 784988787aaaa-eng/ana
+Base: main
+Mode: OBSERVE + TRACE + ANALYZE + VERIFY
+Source modification: NONE
+
+A. MISSION IDENTIFICATION
+
+Objective:
+Resolve AUDIT-DB-003 by determining whether customer_balances is authoritative, derived/cache, unused/dead schema, mixed/ambiguous, or unresolved from available evidence.
+
+Primary conclusion:
+The implementation evidence strongly establishes that customer_balances is NOT the runtime source of customer balances. Runtime customer-balance projections used by the customer UI are calculated directly from habayeb_transactions through HabayebDao.getAllCustomerBalancesFlow(). CustomerBalanceDao has no demonstrated production caller in the available source evidence. However, the repository's GitHub code-search index is disabled (repository metadata reports is_code_search_indexed=false), so a mechanically exhaustive whole-repository caller search cannot be certified. Therefore the final classification is UNRESOLVED rather than an overconfident UNUSED certification.
+
+B. SCOPE
+
+Included:
+- CustomerBalanceDao
+- CustomerBalance entity
+- AppDatabase registration
+- AppContainer composition
+- production repositories and ViewModel paths relevant to customer balances
+- HabayebDao balance projection
+- HabayebFinancialCalculator consumption
+- BackupEngine snapshot/restore contract
+- database schema test evidence
+- source-tree evidence and Git history for CustomerBalanceDao
+
+Excluded:
+- financial-policy correctness beyond determining the persisted balance authority
+- security/cryptography
+- UI correctness beyond identifying the actual balance data source
+- runtime execution claims
+
+C. FILES / COMPONENTS INSPECTED
+
+1. app/src/main/java/com/smartledger/aldaftar/data/local/CustomerBalanceDao.kt
+   Class: CustomerBalanceDao
+   Evidence: DAO exposes read/write/delete/clear methods against customer_balances.
+
+2. app/src/main/java/com/smartledger/aldaftar/data/local/entities/CustomerBalance.kt
+   Entity: CustomerBalance
+   Table: customer_balances
+   Primary key: id
+   Fields: customerId, currencyCode, netAmount, netEquivalentAmount, lastTimestamp, txCount.
+
+3. app/src/main/java/com/smartledger/aldaftar/data/local/AppDatabase.kt
+   AppDatabase registers CustomerBalance as an entity and exposes customerBalanceDao(). Database version is 1.
+
+4. app/src/main/java/com/smartledger/aldaftar/AppContainer.kt
+   AppContainer creates the production repositories and database, but does not expose or inject CustomerBalanceDao into a repository/service/ViewModel.
+
+5. app/src/main/java/com/smartledger/aldaftar/data/local/HabayebDao.kt
+   Contains the active customer-balance projection query directly over habayeb_transactions.
+
+6. app/src/main/java/com/smartledger/aldaftar/data/repository/DomainRepositories.kt
+   HabayebRepository exposes customerBalancesFlow() through HabayebDao.getAllCustomerBalancesFlow(). No CustomerBalanceDao dependency is present.
+
+7. app/src/main/java/com/smartledger/aldaftar/ui/viewmodel/HabayebFinanceViewModel.kt
+   customersUiState consumes HabayebRepository.customerBalancesFlow(), then passes the projection to HabayebFinancialCalculator.
+
+8. app/src/main/java/com/smartledger/aldaftar/domain/usecase/habayeb/HabayebFinancialCalculator.kt
+   Calculates customer UI state from CustomerCurrencyBalance projection records, not CustomerBalance entities.
+
+9. app/src/main/java/com/smartledger/aldaftar/data/backup/BackupEngine.kt
+   snapshot() and rootToDatabase() serialize/restore application tables, but do not read/write customer_balances through CustomerBalanceDao or include customer_balances in the backup payload.
+
+10. app/src/test/java/com/smartledger/aldaftar/data/local/DatabaseSchemaV1Test.kt
+    Fresh schema test explicitly expects customer_balances to exist.
+
+11. Repository metadata / source tree / Git history
+    Repository code-search index is disabled. CustomerBalanceDao path history shows only the current 2026-09-29 "Clean re-upload" commit.
+
+D. COMPLETE CustomerBalanceDao CALLER INVENTORY
+
+CustomerBalanceDao itself exposes:
+- getAllBalancesFlow()
+- getBalancesForCustomer(customerId)
+- insertBalances(balances)
+- deleteBalancesForCustomer(customerId)
+- clearAllBalances()
+
+Production caller evidence found:
+- No caller was identified in AppContainer.
+- No caller was identified in the inspected production repository layer.
+- No caller was identified in the active HabayebDao balance path.
+- No caller was identified in the active HabayebFinanceViewModel balance path.
+- No caller was identified in BackupEngine.
+- No caller was identified in the directly inspected balance/calculation components.
+
+Important limitation:
+A complete whole-repository textual caller inventory cannot be certified because the GitHub code-search index for this repository is disabled. The connector's repository metadata reports is_code_search_indexed=false, and code-search queries returned no indexed results. This is an evidence limitation, not proof of zero callers.
+
+Caller classification:
+UNRESOLVED_FROM_AVAILABLE_EVIDENCE
+
+E. WRITE-PATH TRACE
+
+Declared write path:
+CustomerBalanceDao.insertBalances()
+    -> writes customer_balances with OnConflictStrategy.REPLACE.
+
+Declared deletion paths:
+CustomerBalanceDao.deleteBalancesForCustomer()
+CustomerBalanceDao.clearAllBalances()
+
+Observed production mutation path:
+No production caller was proven for any of the above methods.
+
+Active customer-balance mutation path actually used by the application:
+HabayebFinanceViewModel.add/save/delete/update operations
+    -> HabayebTransactionUseCase
+    -> HabayebRepository
+    -> HabayebDao transaction/customer mutation methods
+    -> habayeb_transactions / habayeb_customers
+
+The balance projection is then recalculated by the SQL query in HabayebDao from habayeb_transactions. There is no demonstrated write-through to customer_balances.
+
+Transaction boundary:
+The active transaction mutation methods in HabayebRepository/HabayebDao operate on habayeb customer/transaction tables. No customer_balances mutation is included in those paths based on inspected source.
+
+F. READ-PATH TRACE
+
+Active runtime read path:
+Room / habayeb_transactions
+    -> HabayebDao.getAllCustomerBalancesFlow(defaultCurrencySymbol)
+    -> CustomerCurrencyBalance projection
+    -> HabayebRepository.customerBalancesFlow()
+    -> HabayebFinanceViewModel.customersUiState
+    -> HabayebFinancialCalculator.calculateCustomersUiState()
+    -> CustomersUiState / UI.
+
+The SQL projection groups habayeb_transactions by customerId and effective currency, calculates netAmount, netEquivalentAmount, MAX(timestamp), and COUNT(*).
+
+CustomerBalanceDao is NOT part of this active read path.
+
+G. TRANSACTION-BOUNDARY ANALYSIS
+
+customer_balances table:
+- No production write transaction boundary was proven because no production writer was proven.
+- The DAO itself contains no @Transaction mutation method.
+- AppDatabase exposes the DAO but does not establish an aggregate mutation contract around it.
+
+Active customer balance calculation:
+- The balance used by the application is a read projection over habayeb_transactions.
+- It is therefore automatically invalidated/recomputed by Room when the source query observes transaction-table changes.
+- This is materially different from maintaining a separately persisted balance table.
+
+No claim is made about runtime scheduling or actual Flow emissions beyond the static Room query contract.
+
+H. AUTHORITY ANALYSIS
+
+Candidate A — AUTHORITATIVE:
+Not supported by inspected evidence. The customer UI does not read CustomerBalanceDao; it reads HabayebDao's transaction-derived projection.
+
+Candidate B — DERIVED/CACHE:
+Not supported as a current active persisted cache because no production write/read caller for CustomerBalanceDao was demonstrated. The actual active derived balance is CustomerCurrencyBalance, computed directly from habayeb_transactions.
+
+Candidate C — UNUSED/DEAD SCHEMA:
+Strongly supported by the implementation structure:
+- entity is registered;
+- DAO is exposed by AppDatabase;
+- AppContainer does not inject/expose the DAO;
+- active repositories use HabayebDao instead;
+- UI/ViewModel uses HabayebRepository.customerBalancesFlow();
+- BackupEngine omits the table;
+- no production caller was found in inspected source.
+
+But because whole-repository code search is unavailable, this cannot be elevated to PROVEN UNUSED for the entire repository.
+
+Candidate D — MIXED/AMBIGUOUS:
+No mixed runtime authority was demonstrated.
+
+FINAL CLASSIFICATION:
+UNRESOLVED
+Reason: implementation strongly indicates UNUSED/DEAD SCHEMA, but complete whole-repository caller absence cannot be certified from the available evidence because code-search indexing is disabled.
+
+I. COMPARISON WITH TRANSACTION-DERIVED BALANCES
+
+The active balance calculation is explicitly derived from habayeb_transactions in HabayebDao.getAllCustomerBalancesFlow().
+
+The query calculates:
+- customerId
+- currencyCode
+- netAmount
+- netEquivalentAmount
+- lastTimestamp
+- txCount
+
+HabayebFinancialCalculator consumes CustomerCurrencyBalance records, not CustomerBalance records.
+
+This establishes a single active balance source for the customer list: the transaction-derived SQL projection.
+
+No evidence was found that customer_balances participates in customer-balance calculation, sorting, totals, or customer display.
+
+J. BACKUP / RESTORE IMPACT
+
+BackupEngine.snapshot() reads and serializes:
+- settings
+- categories
+- trash
+- customers
+- habayebTransactions
+- pins
+- businessProfile
+- recurring
+
+customer_balances is absent.
+
+BackupEngine.rootToDatabase() restores the same logical set and does not restore customer_balances.
+
+Given the active runtime balance authority is habayeb_transactions-derived, omission of customer_balances from backup is consistent with the observed active runtime contract.
+
+If a hidden production caller or external contract treats customer_balances as persisted user data, the omission would become a backup-completeness defect. That condition is not proven from available evidence.
+
+Therefore:
+BACKUP IMPACT = NO CONFIRMED DEFECT FOR THE ACTIVE BALANCE CONTRACT.
+EVIDENCE STATUS = UNRESOLVED FOR HIDDEN/UNINDEXED CALLERS.
+
+K. DELETE / RESTORE LIFECYCLE IMPACT
+
+Observed customer/transaction lifecycle mutates:
+- habayeb_customers
+- habayeb_transactions
+- pinned_habayeb_customers
+- recurring_configs
+- deleted_items/trash as applicable.
+
+No CustomerBalanceDao mutation is present in the inspected lifecycle paths.
+
+Consequently, the active balance projection requires no explicit customer_balances synchronization after:
+- transaction creation
+- transaction edit
+- transaction deletion
+- customer deletion
+- restore
+
+because the active balance is recalculated from the current transaction table.
+
+If customer_balances were later proven active, each of these transitions would require a separate consistency contract. No such active contract is currently demonstrated.
+
+L. TEST-SOURCE EVIDENCE
+
+DatabaseSchemaV1Test explicitly asserts that customer_balances exists in schema version 1.
+
+This proves only schema presence, not runtime use.
+
+No test was identified that proves CustomerBalanceDao mutation/read usage.
+
+No test execution was performed in this audit.
+
+Test classification:
+- TEST SOURCE PRESENT: DatabaseSchemaV1Test
+- TEST EXECUTION PROVEN: NO
+- CustomerBalanceDao behavioral test: NOT PROVEN
+
+M. CONFIRMED FINDINGS
+
+AUDIT-DB-004
+DOMAIN: Database / Data Integrity
+TYPE: Redundant persisted schema / architectural dead-schema concern
+SEVERITY: P2
+CONFIDENCE: PROVEN for observed architecture; NOT PROVEN as whole-repository unused
+STATUS: CONFIRMED
+
+OBSERVATION:
+The application registers CustomerBalance/customer_balances in Room and exposes CustomerBalanceDao, but the active customer-balance read path is a SQL projection directly from habayeb_transactions through HabayebDao and CustomerCurrencyBalance.
+
+EVIDENCE:
+- AppDatabase registers CustomerBalance and customerBalanceDao().
+- CustomerBalanceDao exposes a complete CRUD-like surface but no inspected production caller.
+- HabayebDao.getAllCustomerBalancesFlow() calculates the balance directly from habayeb_transactions.
+- HabayebRepository.customerBalancesFlow() delegates to HabayebDao.
+- HabayebFinanceViewModel consumes that projection.
+- HabayebFinancialCalculator consumes CustomerCurrencyBalance.
+- BackupEngine omits customer_balances.
+
+IMPACT:
+The schema contains a persisted balance structure that is not part of the demonstrated active balance contract. If it is truly unused, it increases schema surface, backup/migration complexity, and future risk of accidental dual-source-of-truth introduction.
+
+RECOMMENDED NEXT INVESTIGATION:
+Perform a repository-wide caller scan with a source-search mechanism that is actually indexed or a complete local checkout. Do not remove the table before this scan.
+
+OWNER:
+Database Engineering / Architecture Review
+
+N. SUSPICIOUS / UNVERIFIED FINDINGS
+
+AUDIT-DB-EVIDENCE-GAP-001
+TYPE: Whole-repository caller inventory gap
+SEVERITY: P2
+CONFIDENCE: PROVEN evidence gap
+STATUS: UNVERIFIED
+
+The GitHub code-search index is disabled. Therefore absence of indexed search results cannot be treated as proof that no production source file references CustomerBalanceDao/customer_balances.
+
+AUDIT-DB-EVIDENCE-GAP-002
+TYPE: Runtime authority validation gap
+SEVERITY: P2
+CONFIDENCE: UNVERIFIED
+STATUS: UNTESTED
+
+No runtime database inspection was executed. Static source evidence identifies the active balance projection but does not prove behavior on a running installation containing historical data.
+
+O. CROSS-DOMAIN FINDINGS
+
+CROSS-DB-001
+ORIGIN: Database/Data Integrity
+OBSERVATION: The active customer balance is derived by a large SQL aggregation with currency/type branching and is then consumed by financial UI calculation code.
+EVIDENCE: HabayebDao.getAllCustomerBalancesFlow() + HabayebFinancialCalculator.calculateCustomersUiState().
+POTENTIAL IMPACT: Financial correctness and calculation semantics are outside this mission.
+REFERRED TO: Financial Calculation Engineer
+REQUIRED FOLLOW-UP: Independently validate the SQL aggregation against the canonical financial rules and representative transaction scenarios.
+
+P. EVIDENCE GAPS
+
+1. Repository code-search index disabled; exhaustive caller absence cannot be certified mechanically.
+2. No local checkout/runtime execution available through the audit environment.
+3. No runtime inspection of sqlite_master or actual customer_balances row population.
+4. No executed test results were available.
+5. No historical schema versions beyond current version 1 can be reconstructed from current source alone.
+
+Q. COVERAGE
+
+Repository structural inventory relevant to customer_balances:
+Inventory: 10 / 10 = 100%
+Items = CustomerBalanceDao, CustomerBalance, AppDatabase, AppContainer, HabayebDao, HabayebRepository, HabayebFinanceViewModel, HabayebFinancialCalculator, BackupEngine, DatabaseSchemaV1Test.
+
+Direct artifact inspection:
+Inspection: 10 / 10 = 100%
+
+Production caller inventory:
+Inventory: X / N
+N = UNDEFINED
+Reason: complete repository-wide caller enumeration cannot be established because code-search indexing is disabled.
+
+Write-path validation:
+Validation: 0 / 1 = 0%
+The declared DAO write path was inspected, but absence of a production caller could not be exhaustively validated across the repository.
+
+Authority classification validation:
+Validation: 4 / 5 = 80%
+AUTHORITATIVE, ACTIVE-DERIVED, MIXED, and BACKUP-contract hypotheses were evaluated from static evidence; UNUSED could not be certified globally because of the caller-inventory gap.
+
+Overall Mission Coverage:
+NOT CERTIFIABLE AS A SINGLE PERCENTAGE because one mandatory denominator (complete production caller set) is undefined.
+
+R. REQUIRED FOLLOW-UP MISSIONS
+
+1. Mission — Repository-Wide Static Caller Closure
+WHY:
+Close the only material evidence gap: exhaustive production references to CustomerBalanceDao, CustomerBalance, customer_balances, and direct AppDatabase.customerBalanceDao() access.
+QUESTION:
+Are there zero production callers anywhere in main?
+REQUIRED TEST:
+Complete local checkout + ripgrep/IDE structural search + Kotlin symbol search, covering app/src/main, generated source if committed, tests, and configuration.
+
+2. Mission — Database Runtime Population Check
+WHY:
+Determine whether customer_balances can contain rows in an existing database despite no current writer.
+QUESTION:
+Is customer_balances ever populated by current release code or only by historical data?
+REQUIRED TEST:
+Run the application/instrumented database inspection against a fresh database and a representative migrated/historical database; query sqlite_master and customer_balances row count.
+
+3. Mission — Financial Balance Projection Validation
+WHY:
+Validate the active source-of-truth projection independently.
+QUESTION:
+Does HabayebDao.getAllCustomerBalancesFlow() exactly match the canonical financial balance contract across currency, rate, transaction type, deletion/restore, and historical data scenarios?
+REQUIRED TEST:
+Golden-data comparison against transaction-derived expected balances.
+
+S. FINAL CLASSIFICATION
+
+CUSTOMER_BALANCE_CLASSIFICATION: UNRESOLVED
+
+Reasoning:
+- The active application balance path is PROVEN to be transaction-derived through HabayebDao -> CustomerCurrencyBalance -> HabayebRepository -> HabayebFinanceViewModel -> HabayebFinancialCalculator.
+- CustomerBalanceDao is PROVEN to be registered in Room and to expose a persisted customer_balances table.
+- No production caller was found in the inspected relevant source.
+- BackupEngine does not include customer_balances.
+- DatabaseSchemaV1Test proves only that the table exists in schema version 1.
+- The repository code-search index is disabled, so complete whole-repository caller absence cannot be proven.
+
+Therefore the audit does NOT certify customer_balances as authoritative, active derived state, or globally dead. The evidence supports a strong UNUSED/DEAD-SCHEMA hypothesis, but the required forensic standard mandates UNRESOLVED until the repository-wide caller gap is closed.
+
+T. MISSION STATUS
+
+FINAL STATUS: BLOCKED BY EVIDENCE
+
+No source/configuration/database schema changes were made as part of the audit. The only repository artifact requested by this mission is this audit report.
+
+END OF MISSION 004
