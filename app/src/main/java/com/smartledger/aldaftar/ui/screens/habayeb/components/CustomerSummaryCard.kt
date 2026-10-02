@@ -158,6 +158,7 @@ fun BalanceCompactChip(
             color = targetHeaderTextColor,
             textAlign = TextAlign.Center,
             maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(2.dp))

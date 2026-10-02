@@ -16,12 +16,12 @@ object FinanceConstants {
 
     const val DEFAULT_FALLBACK_VERSION = "1.0.0"
     
-    const val DEFAULT_CURRENCY_CODE = "DEFAULT"
-    const val FALLBACK_CURRENCY_SYMBOL = "ر.ي"
+    const val DEFAULT_CURRENCY_CODE = com.smartledger.aldaftar.domain.model.FinancialPolicy.DEFAULT_CURRENCY_CODE
+    const val FALLBACK_CURRENCY_SYMBOL = com.smartledger.aldaftar.domain.model.FinancialPolicy.FALLBACK_CURRENCY_SYMBOL
 
-    const val CATEGORY_CLOSED = "CLOSED"
-    const val TYPE_OWED_TO_THEM = "OWED_TO_THEM"
-    const val TYPE_OWED_BY_THEM = "OWED_BY_THEM"
+    const val CATEGORY_CLOSED = com.smartledger.aldaftar.domain.model.FinancialPolicy.CATEGORY_CLOSED
+    const val TYPE_OWED_TO_THEM = com.smartledger.aldaftar.domain.model.FinancialPolicy.TYPE_OWED_TO_THEM
+    const val TYPE_OWED_BY_THEM = com.smartledger.aldaftar.domain.model.FinancialPolicy.TYPE_OWED_BY_THEM
 
     const val FREQ_DAILY = "DAILY"
     const val FREQ_WEEKLY = "WEEKLY"

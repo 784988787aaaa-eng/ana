@@ -142,7 +142,7 @@
     <string name="habayeb_delete_account_title">حذف كلي للحساب</string>
     <string name="habayeb_delete_account_confirm">سيتم نقل الحساب \'%s\' مع حركاته المالية إلى سلة المحذوفات ويمكن استعادته لاحقاً.</string>
     <string name="habayeb_delete_yes">نعم، حذف</string>
-    <string name="habayeb_edit_name_title">تعديل اسم الزبون</string>
+    <string name="habayeb_edit_name_title">تعديل اسم العميل</string>
     <string name="habayeb_edit_customer_dialog_title">تعديل الحساب</string>
     <string name="habayeb_save_edit">حفظ التعديل</string>
     <string name="habayeb_edit_name_desc">تعديل الاسم</string>
@@ -194,7 +194,7 @@
     <string name="habayeb_to_them">له</string>
     <string name="habayeb_balanced">مصفّى</string>
     <string name="habayeb_recurring_source">تكرار رئيسي مجدول 🔄</string>
-    <string name="habayeb_auto_generated_sub">تكرار تلقائي (تابع للمعامله #%1$d)</string>
+    <string name="habayeb_auto_generated_sub">تكرار تلقائي (تابع للمعاملة #%1$d)</string>
     <string name="habayeb_rate_active">نشط (صرف: %1$s)</string>
     <string name="habayeb_rate_inactive_clean">صرف غير نشط</string>
     <string name="habayeb_no_notes">لا يوجد ملاحظات</string>
@@ -305,7 +305,7 @@
     <string name="habayeb_category_cancel">إلغاء</string>
     <string name="habayeb_category_save">حفظ</string>
     <string name="habayeb_category_add_title">إنشاء تصنيف جديد</string>
-    <string name="habayeb_category_add_placeholder">لأصدقاء، العمال، الجمعيات</string>
+    <string name="habayeb_category_add_placeholder">الأصدقاء، العمال، الجمعيات</string>
 
     <!-- ============================================================================== -->
     <!-- 05. التقارير والتصدير (Reports, PDF Engine & CSV Generation)                      -->
@@ -390,7 +390,7 @@
     <string name="pdf_total_currency_prefix">مبلغ عملة %1$s</string>
     <string name="pdf_booklet_title">السجل الشامل المفصل</string>
     <string name="pdf_booklet_subtitle">تقرير مالي لكل تفاصيل الحسابات</string>
-    <string name="pdf_index_title">فهرس ومخلص أرصدة الحسابات</string>
+    <string name="pdf_index_title">فهرس وملخص أرصدة الحسابات</string>
     <string name="pdf_index_col_name">اسم الحساب</string>
     <string name="pdf_index_col_phone">الهاتف</string>
     <string name="pdf_index_col_balance">المبلغ النهائي</string>
@@ -400,7 +400,7 @@
     <string name="pdf_tx_type_owed_by_them">دين عليه</string>
     <string name="pdf_tx_type_payment_by_them">استلام</string>
     <string name="pdf_tx_type_owed_to_them">دين له</string>
-    <string name="pdf_tx_type_payment_to_them">تسديد</string>
+    <string name="pdf_tx_type_payment_to_them">سداد</string>
     <string name="pdf_tx_type_new">معاملة جديدة</string>
     <string name="report_status_for_us">لنا</string>
     <string name="report_status_on_us">علينا</string>
@@ -478,7 +478,7 @@
     <string name="drawer_business_profile_label">بيانات النشاط التجاري</string>
     <string name="settings_title">الإعدادات العامة</string>
     <string name="settings_subtitle">تهيئة العملات، المزامنة السحابية وقفل الأمان</string>
-    <string name="settings_currency_title">العملة الإفتراضية</string>
+    <string name="settings_currency_title">العملة الافتراضية</string>
     <string name="settings_currency_hint">رمز العملة (مثال: ر.ي، $)</string>
     <string name="settings_signature_title">حماية توقيع التطبيق 🔐</string>
     <string name="settings_signature_desc">توقيع الإصدار محفوظ خارج التطبيق وتُدار مفاتيحه الحساسة في بيئة البناء الآمنة.</string>
@@ -751,7 +751,7 @@
     <string name="trash_auto_cleanup_year">سنوياً</string>
     <string name="trash_auto_cleanup_never">مطلقاً</string>
     <string name="trash_sort_btn_label">الترتيب</string>
-    <string name="trash_status_balanced">مصفى</string>
+    <string name="trash_status_balanced">مصفّى</string>
     <string name="trash_status_owed_prefix">عليه:</string>
     <string name="trash_status_due_prefix">له:</string>
     <string name="trash_rate_active_format">✓ نشط (صرف: %1$s)</string>
@@ -928,9 +928,11 @@
     <string name="license_whatsapp_request_help">طلب ترخيص أو مساعدة عبر واتساب</string>
     <string name="report_scope_display_icon">📋 %1$s</string>
 
-    <string name="toast_trash_emptied">تم إفراغ سلة المهملات بنجاح</string>
+    <string name="toast_trash_emptied">تم إفراغ سلة المحذوفات بنجاح</string>
     <string name="toast_item_restored">تمت الاستعادة بنجاح</string>
     <string name="toast_item_permanently_deleted">تم الحذف نهائياً</string>
     <string name="toast_items_restored">تمت الاستعادة بنجاح</string>
     <string name="toast_items_permanently_deleted">تم الحذف نهائياً</string>
+    <string name="currency_exchange_toggle_desc">تبديل اتجاه سعر الصرف</string>
+    <string name="sec_desc_toggle_pin_visibility">إظهار أو إخفاء رمز المرور</string>
 </resources>

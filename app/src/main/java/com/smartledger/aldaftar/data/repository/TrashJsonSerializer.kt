@@ -64,5 +64,52 @@ object TrashJsonSerializer {
             put("rate_context", tx.rateContext)
         }
     }
+
+    fun parseBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): java.math.BigDecimal {
+        if (!obj.has(key) || obj.isNull(key)) return java.math.BigDecimal(fallback)
+        val valueStr = obj.optString(key, "")
+        if (valueStr.isNotBlank() && valueStr != "null") {
+            try {
+                return java.math.BigDecimal(valueStr.trim())
+            } catch (_: Exception) {}
+        }
+        return java.math.BigDecimal(fallback)
+    }
+
+    fun parseHabayebCustomer(custData: JSONObject): HabayebCustomer {
+        return HabayebCustomer(
+            id = custData.getString("id"),
+            name = custData.getString("name"),
+            phone = custData.optString("phone", ""),
+            notes = custData.optString("notes", ""),
+            createdAt = custData.optLong("createdAt", System.currentTimeMillis()),
+            initialType = custData.optString("initialType", custData.optString("initial_type", com.smartledger.aldaftar.domain.model.TransactionType.OWED_BY_THEM.value)),
+            categoryId = if (custData.has("categoryId") && !custData.isNull("categoryId")) custData.optInt("categoryId") else null
+        )
+    }
+
+    fun parseHabayebTransaction(txObj: JSONObject): HabayebTransaction {
+        val linkedId = if (txObj.has("linkedMainTxId") && !txObj.isNull("linkedMainTxId")) {
+            txObj.getString("linkedMainTxId")
+        } else null
+        return HabayebTransaction(
+            id = txObj.getString("id"),
+            customerId = txObj.getString("customerId"),
+            type = txObj.getString("type"),
+            amount = parseBigDecimal(txObj, "amount"),
+            timestamp = txObj.optLong("timestamp", System.currentTimeMillis()),
+            description = txObj.optString("description", ""),
+            linkedMainTxId = linkedId,
+            isForeign = txObj.optBoolean("is_foreign", false),
+            currencyCode = txObj.optString("currency_code", com.smartledger.aldaftar.domain.model.FinancialPolicy.DEFAULT_CURRENCY_CODE),
+            foreignAmount = parseBigDecimal(txObj, "foreign_amount"),
+            exchangeRate = parseBigDecimal(txObj, "exchange_rate", "0"),
+            isRateCalculated = txObj.optBoolean("is_rate_calculated", false),
+            equivalentAmount = parseBigDecimal(txObj, "equivalent_amount"),
+            baseCurrencyCode = txObj.optString("base_currency_code", com.smartledger.aldaftar.domain.model.FinancialPolicy.DEFAULT_CURRENCY_CODE),
+            snapshotVersion = txObj.optInt("snapshot_version", 1),
+            rateContext = txObj.optString("rate_context", "HISTORICAL_SNAPSHOT")
+        )
+    }
 }
 

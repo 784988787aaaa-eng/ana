@@ -193,7 +193,8 @@ fun ExitConfirmDialog(
                             text = stringResource(id = R.string.common_cancel),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.5.sp,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
 
@@ -220,10 +221,11 @@ fun ExitConfirmDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = stringResource(id = R.string.dialog_exit_confirm_btn),
+                            text = stringResource(id = R.string.dialog_exit_confirm),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.5.sp,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
                 }

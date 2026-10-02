@@ -108,6 +108,7 @@ fun CustomerEditDialog(
     val editNameFocusRequester = remember { FocusRequester() }
     val editPhoneFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
     val launchContactPicker = rememberContactPicker { name, phone ->
         if (name.isNotBlank() && editedNameTfv.text.isBlank()) {
@@ -127,12 +128,13 @@ fun CustomerEditDialog(
         )
 
         val handleSave = {
-            if (editedNameStr.trim().isNotBlank()) {
+            if (!isSaving && editedNameStr.trim().isNotBlank()) {
                 if (isDuplicateName) {
                     Toast.makeText(context, context.getString(R.string.habayeb_error_duplicate_name), Toast.LENGTH_SHORT).show()
                 } else {
                     isSaving = true
                     keyboardController?.hide()
+                    focusManager.clearFocus()
                     onConfirm(editedNameStr.trim(), editedPhoneStr.trim())
                     dismiss()
                 }
@@ -213,6 +215,7 @@ fun CustomerEditDialog(
                     keyboardActions = KeyboardActions(
                         onDone = {
                             keyboardController?.hide()
+                            focusManager.clearFocus()
                         }
                     ),
                     textStyle = LocalTextStyle.current.copy(
@@ -265,7 +268,8 @@ fun CustomerEditDialog(
                 MizanDialogActions(
                     confirmText = stringResource(id = R.string.habayeb_save_edit),
                     onConfirm = handleSave,
-                    confirmEnabled = editedNameStr.trim().isNotBlank(),
+                    confirmEnabled = !isSaving && editedNameStr.trim().isNotBlank(),
+                    isConfirmLoading = isSaving,
                     confirmContainerColor = activeThemeColor,
                     cancelText = stringResource(id = R.string.habayeb_cancel),
                     onCancel = dismiss

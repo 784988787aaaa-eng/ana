@@ -36,7 +36,10 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.domain.admin.AdminIssuedLicense
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.theme.CreditGreen
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.theme.MizanRadii
+import com.smartledger.aldaftar.ui.theme.WhatsAppLightGreen
 import com.smartledger.aldaftar.ui.viewmodel.AdminLicenseViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -64,6 +67,8 @@ fun AdminLicenseManagerDialog(
 
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     MizanAnimatedDialog(onDismissRequest = onDismiss) {
         MizanDialogCard(
@@ -186,6 +191,8 @@ fun AdminLicenseManagerDialog(
                         label = { Text(if (licenseType == "ACCOUNT") "كود الحساب (SLD-...)" else "معرف الجهاز (SLD-...)", fontSize = 12.sp) },
                         placeholder = { Text("SLD-L7XY-P7DX-DR", fontSize = 11.sp) },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Next) }),
                         trailingIcon = {
                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                 IconButton(
@@ -196,7 +203,7 @@ fun AdminLicenseManagerDialog(
                                             Toast.makeText(context, "تم لصق الكود", Toast.LENGTH_SHORT).show()
                                         }
                                     },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(Icons.Default.ContentPaste, "لصق", Modifier.size(16.dp))
                                 }
@@ -205,7 +212,7 @@ fun AdminLicenseManagerDialog(
                                         viewModel.fillCurrentDeviceCode()
                                         Toast.makeText(context, "تم جلب كود هذا الجهاز", Toast.LENGTH_SHORT).show()
                                     },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(Icons.Default.Smartphone, "جهازي", Modifier.size(16.dp))
                                 }
@@ -226,9 +233,10 @@ fun AdminLicenseManagerDialog(
                             label = { Text("رقم الواتساب", fontSize = 11.sp) },
                             placeholder = { Text("966500000000", fontSize = 10.sp) },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Next) }),
                             leadingIcon = {
-                                Icon(Icons.Default.Phone, null, Modifier.size(15.dp), tint = Color(0xFF25D366))
+                                Icon(Icons.Default.Phone, null, Modifier.size(15.dp), tint = WhatsAppLightGreen)
                             },
                             shape = MizanDialogTokens.inputShape
                         )
@@ -240,7 +248,8 @@ fun AdminLicenseManagerDialog(
                             label = { Text("البريد الإلكتروني", fontSize = 11.sp) },
                             placeholder = { Text("user@gmail.com", fontSize = 10.sp) },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Next) }),
                             shape = MizanDialogTokens.inputShape
                         )
                     }
@@ -257,6 +266,8 @@ fun AdminLicenseManagerDialog(
                             label = { Text("اسم العميل / النشاط", fontSize = 11.sp) },
                             placeholder = { Text("مؤسسة الوفاق", fontSize = 10.sp) },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Next) }),
                             shape = MizanDialogTokens.inputShape
                         )
 
@@ -293,7 +304,8 @@ fun AdminLicenseManagerDialog(
                                 label = { Text("أيام التجربة", fontSize = 11.sp) },
                                 placeholder = { Text("30", fontSize = 10.sp) },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Next) }),
                                 shape = MizanDialogTokens.inputShape
                             )
                             OutlinedTextField(
@@ -303,7 +315,11 @@ fun AdminLicenseManagerDialog(
                                 label = { Text("عدد الأجهزة", fontSize = 11.sp) },
                                 placeholder = { Text("1", fontSize = 10.sp) },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                }),
                                 shape = MizanDialogTokens.inputShape
                             )
                         }
@@ -510,7 +526,7 @@ private fun IssuedLicenseResultCard(
                 Button(
                     onClick = { shareLicenseWhatsApp(context, license) },
                     modifier = Modifier.height(34.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                    colors = ButtonDefaults.buttonColors(containerColor = WhatsAppLightGreen),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Icon(Icons.Default.Share, null, Modifier.size(14.dp), tint = Color.White)
@@ -536,7 +552,7 @@ private fun LicenseRegistryItemCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = MizanRadii.shapeSm,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
@@ -565,11 +581,18 @@ private fun LicenseRegistryItemCard(
                     )
                     Box(
                         modifier = Modifier
-                            .size(7.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
-                            .background(if (license.isActive) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error)
-                            .clickable { onToggleStatus() }
-                    )
+                            .clickable { onToggleStatus() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(9.dp)
+                                .clip(CircleShape)
+                                .background(if (license.isActive) CreditGreen else MaterialTheme.colorScheme.error)
+                        )
+                    }
                 }
 
                 if (isCloud && license.shortActivationCode.isNotBlank()) {
@@ -592,14 +615,14 @@ private fun LicenseRegistryItemCard(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                IconButton(onClick = onCopyToken, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.ContentCopy, "نسخ", Modifier.size(15.dp))
+                IconButton(onClick = onCopyToken, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.ContentCopy, "نسخ", Modifier.size(16.dp))
                 }
-                IconButton(onClick = onShareWhatsApp, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Share, "واتساب", Modifier.size(15.dp), tint = Color(0xFF25D366))
+                IconButton(onClick = onShareWhatsApp, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Share, "واتساب", Modifier.size(16.dp), tint = WhatsAppLightGreen)
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.DeleteOutline, "حذف", Modifier.size(15.dp), tint = MaterialTheme.colorScheme.error)
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.DeleteOutline, "حذف", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

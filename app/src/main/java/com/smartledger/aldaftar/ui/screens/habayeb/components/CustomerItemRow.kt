@@ -183,7 +183,8 @@ fun CustomerItemRow(
                             fontWeight = FontWeight.Normal,
                             color = textSecondaryColor,
                             maxLines = 1,
-                            softWrap = false
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         if (hasNonZeroForeign) {
@@ -212,7 +213,8 @@ fun CustomerItemRow(
                                         fontWeight = FontWeight.Medium,
                                         color = badgeTextColor,
                                         maxLines = 1,
-                                        softWrap = false
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }

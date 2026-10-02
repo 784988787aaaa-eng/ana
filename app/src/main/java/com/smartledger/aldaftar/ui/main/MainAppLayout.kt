@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,15 +50,15 @@ fun MainAppLayout(
             FinanceConstants.DEFAULT_FALLBACK_VERSION
         }
     }
-    var showComprehensiveReportDialog by remember { mutableStateOf(false) }
-    var showCurrencySettingsDialog by remember { mutableStateOf(false) }
-    var showBusinessProfileDialog by remember { mutableStateOf(false) }
-    var showSecurityDialog by remember { mutableStateOf(false) }
-    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
-    var showAdminAuthDialog by remember { mutableStateOf(false) }
-    var showAdminLicenseManagerDialog by remember { mutableStateOf(false) }
-    var currentScreen by remember { mutableStateOf(Screen.HABAYEB) }
-    var hasInitializedStartScreen by remember { mutableStateOf(false) }
+    var showComprehensiveReportDialog by rememberSaveable { mutableStateOf(false) }
+    var showCurrencySettingsDialog by rememberSaveable { mutableStateOf(false) }
+    var showBusinessProfileDialog by rememberSaveable { mutableStateOf(false) }
+    var showSecurityDialog by rememberSaveable { mutableStateOf(false) }
+    var showPrivacyPolicyDialog by rememberSaveable { mutableStateOf(false) }
+    var showAdminAuthDialog by rememberSaveable { mutableStateOf(false) }
+    var showAdminLicenseManagerDialog by rememberSaveable { mutableStateOf(false) }
+    var currentScreen by rememberSaveable { mutableStateOf(Screen.HABAYEB) }
+    var hasInitializedStartScreen by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (!hasInitializedStartScreen) {
@@ -66,11 +67,11 @@ fun MainAppLayout(
         }
     }
 
-    var showExitConfirmDialog by remember { mutableStateOf(false) }
-    var showBackupRestoreSheet by remember { mutableStateOf(false) }
-    var showCurrencyBallSelector by remember { mutableStateOf(false) }
-    var showLicenseDialog by remember { mutableStateOf(false) }
-    var forceLicenseDialog by remember { mutableStateOf(false) }
+    var showExitConfirmDialog by rememberSaveable { mutableStateOf(false) }
+    var showBackupRestoreSheet by rememberSaveable { mutableStateOf(false) }
+    var showCurrencyBallSelector by rememberSaveable { mutableStateOf(false) }
+    var showLicenseDialog by rememberSaveable { mutableStateOf(false) }
+    var forceLicenseDialog by rememberSaveable { mutableStateOf(false) }
     val licenseSnapshot by licenseViewModel.snapshot.collectAsStateWithLifecycle()
     // Selection is owned by the Habayeb ViewModel so Back can cancel it globally
     // before the normal navigation/exit behavior is reached.

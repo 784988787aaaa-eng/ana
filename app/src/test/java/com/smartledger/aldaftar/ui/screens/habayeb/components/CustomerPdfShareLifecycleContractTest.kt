@@ -18,7 +18,7 @@ class CustomerPdfShareLifecycleContractTest {
 
     private fun locateSourceFile(): String {
         val relativePath = "app/src/main/java/com/smartledger/aldaftar/ui/screens/habayeb/components/CustomerHistoryShareBottomSheet.kt"
-        var directory = File(System.getProperty("user.dir")).absoluteFile
+        var directory = File(System.getProperty("user.dir") ?: ".").absoluteFile
         repeat(5) {
             val candidate = File(directory, relativePath)
             if (candidate.isFile) return candidate.readText()

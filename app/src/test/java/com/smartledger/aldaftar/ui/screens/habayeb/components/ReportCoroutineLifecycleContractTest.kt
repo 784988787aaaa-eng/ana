@@ -89,7 +89,7 @@ class ReportCoroutineLifecycleContractTest {
         root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
 
     private fun findProjectRoot(): File {
-        var directory = File(System.getProperty("user.dir")).absoluteFile
+        var directory = File(System.getProperty("user.dir") ?: ".").absoluteFile
         repeat(8) {
             if (File(directory, "settings.gradle.kts").isFile) return directory
             directory = directory.parentFile ?: return@repeat

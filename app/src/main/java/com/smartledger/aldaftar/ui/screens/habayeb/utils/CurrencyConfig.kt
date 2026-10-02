@@ -166,22 +166,14 @@ object CurrencyConfig {
         rate: BigDecimal,
         rateSourceCurrency: String,
         rateTargetCurrency: String
-    ): BigDecimal {
-        val source = getBySymbol(sourceCurrency)?.symbol ?: sourceCurrency
-        val target = getBySymbol(targetCurrency)?.symbol ?: targetCurrency
-        val rateSource = getBySymbol(rateSourceCurrency)?.symbol ?: rateSourceCurrency
-        val rateTarget = getBySymbol(rateTargetCurrency)?.symbol ?: rateTargetCurrency
-        if (source == target) return amount.setScale(4, RoundingMode.HALF_EVEN)
-        require(rate > BigDecimal.ZERO) { "سعر الصرف غير موجود أو غير صالح" }
-        val normalizedRate = com.smartledger.aldaftar.domain.model.FinancialPolicy.normalizeRate(rate)
-        return when {
-            source == rateSource && target == rateTarget ->
-                amount.multiply(normalizedRate).setScale(4, RoundingMode.HALF_EVEN)
-            source == rateTarget && target == rateSource ->
-                amount.divide(normalizedRate, 4, RoundingMode.HALF_EVEN)
-            else -> throw IllegalArgumentException("اتجاه سعر الصرف لا يطابق العملات المطلوبة")
-        }
-    }
+    ): BigDecimal = com.smartledger.aldaftar.domain.model.FinancialPolicy.convertDirectedAmount(
+        amount = amount,
+        sourceCurrency = sourceCurrency,
+        targetCurrency = targetCurrency,
+        rate = rate,
+        rateSourceCurrency = rateSourceCurrency,
+        rateTargetCurrency = rateTargetCurrency
+    )
 
     fun getTransactionCurrencyAndAmountBigDecimal(
         tx: HabayebTransaction,

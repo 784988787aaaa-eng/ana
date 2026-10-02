@@ -229,7 +229,7 @@ fun ExchangeRateSetupContent(
                                 color = activeThemeColor
                             ),
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
+                                keyboardType = KeyboardType.Decimal,
                                 imeAction = ImeAction.Done
                             ),
                             keyboardActions = KeyboardActions(
@@ -274,13 +274,13 @@ fun ExchangeRateSetupContent(
 
                     IconButton(
                         onClick = { toggleDirection() },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Sync,
-                            contentDescription = "تبديل الاتجاه",
+                            contentDescription = stringResource(R.string.currency_exchange_toggle_desc),
                             tint = activeThemeColor,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -463,7 +463,7 @@ fun ExchangeRateSetupDialog(
                 IconButton(
                     onClick = dismissDialog,
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 ) {

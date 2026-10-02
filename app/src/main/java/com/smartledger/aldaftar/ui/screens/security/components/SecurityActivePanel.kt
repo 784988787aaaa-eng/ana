@@ -321,7 +321,7 @@ fun VerifyOldPinDialog(
                             IconButton(onClick = { pinVisible = !pinVisible }) {
                                 Icon(
                                     imageVector = if (pinVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(id = com.smartledger.aldaftar.R.string.sec_desc_toggle_pin_visibility),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }

@@ -305,7 +305,7 @@ fun DeviceReplacedDialog(
         confirmButton = {
             Button(
                 onClick = onReSignIn,
-                shape = RoundedCornerShape(10.dp)
+                shape = MizanDialogTokens.buttonShape
             ) {
                 Text("تسجيل الدخول مجدداً", fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }

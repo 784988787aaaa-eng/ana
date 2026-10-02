@@ -85,14 +85,14 @@ fun CategoryOptionsPanel(
                 OptionCircularIconButton(
                     onClick = { onMoveRight(categoryKey) },
                     icon = Icons.Default.KeyboardArrowRight,
-                    contentDescription = "Move Right",
+                    contentDescription = "تحريك لليمين",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
                 OptionCircularIconButton(
                     onClick = { onMoveLeft(categoryKey) },
                     icon = Icons.Default.KeyboardArrowLeft,
-                    contentDescription = "Move Left",
+                    contentDescription = "تحريك لليسار",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -100,7 +100,7 @@ fun CategoryOptionsPanel(
                 OptionCircularIconButton(
                     onClick = { showRenameDialog = true },
                     icon = Icons.Default.Edit,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.habayeb_category_edit_title),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -127,7 +127,7 @@ fun CategoryOptionsPanel(
                     OptionCircularIconButton(
                         onClick = { onDelete(customCat) },
                         icon = Icons.Default.Delete,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.habayeb_delete),
                         tint = MaterialTheme.colorScheme.error,
                         backgroundColor = Color.Transparent
                     )
@@ -136,7 +136,7 @@ fun CategoryOptionsPanel(
                 OptionCircularIconButton(
                     onClick = onDismiss,
                     icon = Icons.Default.Close,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.desc_close),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

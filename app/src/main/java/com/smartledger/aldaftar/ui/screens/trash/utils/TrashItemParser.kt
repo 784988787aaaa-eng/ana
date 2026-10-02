@@ -83,61 +83,14 @@ object TrashItemParser {
         return text.replace(Regex("""^\s*(\[[^\]]*\]\s*)+"""), "").trim()
     }
 
-    fun parseBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal {
-        if (!obj.has(key)) return BigDecimal(fallback)
-        val valueStr = obj.optString(key, null)
-        if (!valueStr.isNullOrBlank() && valueStr != "null") {
-            try {
-                return BigDecimal(valueStr.trim())
-            } catch (_: Exception) {}
-        }
-        val rawVal = obj.optString(key, "")
-        return if (rawVal.isNotBlank() && rawVal != "null") {
-            try {
-                BigDecimal(rawVal.trim())
-            } catch (_: Exception) {
-                BigDecimal.ZERO
-            }
-        } else {
-            BigDecimal.ZERO
-        }
-    }
+    fun parseBigDecimal(obj: JSONObject, key: String, fallback: String = "0"): BigDecimal =
+        com.smartledger.aldaftar.data.repository.TrashJsonSerializer.parseBigDecimal(obj, key, fallback)
 
-    fun parseHabayebCustomer(custData: JSONObject): HabayebCustomer {
-        return HabayebCustomer(
-            id = custData.getString("id"),
-            name = custData.getString("name"),
-            phone = custData.optString("phone", ""),
-            notes = custData.optString("notes", ""),
-            createdAt = custData.optLong("createdAt", System.currentTimeMillis()),
-            initialType = custData.optString("initialType", custData.optString("initial_type", TransactionType.OWED_BY_THEM.value)),
-            categoryId = if (custData.has("categoryId") && !custData.isNull("categoryId")) custData.optInt("categoryId") else null
-        )
-    }
+    fun parseHabayebCustomer(custData: JSONObject): HabayebCustomer =
+        com.smartledger.aldaftar.data.repository.TrashJsonSerializer.parseHabayebCustomer(custData)
 
-    fun parseHabayebTransaction(txObj: JSONObject): HabayebTransaction {
-        val linkedId = if (txObj.has("linkedMainTxId") && !txObj.isNull("linkedMainTxId")) {
-            txObj.getString("linkedMainTxId")
-        } else null
-        return HabayebTransaction(
-            id = txObj.getString("id"),
-            customerId = txObj.getString("customerId"),
-            type = txObj.getString("type"),
-            amount = parseBigDecimal(txObj, "amount"),
-            timestamp = txObj.optLong("timestamp", System.currentTimeMillis()),
-            description = txObj.optString("description", ""),
-            linkedMainTxId = linkedId,
-            isForeign = txObj.optBoolean("is_foreign", false),
-            currencyCode = txObj.optString("currency_code", FinanceConstants.DEFAULT_CURRENCY_CODE),
-            foreignAmount = parseBigDecimal(txObj, "foreign_amount"),
-            exchangeRate = parseBigDecimal(txObj, "exchange_rate", "0"),
-            isRateCalculated = txObj.optBoolean("is_rate_calculated", false),
-            equivalentAmount = parseBigDecimal(txObj, "equivalent_amount"),
-            baseCurrencyCode = txObj.optString("base_currency_code", FinanceConstants.DEFAULT_CURRENCY_CODE),
-            snapshotVersion = txObj.optInt("snapshot_version", 1),
-            rateContext = txObj.optString("rate_context", "HISTORICAL_SNAPSHOT")
-        )
-    }
+    fun parseHabayebTransaction(txObj: JSONObject): HabayebTransaction =
+        com.smartledger.aldaftar.data.repository.TrashJsonSerializer.parseHabayebTransaction(txObj)
 
     fun parse(
         item: DeletedItemEntity,

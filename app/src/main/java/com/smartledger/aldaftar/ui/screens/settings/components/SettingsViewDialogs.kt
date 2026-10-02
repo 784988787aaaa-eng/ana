@@ -101,7 +101,7 @@ fun RevalueConfirmDialog(
                     IconButton(
                         onClick = dismissDialog,
                         modifier = Modifier
-                            .size(28.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     ) {

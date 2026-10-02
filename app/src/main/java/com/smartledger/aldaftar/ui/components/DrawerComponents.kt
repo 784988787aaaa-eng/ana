@@ -64,7 +64,8 @@ fun DrawerItem(
                     fontSize = 14.sp,
                     fontWeight = fontWeight,
                     color = textPrimary,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
 

@@ -389,6 +389,35 @@ class HabayebFinanceViewModel(
         true
     }
 
+    fun submitHabayebTransaction(
+        customerId: String, type: String, amount: BigDecimal, desc: String,
+        timestamp: Long = System.currentTimeMillis() / 1000, editingTxId: String? = null, linkedMainTxId: String? = null,
+        isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
+        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO,
+        baseCurrencySymbol: String? = null,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val success = addHabayebTransaction(
+                customerId = customerId,
+                type = type,
+                amount = amount,
+                desc = desc,
+                timestamp = timestamp,
+                editingTxId = editingTxId,
+                linkedMainTxId = linkedMainTxId,
+                isForeign = isForeign,
+                currencyCode = currencyCode,
+                foreignAmount = foreignAmount,
+                exchangeRate = exchangeRate,
+                isRateCalculated = isRateCalculated,
+                equivalentAmount = equivalentAmount,
+                baseCurrencySymbol = baseCurrencySymbol
+            )
+            onComplete(success)
+        }
+    }
+
     fun updateTransactionExchangeRate(txId: String, newRate: BigDecimal, calculateRate: Boolean) {
         viewModelScope.launch { transactionUseCase.updateTransactionExchangeRate(txId, newRate, calculateRate, settingsState.value.currencySymbol) }
     }

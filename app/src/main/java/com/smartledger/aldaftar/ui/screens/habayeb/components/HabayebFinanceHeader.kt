@@ -176,7 +176,7 @@ fun HabayebFinanceHeader(
                         ) {
                             IconButton(
                                 onClick = onTogglePrivacy,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,

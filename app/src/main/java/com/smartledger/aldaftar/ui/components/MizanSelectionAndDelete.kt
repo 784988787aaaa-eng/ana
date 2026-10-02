@@ -25,6 +25,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -136,6 +140,8 @@ fun MizanDeleteConfirmationDialog(
     confirmColor: Color = MaterialTheme.colorScheme.error,
     confirmIcon: ImageVector? = Icons.Default.Delete
 ) {
+    var isConfirmed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     MizanAnimatedDialog(onDismissRequest = onDismiss) { dismiss ->
         MizanDialogCard(
             maxWidth = MizanDialogTokens.compactMaxWidth,
@@ -159,9 +165,14 @@ fun MizanDeleteConfirmationDialog(
                 confirmIcon = confirmIcon,
                 confirmContainerColor = confirmColor,
                 confirmContentColor = MaterialTheme.colorScheme.onError,
+                confirmEnabled = !isConfirmed,
+                isConfirmLoading = isConfirmed,
                 onConfirm = {
-                    onConfirm()
-                    dismiss()
+                    if (!isConfirmed) {
+                        isConfirmed = true
+                        onConfirm()
+                        dismiss()
+                    }
                 },
                 cancelText = stringResource(R.string.common_cancel),
                 onCancel = dismiss

@@ -65,8 +65,8 @@ fun SmartLedgerApp(
                 .getResult(com.google.android.gms.common.api.ApiException::class.java)
         }.onSuccess { account ->
             licenseViewModel.signInWithGoogle(account, account.serverAuthCode)
-        }.onFailure { ex ->
-            Toast.makeText(context, "تعذر تسجيل الدخول بحساب Google: ${ex.localizedMessage ?: ex.message}", Toast.LENGTH_LONG).show()
+        }.onFailure { _ ->
+            Toast.makeText(context, context.getString(R.string.backup_toast_connect_failed), Toast.LENGTH_LONG).show()
         }
     }
     val systemDark = isSystemInDarkTheme()

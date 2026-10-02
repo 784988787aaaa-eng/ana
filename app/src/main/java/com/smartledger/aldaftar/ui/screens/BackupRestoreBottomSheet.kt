@@ -1544,7 +1544,7 @@ private fun ArchiveSubBar(
             IconButton(onClick = onToggleSearch, modifier = Modifier.size(38.dp)) {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.trash_search),
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -1552,7 +1552,7 @@ private fun ArchiveSubBar(
             IconButton(onClick = onToggleSelection, modifier = Modifier.size(38.dp)) {
                 Icon(
                     imageVector = if (selectionMode) Icons.Default.CheckCircle else Icons.Default.Checklist,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.context_menu_multi_select),
                     modifier = Modifier.size(18.dp),
                     tint = if (selectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )

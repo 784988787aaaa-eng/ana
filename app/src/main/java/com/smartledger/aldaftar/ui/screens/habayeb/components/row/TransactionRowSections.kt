@@ -121,7 +121,8 @@ fun TransactionRowDateSection(
             text = annotatedDate,
             fontSize = 8.5.sp,
             textAlign = TextAlign.Center,
-            maxLines = 1
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
         
         Spacer(modifier = Modifier.height(0.5.dp))
@@ -132,7 +133,8 @@ fun TransactionRowDateSection(
             color = mizanColors.contentSecondary,
             fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
-            maxLines = 1
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
 }

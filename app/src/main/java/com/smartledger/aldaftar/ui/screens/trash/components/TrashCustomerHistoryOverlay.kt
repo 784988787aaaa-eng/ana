@@ -153,7 +153,7 @@ fun TrashCustomerHistoryOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DeleteForever,
-                                contentDescription = null,
+                                contentDescription = stringResource(id = R.string.trash_delete_permanently),
                                 tint = errorColor,
                                 modifier = Modifier.size(18.dp)
                             )

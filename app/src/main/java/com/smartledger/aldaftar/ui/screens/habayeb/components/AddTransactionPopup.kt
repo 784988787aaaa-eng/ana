@@ -186,10 +186,10 @@ fun AddTransactionPopup(
 
     val scope = rememberCoroutineScope()
     val executeSave = { finalActionType: String ->
-        focusManager.clearFocus()
-        softwareKeyboardController?.hide()
         if (!isSaving) {
             isSaving = true
+            focusManager.clearFocus()
+            softwareKeyboardController?.hide()
 
             val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
             val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
@@ -223,45 +223,46 @@ fun AddTransactionPopup(
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id
 
-                // Provide instant feedback and dismiss immediately to eliminate any delay
+                // Provide instant feedback and dismiss dialog safely
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 onTransactionSaved()
                 onDismiss()
 
-                scope.launch {
-                    viewModel.addHabayebTransaction(
-                        customerId = customer.id,
-                        type = finalActionType,
-                        amount = saveAmountBd,
-                        desc = saveDescStr,
-                        timestamp = saveTimestamp,
-                        editingTxId = saveEditingTxId,
-                        isForeign = isForeignSelected,
-                        currencyCode = saveCurrencyCode,
-                        foreignAmount = amountBd,
-                        exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ZERO,
-                        isRateCalculated = isForeignSelected && applyExchangeRate,
-                        equivalentAmount = finalEquivalentAmountBd,
-                        baseCurrencySymbol = rateBaseCurrency
-                    )
-                }
+                // Execute on viewModelScope to ensure persistence survives dialog dismissal
+                viewModel.submitHabayebTransaction(
+                    customerId = customer.id,
+                    type = finalActionType,
+                    amount = saveAmountBd,
+                    desc = saveDescStr,
+                    timestamp = saveTimestamp,
+                    editingTxId = saveEditingTxId,
+                    isForeign = isForeignSelected,
+                    currencyCode = saveCurrencyCode,
+                    foreignAmount = amountBd,
+                    exchangeRate = if (applyExchangeRate) effectiveRateBd else BigDecimal.ZERO,
+                    isRateCalculated = isForeignSelected && applyExchangeRate,
+                    equivalentAmount = finalEquivalentAmountBd,
+                    baseCurrencySymbol = rateBaseCurrency
+                )
             }
         }
     }
 
     val handleActionClick = { type: String ->
-        val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
-        val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
-        if (amountBd == null) {
-            Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
-        } else if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
-            Toast.makeText(context, context.getString(R.string.add_transaction_error_empty), Toast.LENGTH_SHORT).show()
-        } else if (amountBd < BigDecimal.ZERO) {
-            Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
-        } else {
-            focusManager.clearFocus()
-            softwareKeyboardController?.hide()
-            executeSave(type)
+        if (!isSaving) {
+            val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
+            val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+            if (amountBd == null) {
+                Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
+            } else if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
+                Toast.makeText(context, context.getString(R.string.add_transaction_error_empty), Toast.LENGTH_SHORT).show()
+            } else if (amountBd < BigDecimal.ZERO) {
+                Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
+            } else {
+                focusManager.clearFocus()
+                softwareKeyboardController?.hide()
+                executeSave(type)
+            }
         }
     }
 
@@ -343,14 +344,14 @@ fun AddTransactionPopup(
                                     onClick = onDismiss,
                                     modifier = Modifier
                                         .align(Alignment.CenterStart)
-                                        .size(24.dp)
+                                        .size(36.dp)
                                         .focusProperties { canFocus = false }
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = stringResource(id = R.string.habayeb_go_back),
                                         tint = activeThemeColor,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }

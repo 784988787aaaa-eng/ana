@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import java.text.SimpleDateFormat
@@ -101,9 +102,8 @@ fun CustomDateRangePickerContent(
 
     val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
     ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(
@@ -452,11 +452,12 @@ fun CustomDateRangePickerContent(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "المدة: $durationFormatted",
+                                    text = stringResource(R.string.datetime_picker_duration_prefix, durationFormatted),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
                         }

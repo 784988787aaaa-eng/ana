@@ -58,7 +58,9 @@ fun CategoryDeleteConfirmationDialog(
                     Text(
                         stringResource(R.string.habayeb_category_delete_only),
                         fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
                 Button(
@@ -74,7 +76,9 @@ fun CategoryDeleteConfirmationDialog(
                     Text(
                         stringResource(R.string.habayeb_category_delete_all_accounts),
                         fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
                 OutlinedButton(
@@ -88,7 +92,9 @@ fun CategoryDeleteConfirmationDialog(
                         stringResource(R.string.habayeb_category_delete_cancel),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }

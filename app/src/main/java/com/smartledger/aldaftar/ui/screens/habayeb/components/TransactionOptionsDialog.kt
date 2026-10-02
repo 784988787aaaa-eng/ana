@@ -364,7 +364,8 @@ fun ActionCircleItem(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            lineHeight = 13.sp
+            lineHeight = 13.sp,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
 }

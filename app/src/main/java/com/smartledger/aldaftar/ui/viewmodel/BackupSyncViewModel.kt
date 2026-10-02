@@ -235,7 +235,7 @@ class BackupSyncViewModel(
             _cloudBackups.value = listOf(remote) + _cloudBackups.value.filterNot { it.id == remote.id }
             backupNotifications.show(
                 "تم رفع النسخة إلى Google Drive",
-                "تم حفظ الأرشيف: ${file.name} في Google Drive / الدفتر الذكي برو.",
+                "تم حفظ الأرشيف: ${file.name} في Google Drive / الدفتر الذكي.",
                 publicUri
             )
             remote to file

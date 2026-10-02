@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.BrandPrimaryLight
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.helper.dialPhoneNumber
 import com.smartledger.aldaftar.ui.helper.openWhatsAppChat
@@ -120,7 +121,7 @@ fun AppNavigationDrawer(
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(
-                                color = Color(0xFF8B5CF6).copy(alpha = 0.20f),
+                                color = BrandPrimaryLight.copy(alpha = 0.20f),
                                 shape = CircleShape
                             )
                             .border(
@@ -273,8 +274,8 @@ fun AppNavigationDrawer(
                 )
 
                 ContactIcon(
-                    icon = Icons.Default.Share,
-                    contentDescription = stringResource(id = R.string.whatsapp_contact_msg),
+                    icon = Icons.Default.Chat,
+                    contentDescription = stringResource(id = R.string.settings_desc_whatsapp),
                     onClick = {
                         val msg = context.getString(R.string.whatsapp_contact_msg)
                         openWhatsAppChat(context, supportPhoneNumber, msg)

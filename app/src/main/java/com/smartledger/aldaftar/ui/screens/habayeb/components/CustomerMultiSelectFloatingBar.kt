@@ -8,7 +8,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.MizanSelectionBar
 
 @Composable
@@ -30,7 +32,12 @@ fun CustomerMultiSelectFloatingBar(
         modifier = Modifier,
         leadingActions = {
             IconButton(onClick = onBulkAssignCategory, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Default.Folder, contentDescription = null, tint = activeThemeColor, modifier = Modifier.size(19.dp))
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = stringResource(R.string.habayeb_bulk_assign_category_title),
+                    tint = activeThemeColor,
+                    modifier = Modifier.size(19.dp)
+                )
             }
         }
     )

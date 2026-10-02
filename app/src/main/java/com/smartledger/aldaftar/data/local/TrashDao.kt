@@ -9,7 +9,7 @@ import androidx.room.Transaction
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
+import com.smartledger.aldaftar.data.repository.TrashJsonSerializer
 import kotlinx.coroutines.flow.Flow
 import org.json.JSONArray
 import org.json.JSONObject
@@ -78,7 +78,7 @@ abstract class TrashDao {
         
         val customerExists = checkCustomerExists(customerId) > 0
         if (!customerExists) {
-            val customer = TrashItemParser.parseHabayebCustomer(custData)
+            val customer = TrashJsonSerializer.parseHabayebCustomer(custData)
             insertHabayebCustomer(customer)
         }
         
@@ -96,7 +96,7 @@ abstract class TrashDao {
         }
         
         if (targetTxObj != null) {
-            val tx = TrashItemParser.parseHabayebTransaction(targetTxObj)
+            val tx = TrashJsonSerializer.parseHabayebTransaction(targetTxObj)
             insertHabayebTransaction(tx)
             
             if (remainingTxs.length() == 0) {
@@ -114,16 +114,16 @@ abstract class TrashDao {
         val root = JSONObject(item.jsonData)
         when (item.originalTableName) {
             TABLE_HABAYEB_TRANSACTIONS -> {
-                val tx = TrashItemParser.parseHabayebTransaction(root)
+                val tx = TrashJsonSerializer.parseHabayebTransaction(root)
                 insertHabayebTransaction(tx)
             }
             TABLE_HABAYEB_CUSTOMERS -> {
-                val customer = TrashItemParser.parseHabayebCustomer(root)
+                val customer = TrashJsonSerializer.parseHabayebCustomer(root)
                 insertHabayebCustomer(customer)
             }
             BUNDLE_HABAYEB -> {
                 val custData = root.getJSONObject("customer")
-                val parsed = TrashItemParser.parseHabayebCustomer(custData)
+                val parsed = TrashJsonSerializer.parseHabayebCustomer(custData)
                 val customer = parsed.copy(categoryId = parsed.categoryId?.takeIf { checkCategoryExists(it) > 0 })
                 insertHabayebCustomer(customer)
                 if (custData.has("pinnedScopeCategoryIds")) {
@@ -139,7 +139,7 @@ abstract class TrashDao {
                 val txsArray = root.getJSONArray("transactions")
                 for (i in 0 until txsArray.length()) {
                     val txObj = txsArray.getJSONObject(i)
-                    val tx = TrashItemParser.parseHabayebTransaction(txObj)
+                    val tx = TrashJsonSerializer.parseHabayebTransaction(txObj)
                     insertHabayebTransaction(tx)
                 }
             }

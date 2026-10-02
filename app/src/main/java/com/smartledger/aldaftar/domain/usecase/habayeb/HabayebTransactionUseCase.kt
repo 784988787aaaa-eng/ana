@@ -7,7 +7,6 @@ import com.smartledger.aldaftar.data.repository.HabayebRepository
 import com.smartledger.aldaftar.data.repository.HabayebMutationRepository
 import com.smartledger.aldaftar.domain.model.CurrencyPair
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
 import java.util.UUID
 
@@ -46,7 +45,7 @@ class HabayebTransactionUseCase(
         val pair=CurrencyPair(target,base,newRate)
         val source=if(tx.foreignAmount.compareTo(BigDecimal.ZERO)>0) tx.foreignAmount else tx.amount
         val enabled=calculateRate&&!pair.isSelfPair
-        val equivalent=if (enabled) CurrencyConfig.convertDirectedAmount(
+        val equivalent=if (enabled) FinancialPolicy.convertDirectedAmount(
             amount=source, sourceCurrency=target, targetCurrency=base,
             rate=pair.safeRate, rateSourceCurrency=target, rateTargetCurrency=base
         ) else BigDecimal.ZERO

@@ -22,6 +22,9 @@ fun GeneralSettingsCard(
     currencySymbol: String,
     onCurrencySymbolChange: (String) -> Unit
 ) {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
     ElevatedCard(
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
@@ -46,7 +49,10 @@ fun GeneralSettingsCard(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {}),
+                keyboardActions = KeyboardActions(onDone = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                }),
                 textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
             )
         }
