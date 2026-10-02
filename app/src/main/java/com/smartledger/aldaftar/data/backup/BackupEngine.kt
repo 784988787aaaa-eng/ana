@@ -179,23 +179,19 @@ class BackupEngine(
         require(root.get("businessProfile") is JSONObject) { "بيانات الملف التجاري غير صالحة" }
         for (i in 0 until root.getJSONArray("habayebTransactions").length()) {
             val tx = root.getJSONArray("habayebTransactions").getJSONObject(i)
-            listOf("id", "customerId", "type", "amount", "timestamp", "description",
-                "isForeign", "currencyCode", "foreignAmount", "exchangeRate",
-                "isRateCalculated", "equivalentAmount", "baseCurrencyCode").forEach {
+            listOf("id", "customerId", "type", "amount", "timestamp").forEach {
                 require(tx.has(it)) { "المعاملة المالية ناقصة: $it" }
             }
+            require(tx.optString("amount").toBigDecimalOrNull() != null) { "مبلغ المعاملة غير صالح" }
         }
         for (i in 0 until root.getJSONArray("recurring").length()) {
             val r = root.getJSONArray("recurring").getJSONObject(i)
-            listOf("id", "originalTxId", "customerId", "amount", "type", "frequency",
-                "startDateMillis", "endDateMillis", "isForeign", "currencyCode",
-                "foreignAmount", "exchangeRate", "isRateCalculated", "equivalentAmount").forEach {
+            listOf("id", "customerId", "amount", "type", "frequency", "startDateMillis").forEach {
                 require(r.has(it)) { "قالب التكرار ناقص: $it" }
             }
-            require(r.has("baseCurrencyCode")) { "قالب التكرار ناقص: baseCurrencyCode" }
+            require(r.optString("amount").toBigDecimalOrNull() != null) { "مبلغ قالب التكرار غير صالح" }
             if (r.optBoolean("isRateCalculated", false)) {
                 require(r.optString("currencyCode").isNotBlank() && r.optString("currencyCode") != "DEFAULT") { "قالب التكرار المصروف بلا عملة أصلية" }
-                require(r.optString("baseCurrencyCode").isNotBlank() && r.optString("baseCurrencyCode") != "DEFAULT") { "قالب التكرار المصروف بلا عملة أساس" }
                 require(r.optString("exchangeRate").toBigDecimalOrNull()?.signum() == 1) { "سعر قالب التكرار غير صالح" }
             }
         }
@@ -228,13 +224,56 @@ class BackupEngine(
     private fun recurringJson(v: RecurringConfigEntity) = JSONObject().apply { put("id", v.id); put("originalTxId", v.originalTxId); put("customerId", v.customerId); put("customerName", v.customerName); put("amount", v.amount.toPlainString()); put("type", v.type); put("description", v.description); put("frequency", v.frequency); put("daysOfWeek", JSONArray(v.daysOfWeek)); put("daysOfMonth", JSONArray(v.daysOfMonth)); put("timeHour", v.timeHour); put("timeMinute", v.timeMinute); put("startDateMillis", v.startDateMillis); put("endDateMillis", v.endDateMillis); put("lastExecutedTimestamp", v.lastExecutedTimestamp); put("isActive", v.isActive); put("isForeign", v.isForeign); put("currencyCode", v.currencyCode); put("foreignAmount", v.foreignAmount.toPlainString()); put("exchangeRate", v.exchangeRate.toPlainString()); put("isRateCalculated", v.isRateCalculated); put("equivalentAmount", v.equivalentAmount.toPlainString()); put("baseCurrencyCode", v.baseCurrencyCode); put("snapshotVersion", v.snapshotVersion); put("rateContext", v.rateContext) }
 
     private fun parseSettings(o: JSONObject) = AppSettings(1, o.optString("currencySymbol", "ر.ي"), o.optBoolean("schoolExpensesEnabled", true), o.optInt("themeMode"), o.optBoolean("doubleCheckExit", true), o.optBoolean("isPasscodeEnabled"), o.optStringOrNull("passcodeHash"), o.optStringOrNull("recoveryPhraseHash"), o.optStringOrNull("recoveryHint"), o.optBoolean("isFirstLaunch", false), o.optBoolean("onboardingShown"), o.optString("trashAutoCleanupPeriod", "NEVER"), o.optString("exchangeRatesJson", "{}"))
-    private fun parseCategory(o: JSONObject) = CustomCategory(o.getInt("id"), o.getString("name"), o.getString("tabType"), o.getString("iconEmoji"), o.getInt("displayOrder"), o.getBoolean("isSystemClosed"))
-    private fun parseTrash(o: JSONObject) = DeletedItemEntity(o.getString("id"), o.getString("sourceSystem"), o.getString("originalTableName"), o.getString("jsonData"), o.getLong("deletedAt"), o.optString("searchableText", ""), o.optString("amount", "0").toBigDecimalOrNull() ?: BigDecimal.ZERO, o.optString("displayName", ""))
-    private fun parseCustomer(o: JSONObject) = HabayebCustomer(o.getString("id"), o.getString("name"), o.getString("phone"), o.getString("notes"), o.getLong("createdAt"), o.optString("initialType", "OWED_BY_THEM"), if (o.isNull("categoryId")) null else o.getInt("categoryId"))
-    private fun parseHabayebTransaction(o: JSONObject) = HabayebTransaction(o.getString("id"), o.getString("customerId"), o.getString("type"), o.getString("amount").toBigDecimal(), o.getLong("timestamp"), o.getString("description"), o.optStringOrNull("linkedMainTxId"), o.optBoolean("isForeign"), o.optString("currencyCode", "DEFAULT"), o.getString("foreignAmount").toBigDecimal(), o.getString("exchangeRate").toBigDecimal(), o.optBoolean("isRateCalculated"), o.getString("equivalentAmount").toBigDecimal(), o.getString("baseCurrencyCode"), o.optInt("snapshotVersion", 1), o.optString("rateContext", ""))
+    private fun parseCategory(o: JSONObject) = CustomCategory(o.getInt("id"), o.getString("name"), o.getString("tabType"), o.getString("iconEmoji"), o.getInt("displayOrder"), o.optBoolean("isSystemClosed", false))
+    private fun parseTrash(o: JSONObject) = DeletedItemEntity(o.getString("id"), o.getString("sourceSystem"), o.getString("originalTableName"), o.optString("jsonData", "{}"), o.getLong("deletedAt"), o.optString("searchableText", ""), o.optString("amount", "0").toBigDecimalOrNull() ?: BigDecimal.ZERO, o.optString("displayName", ""))
+    private fun parseCustomer(o: JSONObject) = HabayebCustomer(o.getString("id"), o.getString("name"), o.optString("phone", ""), o.optString("notes", ""), o.getLong("createdAt"), o.optString("initialType", "OWED_BY_THEM"), if (o.isNull("categoryId")) null else o.optInt("categoryId"))
+    private fun parseHabayebTransaction(o: JSONObject) = HabayebTransaction(
+        o.getString("id"),
+        o.getString("customerId"),
+        o.getString("type"),
+        o.getString("amount").toBigDecimal(),
+        o.getLong("timestamp"),
+        o.optString("description", ""),
+        o.optStringOrNull("linkedMainTxId"),
+        o.optBoolean("isForeign"),
+        o.optString("currencyCode", "DEFAULT"),
+        o.optString("foreignAmount", "0").toBigDecimal(),
+        o.optString("exchangeRate", "1").toBigDecimal(),
+        o.optBoolean("isRateCalculated"),
+        o.optString("equivalentAmount", "0").toBigDecimal(),
+        o.optString("baseCurrencyCode", "DEFAULT"),
+        o.optInt("snapshotVersion", 1),
+        o.optString("rateContext", "")
+    )
     private fun parsePin(o: JSONObject) = PinnedCustomer(o.getInt("scopeCategoryId"), o.getString("customerId"))
-    private fun parseProfile(o: JSONObject) = BusinessProfile(1, o.optString("name"), o.optString("description"), o.optString("logoPath"), o.getJSONArray("phones").let { (0 until it.length()).map(it::getString) })
-    private fun parseRecurring(o: JSONObject) = RecurringConfigEntity(o.getString("id"), o.getString("originalTxId"), o.getString("customerId"), o.getString("customerName"), o.getString("amount").toBigDecimal(), o.getString("type"), o.getString("description"), o.getString("frequency"), o.getJSONArray("daysOfWeek").ints(), o.getJSONArray("daysOfMonth").ints(), o.getInt("timeHour"), o.getInt("timeMinute"), o.getLong("startDateMillis"), o.getLong("endDateMillis"), o.getLong("lastExecutedTimestamp"), o.optBoolean("isActive", true), o.optBoolean("isForeign"), o.optString("currencyCode", "DEFAULT"), o.getString("foreignAmount").toBigDecimal(), o.getString("exchangeRate").toBigDecimal(), o.optBoolean("isRateCalculated"), o.getString("equivalentAmount").toBigDecimal(), o.getString("baseCurrencyCode"), o.optInt("snapshotVersion", 1), o.optString("rateContext", ""))
+    private fun parseProfile(o: JSONObject) = BusinessProfile(1, o.optString("name"), o.optString("description"), o.optString("logoPath"), o.optJSONArray("phones")?.let { (0 until it.length()).map(it::getString) } ?: emptyList())
+    private fun parseRecurring(o: JSONObject) = RecurringConfigEntity(
+        o.getString("id"),
+        o.optString("originalTxId", ""),
+        o.getString("customerId"),
+        o.optString("customerName", ""),
+        o.getString("amount").toBigDecimal(),
+        o.getString("type"),
+        o.optString("description", ""),
+        o.getString("frequency"),
+        o.optJSONArray("daysOfWeek")?.ints() ?: emptyList(),
+        o.optJSONArray("daysOfMonth")?.ints() ?: emptyList(),
+        o.optInt("timeHour", 9),
+        o.optInt("timeMinute", 0),
+        o.getLong("startDateMillis"),
+        o.optLong("endDateMillis", 0L),
+        o.optLong("lastExecutedTimestamp", 0L),
+        o.optBoolean("isActive", true),
+        o.optBoolean("isForeign"),
+        o.optString("currencyCode", "DEFAULT"),
+        o.optString("foreignAmount", "0").toBigDecimal(),
+        o.optString("exchangeRate", "1").toBigDecimal(),
+        o.optBoolean("isRateCalculated"),
+        o.optString("equivalentAmount", "0").toBigDecimal(),
+        o.optString("baseCurrencyCode", "DEFAULT"),
+        o.optInt("snapshotVersion", 1),
+        o.optString("rateContext", "")
+    )
 
     private fun JSONArray.ints() = (0 until length()).map { getInt(it) }
     private fun JSONObject.optStringOrNull(name: String): String? = if (isNull(name)) null else optString(name).takeIf(String::isNotBlank)

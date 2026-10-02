@@ -16,7 +16,6 @@ class KeyboardInputSurfaceMatrixContractTest {
     private val inputFiles = setOf(
         "ui/components/CurrencySettingsDialog.kt",
         "ui/screens/BackupRestoreBottomSheet.kt",
-        "ui/screens/admin/AdminLicenseManagerDialog.kt",
         "ui/screens/business/BusinessProfileInfoSection.kt",
         "ui/screens/business/BusinessProfilePhonesSection.kt",
         "ui/screens/habayeb/components/AddCustomerFormFields.kt",

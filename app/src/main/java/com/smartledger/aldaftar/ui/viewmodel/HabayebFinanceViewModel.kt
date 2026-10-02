@@ -257,7 +257,12 @@ class HabayebFinanceViewModel(
         .map { it.isInitialized }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    private val filterGroup1Flow = combine(searchQuery, selectedFilterTab, financialSortMode, historicalSortMode) { q, t, f, h -> HabayebFilterGroup1(q, t, f, h) }
+    private val debouncedSearchQuery = searchQuery
+        .debounce { query ->
+            if (query.isEmpty()) 0L else 120L
+        }
+
+    private val filterGroup1Flow = combine(debouncedSearchQuery, selectedFilterTab, financialSortMode, historicalSortMode) { q, t, f, h -> HabayebFilterGroup1(q, t, f, h) }
     private val filterGroup2Flow = combine(temporarilyHiddenCustomerIds, selectedCategoryFilter, pinnedCustomerIds) { hid, cat, pin -> HabayebFilterGroup2(hid, cat, pin) }
     private val filterParametersFlow = combine(filterGroup1Flow, filterGroup2Flow) { g1, g2 ->
         HabayebFilterParameters(g1.query, g1.tab, g1.finSort, g1.histSort, g2.hiddenIds, g2.selectedCat, g2.pinnedIds)

@@ -55,7 +55,8 @@ fun PasscodeKeypadContent(
     onDeleteClick: () -> Unit,
     onForgotClick: () -> Unit,
     onBiometricClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lockoutTimeRemainingSec: Long = 0L
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -97,9 +98,16 @@ fun PasscodeKeypadContent(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(id = R.string.lock_enter_pin_prompt),
+                text = if (lockoutTimeRemainingSec > 0L) {
+                    "تم قفل المحاولات مؤقتاً. حاول مجدداً بعد $lockoutTimeRemainingSec ثانية"
+                } else {
+                    stringResource(id = R.string.lock_enter_pin_prompt)
+                },
                 fontSize = 12.sp,
-                color = LOCK_TEXT_SECONDARY_COLOR
+                color = if (lockoutTimeRemainingSec > 0L) androidx.compose.ui.graphics.Color.Red else LOCK_TEXT_SECONDARY_COLOR,
+                fontWeight = if (lockoutTimeRemainingSec > 0L) FontWeight.Bold else FontWeight.Normal,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
 

@@ -58,6 +58,29 @@ class SecurityViewModel(
         }
     }
 
+    fun getLockoutTimeRemainingMs(): Long {
+        val until = securityManager.getLockoutUntil()
+        val now = System.currentTimeMillis()
+        return if (until > now) until - now else 0L
+    }
+
+    fun handleFailedAttempt() {
+        securityManager.incrementFailedAttempts()
+        val attempts = securityManager.getFailedAttempts()
+        if (attempts >= 5) {
+            val lockoutDurationMs = when (attempts) {
+                5 -> 30_000L
+                6 -> 60_000L
+                else -> 300_000L
+            }
+            securityManager.setLockoutUntil(System.currentTimeMillis() + lockoutDurationMs)
+        }
+    }
+
+    fun resetFailedAttempts() {
+        securityManager.resetFailedAttempts()
+    }
+
     fun verifyCredentials(input: String): Boolean {
         val inputChars = input.trim().toCharArray()
         return try {

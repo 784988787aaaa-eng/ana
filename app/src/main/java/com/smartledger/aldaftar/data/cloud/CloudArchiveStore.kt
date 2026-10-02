@@ -321,13 +321,47 @@ class CloudArchiveStore(context: Context) {
         }
     }
 
-    private fun directDriveUpload(token: String, file: File, name: String): CloudBackupFile {
-        val folderId = getOrCreateFolderId(token)
-        val boundary = "SmartLedgerBoundary${System.currentTimeMillis()}"
-        val url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,modifiedTime"
+    private fun findExistingFileId(token: String, folderId: String, name: String): String? {
+        val queryStr = URLEncoder.encode("'$folderId' in parents and name='$name' and trashed=false", "UTF-8")
+        val fieldsStr = URLEncoder.encode("files(id)", "UTF-8")
+        val url = "https://www.googleapis.com/drive/v3/files?q=$queryStr&fields=$fieldsStr"
 
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
+            requestMethod = "GET"
+            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("Accept", "application/json")
+            connectTimeout = 15_000
+            readTimeout = 15_000
+        }
+
+        return try {
+            if (conn.responseCode in 200..299) {
+                val text = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val files = JSONObject(text).optJSONArray("files")
+                if (files != null && files.length() > 0) {
+                    files.getJSONObject(0).getString("id")
+                } else null
+            } else null
+        } catch (_: Exception) {
+            null
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private fun directDriveUpload(token: String, file: File, name: String): CloudBackupFile {
+        val folderId = getOrCreateFolderId(token)
+        val existingFileId = findExistingFileId(token, folderId, name)
+
+        val boundary = "SmartLedgerBoundary${System.currentTimeMillis()}"
+        val (url, method) = if (existingFileId != null) {
+            "https://www.googleapis.com/upload/drive/v3/files/$existingFileId?uploadType=multipart&fields=id,name,size,modifiedTime" to "PATCH"
+        } else {
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,modifiedTime" to "POST"
+        }
+
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = method
             doOutput = true
             setRequestProperty("Authorization", "Bearer $token")
             setRequestProperty("Content-Type", "multipart/related; boundary=$boundary")

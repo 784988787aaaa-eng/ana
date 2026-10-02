@@ -11,20 +11,37 @@ class AppSecurityManager private constructor(context: Context) {
     private val securePrefs: SharedPreferences by lazy { initEncryptedPreferences() }
 
     private fun initEncryptedPreferences(): SharedPreferences {
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        return EncryptedSharedPreferences.create(
-            ENCRYPTED_PREFS_NAME,
-            masterKeyAlias,
-            appContext,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        return runCatching {
+            val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+            EncryptedSharedPreferences.create(
+                ENCRYPTED_PREFS_NAME,
+                masterKeyAlias,
+                appContext,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }.getOrElse {
+            appContext.getSharedPreferences(ENCRYPTED_PREFS_NAME, Context.MODE_PRIVATE)
+        }
     }
 
     fun isBiometricEnabled(): Boolean = securePrefs.getBoolean(PREF_BIOMETRIC_ENABLED, false)
     fun setBiometricEnabled(enabled: Boolean) { securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply() }
     fun isFastPasscodeEnabled(): Boolean = securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
     fun setFastPasscodeEnabled(enabled: Boolean) { securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply() }
+
+    fun getFailedAttempts(): Int = securePrefs.getInt(PREF_FAILED_PIN_ATTEMPTS, 0)
+    fun incrementFailedAttempts() {
+        val next = getFailedAttempts() + 1
+        securePrefs.edit().putInt(PREF_FAILED_PIN_ATTEMPTS, next).apply()
+    }
+    fun resetFailedAttempts() {
+        securePrefs.edit().remove(PREF_FAILED_PIN_ATTEMPTS).remove(PREF_LOCKOUT_UNTIL_TIMESTAMP).apply()
+    }
+    fun getLockoutUntil(): Long = securePrefs.getLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+    fun setLockoutUntil(timestamp: Long) {
+        securePrefs.edit().putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, timestamp).apply()
+    }
 
     fun hasAdminPin(): Boolean = !securePrefs.getString(PREF_ADMIN_PIN_HASH, null).isNullOrBlank()
     fun validateAdminPin(enteredPin: String): Boolean {

@@ -5,13 +5,19 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 class LicenseStore(context: Context) {
-    private val prefs = EncryptedSharedPreferences.create(
-        context.applicationContext,
-        "smartledger_license_v1",
-        MasterKey.Builder(context.applicationContext).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val prefs by lazy {
+        runCatching {
+            EncryptedSharedPreferences.create(
+                context.applicationContext,
+                "smartledger_license_v1",
+                MasterKey.Builder(context.applicationContext).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }.getOrElse {
+            context.applicationContext.getSharedPreferences("smartledger_license_v1", Context.MODE_PRIVATE)
+        }
+    }
 
     var token: String?
         get() = prefs.getString("token", null)

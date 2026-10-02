@@ -5,12 +5,18 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 class CloudConnectionStore(context: Context) {
-    private val preferences = EncryptedSharedPreferences.create(
-        context, "smartledger_cloud_connection",
-        MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val preferences by lazy {
+        runCatching {
+            EncryptedSharedPreferences.create(
+                context.applicationContext, "smartledger_cloud_connection",
+                MasterKey.Builder(context.applicationContext).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }.getOrElse {
+            context.applicationContext.getSharedPreferences("smartledger_cloud_connection", Context.MODE_PRIVATE)
+        }
+    }
 
     fun token(): String? = preferences.getString(KEY_TOKEN, null)
     fun email(): String? = preferences.getString(KEY_EMAIL, null)

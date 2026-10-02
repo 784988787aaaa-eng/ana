@@ -29,5 +29,4 @@ class AppContainer(context: Context) {
     val automaticBackup by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AutomaticBackupCoordinator(backupEngine, cloudArchiveStore, publicBackupStore) }
     val license by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { LicenseRepository(context.applicationContext) }
     val unifiedAccount by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { UnifiedAccountSessionRepository(context.applicationContext, license, cloudArchiveStore) }
-    val adminLicense by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { com.smartledger.aldaftar.domain.admin.AdminLicenseRepository(context.applicationContext) }
 }

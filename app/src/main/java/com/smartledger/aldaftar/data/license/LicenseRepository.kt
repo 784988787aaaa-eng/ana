@@ -284,17 +284,6 @@ class LicenseRepository(private val context: Context) {
             return@withContext applySignedToken(trimmed)
         }
 
-        // 2. Check local Admin Vault / Database first (Zero latency, 100% offline support)
-        try {
-            val adminDb = com.smartledger.aldaftar.domain.admin.AdminLicenseDatabase.getInstance(context)
-            val match = adminDb.adminLicenseDao().findByCode(trimmed.uppercase())
-            if (match != null && match.isActive) {
-                return@withContext applySignedToken(match.activationToken)
-            }
-        } catch (e: Exception) {
-            // ignore and fallback to online check
-        }
-
         val accountMatch = Regex("SL-[A-Z0-9]{4}-[A-Z0-9]{4}", RegexOption.IGNORE_CASE).find(trimmed)
         val extractedAccountCode = accountMatch?.value?.uppercase()
         val resolvedAccountCode = extractedAccountCode ?: store.accountCode

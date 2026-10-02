@@ -67,6 +67,16 @@ fun AppLockScreen(
     val currentIsCheckingPasscode by rememberUpdatedState(isCheckingPasscode)
     val currentPasscodeHash by rememberUpdatedState(settings.passcodeHash.orEmpty())
 
+    var lockoutTimeRemainingSec by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val ms = viewModel.getLockoutTimeRemainingMs()
+            lockoutTimeRemainingSec = if (ms > 0) (ms + 999) / 1000 else 0L
+            kotlinx.coroutines.delay(1000L)
+        }
+    }
+
     val triggerErrorAnimationAndHaptic = {
         scope.launch {
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
@@ -80,13 +90,14 @@ fun AppLockScreen(
 
     val triggerBiometricPrompt = {
         val activity = context as? FragmentActivity
-        if (activity != null && isBiometricSupported) {
+        if (activity != null && isBiometricSupported && lockoutTimeRemainingSec <= 0L) {
             BiometricAuthHelper.authenticate(
                 activity = activity,
                 title = context.getString(R.string.lock_ledger_locked),
                 subtitle = context.getString(R.string.lock_enter_pin_prompt),
                 negativeButtonText = context.getString(R.string.lock_cancel_btn),
                 onSuccess = {
+                    viewModel.resetFailedAttempts()
                     LockHapticHelper.performLockHaptic(vibrator, LockHapticType.SUCCESS)
                     onUnlockSuccess()
                 },
@@ -98,15 +109,18 @@ fun AppLockScreen(
         }
     }
 
-    LaunchedEffect(isBiometricSupported, isBiometricEnabled) {
-        if (isBiometricSupported && isBiometricEnabled && !showRecoveryView) {
+    LaunchedEffect(isBiometricSupported, isBiometricEnabled, lockoutTimeRemainingSec) {
+        if (isBiometricSupported && isBiometricEnabled && !showRecoveryView && lockoutTimeRemainingSec <= 0L) {
             triggerBiometricPrompt()
         }
     }
 
     val onKeyPress = remember(vibrator) {
         { key: String ->
-            if (!currentIsCheckingPasscode && currentEnteredPasscode.length < 4) {
+            if (lockoutTimeRemainingSec > 0L) {
+                triggerErrorAnimationAndHaptic()
+                Toast.makeText(context, "الرجاء الانتظار حتى انتهاء فترة القفل مؤقتاً", Toast.LENGTH_SHORT).show()
+            } else if (!currentIsCheckingPasscode && currentEnteredPasscode.length < 4) {
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
                 val nextPasscode = currentEnteredPasscode + key
                 enteredPasscode = nextPasscode
@@ -122,9 +136,15 @@ fun AppLockScreen(
                             }
                         }
                         if (isMatch) {
+                            viewModel.resetFailedAttempts()
                             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.SUCCESS)
                             onUnlockSuccess()
                         } else {
+                            viewModel.handleFailedAttempt()
+                            val newMs = viewModel.getLockoutTimeRemainingMs()
+                            if (newMs > 0) {
+                                lockoutTimeRemainingSec = (newMs + 999) / 1000
+                            }
                             triggerErrorAnimationAndHaptic()
                             val fallbackMsg = context.getString(R.string.lock_incorrect_pin)
                             Toast.makeText(context, fallbackMsg, Toast.LENGTH_SHORT).show()
@@ -162,6 +182,7 @@ fun AppLockScreen(
                 }
             }
             if (isCorrect) {
+                viewModel.resetFailedAttempts()
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.SUCCESS)
                 keyboardController?.hide()
                 focusManager.clearFocus()
@@ -222,7 +243,8 @@ fun AppLockScreen(
                     onBiometricClick = {
                         LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
                         triggerBiometricPrompt()
-                    }
+                    },
+                    lockoutTimeRemainingSec = lockoutTimeRemainingSec
                 )
             }
         }
