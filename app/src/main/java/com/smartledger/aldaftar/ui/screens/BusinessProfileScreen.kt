@@ -191,7 +191,11 @@ private fun BusinessProfileForm(
         bizName = profile.name
         bizDesc = profile.description
         logoPath = profile.logoPath
-        phoneList.clear(); phoneList.addAll(profile.phones)
+        phoneList.clear()
+        phoneList.addAll(profile.phones)
+        if (phoneList.isEmpty()) {
+            phoneList.add("")
+        }
     }
 
     var logoBitmapState by remember { mutableStateOf<Bitmap?>(null) }
@@ -310,9 +314,26 @@ private fun BusinessProfileForm(
 
         BusinessProfilePhonesSection(
             phoneList = phoneList,
-            onPhoneChange = { index, newVal -> phoneList[index] = newVal },
-            onRemovePhone = { index -> phoneList.removeAt(index) },
-            onAddPhone = { phoneList.add("") },
+            onPhoneChange = { index, newVal ->
+                if (index in phoneList.indices) {
+                    phoneList[index] = newVal
+                } else if (index == phoneList.size) {
+                    phoneList.add(newVal)
+                }
+            },
+            onRemovePhone = { index ->
+                if (index in phoneList.indices) {
+                    phoneList.removeAt(index)
+                }
+                if (phoneList.isEmpty()) {
+                    phoneList.add("")
+                }
+            },
+            onAddPhone = {
+                if (phoneList.size < 3) {
+                    phoneList.add("")
+                }
+            },
             isDialog = isDialog,
             activeThemeColor = activeThemeColor
         )

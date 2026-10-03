@@ -65,7 +65,7 @@ fun BusinessProfilePhonesSection(
 ) {
     val focusManager = LocalFocusManager.current
     val effectivePhones = remember(phoneList) { if (phoneList.isEmpty()) listOf("") else phoneList }
-    var phonesExpanded by remember { mutableStateOf(false) }
+    var phonesExpanded by remember { mutableStateOf(true) }
     val focusRequesters = remember(effectivePhones.size) { List(effectivePhones.size) { FocusRequester() } }
 
     Column(

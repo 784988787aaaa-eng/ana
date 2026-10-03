@@ -206,10 +206,13 @@ class SearchAndCommunicationAutomationTest {
         val originalMessage = "🔴 *دين عليكم*\n💰 10,000 ر.ي\n📝 سلفه\n◀ *الإجمالي عليكم:* 10,000 ر.ي"
         val businessName = "صيدلية الأقصى للأدوية"
 
-        val prefixed = BusinessNamePrefixer.prefix(originalMessage, businessName)
+        val prefixedRich = BusinessNamePrefixer.prefix(originalMessage, businessName, isRichText = true)
+        val expectedRich = "*صيدلية الأقصى للأدوية:*\n🔴 *دين عليكم*\n💰 10,000 ر.ي\n📝 سلفه\n◀ *الإجمالي عليكم:* 10,000 ر.ي"
+        assertEquals(expectedRich, prefixedRich)
 
-        val expected = "صيدلية الأقصى للأدوية:\n🔴 *دين عليكم*\n💰 10,000 ر.ي\n📝 سلفه\n◀ *الإجمالي عليكم:* 10,000 ر.ي"
-        assertEquals(expected, prefixed)
+        val prefixedPlain = BusinessNamePrefixer.prefix(originalMessage, businessName, isRichText = false)
+        val expectedPlain = "*صيدلية الأقصى للأدوية:*\n🔴 *دين عليكم*\n💰 10,000 ر.ي\n📝 سلفه\n◀ *الإجمالي عليكم:* 10,000 ر.ي"
+        assertEquals(expectedPlain, prefixedPlain)
     }
 
     @Test
@@ -246,7 +249,7 @@ class SearchAndCommunicationAutomationTest {
             customer = customer,
             businessName = null
         )
-        assertFalse(msgWithoutName.startsWith("صيدلية الأقصى"))
+        assertFalse(msgWithoutName.startsWith("*صيدلية الأقصى:*"))
         assertTrue(msgWithoutName.contains("🔴 *دين عليكم*"))
 
         // With business name
@@ -255,7 +258,7 @@ class SearchAndCommunicationAutomationTest {
             customer = customer,
             businessName = "صيدلية الأقصى"
         )
-        assertTrue(msgWithName.startsWith("صيدلية الأقصى:\n🔴 *دين عليكم*"))
+        assertTrue(msgWithName.startsWith("*صيدلية الأقصى:*\n🔴 *دين عليكم*"))
     }
 
     // =========================================================================

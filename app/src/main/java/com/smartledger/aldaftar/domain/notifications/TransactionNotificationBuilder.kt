@@ -60,7 +60,7 @@ object TransactionNotificationBuilder {
             allCustomerTxs = allCustomerTxs,
             isRichText = true
         )
-        return BusinessNamePrefixer.prefix(base, businessName)
+        return BusinessNamePrefixer.prefix(base, businessName, isRichText = true)
     }
 
     /**
@@ -82,7 +82,7 @@ object TransactionNotificationBuilder {
             allCustomerTxs = allCustomerTxs,
             isRichText = false
         )
-        return BusinessNamePrefixer.prefix(base, businessName)
+        return BusinessNamePrefixer.prefix(base, businessName, isRichText = false)
     }
 
     /**

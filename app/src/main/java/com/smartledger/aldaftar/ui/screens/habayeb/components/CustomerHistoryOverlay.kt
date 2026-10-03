@@ -348,6 +348,24 @@ fun CustomerHistoryOverlay(
         exchangeRatesJson = settings.exchangeRatesJson,
         netDebt = calcResult.netDebt,
         activeThemeColor = activeThemeColor,
+        communicationConfig = customerCommConfig,
+        onToggleWhatsApp = { enabled ->
+            viewModel.setCommunicationPreferences(
+                customerId = activeCustomer.id,
+                autoWhatsApp = enabled,
+                autoSms = customerCommConfig.autoSms
+            )
+        },
+        onToggleSms = { enabled ->
+            viewModel.setCommunicationPreferences(
+                customerId = activeCustomer.id,
+                autoWhatsApp = customerCommConfig.autoWhatsApp,
+                autoSms = enabled
+            )
+        },
+        onRequestEditPhone = {
+            dialogState = dialogState.copy(showEditNameDialog = true)
+        },
         onDismissRequest = { showShareSheet = false },
         onPdfAction = ::launchCustomerPdfExport,
         onCsvAction = ::launchCustomerCsvExport
