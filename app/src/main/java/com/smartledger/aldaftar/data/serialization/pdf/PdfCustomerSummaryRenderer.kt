@@ -326,9 +326,11 @@ object PdfCustomerSummaryRenderer {
                 }
                 val grossText = "له: ${HabayebMathHelper.formatSmart(entry.value.owedByThem)} $symbol   •   عليه: ${HabayebMathHelper.formatSmart(entry.value.owedToThem)} $symbol"
                 val netText = "الصافي: ${HabayebMathHelper.formatSmart(entry.value.net.abs())} $symbol • $status"
-                drawArabicText(canvas, "$code — $symbol", left + 7f, top + 6f, (cardW - 14f).roundToInt(), amountPaint, Layout.Alignment.ALIGN_NORMAL)
-                drawArabicText(canvas, grossText, left + 7f, top + 23f, (cardW - 14f).roundToInt(), statusPaint, Layout.Alignment.ALIGN_CENTER)
-                drawArabicText(canvas, netText, left + 7f, top + 39f, (cardW - 14f).roundToInt(), statusPaint, Layout.Alignment.ALIGN_CENTER)
+                val nameStr = currency?.arabicName.orEmpty()
+                val headerTitle = if (nameStr.isNotBlank()) "$code — $symbol ($nameStr)" else "$code — $symbol"
+                drawArabicText(canvas, headerTitle, left + 7f, top + 5f, (cardW - 14f).roundToInt(), amountPaint, Layout.Alignment.ALIGN_NORMAL)
+                drawArabicText(canvas, grossText, left + 7f, top + 22f, (cardW - 14f).roundToInt(), statusPaint, Layout.Alignment.ALIGN_CENTER)
+                drawArabicText(canvas, netText, left + 7f, top + 40f, (cardW - 14f).roundToInt(), statusPaint, Layout.Alignment.ALIGN_CENTER)
             }
         }
         return endY

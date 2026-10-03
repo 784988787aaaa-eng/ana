@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,15 +23,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,15 +51,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
+import com.smartledger.aldaftar.domain.business.BusinessPhoneFormatter
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
@@ -71,6 +71,8 @@ import com.smartledger.aldaftar.ui.screens.business.BusinessProfileLogoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfilePhonesSection
 import com.smartledger.aldaftar.ui.screens.settings.components.LogoCropDialog
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel
+import com.smartledger.aldaftar.ui.viewmodel.PhoneInputData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -85,7 +87,7 @@ sealed interface BusinessProfileDialogState {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BusinessProfileScreen(
-    viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
+    viewModel: BusinessProfileViewModel,
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues()
 ) {
@@ -97,7 +99,9 @@ fun BusinessProfileScreen(
             TopAppBar(
                 title = {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(end = 48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 48.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -144,7 +148,7 @@ fun BusinessProfileScreen(
 
 @Composable
 fun BusinessProfileDialog(
-    viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
+    viewModel: BusinessProfileViewModel,
     onDismiss: () -> Unit
 ) {
     MizanAnimatedDialog(
@@ -174,7 +178,7 @@ fun BusinessProfileDialog(
 
 @Composable
 private fun BusinessProfileForm(
-    viewModel: com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel,
+    viewModel: BusinessProfileViewModel,
     isDialog: Boolean,
     onClose: () -> Unit
 ) {
@@ -182,19 +186,27 @@ private fun BusinessProfileForm(
     val coroutineScope = rememberCoroutineScope()
     val activeThemeColor = MaterialTheme.colorScheme.primary
 
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     var bizName by remember { mutableStateOf("") }
     var bizDesc by remember { mutableStateOf("") }
     var logoPath by remember { mutableStateOf("") }
-    val phoneList = remember { mutableStateListOf<String>() }
-    LaunchedEffect(Unit) {
-        val profile = viewModel.profile.value
+    val phoneInputs = remember { mutableStateListOf<PhoneInputData>() }
+
+    LaunchedEffect(profile) {
         bizName = profile.name
         bizDesc = profile.description
         logoPath = profile.logoPath
-        phoneList.clear()
-        phoneList.addAll(profile.phones)
-        if (phoneList.isEmpty()) {
-            phoneList.add("")
+
+        phoneInputs.clear()
+        if (profile.phones.isNotEmpty()) {
+            profile.phones.forEachIndexed { idx, raw ->
+                val parsed = BusinessPhoneFormatter.parseRawPhone(raw)
+                phoneInputs.add(PhoneInputData(id = idx, countryCode = parsed.countryCode, nationalNumber = parsed.nationalNumber))
+            }
+        } else {
+            phoneInputs.add(PhoneInputData(id = 0))
         }
     }
 
@@ -246,15 +258,16 @@ private fun BusinessProfileForm(
     }
 
     val handleSave = {
-        if (bizName.isBlank()) {
-            Toast.makeText(context, context.getString(R.string.biz_toast_err_empty_name), Toast.LENGTH_SHORT).show()
-        } else {
-            coroutineScope.launch {
-                viewModel.save(BusinessProfile(name = bizName.trim(), description = bizDesc.trim(), logoPath = logoPath, phones = phoneList.toList()))
+        viewModel.saveProfile(
+            name = bizName,
+            description = bizDesc,
+            logoPath = logoPath,
+            phoneInputs = phoneInputs.toList(),
+            onSuccess = {
                 Toast.makeText(context, context.getString(R.string.biz_toast_save_success), Toast.LENGTH_SHORT).show()
                 onClose()
             }
-        }
+        )
     }
 
     val handleReset = {
@@ -263,7 +276,8 @@ private fun BusinessProfileForm(
             bizName = ""
             bizDesc = ""
             logoPath = ""
-            phoneList.clear()
+            phoneInputs.clear()
+            phoneInputs.add(PhoneInputData(id = 0))
             logoBitmapState = null
             Toast.makeText(context, context.getString(R.string.biz_reset_success), Toast.LENGTH_SHORT).show()
         }
@@ -290,7 +304,7 @@ private fun BusinessProfileForm(
                 }
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         BusinessProfileLogoSection(
             logoBitmapState = logoBitmapState,
@@ -305,38 +319,69 @@ private fun BusinessProfileForm(
 
         BusinessProfileInfoSection(
             bizName = bizName,
-            onBizNameChange = { bizName = it },
+            onBizNameChange = {
+                bizName = it
+                viewModel.clearSaveState()
+            },
             bizDesc = bizDesc,
             onBizDescChange = { bizDesc = it },
             isDialog = isDialog,
             activeThemeColor = activeThemeColor
         )
 
+        if (uiState.nameError != null) {
+            Text(
+                text = uiState.nameError!!,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 11.5.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            )
+        }
+
         BusinessProfilePhonesSection(
-            phoneList = phoneList,
-            onPhoneChange = { index, newVal ->
-                if (index in phoneList.indices) {
-                    phoneList[index] = newVal
-                } else if (index == phoneList.size) {
-                    phoneList.add(newVal)
+            phoneInputs = phoneInputs,
+            phoneErrors = uiState.phoneErrors,
+            onPhoneDataChange = { index, newData ->
+                if (index in phoneInputs.indices) {
+                    phoneInputs[index] = newData
+                } else if (index == phoneInputs.size) {
+                    phoneInputs.add(newData)
                 }
+                viewModel.clearSaveState()
             },
             onRemovePhone = { index ->
-                if (index in phoneList.indices) {
-                    phoneList.removeAt(index)
+                if (index in phoneInputs.indices) {
+                    phoneInputs.removeAt(index)
                 }
-                if (phoneList.isEmpty()) {
-                    phoneList.add("")
+                if (phoneInputs.isEmpty()) {
+                    phoneInputs.add(PhoneInputData(id = 0))
                 }
+                viewModel.clearSaveState()
             },
             onAddPhone = {
-                if (phoneList.size < 3) {
-                    phoneList.add("")
+                if (phoneInputs.size < 3) {
+                    phoneInputs.add(PhoneInputData(id = phoneInputs.size))
                 }
+                viewModel.clearSaveState()
             },
             isDialog = isDialog,
             activeThemeColor = activeThemeColor
         )
+
+        if (uiState.errorMessage != null) {
+            Text(
+                text = uiState.errorMessage!!,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+            )
+        }
 
         if (isDialog) {
             MizanDialogActions(
@@ -391,6 +436,7 @@ private fun BusinessProfileForm(
 
                 Button(
                     onClick = { handleSave() },
+                    enabled = !uiState.isSaving,
                     modifier = Modifier
                         .weight(1.3f)
                         .height(48.dp)
@@ -409,7 +455,7 @@ private fun BusinessProfileForm(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = stringResource(id = R.string.biz_btn_save),
+                            text = if (uiState.isSaving) "جاري الحفظ..." else stringResource(id = R.string.biz_btn_save),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -420,64 +466,51 @@ private fun BusinessProfileForm(
         }
     }
 
-    (dialogState as? BusinessProfileDialogState.CropLogo)?.let { cropState ->
-        val density = LocalDensity.current.density
-        val bitmapToCrop = cropState.bitmap
-        val cropShapeIsCircle = cropState.isCircle
+    if (dialogState is BusinessProfileDialogState.CropLogo) {
+        val cropState = dialogState as BusinessProfileDialogState.CropLogo
+        var cropIsCircle by remember { mutableStateOf(cropState.isCircle) }
+        var currentBitmap by remember { mutableStateOf(cropState.bitmap) }
+
         LogoCropDialog(
-            editingBitmap = bitmapToCrop,
-            cropShapeIsCircle = cropShapeIsCircle,
-            onCropShapeChange = { isCircle ->
-                dialogState = cropState.copy(isCircle = isCircle)
-            },
+            editingBitmap = currentBitmap,
+            cropShapeIsCircle = cropIsCircle,
+            onCropShapeChange = { cropIsCircle = it },
             activeThemeColor = activeThemeColor,
             onRotate = {
-                coroutineScope.launch {
-                    try {
-                        val rotated = withContext(Dispatchers.Default) {
-                            BusinessProfileImageHelper.rotateBitmap(bitmapToCrop, 90f)
-                        }
-                        if (!rotated.isRecycled) {
-                            dialogState = cropState.copy(bitmap = rotated)
-                        }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (_: Exception) {
-                        dialogState = BusinessProfileDialogState.None
-                    }
-                }
+                val matrix = android.graphics.Matrix().apply { postRotate(90f) }
+                val rotated = Bitmap.createBitmap(currentBitmap, 0, 0, currentBitmap.width, currentBitmap.height, matrix, true)
+                currentBitmap = rotated
             },
-            onDismiss = {
-                dialogState = BusinessProfileDialogState.None
-                pendingImageUri = null
-            },
+            onDismiss = { dialogState = BusinessProfileDialogState.None },
             onApply = { scale, offsetX, offsetY ->
                 coroutineScope.launch {
                     try {
-                        val result = withContext(Dispatchers.IO) {
-                            val croppedResult = BusinessProfileImageHelper.cropWithTransform(
-                                bitmapToCrop, scale, offsetX, offsetY, density, cropShapeIsCircle
+                        val density = context.resources.displayMetrics.density
+                        val cropped = withContext(Dispatchers.IO) {
+                            BusinessProfileImageHelper.cropWithTransform(
+                                currentBitmap,
+                                scale,
+                                offsetX,
+                                offsetY,
+                                density,
+                                cropIsCircle
                             )
-                            val scaledResult = BusinessProfileImageHelper.scaleBitmap(croppedResult, 400)
-                            val localPath = BusinessProfileImageHelper.saveBitmapToInternalStorage(context, scaledResult)
-                            localPath to scaledResult
                         }
-                        val localPath = result.first
-                        if (localPath != null) {
-                            logoPath = localPath
-                            logoBitmapState = result.second
-                            Toast.makeText(context, context.getString(R.string.biz_toast_logo_success), Toast.LENGTH_SHORT).show()
+                        val path = withContext(Dispatchers.IO) {
+                            BusinessProfileImageHelper.saveBitmapToInternalStorage(context, cropped)
+                        }
+                        if (path != null) {
+                            logoPath = path
+                            logoBitmapState = cropped
                         } else {
-                            Toast.makeText(context, context.getString(R.string.biz_toast_logo_save_err), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.biz_toast_logo_failed), Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Exception) {
-                        Toast.makeText(context, context.getString(R.string.biz_toast_logo_save_err), Toast.LENGTH_SHORT).show()
-                    } finally {
-                        dialogState = BusinessProfileDialogState.None
-                        pendingImageUri = null
+                        Toast.makeText(context, context.getString(R.string.biz_toast_logo_failed), Toast.LENGTH_SHORT).show()
                     }
+                    dialogState = BusinessProfileDialogState.None
                 }
             }
         )

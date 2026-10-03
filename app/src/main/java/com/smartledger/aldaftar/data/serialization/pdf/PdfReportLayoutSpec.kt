@@ -8,13 +8,13 @@ object PdfReportLayoutSpec {
     private const val CUSTOMER_TITLE_GAP = 6f
     private const val TABLE_HEADER_GAP = 10f
     private const val FOREIGN_CARD_HEADER = 28f
-    private const val FOREIGN_CARD_ITEM = 38f
+    private const val FOREIGN_CARD_ITEM = 52f
     private const val FOREIGN_CARD_BOTTOM = 4f
     private const val FOREIGN_COLUMNS = 2
     private const val COMPREHENSIVE_BASE_HEIGHT = 72f
     private const val COMPREHENSIVE_FOREIGN_TOP = 72f
     private const val COMPREHENSIVE_FOREIGN_BOTTOM = 6f
-    private const val COMPREHENSIVE_FOREIGN_ROW = 58f
+    private const val COMPREHENSIVE_FOREIGN_ROW = 64f
     private const val CUSTOMER_INTRO_HEIGHT = 66f
     private const val CUSTOMER_INTRO_GAP = 8f
     private const val TABLE_HEADER_HEIGHT = 24f

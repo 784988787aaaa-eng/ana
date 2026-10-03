@@ -15,8 +15,8 @@ class ReportLayoutContractTest {
     fun foreignCurrencyCardHeightScalesPerCurrencyWithoutHugeEmptyBox() {
         assertTrue(PdfReportLayoutSpec.foreignCurrencySectionHeight(1) < 120f)
         assertTrue(PdfReportLayoutSpec.foreignCurrencySectionHeight(3) > PdfReportLayoutSpec.foreignCurrencySectionHeight(1))
-        assertEquals(136f, PdfReportLayoutSpec.comprehensiveSummaryCardHeight(1), 0.001f)
-        assertEquals(194f, PdfReportLayoutSpec.comprehensiveSummaryCardHeight(3), 0.001f)
+        assertEquals(142f, PdfReportLayoutSpec.comprehensiveSummaryCardHeight(1), 0.001f)
+        assertEquals(206f, PdfReportLayoutSpec.comprehensiveSummaryCardHeight(3), 0.001f)
     }
     @Test
     fun foreignSectionHeightHandlesColumnBoundariesWithoutNegativeOrExcessiveGrowth() {
