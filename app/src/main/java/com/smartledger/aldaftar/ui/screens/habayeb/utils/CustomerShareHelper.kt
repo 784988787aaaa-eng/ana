@@ -62,14 +62,16 @@ object CustomerShareHelper {
         customer: HabayebCustomer,
         netDebt: java.math.BigDecimal,
         currencySymbol: String,
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
     ): String {
         return TransactionNotificationBuilder.buildWhatsAppNotification(
             tx = tx,
             customer = customer,
             netDebt = netDebt,
             currencySymbol = currencySymbol,
-            allCustomerTxs = allCustomerTxs
+            allCustomerTxs = allCustomerTxs,
+            businessName = businessName
         )
     }
 
@@ -78,7 +80,8 @@ object CustomerShareHelper {
         customer: HabayebCustomer,
         netDebt: java.math.BigDecimal,
         currencySymbol: String,
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
     ): String {
         val debtStatus = when {
             netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> context.getString(R.string.habayeb_statement_status_owed_by_them, formatCurrency(netDebt.abs(), currencySymbol))
@@ -123,7 +126,8 @@ object CustomerShareHelper {
         }
         val foreignText = if (foreignLines.isNotEmpty()) foreignLines.joinToString("") + "\n" else ""
 
-        return "$title• $debtStatus\n$foreignText$footer"
+        val rawStatement = "$title• $debtStatus\n$foreignText$footer"
+        return com.smartledger.aldaftar.domain.notifications.BusinessNamePrefixer.prefix(rawStatement, businessName)
     }
 
     fun triggerSmsStatement(
@@ -131,9 +135,10 @@ object CustomerShareHelper {
         customer: HabayebCustomer,
         debt: java.math.BigDecimal,
         currencySymbol: String,
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
     ) {
-        val body = buildStatementShareBody(context, customer, debt, currencySymbol, allCustomerTxs)
+        val body = buildStatementShareBody(context, customer, debt, currencySymbol, allCustomerTxs, businessName)
         sendSmsReliably(context, customer.phone, body, R.string.habayeb_statement_send)
     }
 
@@ -142,9 +147,10 @@ object CustomerShareHelper {
         customer: HabayebCustomer,
         debt: java.math.BigDecimal,
         currencySymbol: String,
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
     ) {
-        val body = buildStatementShareBody(context, customer, debt, currencySymbol, allCustomerTxs)
+        val body = buildStatementShareBody(context, customer, debt, currencySymbol, allCustomerTxs, businessName)
         try {
             val waUrl = "https://wa.me/${customer.phone.replace("+", "").replace(" ", "")}?text=${Uri.encode(body)}"
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(waUrl))
@@ -164,14 +170,16 @@ object CustomerShareHelper {
         customer: HabayebCustomer,
         netDebt: java.math.BigDecimal,
         currencySymbol: String,
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
     ) {
         val body = TransactionNotificationBuilder.buildSmsNotification(
             tx = tx,
             customer = customer,
             netDebt = netDebt,
             currencySymbol = currencySymbol,
-            allCustomerTxs = allCustomerTxs
+            allCustomerTxs = allCustomerTxs,
+            businessName = businessName
         )
         sendSmsReliably(context, customer.phone, body, R.string.habayeb_tx_send_notice)
     }
@@ -182,14 +190,16 @@ object CustomerShareHelper {
         customer: HabayebCustomer,
         netDebt: java.math.BigDecimal,
         currencySymbol: String,
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
     ) {
         val body = TransactionNotificationBuilder.buildWhatsAppNotification(
             tx = tx,
             customer = customer,
             netDebt = netDebt,
             currencySymbol = currencySymbol,
-            allCustomerTxs = allCustomerTxs
+            allCustomerTxs = allCustomerTxs,
+            businessName = businessName
         )
         try {
             val waUrl = "https://wa.me/${customer.phone.replace("+", "").replace(" ", "")}?text=${Uri.encode(body)}"

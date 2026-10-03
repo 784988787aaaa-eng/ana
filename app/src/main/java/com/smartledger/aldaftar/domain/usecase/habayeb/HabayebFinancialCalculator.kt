@@ -4,6 +4,7 @@ import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.platform.contacts.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils.toWesternDigits
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.state.CustomerUiState
@@ -16,13 +17,13 @@ import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 private const val CATEGORY_CLOSED = FinanceConstants.CATEGORY_CLOSED
 
 data class HabayebFilterParameters(
-    val query: String,
-    val tab: Int,
-    val finSort: Int,
-    val histSort: Int,
-    val hiddenIds: Set<String>,
-    val selectedCat: String?,
-    val pinnedIds: Set<String>
+    val query: String = "",
+    val tab: Int = 0,
+    val finSort: Int = 0,
+    val histSort: Int = 1,
+    val hiddenIds: Set<String> = emptySet(),
+    val selectedCat: String? = null,
+    val pinnedIds: Set<String> = emptySet()
 )
 
 data class HabayebFilterGroup1(
@@ -223,9 +224,14 @@ object HabayebFinancialCalculator {
             }
             if (!matchesCategory) continue
 
+            val westernQuery = params.query.toWesternDigits().trim()
+            val queryWithoutSpaces = normalizedQuery.replace(" ", "")
             val matchesSearch = isQueryEmpty ||
                     customerUi.normalizedName.contains(normalizedQuery, ignoreCase = true) ||
-                    customerUi.phone.contains(params.query, ignoreCase = true)
+                    (queryWithoutSpaces.isNotEmpty() && customerUi.normalizedName.replace(" ", "").contains(queryWithoutSpaces, ignoreCase = true)) ||
+                    (westernQuery.isNotEmpty() && customerUi.phone.toWesternDigits().contains(westernQuery, ignoreCase = true)) ||
+                    (customerUi.notes.isNotBlank() && StringUtils.normalizeArabic(customerUi.notes).contains(normalizedQuery, ignoreCase = true)) ||
+                    (westernQuery.isNotEmpty() && customerUi.defaultCurrencyTotalAbs.stripTrailingZeros().toPlainString().contains(westernQuery))
             if (!matchesSearch) continue
 
             baseFilteredList.add(customerUi)

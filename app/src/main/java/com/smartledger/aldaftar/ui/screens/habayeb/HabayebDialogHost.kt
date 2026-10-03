@@ -116,12 +116,32 @@ fun HabayebDialogHost(
         is HabayebDialogState.ContextMenu -> {
             val pinnedSet by viewModel.pinnedCustomerIds.collectAsStateWithLifecycle()
             val isPinned = pinnedSet.contains(dialogState.customer.id)
+            val commConfigs by viewModel.communicationConfigsState.collectAsStateWithLifecycle()
+            val customerCommConfig = commConfigs[dialogState.customer.id] ?: viewModel.getCommunicationConfig(dialogState.customer.id)
 
             CustomerContextBottomSheet(
                 customer = dialogState.customer,
                 customCategories = customCategories,
                 isPinned = isPinned,
                 activeThemeColor = activeThemeColor,
+                communicationConfig = customerCommConfig,
+                onToggleWhatsApp = { enabled ->
+                    viewModel.setCommunicationPreferences(
+                        customerId = dialogState.customer.id,
+                        autoWhatsApp = enabled,
+                        autoSms = customerCommConfig.autoSms
+                    )
+                },
+                onToggleSms = { enabled ->
+                    viewModel.setCommunicationPreferences(
+                        customerId = dialogState.customer.id,
+                        autoWhatsApp = customerCommConfig.autoWhatsApp,
+                        autoSms = enabled
+                    )
+                },
+                onRequestEditPhone = {
+                    onOpenEditCustomer(dialogState.customer.originalCustomer)
+                },
                 onDismiss = onDismissDialog,
                 onTogglePin = {
                     val targetId = dialogState.customer.id

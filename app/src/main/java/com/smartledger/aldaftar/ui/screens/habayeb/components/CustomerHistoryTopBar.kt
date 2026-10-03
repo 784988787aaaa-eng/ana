@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -102,9 +103,13 @@ fun CustomerHistoryTopBar(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                var textState by remember(txSearchQuery) { mutableStateOf(txSearchQuery) }
                 BasicTextField(
-                    value = txSearchQuery,
-                    onValueChange = onSearchQueryChange,
+                    value = textState,
+                    onValueChange = { newText ->
+                        textState = newText
+                        onSearchQueryChange(newText)
+                    },
                     textStyle = TextStyle(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp,
@@ -114,13 +119,14 @@ fun CustomerHistoryTopBar(
                     singleLine = true,
                     modifier = Modifier
                         .weight(1f)
-                        .focusRequester(focusRequester),
+                        .focusRequester(focusRequester)
+                        .testTag("history_search_input"),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = {
                         keyboardController?.hide()
                     }),
                     decorationBox = { innerTextField ->
-                        if (txSearchQuery.isEmpty()) {
+                        if (textState.isEmpty()) {
                             Text(
                                 text = stringResource(id = R.string.habayeb_search_tx_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
@@ -159,37 +165,43 @@ fun CustomerHistoryTopBar(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(vertical = 4.dp),
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onEditClick() }
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp),
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onEditClick() }
-                            .padding(vertical = 2.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = if (customerPhone.isNotBlank()) "$customerName : $customerPhone" else customerName,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            text = customerName,
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
+                            overflow = TextOverflow.Ellipsis
                         )
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(id = R.string.habayeb_edit_name_desc),
-                            tint = activeThemeColor,
-                            modifier = Modifier.size(16.dp)
+                            tint = activeThemeColor.copy(alpha = 0.8f),
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+
+                    if (customerPhone.isNotBlank()) {
+                        Text(
+                            text = customerPhone,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

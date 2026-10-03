@@ -50,7 +50,8 @@ fun TransactionRowDateSection(
 
     Column(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -59,7 +60,7 @@ fun TransactionRowDateSection(
             if (isSelected) {
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(13.dp)
                         .background(activeThemeColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -67,24 +68,25 @@ fun TransactionRowDateSection(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(10.dp)
+                        modifier = Modifier.size(8.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(3.dp))
+                Spacer(modifier = Modifier.width(2.dp))
             }
             Text(
                 text = "#$txSeqNo",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = activeThemeColor,
                 modifier = Modifier
-                    .background(activeThemeColor.copy(alpha = 0.08f), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .background(activeThemeColor.copy(alpha = 0.08f), RoundedCornerShape(3.dp))
+                    .padding(horizontal = 3.dp, vertical = 0.5.dp)
             )
             if (hasActiveRecurring) {
+                Spacer(modifier = Modifier.width(2.dp))
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(13.dp)
                         .background(activeThemeColor.copy(alpha = 0.12f), CircleShape)
                         .clickable { onScheduleClick(tx) },
                     contentAlignment = Alignment.Center
@@ -93,13 +95,11 @@ fun TransactionRowDateSection(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = stringResource(id = R.string.habayeb_recurring_source),
                         tint = activeThemeColor,
-                        modifier = Modifier.size(10.dp)
+                        modifier = Modifier.size(8.dp)
                     )
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(2.dp))
 
         val dayName = stringResource(id = cached.dayNameResId)
         val onSurfaceColor = MaterialTheme.colorScheme.onSurface
@@ -124,12 +124,10 @@ fun TransactionRowDateSection(
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
-        
-        Spacer(modifier = Modifier.height(0.5.dp))
 
         Text(
             text = cached.timeStr,
-            fontSize = 8.sp,
+            fontSize = 7.5.sp,
             color = mizanColors.contentSecondary,
             fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
@@ -164,97 +162,99 @@ fun TransactionRowDetailsSection(
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-        
-        Spacer(modifier = Modifier.height(1.dp))
 
         Text(
             text = cached.cleanDescription.ifEmpty { stringResource(id = R.string.habayeb_no_notes) },
-            fontSize = 11.sp,
+            fontSize = 10.5.sp,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
 
-        Row(
-            modifier = Modifier.padding(top = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
-        ) {
-            if (hasActiveRecurring) {
-                Box(
-                    modifier = Modifier
-                        .background(mizanColors.alertGoldBackground, RoundedCornerShape(4.dp))
-                        .border(0.5.dp, mizanColors.alertGoldBorder, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.habayeb_recurring_source),
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        color = mizanColors.alertGoldText
-                    )
-                }
-            } else if (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id) {
-                Box(
-                    modifier = Modifier
-                        .background(mizanColors.infoBlueBackground, RoundedCornerShape(4.dp))
-                        .border(0.5.dp, mizanColors.infoBlueBorder, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.habayeb_auto_generated_sub, parentTxSeq),
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        color = mizanColors.infoBlueText
-                    )
-                }
-            }
+        val showRecurringBadge = hasActiveRecurring || (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id)
+        val showToggle = cached.isTxForeign || cached.isCalculated
 
-            val showToggle = cached.isTxForeign || cached.isCalculated
-            if (showToggle) {
-                val isCalculated = cached.isCalculated
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(
-                            if (isCalculated) mizanColors.successGreenBackground
-                            else mizanColors.appSurfaceVariant
+        if (showRecurringBadge || showToggle) {
+            Row(
+                modifier = Modifier.padding(top = 1.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally)
+            ) {
+                if (hasActiveRecurring) {
+                    Box(
+                        modifier = Modifier
+                            .background(mizanColors.alertGoldBackground, RoundedCornerShape(3.dp))
+                            .border(0.5.dp, mizanColors.alertGoldBorder, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.5.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.habayeb_recurring_source),
+                            fontSize = 7.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            color = mizanColors.alertGoldText
                         )
-                        .border(
-                            0.5.dp,
-                            if (isCalculated) mizanColors.successGreenBorder
-                            else mizanColors.border,
-                            RoundedCornerShape(4.dp)
+                    }
+                } else if (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id) {
+                    Box(
+                        modifier = Modifier
+                            .background(mizanColors.infoBlueBackground, RoundedCornerShape(3.dp))
+                            .border(0.5.dp, mizanColors.infoBlueBorder, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 3.dp, vertical = 0.5.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.habayeb_auto_generated_sub, parentTxSeq),
+                            fontSize = 7.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            color = mizanColors.infoBlueText
                         )
-                        .clickable { onExchangeRateClick(tx) }
-                        .padding(horizontal = 5.dp, vertical = 1.5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = if (isCalculated) Icons.Default.Check else Icons.Default.Close,
-                        contentDescription = null,
-                        tint = if (isCalculated) mizanColors.successGreenBorder else mizanColors.debtBorder.copy(alpha = 0.8f),
-                        modifier = Modifier.size(9.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = if (isCalculated) {
-                            stringResource(id = R.string.habayeb_rate_active, com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(tx.exchangeRate))
-                        } else {
-                            stringResource(id = R.string.habayeb_rate_inactive_clean)
-                        },
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        color = if (isCalculated) mizanColors.successGreenBorder else mizanColors.contentSecondary.copy(alpha = 0.8f)
-                    )
+                    }
+                }
+
+                if (showToggle) {
+                    val isCalculated = cached.isCalculated
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(
+                                if (isCalculated) mizanColors.successGreenBackground
+                                else mizanColors.appSurfaceVariant
+                            )
+                            .border(
+                                0.5.dp,
+                                if (isCalculated) mizanColors.successGreenBorder
+                                else mizanColors.border,
+                                RoundedCornerShape(3.dp)
+                            )
+                            .clickable { onExchangeRateClick(tx) }
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isCalculated) Icons.Default.Check else Icons.Default.Close,
+                            contentDescription = null,
+                            tint = if (isCalculated) mizanColors.successGreenBorder else mizanColors.debtBorder.copy(alpha = 0.8f),
+                            modifier = Modifier.size(8.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = if (isCalculated) {
+                                stringResource(id = R.string.habayeb_rate_active, com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatActiveRateBadge(tx.exchangeRate))
+                            } else {
+                                stringResource(id = R.string.habayeb_rate_inactive_clean)
+                            },
+                            fontSize = 7.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            color = if (isCalculated) mizanColors.successGreenBorder else mizanColors.contentSecondary.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
         }
@@ -279,12 +279,12 @@ fun TransactionRowAmountSection(
                 imageVector = cached.txArrow,
                 contentDescription = null,
                 tint = cached.indicatorColor,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(12.dp)
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(3.dp))
             AutoSizeText(
                 text = "${cached.formattedAmount} ${cached.displayCurrency}",
-                fontSize = 13.sp,
+                fontSize = 12.5.sp,
                 fontWeight = FontWeight.Black,
                 color = cached.indicatorColor
             )
@@ -292,7 +292,7 @@ fun TransactionRowAmountSection(
         if (cached.equivalentAmountText != null) {
             AutoSizeText(
                 text = cached.equivalentAmountText,
-                fontSize = 11.sp,
+                fontSize = 9.5.sp,
                 color = cached.indicatorColor.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
             )

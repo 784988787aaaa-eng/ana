@@ -54,8 +54,19 @@ class HabayebFinanceViewModel(
     private val settingsRepository: com.smartledger.aldaftar.data.repository.SettingsRepository,
     private val recurringRepository: com.smartledger.aldaftar.data.repository.RecurringRepository,
     mutationRepository: com.smartledger.aldaftar.data.repository.HabayebMutationRepository,
-    private val floatingUiRepository: com.smartledger.aldaftar.data.repository.FloatingUiPreferencesRepository
+    private val floatingUiRepository: com.smartledger.aldaftar.data.repository.FloatingUiPreferencesRepository,
+    private val communicationPreferencesRepository: com.smartledger.aldaftar.domain.communication.CustomerCommunicationPreferencesRepository = com.smartledger.aldaftar.domain.communication.CustomerCommunicationPreferencesRepository(application),
+    private val autoCommunicationCoordinator: com.smartledger.aldaftar.domain.communication.AutoCommunicationCoordinator = com.smartledger.aldaftar.domain.communication.AutoCommunicationCoordinator(),
+    private val businessProfileRepository: com.smartledger.aldaftar.data.repository.BusinessProfileRepository = com.smartledger.aldaftar.data.repository.BusinessProfileRepository(com.smartledger.aldaftar.data.local.AppDatabase.getDatabase(application).businessProfileDao())
 ) : AndroidViewModel(application) {
+
+    val communicationConfigsState: StateFlow<Map<String, com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig>> = communicationPreferencesRepository.configsState
+    fun getCommunicationConfig(customerId: String): com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig = communicationPreferencesRepository.getPreferences(customerId)
+    fun setCommunicationPreferences(customerId: String, autoWhatsApp: Boolean, autoSms: Boolean) = communicationPreferencesRepository.setPreferences(customerId, autoWhatsApp, autoSms)
+    val pendingCommunicationRequest: StateFlow<com.smartledger.aldaftar.domain.communication.PendingCommunicationRequest?> = autoCommunicationCoordinator.pendingRequest
+    fun markCommunicationChannelLaunched() = autoCommunicationCoordinator.markCurrentChannelLaunched()
+    fun onActivityResumed() = autoCommunicationCoordinator.onActivityResumed()
+    fun dismissCommunication() = autoCommunicationCoordinator.dismiss()
 
     fun floatingAddState() = floatingUiRepository.add()
     fun saveFloatingAddState(state: com.smartledger.aldaftar.data.repository.FloatingAddState) = floatingUiRepository.saveAdd(state)
@@ -391,6 +402,64 @@ class HabayebFinanceViewModel(
         resetFiltersToDefault(resetCategory = false)
         VibrationHelper.triggerSuccessVibration(getApplication())
         emitScrollToAccount(customerId)
+
+        // Dispatch instant auto communication if configured
+        val commConfig = communicationPreferencesRepository.getPreferences(customerId)
+        if (commConfig.hasAnyEnabled) {
+            try {
+                val customer = habayebRepository.getCustomerByIdDirect(customerId)
+                if (customer != null && com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper.isValidDestination(customer.phone)) {
+                    val allTxs = habayebRepository.getTransactionsForCustomerDirect(customerId)
+                    val profile = businessProfileRepository.profileFlow.first()
+                    val bName = profile?.name?.takeIf { it.isNotBlank() }
+                    val newTx = allTxs.maxByOrNull { it.timestamp } ?: HabayebTransaction(
+                        id = "tx_${System.currentTimeMillis()}",
+                        customerId = customerId,
+                        type = type,
+                        amount = amount,
+                        timestamp = timestamp,
+                        description = desc,
+                        isForeign = isForeign,
+                        currencyCode = currencyCode,
+                        foreignAmount = foreignAmount,
+                        exchangeRate = exchangeRate,
+                        isRateCalculated = isRateCalculated,
+                        equivalentAmount = equivalentAmount,
+                        baseCurrencyCode = historicalOrCurrentBase
+                    )
+                    val channels = mutableListOf<com.smartledger.aldaftar.domain.communication.CommunicationChannelType>()
+                    if (commConfig.autoWhatsApp) {
+                        val waMsg = com.smartledger.aldaftar.domain.notifications.TransactionNotificationBuilder.buildWhatsAppNotification(
+                            tx = newTx,
+                            customer = customer,
+                            netDebt = null,
+                            currencySymbol = historicalOrCurrentBase,
+                            allCustomerTxs = allTxs,
+                            businessName = bName
+                        )
+                        channels.add(com.smartledger.aldaftar.domain.communication.CommunicationChannelType.WhatsApp(waMsg))
+                    }
+                    if (commConfig.autoSms) {
+                        val smsMsg = com.smartledger.aldaftar.domain.notifications.TransactionNotificationBuilder.buildSmsNotification(
+                            tx = newTx,
+                            customer = customer,
+                            netDebt = null,
+                            currencySymbol = historicalOrCurrentBase,
+                            allCustomerTxs = allTxs,
+                            businessName = bName
+                        )
+                        channels.add(com.smartledger.aldaftar.domain.communication.CommunicationChannelType.SMS(smsMsg))
+                    }
+                    autoCommunicationCoordinator.enqueue(
+                        transactionId = newTx.id,
+                        customerId = customerId,
+                        customerPhone = customer.phone,
+                        channels = channels
+                    )
+                }
+            } catch (_: Exception) {}
+        }
+
         true
     }
 

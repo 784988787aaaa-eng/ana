@@ -55,6 +55,8 @@ import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
+import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
+
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CustomerContextBottomSheet(
@@ -62,6 +64,10 @@ fun CustomerContextBottomSheet(
     customCategories: List<CustomCategory>,
     isPinned: Boolean,
     activeThemeColor: Color,
+    communicationConfig: CustomerCommunicationConfig = CustomerCommunicationConfig(),
+    onToggleWhatsApp: (Boolean) -> Unit = {},
+    onToggleSms: (Boolean) -> Unit = {},
+    onRequestEditPhone: () -> Unit = {},
     onDismiss: () -> Unit,
     onTogglePin: () -> Unit,
     onAssignCategory: (String?) -> Unit,
@@ -163,6 +169,21 @@ fun CustomerContextBottomSheet(
                                 )
                             }
                         }
+
+                        // Smart Compact Instant Dispatch Toggles (زران ذكيان للمشاركة الفورية)
+                        SmartAutoCommunicationToggles(
+                            customerPhone = customer.originalCustomer.phone,
+                            communicationConfig = communicationConfig,
+                            activeThemeColor = activeThemeColor,
+                            onToggleWhatsApp = onToggleWhatsApp,
+                            onToggleSms = onToggleSms,
+                            onRequestEditPhone = {
+                                onDismiss()
+                                onRequestEditPhone()
+                            },
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            testTagPrefix = "context_menu_auto_comm"
+                        )
 
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f),

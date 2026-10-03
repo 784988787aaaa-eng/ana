@@ -27,6 +27,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -124,8 +125,48 @@ fun HabayebScreen(
             focusManager.clearFocus()
         } else {
             isHistoryTxMultiSelectActive = false
+            onHistorySearchActiveChanged(false)
         }
         onHistoryOverlayActiveChanged(activeCustomerForHistory != null)
+    }
+
+    // Auto Communication Lifecycle & Intent Launching
+    val pendingComm by viewModel.pendingCommunicationRequest.collectAsStateWithLifecycle()
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.onActivityResumed()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(pendingComm) {
+        val request = pendingComm ?: return@LaunchedEffect
+        if (!request.isLaunched) {
+            viewModel.markCommunicationChannelLaunched()
+            when (val channel = request.currentChannel) {
+                is com.smartledger.aldaftar.domain.communication.CommunicationChannelType.WhatsApp -> {
+                    com.smartledger.aldaftar.domain.communication.CommunicationIntentLauncher.openWhatsApp(
+                        context = context,
+                        phone = request.customerPhone,
+                        message = channel.message
+                    )
+                }
+                is com.smartledger.aldaftar.domain.communication.CommunicationChannelType.SMS -> {
+                    com.smartledger.aldaftar.domain.communication.CommunicationIntentLauncher.openSms(
+                        context = context,
+                        phone = request.customerPhone,
+                        message = channel.message
+                    )
+                }
+            }
+        }
     }
 
 

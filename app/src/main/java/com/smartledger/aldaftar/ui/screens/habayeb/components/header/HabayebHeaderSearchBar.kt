@@ -1,12 +1,11 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components.header
 
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -16,7 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -26,15 +28,16 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
-import kotlinx.coroutines.android.awaitFrame
 
 @Composable
 fun HabayebHeaderSearchBar(
@@ -47,6 +50,9 @@ fun HabayebHeaderSearchBar(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Immediate local text state ensures typing is never blocked, delayed or lost
+    var textState by remember(searchQuery) { mutableStateOf(searchQuery) }
 
     Row(
         modifier = modifier
@@ -74,8 +80,11 @@ fun HabayebHeaderSearchBar(
         }
 
         BasicTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChanged,
+            value = textState,
+            onValueChange = { newText ->
+                textState = newText
+                onSearchQueryChanged(newText)
+            },
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onPrimary,
                 fontSize = 14.sp,
@@ -86,7 +95,8 @@ fun HabayebHeaderSearchBar(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 10.dp)
-                .focusRequester(focusRequester),
+                .focusRequester(focusRequester)
+                .testTag("main_search_input"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = {
                 keyboardController?.hide()
@@ -96,7 +106,7 @@ fun HabayebHeaderSearchBar(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (searchQuery.isEmpty()) {
+                    if (textState.isEmpty()) {
                         Text(
                             text = searchHint,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.65f),

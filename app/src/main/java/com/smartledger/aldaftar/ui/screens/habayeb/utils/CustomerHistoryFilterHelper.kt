@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.platform.contacts.StringUtils
+import com.smartledger.aldaftar.platform.contacts.StringUtils.toWesternDigits
 import com.smartledger.aldaftar.domain.model.TransactionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -68,6 +69,7 @@ fun rememberFilteredCustomerTransactions(
             val monthEnd = dateBoundaries[3]
 
             val normalizedQuery = if (!isSearchBlank) StringUtils.normalizeArabic(txSearchQuery) else ""
+            val westernQuery = if (!isSearchBlank) txSearchQuery.toWesternDigits().trim() else ""
             val normalizedDebtStr = if (!isSearchBlank) StringUtils.normalizeArabic(searchDebtStr) else ""
             val normalizedPaymentStr = if (!isSearchBlank) StringUtils.normalizeArabic(searchPaymentStr) else ""
 
@@ -81,8 +83,8 @@ fun rememberFilteredCustomerTransactions(
                     val typeText = if (tx.type == TransactionType.OWED_BY_THEM.value) normalizedDebtStr else normalizedPaymentStr
 
                     normalizedDesc.contains(normalizedQuery, ignoreCase = true) ||
-                    tx.amount.toString().contains(txSearchQuery) ||
-                    tx.foreignAmount.toString().contains(txSearchQuery) ||
+                    (westernQuery.isNotEmpty() && tx.amount.stripTrailingZeros().toPlainString().contains(westernQuery)) ||
+                    (westernQuery.isNotEmpty() && tx.foreignAmount.stripTrailingZeros().toPlainString().contains(westernQuery)) ||
                     typeText.contains(normalizedQuery, ignoreCase = true)
                 }
 

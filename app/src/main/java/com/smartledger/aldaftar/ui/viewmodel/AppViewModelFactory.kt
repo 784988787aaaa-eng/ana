@@ -13,7 +13,20 @@ class AppViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
         FinanceViewModel::class.java -> FinanceViewModel(application, container.license, container.settings, container.categories, container.habayeb, container.trash, container.maintenance, container.floatingUi) as T
-        HabayebFinanceViewModel::class.java -> HabayebFinanceViewModel(application, container.license, container.categoryUseCase, container.habayeb, container.categories, container.settings, container.recurring, container.mutation, container.floatingUi) as T
+        HabayebFinanceViewModel::class.java -> HabayebFinanceViewModel(
+            application,
+            container.license,
+            container.categoryUseCase,
+            container.habayeb,
+            container.categories,
+            container.settings,
+            container.recurring,
+            container.mutation,
+            container.floatingUi,
+            container.communicationPreferences,
+            container.autoCommunicationCoordinator,
+            container.businessProfile
+        ) as T
         SecurityViewModel::class.java -> SecurityViewModel(application, container.settings) as T
         BackupSyncViewModel::class.java -> BackupSyncViewModel(application, container.maintenance, container.backupEngine, container.unifiedAccount, container.cloudArchiveStore) as T
         BusinessProfileViewModel::class.java -> BusinessProfileViewModel(container.businessProfile) as T

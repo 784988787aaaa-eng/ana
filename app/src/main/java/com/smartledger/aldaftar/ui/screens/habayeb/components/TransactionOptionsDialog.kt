@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -42,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
+import com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper
 import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
@@ -67,6 +71,11 @@ private data class TransactionHeaderSummary(
 fun TransactionOptionsDialog(
     transaction: HabayebTransaction,
     customerName: String,
+    customerPhone: String = "",
+    communicationConfig: CustomerCommunicationConfig = CustomerCommunicationConfig(),
+    onToggleWhatsApp: (Boolean) -> Unit = {},
+    onToggleSms: (Boolean) -> Unit = {},
+    onRequestEditPhone: () -> Unit = {},
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -81,6 +90,7 @@ fun TransactionOptionsDialog(
 ) {
     val mizanColors = MaterialTheme.mizanColors
     var showShareMenu by remember { mutableStateOf(false) }
+    val isPhoneValid = remember(customerPhone) { CustomerPhoneHelper.isValidDestination(customerPhone) }
 
     Dialog(onDismissRequest = onDismiss) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -208,6 +218,17 @@ fun TransactionOptionsDialog(
                             )
                         }
                     }
+
+                    // Smart Compact Instant Dispatch Toggles (إرسال فوري ذكي)
+                    SmartAutoCommunicationToggles(
+                        customerPhone = customerPhone,
+                        communicationConfig = communicationConfig,
+                        activeThemeColor = activeThemeColor,
+                        onToggleWhatsApp = onToggleWhatsApp,
+                        onToggleSms = onToggleSms,
+                        onRequestEditPhone = onRequestEditPhone,
+                        testTagPrefix = "dialog_auto"
+                    )
 
                     if (isRecurringOriginal) {
                         val warningBg = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +28,8 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.serialization.CsvReportGenerator
 import com.smartledger.aldaftar.data.serialization.pdf.PdfAction
+import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
+import com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
 import com.smartledger.aldaftar.ui.theme.CreditContainerLight
@@ -45,6 +49,10 @@ fun CustomerHistoryShareBottomSheet(
     exchangeRatesJson: String,
     netDebt: java.math.BigDecimal,
     activeThemeColor: Color,
+    communicationConfig: CustomerCommunicationConfig = CustomerCommunicationConfig(),
+    onToggleWhatsApp: (Boolean) -> Unit = {},
+    onToggleSms: (Boolean) -> Unit = {},
+    onRequestEditPhone: () -> Unit = {},
     onDismissRequest: () -> Unit,
     onPdfAction: (PdfAction) -> Unit,
     onCsvAction: (CsvReportGenerator.CsvAction) -> Unit
@@ -53,6 +61,7 @@ fun CustomerHistoryShareBottomSheet(
 
     val context = LocalContext.current
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
+    val isPhoneValid = remember(activeCustomer.phone) { CustomerPhoneHelper.isValidDestination(activeCustomer.phone) }
     val scrollState = androidx.compose.foundation.rememberScrollState()
 
     ModalBottomSheet(
@@ -157,6 +166,17 @@ fun CustomerHistoryShareBottomSheet(
                 }
             }
 
+            // Smart Compact Auto Communication Section in Share Sheet
+            SmartAutoCommunicationToggles(
+                customerPhone = activeCustomer.phone,
+                communicationConfig = communicationConfig,
+                activeThemeColor = activeThemeColor,
+                onToggleWhatsApp = onToggleWhatsApp,
+                onToggleSms = onToggleSms,
+                onRequestEditPhone = onRequestEditPhone,
+                testTagPrefix = "share_sheet_auto"
+            )
+
             Text(
                 text = stringResource(id = R.string.share_section_reports),
                 fontSize = 13.sp,
@@ -219,7 +239,7 @@ fun CustomerHistoryShareBottomSheet(
                 Button(
                     onClick = {
                         onDismissRequest()
-                        CustomerShareHelper.triggerWhatsAppStatement(context, activeCustomer, netDebt, currencySymbol, allCustomerTxs)
+                        CustomerShareHelper.triggerWhatsAppStatement(context, activeCustomer, netDebt, currencySymbol, allCustomerTxs, businessProfile.name)
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -247,7 +267,7 @@ fun CustomerHistoryShareBottomSheet(
                 Button(
                     onClick = {
                         onDismissRequest()
-                        CustomerShareHelper.triggerSmsStatement(context, activeCustomer, netDebt, currencySymbol, allCustomerTxs)
+                        CustomerShareHelper.triggerSmsStatement(context, activeCustomer, netDebt, currencySymbol, allCustomerTxs, businessProfile.name)
                     },
                     modifier = Modifier
                         .weight(1f)

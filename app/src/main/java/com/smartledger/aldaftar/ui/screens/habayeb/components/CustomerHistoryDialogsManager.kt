@@ -2,8 +2,10 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
@@ -54,10 +56,13 @@ fun CustomerHistoryDialogsManager(
     activeRecurringTxIds: Set<String>,
     txSequenceNumbers: Map<String, Int>,
     onRefreshRecurringTrigger: () -> Unit,
-    allCustomerTxs: List<HabayebTransaction> = emptyList()
+    allCustomerTxs: List<HabayebTransaction> = emptyList(),
+    businessProfile: com.smartledger.aldaftar.data.local.entities.BusinessProfile? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val commConfigs by viewModel.communicationConfigsState.collectAsStateWithLifecycle()
+    val customerCommConfig = commConfigs[activeCustomer.id] ?: viewModel.getCommunicationConfig(activeCustomer.id)
 
     fun updateState(transform: (CustomerHistoryDialogState) -> CustomerHistoryDialogState) {
         onDialogStateChange(transform)
@@ -118,11 +123,11 @@ fun CustomerHistoryDialogsManager(
             txSequenceNumbers[cleanLinkedId]
         } else null
 
-        val onWhatsAppShare = remember(optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) {
-            { CustomerShareHelper.triggerSingleTxWhatsApp(context, optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) }
+        val onWhatsAppShare = remember(optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs, businessProfile) {
+            { CustomerShareHelper.triggerSingleTxWhatsApp(context, optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs, businessProfile?.name) }
         }
-        val onSmsShare = remember(optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) {
-            { CustomerShareHelper.triggerSingleTxSms(context, optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs) }
+        val onSmsShare = remember(optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs, businessProfile) {
+            { CustomerShareHelper.triggerSingleTxSms(context, optTx, activeCustomer, netDebt, currencySymbol, allCustomerTxs, businessProfile?.name) }
         }
         val onDeleteAutoRepeat = remember(optTx) {
             {
@@ -137,6 +142,25 @@ fun CustomerHistoryDialogsManager(
         TransactionOptionsDialog(
             transaction = optTx,
             customerName = activeCustomer.name,
+            customerPhone = activeCustomer.phone,
+            communicationConfig = customerCommConfig,
+            onToggleWhatsApp = { enabled ->
+                viewModel.setCommunicationPreferences(
+                    customerId = activeCustomer.id,
+                    autoWhatsApp = enabled,
+                    autoSms = customerCommConfig.autoSms
+                )
+            },
+            onToggleSms = { enabled ->
+                viewModel.setCommunicationPreferences(
+                    customerId = activeCustomer.id,
+                    autoWhatsApp = customerCommConfig.autoWhatsApp,
+                    autoSms = enabled
+                )
+            },
+            onRequestEditPhone = {
+                updateState { it.copy(showEditNameDialog = true, transactionForOptionsDialog = null) }
+            },
             onDismiss = { updateState { it.copy(transactionForOptionsDialog = null) } },
             onEdit = {
                 updateState {

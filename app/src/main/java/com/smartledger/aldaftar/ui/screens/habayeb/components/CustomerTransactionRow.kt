@@ -81,14 +81,14 @@ fun CustomerTransactionRow(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .padding(horizontal = 6.dp, vertical = 1.dp)
             .graphicsLayer {
-                shadowElevation = if (isSelected) 3f else 1f
-                shape = RoundedCornerShape(8.dp)
+                shadowElevation = if (isSelected) 2f else 0.5f
+                shape = RoundedCornerShape(6.dp)
                 clip = true
             }
             .drawBehind {
-                val barWidth = 4.dp.toPx()
+                val barWidth = 3.5.dp.toPx()
                 val xOffset = if (layoutDirection == LayoutDirection.Rtl) {
                     size.width - barWidth
                 } else {
@@ -104,14 +104,14 @@ fun CustomerTransactionRow(
                 onClick = onCardClick,
                 onLongClick = onCardLongClick
             ),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(containerColor = rowBgColor),
-        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, borderColor)
+        border = BorderStroke(if (isSelected) 1.25.dp else 0.75.dp, borderColor)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 4.dp),
+                .padding(horizontal = 4.dp, vertical = 2.5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             TransactionRowDateSection(

@@ -49,15 +49,19 @@ object TransactionNotificationBuilder {
         customer: HabayebCustomer? = null,
         netDebt: BigDecimal? = null,
         currencySymbol: String = "ر.ي",
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
-    ): String = buildMessage(
-        tx = tx,
-        customer = customer,
-        netDebt = netDebt,
-        currencySymbol = currencySymbol,
-        allCustomerTxs = allCustomerTxs,
-        isRichText = true
-    )
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
+    ): String {
+        val base = buildMessage(
+            tx = tx,
+            customer = customer,
+            netDebt = netDebt,
+            currencySymbol = currencySymbol,
+            allCustomerTxs = allCustomerTxs,
+            isRichText = true
+        )
+        return BusinessNamePrefixer.prefix(base, businessName)
+    }
 
     /**
      * Builds an SMS (plain text formatted) notification message.
@@ -67,15 +71,19 @@ object TransactionNotificationBuilder {
         customer: HabayebCustomer? = null,
         netDebt: BigDecimal? = null,
         currencySymbol: String = "ر.ي",
-        allCustomerTxs: List<HabayebTransaction> = emptyList()
-    ): String = buildMessage(
-        tx = tx,
-        customer = customer,
-        netDebt = netDebt,
-        currencySymbol = currencySymbol,
-        allCustomerTxs = allCustomerTxs,
-        isRichText = false
-    )
+        allCustomerTxs: List<HabayebTransaction> = emptyList(),
+        businessName: String? = null
+    ): String {
+        val base = buildMessage(
+            tx = tx,
+            customer = customer,
+            netDebt = netDebt,
+            currencySymbol = currencySymbol,
+            allCustomerTxs = allCustomerTxs,
+            isRichText = false
+        )
+        return BusinessNamePrefixer.prefix(base, businessName)
+    }
 
     /**
      * Internal unified message builder.

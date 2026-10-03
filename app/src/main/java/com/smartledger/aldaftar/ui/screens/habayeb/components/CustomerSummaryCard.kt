@@ -142,18 +142,18 @@ fun BalanceCompactChip(
 
     Column(
         modifier = modifier
-            .defaultMinSize(minHeight = 52.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .defaultMinSize(minHeight = 40.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(targetBgColor)
-            .border(borderWidth, targetBorderColor, RoundedCornerShape(10.dp))
+            .border(borderWidth, targetBorderColor, RoundedCornerShape(8.dp))
             .clickable(onClick = onSelect)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = stateLabel,
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = targetHeaderTextColor,
             textAlign = TextAlign.Center,
@@ -161,10 +161,10 @@ fun BalanceCompactChip(
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(1.dp))
         AutoSizeText(
             text = formattedAmountStr,
-            fontSize = 14.5.sp,
+            fontSize = 13.5.sp,
             fontWeight = FontWeight.Black,
             color = targetChipColor,
             textAlign = TextAlign.Center,
@@ -200,8 +200,8 @@ fun CustomerSummaryCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(horizontal = 8.dp, vertical = 1.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         val rowModifier = if (isCompact) {
             Modifier
@@ -216,7 +216,7 @@ fun CustomerSummaryCard(
 
         Row(
             modifier = rowModifier,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             for (curr in allCurrencies) {

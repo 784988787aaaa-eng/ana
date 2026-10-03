@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,11 +86,50 @@ fun CustomerHistoryOverlay(
     var showShareSheet by remember { mutableStateOf(false) }
     var dialogState by remember { mutableStateOf(CustomerHistoryDialogState()) }
     var selectedCurrencyFilter by remember { mutableStateOf<String?>(null) }
+    var isTxMultiSelectActive by remember { mutableStateOf(false) }
+    val selectedTxIds = remember { mutableStateListOf<String>() }
+
+    LaunchedEffect(isTxMultiSelectActive) { onTxMultiSelectActiveChanged(isTxMultiSelectActive) }
 
     LaunchedEffect(showShareSheet, dialogState.showFilterMenu, isPdfExporting) {
         if (showShareSheet || dialogState.showFilterMenu || isPdfExporting) {
             focusManager.clearFocus()
             keyboardController?.hide()
+        }
+    }
+
+    val commConfigs by viewModel.communicationConfigsState.collectAsStateWithLifecycle()
+    val customerCommConfig = commConfigs[activeCustomer.id] ?: viewModel.getCommunicationConfig(activeCustomer.id)
+
+    BackHandler {
+        when {
+            isSearchActive || txSearchQuery.isNotEmpty() -> {
+                onSearchActiveChanged(false)
+                txSearchQuery = ""
+            }
+            isTxMultiSelectActive -> {
+                isTxMultiSelectActive = false
+                selectedTxIds.clear()
+            }
+            selectedCurrencyFilter != null -> {
+                selectedCurrencyFilter = null
+            }
+            showShareSheet -> {
+                showShareSheet = false
+            }
+            dialogState.confirmDeleteCust || dialogState.showEditNameDialog ||
+            dialogState.showAddTransactionDialogFromHistory != null ||
+            dialogState.transactionForOptionsDialog != null ||
+            dialogState.transactionForDeleteConfirm != null ||
+            dialogState.transactionForAutoRepeatDialog != null ||
+            dialogState.showDeleteBulkTxConfirmDialog ||
+            dialogState.showFilterMenu ||
+            dialogState.showRateModifyDialog -> {
+                dialogState = CustomerHistoryDialogState()
+            }
+            else -> {
+                onDismiss()
+            }
         }
     }
 
@@ -144,25 +184,6 @@ fun CustomerHistoryOverlay(
 
     val calcResult = remember(allCustomerTxs, currencySymbol, settings.exchangeRatesJson) {
         CustomerHistoryCalculator.calculate(allCustomerTxs, currencySymbol, settings.exchangeRatesJson)
-    }
-
-    var isTxMultiSelectActive by remember { mutableStateOf(false) }
-    val selectedTxIds = remember { mutableStateListOf<String>() }
-
-    LaunchedEffect(isTxMultiSelectActive) { onTxMultiSelectActiveChanged(isTxMultiSelectActive) }
-
-    BackHandler {
-        if (isTxMultiSelectActive) {
-            isTxMultiSelectActive = false
-            selectedTxIds.clear()
-        } else if (selectedCurrencyFilter != null) {
-            selectedCurrencyFilter = null
-        } else if (isSearchActive || txSearchQuery.isNotEmpty()) {
-            onSearchActiveChanged(false)
-            txSearchQuery = ""
-        } else {
-            onDismiss()
-        }
     }
 
     var refreshRecurringTrigger by remember { mutableStateOf(0) }
@@ -347,6 +368,7 @@ fun CustomerHistoryOverlay(
         activeRecurringTxIds = activeRecurringTxIds,
         txSequenceNumbers = calcResult.txSequenceNumbers,
         onRefreshRecurringTrigger = { refreshRecurringTrigger++ },
-        allCustomerTxs = allCustomerTxs
+        allCustomerTxs = allCustomerTxs,
+        businessProfile = businessProfile
     )
 }

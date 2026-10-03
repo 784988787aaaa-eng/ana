@@ -61,9 +61,9 @@ fun CustomerHistoryTableSection(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Top,
+                verticalArrangement = Arrangement.spacedBy(0.dp),
                 contentPadding = PaddingValues(
-                    top = 4.dp,
+                    top = 1.dp,
                     bottom = contentPadding.calculateBottomPadding() + 80.dp
                 )
             ) {
