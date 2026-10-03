@@ -48,13 +48,39 @@ data class HabayebTransaction(
     @ColumnInfo(name = "rate_context") val rateContext: String = "HISTORICAL_SNAPSHOT"
 ) {
 
-    val originalAmount: BigDecimal get() = foreignAmount
+    val originalAmount: BigDecimal
+        get() = if (foreignAmount.compareTo(BigDecimal.ZERO) > 0) foreignAmount else amount
 
-    val currencySymbol: String get() = currencyCode
+    val originalCurrency: String
+        get() {
+            val code = currencyCode.trim()
+            if (code.isNotBlank() && code != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
+                return FinancialPolicy.canonicalCurrencySymbol(code)
+            }
+            val base = baseCurrencyCode.trim()
+            if (base.isNotBlank() && base != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
+                return FinancialPolicy.canonicalCurrencySymbol(base)
+            }
+            return FinancialPolicy.FALLBACK_CURRENCY_SYMBOL
+        }
+
+    fun isForeignUnder(defaultCurrency: String): Boolean {
+        val canonicalDefault = FinancialPolicy.canonicalCurrencySymbol(defaultCurrency)
+        return originalCurrency != canonicalDefault
+    }
+
+    val currencySymbol: String get() = originalCurrency
 
     val isExchanged: Boolean get() = isRateCalculated
 
-    val targetCurrencySymbol: String get() = baseCurrencyCode
+    val targetCurrencySymbol: String
+        get() {
+            val base = baseCurrencyCode.trim()
+            if (base.isNotBlank() && base != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
+                return FinancialPolicy.canonicalCurrencySymbol(base)
+            }
+            return originalCurrency
+        }
 
     val exchangedAmount: BigDecimal get() = equivalentAmount
 }

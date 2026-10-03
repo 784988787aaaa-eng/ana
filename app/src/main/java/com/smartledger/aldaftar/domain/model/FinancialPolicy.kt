@@ -31,6 +31,39 @@ object FinancialPolicy {
         }
     }
 
+    fun validateTransactionSnapshot(
+        currencyCode: String,
+        baseCurrencyCode: String,
+        isRateCalculated: Boolean,
+        exchangeRate: BigDecimal,
+        amount: BigDecimal,
+        foreignAmount: BigDecimal,
+        equivalentAmount: BigDecimal
+    ) {
+        require(amount >= BigDecimal.ZERO) { "مبلغ المعاملة لا يمكن أن يكون سالباً" }
+        require(foreignAmount >= BigDecimal.ZERO) { "المبلغ الأجنبي لا يمكن أن يكون سالباً" }
+        require(equivalentAmount >= BigDecimal.ZERO) { "المبلغ المعادل لا يمكن أن يكون سالباً" }
+        if (isRateCalculated) {
+            val canonicalSource = canonicalCurrencySymbol(currencyCode)
+            val canonicalTarget = canonicalCurrencySymbol(baseCurrencyCode)
+            require(canonicalSource.isNotBlank() && canonicalSource != DEFAULT_CURRENCY_CODE) {
+                "عملة المعاملة الأصلية مطلوبة عند الصرف"
+            }
+            require(canonicalTarget.isNotBlank() && canonicalTarget != DEFAULT_CURRENCY_CODE) {
+                "عملة الأساس مطلوبة عند الصرف"
+            }
+            require(canonicalSource != canonicalTarget) {
+                "عملة المصدر لا يمكن أن تطابق عملة الهدف في معاملة مصروفة"
+            }
+            require(exchangeRate > BigDecimal.ZERO) {
+                "سعر الصرف غير موجود أو غير صالح"
+            }
+            require(equivalentAmount > BigDecimal.ZERO || (amount == BigDecimal.ZERO && foreignAmount == BigDecimal.ZERO)) {
+                "المبلغ المعادل مطلوب لمعاملة مصروفة"
+            }
+        }
+    }
+
     fun convertDirectedAmount(
         amount: BigDecimal,
         sourceCurrency: String,

@@ -24,7 +24,6 @@ class HabayebMutationRepository(private val database: AppDatabase) {
     suspend fun deleteTransactionToTrash(transactionId: String, saveToTrash: Boolean) = database.withTransaction {
         val tx = habayeb.getTransactionById(transactionId) ?: return@withTransaction
         if (saveToTrash) trash.insertDeletedItem(DeletedItemEntity(tx.id, "الحبايب", "habayeb_transactions", TrashJsonSerializer.serializeHabayebTransaction(tx)))
-        recurring.deleteForTransaction(transactionId)
         habayeb.deleteTransactionById(transactionId)
     }
 }

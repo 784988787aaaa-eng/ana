@@ -17,20 +17,22 @@ class HabayebTransactionUseCase(
 ) {
     private fun id() = "dtx_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(4)}"
     suspend fun saveHabayebCustomer(customer:HabayebCustomer, initialAmount:BigDecimal, initialType:String, customTimestamp:Long=System.currentTimeMillis()/1000, initialDetails:String="", isForeign:Boolean=false, currencyCode:String="DEFAULT", foreignAmount:BigDecimal=BigDecimal.ZERO, exchangeRate:BigDecimal=BigDecimal.ZERO, isRateCalculated:Boolean=false, equivalentAmount:BigDecimal=BigDecimal.ZERO, selectedCategoryFilter:String?, settings:AppSettings): Boolean {
+        val canonicalTxCurrency = if (currencyCode.isNotBlank() && currencyCode != "DEFAULT") FinancialPolicy.canonicalCurrencySymbol(currencyCode) else FinancialPolicy.canonicalCurrencySymbol(settings.currencySymbol)
+        val canonicalBaseCurrency = FinancialPolicy.canonicalCurrencySymbol(settings.currencySymbol)
+        if (isRateCalculated) {
+            FinancialPolicy.validateTransactionSnapshot(canonicalTxCurrency, canonicalBaseCurrency, isRateCalculated, exchangeRate, initialAmount, foreignAmount, equivalentAmount)
+        }
         val opening = initialAmount.compareTo(BigDecimal.ZERO).takeIf { it > 0 }?.let {
-            HabayebTransaction(id(),customer.id,initialType,initialAmount,customTimestamp,initialDetails.ifEmpty{customer.notes},isForeign=isForeign,currencyCode=currencyCode,foreignAmount=foreignAmount,exchangeRate=exchangeRate,isRateCalculated=isRateCalculated,equivalentAmount=equivalentAmount,baseCurrencyCode=settings.currencySymbol)
+            HabayebTransaction(id(),customer.id,initialType,initialAmount,customTimestamp,initialDetails.ifEmpty{customer.notes},isForeign=isForeign,currencyCode=canonicalTxCurrency,foreignAmount=foreignAmount,exchangeRate=exchangeRate,isRateCalculated=isRateCalculated,equivalentAmount=equivalentAmount,baseCurrencyCode=canonicalBaseCurrency)
         }
         return habayeb.insertCustomerWithOpeningTransaction(customer,opening)
     }
     suspend fun addHabayebTransaction(customerId:String,type:String,amount:BigDecimal,desc:String,timestamp:Long=System.currentTimeMillis()/1000,editingTxId:String?=null,linkedMainTxId:String?=null,isForeign:Boolean=false,currencyCode:String="DEFAULT",foreignAmount:BigDecimal=BigDecimal.ZERO,exchangeRate:BigDecimal=BigDecimal.ZERO,isRateCalculated:Boolean=false,equivalentAmount:BigDecimal=BigDecimal.ZERO,baseCurrencySymbol:String): Boolean {
-        if (isForeign && isRateCalculated) {
-            require(exchangeRate > BigDecimal.ZERO) { "المعاملة المصروفة تحتاج سعر صرف صالح" }
-            require(equivalentAmount >= BigDecimal.ZERO) { "المكافئ المالي غير صالح" }
-            require(currencyCode.isNotBlank() && currencyCode != "DEFAULT") { "عملة المعاملة الأجنبية مطلوبة" }
-            require(baseCurrencySymbol.isNotBlank() && baseCurrencySymbol != "DEFAULT") { "عملة الأساس التاريخية مطلوبة" }
-        }
+        val canonicalTxCurrency = if (currencyCode.isNotBlank() && currencyCode != "DEFAULT") FinancialPolicy.canonicalCurrencySymbol(currencyCode) else FinancialPolicy.canonicalCurrencySymbol(baseCurrencySymbol)
+        val canonicalBaseCurrency = FinancialPolicy.canonicalCurrencySymbol(baseCurrencySymbol)
+        FinancialPolicy.validateTransactionSnapshot(canonicalTxCurrency, canonicalBaseCurrency, isRateCalculated, exchangeRate, amount, foreignAmount, equivalentAmount)
         val txId=editingTxId?:id(); val link=(linkedMainTxId ?: editingTxId?.let{habayeb.getHabayebTransactionById(it)?.linkedMainTxId})?.trim()?.takeIf{it.isNotEmpty()&&it!="0"&&it!="null"&&it!=txId}
-        val tx = HabayebTransaction(txId,customerId,type,amount,timestamp,desc,link,isForeign,currencyCode,foreignAmount,exchangeRate,isRateCalculated,equivalentAmount,baseCurrencySymbol)
+        val tx = HabayebTransaction(txId,customerId,type,amount,timestamp,desc,link,isForeign,canonicalTxCurrency,foreignAmount,exchangeRate,isRateCalculated,equivalentAmount,canonicalBaseCurrency)
         return if (editingTxId != null) {
             habayeb.updateHabayebTransaction(tx)
             true

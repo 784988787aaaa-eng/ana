@@ -214,11 +214,7 @@ fun AddTransactionPopup(
                     BigDecimal.ZERO
                 }
                 val saveAmountBd = if (isForeignSelected && applyExchangeRate) finalEquivalentAmountBd else amountBd
-                val saveCurrencyCode = if (editingTransaction != null && selectedTransactionCurrency == editingOriginalCurrency && !editingTransaction.isForeign) {
-                    "DEFAULT"
-                } else {
-                    selectedTransactionCurrency
-                }
+                val saveCurrencyCode = selectedTransactionCurrency
                 val saveDescStr = CurrencyConfig.formatDescriptionWithCurrency(descStr.trim(), selectedTransactionCurrency)
                 val saveTimestamp = dateMillis / 1000
                 val saveEditingTxId = editingTransaction?.id

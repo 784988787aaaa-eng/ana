@@ -80,16 +80,53 @@ class HabayebRepository(private val database:AppDatabase, private val dao:Habaye
     }
     suspend fun deleteCustomerAndTransactions(id:String)=database.withTransaction { database.recurringConfigDao().deleteForCustomer(id); dao.deleteCustomerAndTransactions(id) }
     suspend fun updateCustomerName(id:String,n:String)=dao.updateCustomerName(id,n)
-    suspend fun insertHabayebTransaction(v:HabayebTransaction): Boolean =
-        if (licenseRepository == null) {
-            dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money())); true
+    private fun normalizeTransaction(v: HabayebTransaction): HabayebTransaction {
+        val canonicalCurr = if (v.currencyCode.isNotBlank() && v.currencyCode != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
+            FinancialPolicy.canonicalCurrencySymbol(v.currencyCode)
+        } else {
+            FinancialPolicy.canonicalCurrencySymbol(v.baseCurrencyCode.takeIf { it.isNotBlank() && it != FinancialPolicy.DEFAULT_CURRENCY_CODE } ?: FinancialPolicy.FALLBACK_CURRENCY_SYMBOL)
+        }
+        val canonicalBase = if (v.baseCurrencyCode.isNotBlank() && v.baseCurrencyCode != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
+            FinancialPolicy.canonicalCurrencySymbol(v.baseCurrencyCode)
+        } else canonicalCurr
+
+        val normAmount = v.amount.money()
+        val normForeign = v.foreignAmount.money()
+        val normRate = FinancialPolicy.normalizeRate(v.exchangeRate)
+        val normEquiv = v.equivalentAmount.money()
+
+        FinancialPolicy.validateTransactionSnapshot(
+            currencyCode = canonicalCurr,
+            baseCurrencyCode = canonicalBase,
+            isRateCalculated = v.isRateCalculated,
+            exchangeRate = normRate,
+            amount = normAmount,
+            foreignAmount = normForeign,
+            equivalentAmount = normEquiv
+        )
+
+        return v.copy(
+            currencyCode = canonicalCurr,
+            baseCurrencyCode = canonicalBase,
+            amount = normAmount,
+            foreignAmount = normForeign,
+            exchangeRate = normRate,
+            equivalentAmount = normEquiv
+        )
+    }
+
+    suspend fun insertHabayebTransaction(v:HabayebTransaction): Boolean {
+        val norm = normalizeTransaction(v)
+        return if (licenseRepository == null) {
+            dao.insertTransaction(norm); true
         } else {
             licenseRepository.runAuthorizedCreation(::getHabayebTransactionsCountDirect, 1) {
-                dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money()))
+                dao.insertTransaction(norm)
             } != null
         }
+    }
     suspend fun updateHabayebTransaction(v:HabayebTransaction) =
-        dao.insertTransaction(v.copy(amount=v.amount.money(),foreignAmount=v.foreignAmount.money(),exchangeRate=FinancialPolicy.normalizeRate(v.exchangeRate),equivalentAmount=v.equivalentAmount.money()))
+        dao.insertTransaction(normalizeTransaction(v))
     suspend fun deleteHabayebTransaction(v:HabayebTransaction)=dao.deleteTransaction(v); suspend fun deleteHabayebTransactionById(id:String)=dao.deleteTransactionById(id)
     suspend fun getHabayebTransactionById(id:String)=dao.getTransactionById(id); suspend fun getCustomerByIdDirect(id:String)=dao.getCustomerByIdDirect(id)
     suspend fun revalueHistoricalTransactions(baseCurrencyCode: String, targetCurrencyCode: String, newRate: BigDecimal) = database.withTransaction {

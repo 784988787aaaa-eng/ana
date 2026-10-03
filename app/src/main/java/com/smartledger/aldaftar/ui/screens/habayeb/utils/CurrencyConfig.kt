@@ -124,7 +124,7 @@ object CurrencyConfig {
     }
 
     fun getOriginalAmount(tx: HabayebTransaction): BigDecimal {
-        return tx.foreignAmount
+        return tx.originalAmount
     }
     
     fun convertWithCurrencyPair(

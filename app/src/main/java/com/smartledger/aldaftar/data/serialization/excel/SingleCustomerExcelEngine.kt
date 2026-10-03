@@ -8,6 +8,7 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
 import com.smartledger.aldaftar.data.serialization.pdf.PdfReportCalculator
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
@@ -159,8 +160,13 @@ object SingleCustomerExcelEngine {
                     txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM
                 }
 
-                val originalCurrency = CurrencyConfig.getBySymbol(pt.resolvedCurrency)
-                val currencyCode = originalCurrency?.code ?: pt.resolvedCurrency
+                val rawTxCurrency = if (tx.currencyCode.isNotBlank() && tx.currencyCode != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
+                    tx.currencyCode
+                } else {
+                    tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != FinancialPolicy.DEFAULT_CURRENCY_CODE } ?: currencySymbol
+                }
+                val originalCurrency = CurrencyConfig.getBySymbol(rawTxCurrency)
+                val currencyCode = originalCurrency?.code ?: rawTxCurrency
                 currencyCodesInOrder.add(currencyCode)
 
                 val sourceAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) {
