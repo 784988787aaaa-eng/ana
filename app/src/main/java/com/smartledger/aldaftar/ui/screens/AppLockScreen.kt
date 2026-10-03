@@ -26,8 +26,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.platform.security.BiometricAuthHelper
 import com.smartledger.aldaftar.domain.HashUtils
+import com.smartledger.aldaftar.platform.security.BiometricAuthHelper
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType
 import com.smartledger.aldaftar.ui.screens.security.lock.PasscodeKeypadContent
@@ -35,6 +35,7 @@ import com.smartledger.aldaftar.ui.screens.security.lock.RecoveryPhraseContent
 import com.smartledger.aldaftar.ui.theme.NeutralBackgroundDark
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -56,6 +57,7 @@ fun AppLockScreen(
 
     var enteredPasscode by remember { mutableStateOf("") }
     var isCheckingPasscode by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var showRecoveryView by remember { mutableStateOf(false) }
     var recoveryPhraseInput by remember { mutableStateOf("") }
     var showHintText by remember { mutableStateOf(false) }
@@ -73,17 +75,17 @@ fun AppLockScreen(
         while (true) {
             val ms = viewModel.getLockoutTimeRemainingMs()
             lockoutTimeRemainingSec = if (ms > 0) (ms + 999) / 1000 else 0L
-            kotlinx.coroutines.delay(1000L)
+            delay(1000L)
         }
     }
 
     val triggerErrorAnimationAndHaptic = {
         scope.launch {
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
-            shakeOffset.animateTo(10f, tween(50))
-            shakeOffset.animateTo(-10f, tween(50))
-            shakeOffset.animateTo(5f, tween(50))
-            shakeOffset.animateTo(0f, tween(50))
+            shakeOffset.animateTo(12f, tween(40))
+            shakeOffset.animateTo(-12f, tween(40))
+            shakeOffset.animateTo(6f, tween(40))
+            shakeOffset.animateTo(0f, tween(40))
         }
         Unit
     }
@@ -119,11 +121,12 @@ fun AppLockScreen(
         { key: String ->
             if (lockoutTimeRemainingSec > 0L) {
                 triggerErrorAnimationAndHaptic()
-                Toast.makeText(context, "الرجاء الانتظار حتى انتهاء فترة القفل مؤقتاً", Toast.LENGTH_SHORT).show()
             } else if (!currentIsCheckingPasscode && currentEnteredPasscode.length < 4) {
+                errorMessage = null
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
                 val nextPasscode = currentEnteredPasscode + key
                 enteredPasscode = nextPasscode
+
                 if (nextPasscode.length == 4) {
                     isCheckingPasscode = true
                     scope.launch {
@@ -146,8 +149,7 @@ fun AppLockScreen(
                                 lockoutTimeRemainingSec = (newMs + 999) / 1000
                             }
                             triggerErrorAnimationAndHaptic()
-                            val fallbackMsg = context.getString(R.string.lock_incorrect_pin)
-                            Toast.makeText(context, fallbackMsg, Toast.LENGTH_SHORT).show()
+                            errorMessage = context.getString(R.string.lock_incorrect_pin)
                             enteredPasscode = ""
                             isCheckingPasscode = false
                         }
@@ -159,6 +161,7 @@ fun AppLockScreen(
 
     val onDeleteClick = {
         if (!isCheckingPasscode) {
+            errorMessage = null
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
             if (enteredPasscode.isNotEmpty()) {
                 enteredPasscode = enteredPasscode.dropLast(1)
@@ -186,13 +189,11 @@ fun AppLockScreen(
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.SUCCESS)
                 keyboardController?.hide()
                 focusManager.clearFocus()
-                val successMsg = context.getString(R.string.lock_recovery_matched)
-                Toast.makeText(context, successMsg, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.lock_recovery_matched), Toast.LENGTH_SHORT).show()
                 onUnlockBypassedAndDisabled()
             } else {
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
-                val errorMsg = context.getString(R.string.lock_recovery_wrong)
-                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.lock_recovery_wrong), Toast.LENGTH_SHORT).show()
             }
         }
         Unit
@@ -237,6 +238,7 @@ fun AppLockScreen(
                     isCheckingPasscode = isCheckingPasscode,
                     shakeOffsetPx = shakeOffset.value,
                     isBiometricSupported = isBiometricSupported,
+                    errorMessage = errorMessage,
                     onKeyPress = onKeyPress,
                     onDeleteClick = onDeleteClick,
                     onForgotClick = onForgotClick,

@@ -17,25 +17,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.BrandSecondary
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.BrandSecondary
 import com.smartledger.aldaftar.ui.theme.NeutralTextPrimaryDark
 
 private val KEYPAD_ROW_1 = listOf("1", "2", "3")
@@ -51,6 +53,7 @@ fun PasscodeKeypadContent(
     isCheckingPasscode: Boolean,
     shakeOffsetPx: Float,
     isBiometricSupported: Boolean,
+    errorMessage: String? = null,
     onKeyPress: (String) -> Unit,
     onDeleteClick: () -> Unit,
     onForgotClick: () -> Unit,
@@ -97,15 +100,22 @@ fun PasscodeKeypadContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val subtitleText = when {
+                lockoutTimeRemainingSec > 0L -> stringResource(id = R.string.lock_lockout_active, lockoutTimeRemainingSec)
+                !errorMessage.isNullOrBlank() -> errorMessage
+                else -> stringResource(id = R.string.lock_enter_pin_prompt)
+            }
+
+            val subtitleColor = when {
+                lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank() -> Color(0xFFEF4444)
+                else -> LOCK_TEXT_SECONDARY_COLOR
+            }
+
             Text(
-                text = if (lockoutTimeRemainingSec > 0L) {
-                    "تم قفل المحاولات مؤقتاً. حاول مجدداً بعد $lockoutTimeRemainingSec ثانية"
-                } else {
-                    stringResource(id = R.string.lock_enter_pin_prompt)
-                },
-                fontSize = 12.sp,
-                color = if (lockoutTimeRemainingSec > 0L) androidx.compose.ui.graphics.Color.Red else LOCK_TEXT_SECONDARY_COLOR,
-                fontWeight = if (lockoutTimeRemainingSec > 0L) FontWeight.Bold else FontWeight.Normal,
+                text = subtitleText,
+                fontSize = 12.5.sp,
+                color = subtitleColor,
+                fontWeight = if (lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank()) FontWeight.Bold else FontWeight.Normal,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )

@@ -65,6 +65,7 @@
     <string name="lock_forgot_pin">نسيت رمز المرور؟</string>
     <string name="lock_recover_account">استرداد الدخول بعبارة الأمان</string>
     <string name="lock_incorrect_pin">رمز المرور غير صحيح</string>
+    <string name="lock_lockout_active">تم إيقاف المحاولات مؤقتاً. يمكنك المحاولة بعد %d ثانية</string>
     <string name="lock_delete_btn">مسح</string>
     <string name="lock_cancel_btn">إلغاء</string>
     <string name="sec_biometric_title">تفعيل القفل بالبصمة</string>

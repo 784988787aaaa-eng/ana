@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.smartledger.aldaftar.domain.HashUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class AppSecurityManager private constructor(context: Context) {
     private val appContext = context.applicationContext
@@ -25,32 +27,57 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * Pre-warms EncryptedSharedPreferences off the main thread to eliminate UI thread lag.
+     */
+    suspend fun warmupStorage() {
+        withContext(Dispatchers.IO) {
+            // Touch securePrefs to trigger lazy initialization on IO dispatcher
+            securePrefs.contains("warmup_check")
+        }
+    }
+
     fun isBiometricEnabled(): Boolean = securePrefs.getBoolean(PREF_BIOMETRIC_ENABLED, false)
-    fun setBiometricEnabled(enabled: Boolean) { securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply() }
+    
+    fun setBiometricEnabled(enabled: Boolean) {
+        securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply()
+    }
+
     fun isFastPasscodeEnabled(): Boolean = securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
-    fun setFastPasscodeEnabled(enabled: Boolean) { securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply() }
+
+    fun setFastPasscodeEnabled(enabled: Boolean) {
+        securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply()
+    }
 
     fun getFailedAttempts(): Int = securePrefs.getInt(PREF_FAILED_PIN_ATTEMPTS, 0)
+
     fun incrementFailedAttempts() {
         val next = getFailedAttempts() + 1
         securePrefs.edit().putInt(PREF_FAILED_PIN_ATTEMPTS, next).apply()
     }
+
     fun resetFailedAttempts() {
         securePrefs.edit().remove(PREF_FAILED_PIN_ATTEMPTS).remove(PREF_LOCKOUT_UNTIL_TIMESTAMP).apply()
     }
+
     fun getLockoutUntil(): Long = securePrefs.getLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
+
     fun setLockoutUntil(timestamp: Long) {
         securePrefs.edit().putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, timestamp).apply()
     }
 
     fun hasAdminPin(): Boolean = !securePrefs.getString(PREF_ADMIN_PIN_HASH, null).isNullOrBlank()
+
     fun validateAdminPin(enteredPin: String): Boolean {
         val stored = securePrefs.getString(PREF_ADMIN_PIN_HASH, null) ?: return false
         return HashUtils.verifyPin(enteredPin, stored)
     }
 
-    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = securePrefs.registerOnSharedPreferenceChangeListener(listener)
-    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = securePrefs.unregisterOnSharedPreferenceChangeListener(listener)
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) =
+        securePrefs.registerOnSharedPreferenceChangeListener(listener)
+
+    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) =
+        securePrefs.unregisterOnSharedPreferenceChangeListener(listener)
 
     companion object {
         private const val ENCRYPTED_PREFS_NAME = "mizan_encrypted_sec_prefs"
@@ -59,7 +86,9 @@ class AppSecurityManager private constructor(context: Context) {
         const val PREF_ADMIN_PIN_HASH = "admin_pin_hash"
         const val PREF_FAILED_PIN_ATTEMPTS = "failed_pin_attempts"
         const val PREF_LOCKOUT_UNTIL_TIMESTAMP = "lockout_until_timestamp"
+
         @Volatile private var INSTANCE: AppSecurityManager? = null
+
         fun getInstance(context: Context): AppSecurityManager = INSTANCE ?: synchronized(this) {
             INSTANCE ?: AppSecurityManager(context).also { INSTANCE = it }
         }
