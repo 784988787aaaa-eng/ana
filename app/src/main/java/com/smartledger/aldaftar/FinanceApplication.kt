@@ -30,6 +30,8 @@ class FinanceApplication : Application(), Configuration.Provider {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 BackupScheduler(this@FinanceApplication).scheduleDaily()
+                val cleanupPeriod = container.settings.getSettingsDirect()?.trashAutoCleanupPeriod ?: "NEVER"
+                TrashCleanupWorker.schedulePeriodicCleanup(this@FinanceApplication, cleanupPeriod)
                 val workManager = WorkManager.getInstance(this@FinanceApplication)
                 workManager.enqueueUniquePeriodicWork(
                     LICENSE_VERIFICATION_WORK_NAME,

@@ -168,14 +168,11 @@ class FinanceViewModel(
     }
 
     fun cleanLedgerTrashItems() {
-                viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val period = settingsState.value.trashAutoCleanupPeriod
-            val threshold = when (period) {
-                "1_DAY" -> System.currentTimeMillis() - 86400000L
-                "7_DAYS" -> System.currentTimeMillis() - 86400000L * 7
-                "30_DAYS" -> System.currentTimeMillis() - 86400000L * 30
-                else -> return@launch
-            }
+            val duration = com.smartledger.aldaftar.TrashCleanupWorker.getPeriodDurationMillis(period)
+            if (duration <= 0L) return@launch
+            val threshold = System.currentTimeMillis() - duration
             trashRepository.removeExpiredBefore(threshold)
         }
     }
@@ -183,6 +180,13 @@ class FinanceViewModel(
     fun updateAutoCleanupPeriod(period: String) {
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.saveSettings(settingsState.value.copy(trashAutoCleanupPeriod = period))
+            runCatching {
+                com.smartledger.aldaftar.TrashCleanupWorker.schedulePeriodicCleanup(getApplication(), period)
+            }
+            val duration = com.smartledger.aldaftar.TrashCleanupWorker.getPeriodDurationMillis(period)
+            if (duration > 0L) {
+                trashRepository.removeExpiredBefore(System.currentTimeMillis() - duration)
+            }
         }
     }
 

@@ -297,12 +297,12 @@ fun TrashFilterToolbar(
         // ==========================================
         // 3. زر التنظيف التلقائي المدمج
         // ==========================================
-        val selectedCleanupLabel = when (autoCleanupPeriod) {
-            "week" -> stringResource(R.string.trash_auto_cleanup_week)
-            "month" -> stringResource(R.string.trash_auto_cleanup_month)
-            "3months" -> stringResource(R.string.trash_auto_cleanup_3months)
-            "6months" -> stringResource(R.string.trash_auto_cleanup_6months)
-            "year" -> stringResource(R.string.trash_auto_cleanup_year)
+        val selectedCleanupLabel = when (autoCleanupPeriod.lowercase()) {
+            "week", "7_days" -> stringResource(R.string.trash_auto_cleanup_week)
+            "month", "30_days" -> stringResource(R.string.trash_auto_cleanup_month)
+            "3months", "90_days" -> stringResource(R.string.trash_auto_cleanup_3months)
+            "6months", "180_days" -> stringResource(R.string.trash_auto_cleanup_6months)
+            "year", "365_days" -> stringResource(R.string.trash_auto_cleanup_year)
             else -> stringResource(R.string.trash_auto_cleanup_never)
         }
 
@@ -365,7 +365,7 @@ fun TrashFilterToolbar(
                 )
 
                 periods.forEach { (periodKey, periodName) ->
-                    val isSelected = autoCleanupPeriod == periodKey
+                    val isSelected = autoCleanupPeriod.equals(periodKey, ignoreCase = true)
                     DropdownMenuItem(
                         text = {
                             Row(

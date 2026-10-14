@@ -274,8 +274,37 @@ class CloudArchiveStore(context: Context) {
 
     private fun directDriveList(token: String, search: String): List<CloudBackupFile> {
         val folderId = getOrCreateFolderId(token)
-        val queryStr = URLEncoder.encode("'$folderId' in parents and trashed=false", "UTF-8")
-        val fieldsStr = URLEncoder.encode("files(id,name,size,modifiedTime,createdTime)", "UTF-8")
+        val rootEntries = queryDriveEntriesInParent(token, folderId)
+        val list = mutableListOf<CloudBackupFile>()
+        val childFolderIds = mutableListOf<Pair<String, String>>()
+
+        for (i in 0 until rootEntries.length()) {
+            val item = rootEntries.getJSONObject(i)
+            val mimeType = item.optString("mimeType", "")
+            val itemName = item.optString("name", "")
+            if (mimeType == "application/vnd.google-apps.folder") {
+                childFolderIds.add(item.getString("id") to itemName)
+            } else {
+                parseDriveBackupItem(item, search, "")?.let { list.add(it) }
+            }
+        }
+
+        for ((subFolderId, subFolderName) in childFolderIds) {
+            val subEntries = runCatching { queryDriveEntriesInParent(token, subFolderId) }.getOrNull() ?: continue
+            for (i in 0 until subEntries.length()) {
+                val item = subEntries.getJSONObject(i)
+                if (item.optString("mimeType", "") != "application/vnd.google-apps.folder") {
+                    parseDriveBackupItem(item, search, subFolderName)?.let { list.add(it) }
+                }
+            }
+        }
+
+        return list.sortedByDescending { it.modifiedTime }
+    }
+
+    private fun queryDriveEntriesInParent(token: String, parentId: String): JSONArray {
+        val queryStr = URLEncoder.encode("'$parentId' in parents and trashed=false", "UTF-8")
+        val fieldsStr = URLEncoder.encode("files(id,name,mimeType,size,modifiedTime,createdTime)", "UTF-8")
         val url = "https://www.googleapis.com/drive/v3/files?q=$queryStr&fields=$fieldsStr&orderBy=modifiedTime%20desc&pageSize=100"
 
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
@@ -293,32 +322,34 @@ class CloudArchiveStore(context: Context) {
             if (code !in 200..299) {
                 throw createExceptionFromResponse(code, text)
             }
-            val array = JSONObject(text).optJSONArray("files") ?: JSONArray()
-            val list = mutableListOf<CloudBackupFile>()
-            for (i in 0 until array.length()) {
-                val item = array.getJSONObject(i)
-                val fileName = item.getString("name")
-                if (search.isNotBlank() && !fileName.contains(search, ignoreCase = true)) {
-                    continue
-                }
-                val modIso = item.optString("modifiedTime", item.optString("createdTime", ""))
-                val timeMs = parseIsoTime(modIso)
-                val monthStr = if (timeMs > 0) SimpleDateFormat("yyyy-MM", Locale.US).format(Date(timeMs)) else ""
-
-                list.add(
-                    CloudBackupFile(
-                        id = item.getString("id"),
-                        name = fileName,
-                        size = item.optLong("size", 0L),
-                        modifiedTime = if (timeMs > 0) timeMs else System.currentTimeMillis(),
-                        month = monthStr
-                    )
-                )
-            }
-            return list
+            return JSONObject(text).optJSONArray("files") ?: JSONArray()
         } finally {
             conn.disconnect()
         }
+    }
+
+    private fun parseDriveBackupItem(item: JSONObject, search: String, folderLabel: String): CloudBackupFile? {
+        val fileName = item.optString("name", "")
+        if (! fileName.endsWith(".sna", ignoreCase = true) && !fileName.endsWith(".slb", ignoreCase = true)) {
+            return null
+        }
+        if (search.isNotBlank() && !fileName.contains(search, ignoreCase = true) && !folderLabel.contains(search, ignoreCase = true)) {
+            return null
+        }
+        val modIso = item.optString("modifiedTime", item.optString("createdTime", ""))
+        val timeMs = parseIsoTime(modIso)
+        val monthStr = when {
+            folderLabel.isNotBlank() -> folderLabel
+            timeMs > 0 -> SimpleDateFormat("yyyy-MM", Locale.US).format(Date(timeMs))
+            else -> ""
+        }
+        return CloudBackupFile(
+            id = item.getString("id"),
+            name = fileName,
+            size = item.optLong("size", 0L),
+            modifiedTime = if (timeMs > 0) timeMs else System.currentTimeMillis(),
+            month = monthStr
+        )
     }
 
     private fun findExistingFileId(token: String, folderId: String, name: String): String? {

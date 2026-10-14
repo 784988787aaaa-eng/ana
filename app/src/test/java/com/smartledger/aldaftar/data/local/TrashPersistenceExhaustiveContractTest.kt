@@ -58,4 +58,32 @@ class TrashPersistenceExhaustiveContractTest {
         } finally { db.close() }
     }
 
+    @Test fun partialBundleRestoreUpdatesTotalTransactionsCountAccurately() = runTest {
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext<Context>(), AppDatabase::class.java)
+            .allowMainThreadQueries().build()
+        try {
+            val c = HabayebCustomer("c3", "C3", "", "", 1L)
+            val tx1 = HabayebTransaction("t3_1", "c3", "OWED_BY_THEM", BigDecimal("100"), 1L, "")
+            val tx2 = HabayebTransaction("t3_2", "c3", "OWED_BY_THEM", BigDecimal("200"), 2L, "")
+            db.habayebDao().insertCustomer(c)
+            val repository = com.smartledger.aldaftar.data.repository.HabayebRepository(db, db.habayebDao())
+
+            db.trashDao().insertDeletedItem(
+                DeletedItemEntity(
+                    "bundle_c3",
+                    "الحبايب",
+                    "habayeb_bundle",
+                    TrashJsonSerializer.serializeHabayebBundle(c, listOf(tx1, tx2), null, emptySet()),
+                    3L
+                )
+            )
+            // 1 active customer + 1 trashed bundle (1 customer + 2 txs) = 4 slots
+            assertEquals(4, repository.getHabayebTransactionsCountDirect())
+
+            db.trashDao().restoreSingleTransactionFromBundle("bundle_c3", "t3_1")
+            // 1 active customer + 1 restored active tx + 1 trashed bundle (1 customer + 1 remaining tx) = 4 slots
+            assertEquals(4, repository.getHabayebTransactionsCountDirect())
+        } finally { db.close() }
+    }
+
 }

@@ -31,13 +31,16 @@ class LicenseCrypto(private val context: Context) {
         val pem = try {
             context.assets.open(asset).bufferedReader().use { it.readText() }
         } catch (e: Exception) {
-            if (kid == "LOCAL1") {
+            if (kid == "LOCAL1" || kid == "ACCOUNT1") {
                 FALLBACK_LOCAL_PUBLIC_KEY
             } else {
                 throw e
             }
         }
-        val clean = pem.lines().filter { !it.startsWith("---") }.joinToString("")
+        val clean = pem.lines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("---") && !it.startsWith("#") }
+            .joinToString("")
         return KeyFactory.getInstance("RSA").generatePublic(
             X509EncodedKeySpec(Base64.decode(clean, Base64.DEFAULT))
         )

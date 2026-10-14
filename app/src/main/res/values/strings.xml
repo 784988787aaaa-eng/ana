@@ -164,7 +164,7 @@
     <string name="share_pdf_title">تقرير حساب PDF</string>
     <string name="share_pdf_desc">مستند جاهز للطباعة والمشاركة</string>
     <string name="share_csv_title">جدول بيانات Excel</string>
-    <string name="share_csv_desc">ملف CSV متوافق مع برامج الجداول</string>
+    <string name="share_csv_desc">ملف Excel (.xlsx) احترافي متوافق مع برامج الجداول</string>
     <string name="share_section_messages">الرسائل النصية</string>
     <string name="share_whatsapp_text_btn">كشف حساب واتساب</string>
     <string name="share_sms_text_btn">رسالة SMS</string>
@@ -198,14 +198,14 @@
     <string name="habayeb_auto_generated_sub">تكرار تلقائي (تابع للمعاملة #%1$d)</string>
     <string name="habayeb_rate_active">نشط (صرف: %1$s)</string>
     <string name="habayeb_rate_inactive_clean">صرف غير نشط</string>
-    <string name="habayeb_no_notes">لا يوجد ملاحظات</string>
+    <string name="habayeb_no_notes">لا توجد ملاحظات</string>
     <string name="habayeb_select_all">تحديد الكل</string>
     <string name="habayeb_all_selected">تم تحديد الكل</string>
     <string name="habayeb_items_selected">%1$d محدد</string>
     <string name="habayeb_add_tx_desc">إضافة معاملة</string>
     <string name="habayeb_confirm_delete_txs">تأكيد الحذف</string>
     <string name="habayeb_confirm_delete_single_tx">سيتم نقل معاملة حساب %1$s إلى سلة المحذوفات ويمكن استعادتها لاحقاً.</string>
-    <string name="habayeb_confirm_delete_txs_msg">هل أنت متأكد من حذف %1$d معاملات نهائياً؟</string>
+    <string name="habayeb_confirm_delete_txs_msg">سيتم نقل %1$d معاملات محددة إلى سلة المحذوفات ويمكن استعادتها لاحقاً.</string>
     <string name="habayeb_activate_exchange">تفعيل الصرف</string>
     <string name="habayeb_deactivate_exchange">تعطيل الصرف</string>
     <string name="habayeb_back">رجوع</string>
@@ -238,8 +238,8 @@
     <string name="nav_habayeb_plain">الدفتر الذكي</string>
     <string name="habayeb_filter_owed_by">لنا</string>
     <string name="habayeb_filter_owed_to">علينا</string>
-    <string name="habayeb_no_debtors">لا يوجد مدينين حالياً!</string>
-    <string name="habayeb_no_creditors">لا يوجد دائنين حالياً!</string>
+    <string name="habayeb_no_debtors">لا يوجد مدينون حالياً!</string>
+    <string name="habayeb_no_creditors">لا يوجد دائنون حالياً!</string>
     <string name="habayeb_add_customer_fab">إضافة عميل أو مورد</string>
     <string name="habayeb_bulk_delete_title">تأكيد حذف الكل</string>
     <string name="habayeb_bulk_delete_confirm">سيتم نقل الحسابات المحددة (%d) مع سجلاتها المالية إلى سلة المحذوفات ويمكن استعادتها لاحقاً.</string>
@@ -280,8 +280,8 @@
     <string name="context_menu_no_category">بلا تصنيف</string>
     <string name="context_menu_unpin_customer">إلغاء تثبيت الحساب</string>
     <string name="context_menu_pin_customer">تثبيت الحساب الحالي</string>
-    <string name="habayeb_pin_limit_toast">التثبيت حصراً، ثلاثة حسابات فقط لكل تصنيف</string>
-    <string name="context_menu_delete_customer">حذف الحساب نهائياً</string>
+    <string name="habayeb_pin_limit_toast">الحد الأقصى للتثبيت هو 3 حسابات فقط لكل تصنيف</string>
+    <string name="context_menu_delete_customer">حذف الحساب (نقل إلى السلة)</string>
     <string name="context_menu_back">رجوع</string>
     <string name="habayeb_manage_account_title">خيارات إدارة الحساب</string>
     <string name="habayeb_bulk_assign_category_title">ربط الحسابات المحددة بتصنيف</string>
@@ -320,7 +320,7 @@
     <string name="habayeb_statement_send">إرسال كشف حساب</string>
     <string name="habayeb_statement_send_whatsapp">إرسال عبر واتساب</string>
     <string name="pdf_chooser_title">تصدير ومشاركة تقرير PDF عبر</string>
-    <string name="backup_reminder_msg_1">💡 خطوة بسيطة لراحة بال دامت طويلاً... هل ترغب في إجراء نسخة احتياطية سريعة لبياناتك الآن؟ ✨</string>
+    <string name="backup_reminder_msg_1">💡 خطوة بسيطة لراحة بال تدوم طويلاً... هل ترغب في إجراء نسخة احتياطية سريعة لبياناتك الآن؟ ✨</string>
     <string name="backup_reminder_msg_2">🛡️ بياناتك المالية واليومية ثمينة للغاية! بلمسة واحدة احفظها بأمان واحمها من الضياع. 🌸</string>
     <string name="backup_reminder_msg_3">📁 أهلاً بك! مرّ بعض الوقت منذ آخر نسخة احتياطية. هل نؤمن سجلاتك اليوم في السحابة؟ ☁️</string>
     <string name="backup_reminder_msg_4">✨ تفاصيلك في أمان تام دائماً... ننصحك بإجراء نسخ احتياطي سريع لراحة بالك. 💾</string>
@@ -363,7 +363,7 @@
     <string name="pdf_totals_operations_title">إجمالي العمليات</string>
     <string name="pdf_net_banner_owed_by">المبلغ الإجمالي - عليه</string>
     <string name="pdf_net_banner_owed_to">المبلغ الإجمالي - له</string>
-    <string name="pdf_net_banner_balanced">الإجمالي - متساوي</string>
+    <string name="pdf_net_banner_balanced">الإجمالي - متساوٍ</string>
     <string name="pdf_mini_header_text">%1$s - كشف حساب مالي</string>
     <string name="pdf_footer_page">%1$d / %2$d</string>
     <string name="pdf_footer_certified">تطبيق الدفتر الذكي</string>
@@ -428,7 +428,7 @@
     <string name="habayeb_statement_header">كشف حساب: %1$s\n</string>
     <string name="habayeb_statement_status_owed_by_them">المبلغ الإجمالي عليكم: %1$s</string>
     <string name="habayeb_statement_status_owed_to_them">المبلغ الإجمالي لكم: %1$s</string>
-    <string name="habayeb_statement_status_balanced_new">المبلغ الإجمالي: %1$s (الحساب متساوي)</string>
+    <string name="habayeb_statement_status_balanced_new">المبلغ الإجمالي: %1$s (الحساب متساوٍ)</string>
     <string name="habayeb_statement_footer">\nشاكرين ومقدرين حسن تعاونكم.</string>
     <string name="report_net_total_pattern">صافي المبلغ الإجمالي (%1$s)</string>
     <string name="report_active_accounts_count">%1$d حساب نشط</string>
@@ -612,7 +612,7 @@
     <string name="backup_toast_cancelled">تم إلغاء عملية الربط.</string>
     <string name="backup_toast_sync_success">تمت المزامنة وحفظ النسخة السحابية بنجاح</string>
     <string name="backup_sheet_title">النسخ الاحتياطي والمزامنة</string>
-    <string name="backup_archive_subtitle">نسخ آمنة بامتداد SLB مع أرشيف محلي قابل للتنزيل والاستعادة.</string>
+    <string name="backup_archive_subtitle">نسخ آمنة بامتداد SNA مع أرشيف محلي قابل للتنزيل والاستعادة.</string>
     <string name="backup_btn_create_local">إنشاء وحفظ نسخة</string>
     <string name="backup_btn_download_cloud">تنزيل من السحابة</string>
     <string name="backup_local_archive_title">الأرشيف المحلي</string>
