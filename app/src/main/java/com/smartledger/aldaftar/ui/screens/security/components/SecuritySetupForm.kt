@@ -1,8 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.security.components
 
-import android.util.Log
-import androidx.compose.material3.MaterialTheme
-
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,9 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -34,14 +31,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.BrandPrimary
-import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
+import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.theme.mizanColors
 
-private const val TAG = "SecuritySetupForm"
-private const val CD_TOGGLE_VISIBILITY = "Toggle Visibility"
 private const val TEST_TAG_PIN_CODE_INPUT = "pin_code_input"
 private const val TEST_TAG_PIN_CODE_CONFIRM_INPUT = "pin_code_confirm_input"
 private const val TEST_TAG_RECOVERY_PHRASE_INPUT = "recovery_phrase_input"
@@ -66,6 +61,7 @@ fun SecuritySetupForm(
 ) {
     val focusManager = LocalFocusManager.current
     val haptic = LocalHapticFeedback.current
+    val mizanColors = MaterialTheme.mizanColors
 
     var passcodeVisible by remember { mutableStateOf(false) }
     var confirmPasscodeVisible by remember { mutableStateOf(false) }
@@ -75,7 +71,10 @@ fun SecuritySetupForm(
     val recoveryPhraseFocus = remember { FocusRequester() }
     val recoveryHintFocus = remember { FocusRequester() }
 
-    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val toggleVisibilityDesc = stringResource(id = R.string.sec_desc_toggle_pin_visibility)
+    val pinsComplete = passcode.length == 4 && confirmPasscode.length == 4
+    val pinsMatch = pinsComplete && passcode == confirmPasscode
+
     RequestFocusAndShowKeyboard(focusRequester = passcodeFocus, autoShow = true)
 
     Card(
@@ -85,25 +84,85 @@ fun SecuritySetupForm(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = 0.5.dp,
+                width = 0.8.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 shape = MizanDialogTokens.innerCardShape
             )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp) // تقارب الحقول بمسافات دقيقة واحترافية تمنع التشتت
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.sec_setup_title),
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 2.dp)
-            )
+            // Section 1: PIN Setup Header + Live Match Status Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(32.dp),
+                        shape = RoundedCornerShape(9.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.sec_setup_title),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(id = R.string.sec_setup_subtitle),
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                val badgeBg = when {
+                    pinsMatch -> mizanColors.creditContainer
+                    pinsComplete -> mizanColors.debtContainer
+                    else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                }
+                val badgeText = when {
+                    pinsMatch -> mizanColors.credit
+                    pinsComplete -> mizanColors.debt
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                val badgeLabel = when {
+                    pinsMatch -> stringResource(id = R.string.sec_pin_match_ok)
+                    pinsComplete -> stringResource(id = R.string.sec_pin_match_err)
+                    else -> stringResource(id = R.string.sec_pin_digits_badge)
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = badgeBg
+                ) {
+                    Text(
+                        text = badgeLabel,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = badgeText
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = passcode,
@@ -121,17 +180,20 @@ fun SecuritySetupForm(
                 singleLine = true,
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Default.Lock,
+                        imageVector = Icons.Default.Pin,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 },
                 trailingIcon = {
-                    IconButton(onClick = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); passcodeVisible = !passcodeVisible }) {
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        passcodeVisible = !passcodeVisible
+                    }) {
                         Icon(
                             imageVector = if (passcodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = CD_TOGGLE_VISIBILITY,
+                            contentDescription = toggleVisibilityDesc,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -172,19 +234,23 @@ fun SecuritySetupForm(
                 label = { Text(stringResource(id = R.string.sec_label_confirm), fontSize = 12.sp) },
                 placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontSize = 12.sp) },
                 singleLine = true,
+                isError = pinsComplete && !pinsMatch,
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Default.LockReset,
+                        imageVector = if (pinsMatch) Icons.Default.CheckCircle else Icons.Default.LockReset,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (pinsMatch) mizanColors.credit else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 },
                 trailingIcon = {
-                    IconButton(onClick = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); confirmPasscodeVisible = !confirmPasscodeVisible }) {
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        confirmPasscodeVisible = !confirmPasscodeVisible
+                    }) {
                         Icon(
                             imageVector = if (confirmPasscodeVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = CD_TOGGLE_VISIBILITY,
+                            contentDescription = toggleVisibilityDesc,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
@@ -200,8 +266,8 @@ fun SecuritySetupForm(
                 keyboardActions = KeyboardActions(onNext = { recoveryPhraseFocus.requestFocus() }),
                 shape = MizanDialogTokens.inputShape,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedBorderColor = if (pinsMatch) mizanColors.credit else MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = if (pinsMatch) mizanColors.creditBorder else MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),
@@ -212,21 +278,65 @@ fun SecuritySetupForm(
             )
 
             HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), 
-                thickness = 0.5.dp,
-                modifier = Modifier.padding(vertical = 1.dp)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                thickness = 0.6.dp,
+                modifier = Modifier.padding(vertical = 2.dp)
             )
 
-            Text(
-                text = stringResource(id = R.string.sec_recovery_title),
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 2.dp)
-            )
+            // Section 2: Recovery Phrase & Hint Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(32.dp),
+                        shape = RoundedCornerShape(9.dp),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Key,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.sec_recovery_title),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(id = R.string.sec_recovery_subtitle),
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.sec_recovery_badge),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = recoveryPhrase,
@@ -294,39 +404,50 @@ fun SecuritySetupForm(
                     .testTag(TEST_TAG_RECOVERY_HINT_INPUT)
             )
 
-            val ackBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
-            val ackText = MaterialTheme.colorScheme.onSurface
-            val checkboxBorderColor = MaterialTheme.colorScheme.outline
+            // Section 3: Acknowledgment Interactive Card
+            val ackBg = if (checkAcknowledged) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
+            }
+            val ackBorder = if (checkAcknowledged) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            }
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(MizanDialogTokens.inputShape)
                     .background(ackBg)
-                    .clickable { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); onCheckAcknowledgedChange(!checkAcknowledged) }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                horizontalArrangement = Arrangement.Start,
+                    .border(1.dp, ackBorder, MizanDialogTokens.inputShape)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onCheckAcknowledgedChange(!checkAcknowledged)
+                    }
+                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(id = R.string.sec_checkbox_ack),
-                    fontSize = 11.sp,
-                    color = ackText,
-                    textAlign = TextAlign.Start,
-                    lineHeight = 16.sp,
-                    modifier = Modifier
-                        .weight(1f)
-                )
                 Checkbox(
                     checked = checkAcknowledged,
                     onCheckedChange = null,
                     colors = CheckboxDefaults.colors(
                         checkedColor = BrandPrimary,
-                        uncheckedColor = checkboxBorderColor
+                        uncheckedColor = MaterialTheme.colorScheme.outline
                     ),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(id = R.string.sec_checkbox_ack),
+                    fontSize = 11.5.sp,
+                    fontWeight = if (checkAcknowledged) FontWeight.Bold else FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Start,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             val isValid = passcode.length == 4 &&
@@ -351,22 +472,33 @@ fun SecuritySetupForm(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .padding(top = 4.dp) // تباعد دقيق ليعطي الزر متنفساً حركياً ملحوظاً
+                    .padding(top = 2.dp)
                     .testTag(TEST_TAG_SECURITY_SAVE_BUTTON)
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.onPrimary, 
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(
-                        text = stringResource(id = R.string.sec_btn_activate),
-                        color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VerifiedUser,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.sec_btn_activate),
+                            color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         }

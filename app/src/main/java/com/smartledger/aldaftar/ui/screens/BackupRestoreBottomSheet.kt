@@ -2,12 +2,15 @@ package com.smartledger.aldaftar.ui.screens
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -63,8 +65,8 @@ import com.smartledger.aldaftar.ui.components.MizanSelectionBar
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.helper.VibrationHelper
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -122,7 +124,8 @@ fun BackupRestoreBottomSheet(
                         }.onSuccess {
                             launch(Dispatchers.Main) {
                                 VibrationHelper.triggerBackupSuccessVibration(context)
-                                showBackupSnackbar("تم حفظ الأرشيف بنجاح: ${pendingExportName ?: "SNA"}")
+                                val displayTarget = pendingExportName ?: context.getString(R.string.backup_format_sna_badge)
+                                showBackupSnackbar(context.getString(R.string.backup_snackbar_local_saved, displayTarget))
                             }
                         }.onFailure {
                             launch(Dispatchers.Main) {
@@ -240,17 +243,17 @@ fun BackupRestoreBottomSheet(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = {
                 Box(
                     modifier = Modifier
                         .padding(top = 10.dp, bottom = 6.dp)
-                        .width(42.dp)
+                        .width(44.dp)
                         .height(4.5.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))
                 )
             }
         ) {
@@ -261,17 +264,61 @@ fun BackupRestoreBottomSheet(
                         .verticalScroll(rememberScrollState())
                         .navigationBarsPadding()
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 18.dp)
                         .imePadding(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // 1. Prestigious Unified Top Header
+                    // 1. Prestigious Unified Top Header with Status Pill & Close Button
                     BackupMainHeader(
                         connected = connected,
                         onDismiss = onDismiss
                     )
 
-                    // 2. Google Drive Cloud Section (Vault)
+                    // 2. Auto-Protection & Encryption Assurance Strip
+                    AutoProtectionStrip()
+
+                    // 3. Operation Status / Busy Indicator (Top visibility when active)
+                    AnimatedVisibility(
+                        visible = busy,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        OperationStatusBanner(text = busyMessage ?: stringResource(R.string.msg_processing))
+                    }
+
+                    // 4. Error Message Display
+                    error?.takeIf(String::isNotBlank)?.let {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.weight(1f),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+
+                    // 5. Google Drive Cloud Vault Section
                     CloudSyncCard(
                         connected = connected,
                         email = email,
@@ -295,7 +342,12 @@ fun BackupRestoreBottomSheet(
                                 backupSyncViewModel.createCloudBackup { remote, file ->
                                     if (remote != null) {
                                         VibrationHelper.triggerBackupSuccessVibration(context)
-                                        showBackupSnackbar("تم حفظ النسخة السحابية: ${file?.name ?: remote.name}")
+                                        showBackupSnackbar(
+                                            context.getString(
+                                                R.string.backup_snackbar_cloud_saved,
+                                                file?.name ?: remote.name
+                                            )
+                                        )
                                     } else {
                                         Toast.makeText(context, context.getString(R.string.backup_toast_cloud_download_failed), Toast.LENGTH_SHORT).show()
                                     }
@@ -323,7 +375,7 @@ fun BackupRestoreBottomSheet(
                         }
                     )
 
-                    // 3. Local Backup Section (Storage & Files)
+                    // 6. Local Backup Section (Portable Encrypted .SNA Archive)
                     LocalBackupCard(
                         busy = busy,
                         onExportLocal = {
@@ -338,7 +390,7 @@ fun BackupRestoreBottomSheet(
                         }
                     )
 
-                    // 4. Sensitive Zone: Wipe & Reset Data (Discrete & Professional)
+                    // 7. Sensitive Zone: Wipe & Reset Data
                     SensitiveResetCard(
                         busy = busy,
                         onClick = {
@@ -346,31 +398,6 @@ fun BackupRestoreBottomSheet(
                             resetOpen = true
                         }
                     )
-
-                    // Operation Status / Busy Indicator
-                    if (busy) {
-                        OperationStatusBanner(text = busyMessage ?: stringResource(R.string.msg_processing))
-                    }
-
-                    // Error Message Display
-                    error?.takeIf(String::isNotBlank)?.let {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = it,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                fontSize = 11.5.sp,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
                 }
 
                 SnackbarHost(
@@ -443,14 +470,20 @@ fun BackupRestoreBottomSheet(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = stringResource(R.string.dialog_wipe_desc),
-                                fontSize = 12.5.sp,
-                                lineHeight = 19.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.28f))
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dialog_wipe_desc),
+                                    modifier = Modifier.padding(12.dp),
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 19.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
 
                             MizanDialogActions(
                                 confirmText = stringResource(R.string.dialog_btn_confirm_wipe),
@@ -462,6 +495,7 @@ fun BackupRestoreBottomSheet(
                                         onDismiss()
                                     }
                                 },
+                                confirmIcon = Icons.Default.DeleteForever,
                                 confirmContainerColor = MaterialTheme.colorScheme.error,
                                 confirmContentColor = MaterialTheme.colorScheme.onError,
                                 cancelText = stringResource(R.string.common_cancel),
@@ -480,6 +514,7 @@ private fun BackupMainHeader(
     connected: Boolean,
     onDismiss: () -> Unit
 ) {
+    val mizanColors = MaterialTheme.mizanColors
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -487,73 +522,145 @@ private fun BackupMainHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right side: Icon + Title & Subtitle
+        // Start: Icon Badge + Title & Subtitle
         Row(
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Surface(
-                modifier = Modifier.size(38.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                modifier = Modifier.size(42.dp),
+                shape = RoundedCornerShape(13.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.Default.CloudQueue,
+                        imageVector = Icons.Default.CloudSync,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(22.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = stringResource(R.string.backup_screen_title),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = stringResource(R.string.backup_subtitle),
-                    fontSize = 10.5.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
 
-        // Left side: Status Pill Badge
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = if (connected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            },
-            border = BorderStroke(
-                0.8.dp,
-                if (connected) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            )
+        // End: Status Pill Badge + Close Button
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val statusBg = if (connected) mizanColors.creditContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+            val statusBorder = if (connected) mizanColors.creditBorder else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            val statusText = if (connected) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant
+
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = statusBg,
+                border = BorderStroke(0.9.dp, statusBorder)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(statusText)
+                    )
+                    Text(
+                        text = stringResource(if (connected) R.string.backup_status_connected else R.string.backup_status_disconnected),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = statusText
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.desc_close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AutoProtectionStrip() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
+        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.5.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
+                Icon(
+                    imageVector = Icons.Default.VerifiedUser,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = stringResource(if (connected) R.string.backup_status_connected else R.string.backup_status_disconnected),
+                    text = stringResource(R.string.backup_auto_protection_strip),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            ) {
+                Text(
+                    text = stringResource(R.string.backup_encryption_badge),
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -575,42 +682,53 @@ private fun CloudSyncCard(
     onOpenArchive: () -> Unit,
     onDisconnect: () -> Unit
 ) {
+    val mizanColors = MaterialTheme.mizanColors
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (connected) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
+        tonalElevation = 1.dp
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (!connected) {
-                // Not Connected State: Hero Banner
+            // Card Section Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Surface(
-                        modifier = Modifier.size(42.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        modifier = Modifier.size(38.dp),
+                        shape = RoundedCornerShape(11.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.CloudSync,
+                                imageVector = if (connected) Icons.Default.CloudDone else Icons.Default.CloudQueue,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
 
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                         Text(
                             text = stringResource(R.string.backup_cloud_title),
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -622,7 +740,9 @@ private fun CloudSyncCard(
                         )
                     }
                 }
+            }
 
+            if (!connected) {
                 // Primary Connect Button
                 Button(
                     onClick = onInternalConnect,
@@ -630,8 +750,11 @@ private fun CloudSyncCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(46.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Icon(Icons.Default.Link, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -642,7 +765,7 @@ private fun CloudSyncCard(
                     )
                 }
 
-                // Manual connection fallback: ONLY visible if automatic sign-in failed
+                // Manual connection fallback: visible if automatic sign-in failed
                 if (hasFailedAttempt) {
                     TextButton(
                         onClick = onManualToggle,
@@ -654,7 +777,7 @@ private fun CloudSyncCard(
                         Text(
                             text = stringResource(if (manualOptionsOpen) R.string.backup_manual_toggle_hide else R.string.backup_manual_fallback_link),
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -664,34 +787,34 @@ private fun CloudSyncCard(
                     }
                 }
             } else {
-                // Connected State: Account Card
+                // Connected State: Elevated Account Identity Card
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    color = mizanColors.creditContainer.copy(alpha = 0.55f),
+                    border = BorderStroke(0.9.dp, mizanColors.creditBorder)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.weight(1f)
                         ) {
                             Surface(
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(32.dp),
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                color = mizanColors.credit.copy(alpha = 0.15f)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.primary
+                                        modifier = Modifier.size(18.dp),
+                                        tint = mizanColors.credit
                                     )
                                 }
                             }
@@ -708,23 +831,26 @@ private fun CloudSyncCard(
                                 Text(
                                     text = stringResource(R.string.backup_cloud_active_status),
                                     fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = mizanColors.credit
                                 )
                             }
                         }
 
-                        // Disconnect Icon Button
+                        // Disconnect Icon Button in subtle error container
                         IconButton(
                             onClick = onDisconnect,
                             enabled = !busy,
-                            modifier = Modifier.size(34.dp)
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.10f))
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = stringResource(R.string.backup_btn_disconnect),
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                modifier = Modifier.size(17.dp),
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -735,16 +861,18 @@ private fun CloudSyncCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Right button: نسخ سحابي (Primary)
                     Button(
                         onClick = onCreateCloudBackup,
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
                             .height(46.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -762,15 +890,18 @@ private fun CloudSyncCard(
                         }
                     }
 
-                    // Left button: استعادة أحدث نسخة (Tonal)
                     FilledTonalButton(
                         onClick = onRestoreLatest,
                         enabled = !busy,
                         modifier = Modifier
                             .weight(1f)
                             .height(46.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -789,13 +920,13 @@ private fun CloudSyncCard(
                     }
                 }
 
-                // Navigation Banner: Cloud Archive (Clean, modern list navigation item)
+                // Navigation Banner: Cloud Archive
                 Surface(
                     onClick = onOpenArchive,
                     enabled = !busy,
                     shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
+                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -810,7 +941,7 @@ private fun CloudSyncCard(
                         ) {
                             Surface(
                                 modifier = Modifier.size(36.dp),
-                                shape = CircleShape,
+                                shape = RoundedCornerShape(10.dp),
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -833,17 +964,27 @@ private fun CloudSyncCard(
                                 Text(
                                     text = stringResource(R.string.backup_history_nav_desc),
                                     fontSize = 10.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
 
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Surface(
+                            modifier = Modifier.size(28.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -861,44 +1002,64 @@ private fun LocalBackupCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        tonalElevation = 1.dp
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header Row
+            // Header Row with Format Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Surface(
-                    modifier = Modifier.size(36.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.secondary
+                    Surface(
+                        modifier = Modifier.size(38.dp),
+                        shape = RoundedCornerShape(11.dp),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Save,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(
+                            text = stringResource(R.string.backup_local_section_title),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.backup_local_section_desc),
+                            fontSize = 10.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                ) {
                     Text(
-                        text = stringResource(R.string.backup_local_section_title),
-                        fontSize = 13.5.sp,
+                        text = stringResource(R.string.backup_format_sna_badge),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.backup_local_section_desc),
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -908,21 +1069,24 @@ private fun LocalBackupCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Export Button (FilledTonalButton)
                 FilledTonalButton(
                     onClick = onExportLocal,
                     enabled = !busy,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
+                        .height(45.dp),
                     shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(Icons.Default.FileUpload, null, Modifier.size(16.dp))
+                        Icon(Icons.Default.FileUpload, null, Modifier.size(17.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.backup_btn_local_export),
@@ -934,16 +1098,15 @@ private fun LocalBackupCard(
                     }
                 }
 
-                // Import Button (OutlinedButton)
                 OutlinedButton(
                     onClick = onImportLocal,
                     enabled = !busy,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
+                        .height(45.dp),
                     shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -952,7 +1115,7 @@ private fun LocalBackupCard(
                         Icon(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(17.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.width(6.dp))
@@ -978,14 +1141,14 @@ private fun SensitiveResetCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.error.copy(alpha = 0.04f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.18f))
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.22f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -995,15 +1158,15 @@ private fun SensitiveResetCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Surface(
-                    modifier = Modifier.size(32.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                    modifier = Modifier.size(34.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.DeleteForever,
                             contentDescription = null,
-                            modifier = Modifier.size(17.dp),
+                            modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
@@ -1027,11 +1190,14 @@ private fun SensitiveResetCard(
             OutlinedButton(
                 onClick = onClick,
                 enabled = !busy,
-                modifier = Modifier.height(34.dp),
+                modifier = Modifier.height(36.dp),
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.06f),
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
             ) {
                 Text(
                     text = stringResource(R.string.backup_reset_action_btn),
@@ -1050,11 +1216,13 @@ private fun DirectCloudRestoreDialog(
     onConfirmRestore: () -> Unit
 ) {
     val context = LocalContext.current
-    val formattedDateTime = remember(file.modifiedTime) {
+    val amStr = stringResource(R.string.datetime_picker_am)
+    val pmStr = stringResource(R.string.datetime_picker_pm)
+    val formattedDateTime = remember(file.modifiedTime, amStr, pmStr) {
         val datePart = SimpleDateFormat("dd-MM-yyyy", Locale.US).format(Date(file.modifiedTime))
         val timePart = SimpleDateFormat("hh:mm a", Locale.US).format(Date(file.modifiedTime))
-            .replace("AM", "ص")
-            .replace("PM", "م")
+            .replace("AM", amStr)
+            .replace("PM", pmStr)
         WesternDigits.normalize("$datePart | $timePart")
     }
     val sizeText = remember(file.size) {
@@ -1083,21 +1251,32 @@ private fun DirectCloudRestoreDialog(
                 // Details Box
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = formattedDateTime,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = formattedDateTime,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                         Surface(
                             shape = RoundedCornerShape(50),
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
@@ -1120,10 +1299,9 @@ private fun DirectCloudRestoreDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
-
                 MizanDialogActions(
                     confirmText = stringResource(R.string.dialog_btn_restore),
+                    confirmIcon = Icons.Default.CloudDownload,
                     onConfirm = onConfirmRestore,
                     cancelText = stringResource(R.string.common_cancel),
                     onCancel = dismiss
@@ -1137,7 +1315,8 @@ private fun DirectCloudRestoreDialog(
 private fun OperationStatusBanner(text: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -1146,15 +1325,15 @@ private fun OperationStatusBanner(text: String) {
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(17.dp),
                 strokeWidth = 2.dp,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = text,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -1165,7 +1344,7 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -1191,7 +1370,7 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
                 enabled = !busy,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp),
+                    .height(40.dp),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
@@ -1332,7 +1511,12 @@ private fun CloudArchiveBottomSheet(
                             vm.createCloudBackup { remote, file ->
                                 if (remote != null) {
                                     VibrationHelper.triggerBackupSuccessVibration(context)
-                                    showBackupSnackbar("تم حفظ النسخة السحابية: ${file?.name ?: remote.name}")
+                                    showBackupSnackbar(
+                                        context.getString(
+                                            R.string.backup_snackbar_cloud_saved,
+                                            file?.name ?: remote.name
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -1341,7 +1525,7 @@ private fun CloudArchiveBottomSheet(
                         .fillMaxWidth()
                         .height(46.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.CloudUpload, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -1401,10 +1585,9 @@ private fun CloudArchiveBottomSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.height(2.dp))
-
                     MizanDialogActions(
                         confirmText = stringResource(R.string.backup_btn_delete_confirm),
+                        confirmIcon = Icons.Default.Delete,
                         onConfirm = {
                             VibrationHelper.triggerDeleteVibration(context)
                             vm.deleteCloudBackups(setOf(item.id)) { deleteItem = null }
@@ -1445,10 +1628,9 @@ private fun CloudArchiveBottomSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.height(2.dp))
-
                     MizanDialogActions(
                         confirmText = stringResource(R.string.backup_btn_delete_confirm),
+                        confirmIcon = Icons.Default.Delete,
                         onConfirm = {
                             VibrationHelper.triggerDeleteVibration(context)
                             vm.deleteCloudBackups(selected) {
@@ -1476,28 +1658,38 @@ private fun ArchiveHeader(onDismiss: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(34.dp),
-                shape = CircleShape,
+                modifier = Modifier.size(38.dp),
+                shape = RoundedCornerShape(11.dp),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.CloudSync, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.FolderShared, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            Text(
-                text = stringResource(R.string.history_sheet_title),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = stringResource(R.string.history_sheet_title),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.backup_archive_subtitle_header),
+                    fontSize = 10.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         IconButton(
             onClick = onDismiss,
-            modifier = Modifier.size(36.dp)
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
@@ -1522,30 +1714,29 @@ private fun ArchiveSubBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right side count badge
         Surface(
             shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
         ) {
             Text(
                 text = WesternDigits.normalize(stringResource(R.string.history_items_count, count)),
-                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                 fontSize = 11.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
-        // Left side action icons
         Row(
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onToggleSearch, modifier = Modifier.size(38.dp)) {
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(R.string.trash_search),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(19.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -1553,7 +1744,7 @@ private fun ArchiveSubBar(
                 Icon(
                     imageVector = if (selectionMode) Icons.Default.CheckCircle else Icons.Default.Checklist,
                     contentDescription = stringResource(R.string.context_menu_multi_select),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(19.dp),
                     tint = if (selectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1561,7 +1752,7 @@ private fun ArchiveSubBar(
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = stringResource(R.string.history_btn_refresh),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(19.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -1576,9 +1767,10 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(46.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1587,7 +1779,8 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(R.string.backup_search_close),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         BasicTextField(
@@ -1601,7 +1794,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                 focusManager.clearFocus()
             }),
             textStyle = TextStyle(
-                fontSize = 12.5.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             ),
@@ -1641,13 +1834,15 @@ private fun CloudBackupRow(
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current
+    val amStr = stringResource(R.string.datetime_picker_am)
+    val pmStr = stringResource(R.string.datetime_picker_pm)
     val dateText = remember(item.modifiedTime) {
         WesternDigits.normalize(SimpleDateFormat("dd-MM-yyyy", Locale.US).format(Date(item.modifiedTime)))
     }
-    val timeText = remember(item.modifiedTime) {
+    val timeText = remember(item.modifiedTime, amStr, pmStr) {
         SimpleDateFormat("hh:mm a", Locale.US).format(Date(item.modifiedTime))
-            .replace("AM", "ص")
-            .replace("PM", "م")
+            .replace("AM", amStr)
+            .replace("PM", pmStr)
             .let(WesternDigits::normalize)
     }
     val sizeText = remember(item.size) {
@@ -1661,7 +1856,7 @@ private fun CloudBackupRow(
         shape = RoundedCornerShape(14.dp),
         color = if (checked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
         border = BorderStroke(
-            if (checked) 1.5.dp else 0.8.dp,
+            if (checked) 1.5.dp else 0.9.dp,
             if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
         ),
         onClick = onClick
@@ -1669,25 +1864,46 @@ private fun CloudBackupRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 9.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
+            Row(
                 modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.Start
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = dateText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = timeText,
-                    fontSize = 10.5.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    modifier = Modifier.size(34.dp),
+                    shape = RoundedCornerShape(9.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = null,
+                            modifier = Modifier.size(17.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        text = dateText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = timeText,
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Row(
@@ -1696,7 +1912,7 @@ private fun CloudBackupRow(
             ) {
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
                 ) {
                     Text(
                         text = sizeText,
@@ -1726,40 +1942,38 @@ private fun CloudBackupRow(
                 } else {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // Quick Restore Button
                         FilledTonalButton(
                             onClick = {
                                 VibrationHelper.triggerClickVibration(context)
                                 onRestore()
                             },
-                            modifier = Modifier.height(32.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                            modifier = Modifier.height(34.dp),
+                            shape = RoundedCornerShape(9.dp),
+                            contentPadding = PaddingValues(horizontal = 9.dp, vertical = 0.dp)
                         ) {
-                            Icon(Icons.Default.CloudDownload, null, Modifier.size(13.dp))
+                            Icon(Icons.Default.CloudDownload, null, Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = stringResource(R.string.dialog_btn_restore),
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
-                        // Delete button
                         IconButton(
                             onClick = {
                                 VibrationHelper.triggerClickVibration(context)
                                 onDelete()
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(34.dp)
                         ) {
                             Icon(
                                 Icons.Default.DeleteOutline,
                                 contentDescription = stringResource(R.string.backup_btn_delete_confirm),
-                                modifier = Modifier.size(17.dp),
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
                             )
                         }
                     }
@@ -1779,7 +1993,7 @@ private fun EmptyCloudState(onConnect: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
-            modifier = Modifier.size(54.dp),
+            modifier = Modifier.size(56.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
         ) {
@@ -1850,7 +2064,7 @@ private fun EmptyListState() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
-            modifier = Modifier.size(54.dp),
+            modifier = Modifier.size(56.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ) {

@@ -11,15 +11,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -40,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
@@ -55,69 +53,28 @@ fun RevalueConfirmDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
         MizanDialogCard(
-            maxWidth = MizanDialogTokens.compactMaxWidth
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Compact Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 2.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Text(
-                            text = stringResource(id = R.string.currency_update_rate_title),
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    IconButton(
-                        onClick = dismissDialog,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.desc_close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
-                }
+                MizanDialogHeader(
+                    title = stringResource(id = R.string.currency_update_rate_title),
+                    subtitle = stringResource(id = R.string.currency_revalue_subtitle),
+                    icon = Icons.Default.Refresh,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    onCloseClick = dismissDialog
+                )
 
                 Text(
                     text = stringResource(id = R.string.currency_update_rate_confirm_msg, targetCurrency),
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -127,7 +84,8 @@ fun RevalueConfirmDialog(
 
                 // Option 1 (Default / Recommended): Apply to new / future transactions only
                 SettingsRevalueOptionCard(
-                    title = "${stringResource(R.string.currency_update_future_only_title)} (افتراضياً)",
+                    title = stringResource(R.string.currency_update_future_only_title),
+                    badge = stringResource(R.string.currency_recommended_badge),
                     description = stringResource(R.string.currency_update_future_only_desc),
                     icon = Icons.Default.ArrowForward,
                     iconTint = MaterialTheme.colorScheme.primary,
@@ -142,11 +100,12 @@ fun RevalueConfirmDialog(
                 // Option 2: Apply to all transactions (Past and Future)
                 SettingsRevalueOptionCard(
                     title = stringResource(R.string.currency_update_past_future_title),
+                    badge = null,
                     description = stringResource(R.string.currency_update_past_future_desc),
                     icon = Icons.Default.Sync,
                     iconTint = MaterialTheme.colorScheme.secondary,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onConfirmAll()
@@ -155,16 +114,16 @@ fun RevalueConfirmDialog(
 
                 OutlinedButton(
                     onClick = dismissDialog,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = MizanDialogTokens.buttonShape,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(34.dp),
+                        .height(42.dp),
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.currency_settings_dialog_cancel),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -176,6 +135,7 @@ fun RevalueConfirmDialog(
 @Composable
 private fun SettingsRevalueOptionCard(
     title: String,
+    badge: String?,
     description: String,
     icon: ImageVector,
     iconTint: Color,
@@ -186,21 +146,21 @@ private fun SettingsRevalueOptionCard(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(13.dp),
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(26.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(9.dp))
                     .background(iconTint.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -208,25 +168,44 @@ private fun SettingsRevalueOptionCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = iconTint,
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(
-                    text = title,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = title,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (!badge.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = iconTint.copy(alpha = 0.16f)
+                        ) {
+                            Text(
+                                text = badge,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = iconTint
+                            )
+                        }
+                    }
+                }
                 Text(
                     text = description,
-                    fontSize = 9.5.sp,
+                    fontSize = 10.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 13.sp
+                    lineHeight = 15.sp
                 )
             }
         }

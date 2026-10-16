@@ -1,25 +1,24 @@
 package com.smartledger.aldaftar.ui.screens
 
 import android.widget.Toast
-import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,17 +30,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -57,7 +51,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 private suspend fun buildSecuritySettings(
     passcode: String,
@@ -85,7 +78,6 @@ fun SecurityScreen(
     contentPadding: PaddingValues = PaddingValues()
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
     val currentSettings by viewModel.settingsState.collectAsStateWithLifecycle()
@@ -104,16 +96,44 @@ fun SecurityScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(end = 48.dp),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = stringResource(id = R.string.sec_title),
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (isAlreadyPasscodeEnabled) Icons.Default.VerifiedUser else Icons.Default.Shield,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.sec_title),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = stringResource(
+                                    id = if (isAlreadyPasscodeEnabled) R.string.sec_desc_active else R.string.sec_desc_inactive
+                                ),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -136,7 +156,7 @@ fun SecurityScreen(
                     scrolledContainerColor = MaterialTheme.colorScheme.surface
                 ),
                 modifier = Modifier.border(
-                    width = 0.5.dp, 
+                    width = 0.5.dp,
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                 )
             )
@@ -150,7 +170,7 @@ fun SecurityScreen(
                 .navigationBarsPadding()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -185,7 +205,11 @@ fun SecurityScreen(
                                     onBack()
                                 } catch (e: Exception) {
                                     isSaving = false
-                                    Toast.makeText(context, e.message ?: "Error", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        e.message ?: context.getString(R.string.toast_operation_failed),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         }
@@ -225,7 +249,6 @@ fun SecurityDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
     val currentSettings by viewModel.settingsState.collectAsStateWithLifecycle()
@@ -243,16 +266,32 @@ fun SecurityDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
         MizanDialogCard(
-            maxWidth = MizanDialogTokens.compactMaxWidth,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+            maxWidth = MizanDialogTokens.maxWidth,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
             MizanDialogHeader(
                 title = stringResource(id = R.string.sec_title),
-                subtitle = null,
-                icon = null,
-                isCentered = true,
-                onCloseClick = dismissDialog,
-                closeButtonAlignment = Alignment.TopStart
+                subtitle = stringResource(
+                    id = if (isAlreadyPasscodeEnabled && !isEditingPasscodeInDialog) {
+                        R.string.sec_desc_active
+                    } else {
+                        R.string.sec_desc_inactive
+                    }
+                ),
+                icon = if (isAlreadyPasscodeEnabled && !isEditingPasscodeInDialog) {
+                    Icons.Default.VerifiedUser
+                } else {
+                    Icons.Default.Security
+                },
+                iconTint = MaterialTheme.colorScheme.primary,
+                isCentered = false,
+                onCloseClick = {
+                    if (isEditingPasscodeInDialog && isAlreadyPasscodeEnabled) {
+                        isEditingPasscodeInDialog = false
+                    } else {
+                        dismissDialog()
+                    }
+                }
             )
 
             Column(
@@ -260,7 +299,7 @@ fun SecurityDialog(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (!isAlreadyPasscodeEnabled || isEditingPasscodeInDialog) {
                     SecuritySetupForm(
@@ -320,4 +359,3 @@ fun SecurityDialog(
         }
     }
 }
-

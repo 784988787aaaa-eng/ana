@@ -1,14 +1,13 @@
 package com.smartledger.aldaftar.ui.screens
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,15 +27,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -55,11 +59,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.domain.business.BusinessPhoneFormatter
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogActions
@@ -73,11 +77,11 @@ import com.smartledger.aldaftar.ui.screens.settings.components.LogoCropDialog
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel
 import com.smartledger.aldaftar.ui.viewmodel.PhoneInputData
+import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 sealed interface BusinessProfileDialogState {
     object None : BusinessProfileDialogState
@@ -98,19 +102,42 @@ fun BusinessProfileScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 48.dp),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = stringResource(id = R.string.biz_title),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            textAlign = TextAlign.Center
-                        )
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = activeThemeColor.copy(alpha = 0.12f),
+                            border = BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.25f))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Storefront,
+                                    contentDescription = null,
+                                    tint = activeThemeColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.biz_title),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = stringResource(id = R.string.biz_desc_header),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -121,12 +148,17 @@ fun BusinessProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.biz_back),
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = activeThemeColor
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface
+                ),
+                modifier = Modifier.border(
+                    width = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                 )
             )
         },
@@ -155,15 +187,15 @@ fun BusinessProfileDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
         MizanDialogCard(
-            maxWidth = MizanDialogTokens.compactMaxWidth,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+            maxWidth = MizanDialogTokens.maxWidth,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
             MizanDialogHeader(
                 title = stringResource(id = R.string.biz_title),
                 subtitle = stringResource(id = R.string.biz_desc_header),
-                icon = null,
+                icon = Icons.Default.Business,
                 iconTint = MaterialTheme.colorScheme.primary,
-                isCentered = true,
+                isCentered = false,
                 onCloseClick = dismissDialog
             )
 
@@ -292,19 +324,19 @@ private fun BusinessProfileForm(
                         .imePadding()
                         .navigationBarsPadding()
                         .verticalScroll(rememberScrollState())
-                        .padding(bottom = 12.dp)
+                        .padding(bottom = 4.dp)
                 } else {
                     Modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
                         .imePadding()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .padding(bottom = 12.dp)
+                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                        .padding(bottom = 14.dp)
                 }
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         BusinessProfileLogoSection(
             logoBitmapState = logoBitmapState,
@@ -334,9 +366,10 @@ private fun BusinessProfileForm(
                 text = uiState.nameError!!,
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
+                    .padding(horizontal = 6.dp)
             )
         }
 
@@ -371,16 +404,32 @@ private fun BusinessProfileForm(
         )
 
         if (uiState.errorMessage != null) {
-            Text(
-                text = uiState.errorMessage!!,
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
+                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = uiState.errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
 
         if (isDialog) {
@@ -388,13 +437,14 @@ private fun BusinessProfileForm(
                 confirmText = stringResource(id = R.string.biz_btn_save),
                 onConfirm = { handleSave() },
                 confirmIcon = Icons.Default.Check,
+                isConfirmLoading = uiState.isSaving,
                 cancelText = stringResource(id = R.string.common_cancel),
                 onCancel = onClose,
                 extraActionText = stringResource(id = R.string.biz_btn_reset),
                 onExtraAction = { handleReset() }
             )
         } else {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier
@@ -403,7 +453,7 @@ private fun BusinessProfileForm(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                androidx.compose.material3.OutlinedButton(
+                OutlinedButton(
                     onClick = { handleReset() },
                     modifier = Modifier
                         .weight(1f)
@@ -411,6 +461,7 @@ private fun BusinessProfileForm(
                         .testTag("biz_reset_button"),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                     colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.04f),
                         contentColor = MaterialTheme.colorScheme.error
                     ),
                     shape = RoundedCornerShape(12.dp)
@@ -438,7 +489,7 @@ private fun BusinessProfileForm(
                     onClick = { handleSave() },
                     enabled = !uiState.isSaving,
                     modifier = Modifier
-                        .weight(1.3f)
+                        .weight(1.35f)
                         .height(48.dp)
                         .testTag("biz_save_button"),
                     colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor),
@@ -455,7 +506,11 @@ private fun BusinessProfileForm(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (uiState.isSaving) "جاري الحفظ..." else stringResource(id = R.string.biz_btn_save),
+                            text = if (uiState.isSaving) {
+                                stringResource(id = R.string.biz_saving_progress)
+                            } else {
+                                stringResource(id = R.string.biz_btn_save)
+                            },
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center

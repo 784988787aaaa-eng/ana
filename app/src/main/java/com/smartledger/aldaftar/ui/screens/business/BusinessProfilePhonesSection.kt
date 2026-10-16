@@ -7,9 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,20 +22,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.business.BusinessPhoneFormatter
 import com.smartledger.aldaftar.domain.business.CountryCode
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.PhoneInputData
 
 @Composable
@@ -72,162 +73,200 @@ fun BusinessProfilePhonesSection(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Column(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        tonalElevation = if (isDialog) 0.dp else 1.dp
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            color = activeThemeColor.copy(alpha = 0.055f),
-            border = BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.16f))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Section Header Row
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = null,
-                        tint = activeThemeColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = stringResource(id = R.string.biz_phones_section),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.testTag("biz_phones_section")
-                    )
-                    val validCount = phoneInputs.count { it.nationalNumber.isNotBlank() }
-                    if (validCount > 0) {
+                    Surface(
+                        modifier = Modifier.size(30.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = activeThemeColor.copy(alpha = 0.12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = null,
+                                tint = activeThemeColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.biz_phones_section),
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.testTag("biz_phones_section")
+                            )
+                            val validCount = phoneInputs.count { it.nationalNumber.isNotBlank() }
+                            if (validCount > 0) {
+                                Text(
+                                    text = validCount.toString(),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = activeThemeColor,
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(activeThemeColor.copy(alpha = 0.14f))
+                                        .padding(horizontal = 7.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
                         Text(
-                            text = validCount.toString(),
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeThemeColor,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(activeThemeColor.copy(alpha = 0.12f))
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                            text = stringResource(id = R.string.biz_phones_subtitle),
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
                 if (phoneInputs.size < 3) {
-                    TextButton(
+                    FilledTonalButton(
                         onClick = onAddPhone,
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                        modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 32.dp)
+                        modifier = Modifier.height(32.dp),
+                        shape = RoundedCornerShape(9.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = activeThemeColor.copy(alpha = 0.12f),
+                            contentColor = activeThemeColor
+                        ),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.AddCircleOutline,
                             contentDescription = null,
-                            tint = activeThemeColor,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = stringResource(id = R.string.biz_btn_add_phone),
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeThemeColor
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
-        }
 
-        phoneInputs.forEachIndexed { index, phoneData ->
-            val primaryLabel = stringResource(id = R.string.biz_label_primary_phone)
-            val secLabel = stringResource(id = R.string.biz_label_secondary_phone, index + 1)
-            val fieldLabel = if (index == 0) primaryLabel else secLabel
-            val errorMessage = phoneErrors[index]
-            val isLastItem = index == phoneInputs.lastIndex
+            phoneInputs.forEachIndexed { index, phoneData ->
+                val primaryLabel = stringResource(id = R.string.biz_label_primary_phone)
+                val secLabel = stringResource(id = R.string.biz_label_secondary_phone, index + 1)
+                val fieldLabel = if (index == 0) primaryLabel else secLabel
+                val errorMessage = phoneErrors[index]
+                val isLastItem = index == phoneInputs.lastIndex
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateContentSize(),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    // 1. Country Code Selector
-                    CountryCodeSelector(
-                        selectedCode = phoneData.countryCode,
-                        onCodeSelected = { newCode ->
-                            onPhoneDataChange(index, phoneData.copy(countryCode = newCode))
-                        },
-                        activeThemeColor = activeThemeColor
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // 1. Country Code Selector
+                        CountryCodeSelector(
+                            selectedCode = phoneData.countryCode,
+                            onCodeSelected = { newCode ->
+                                onPhoneDataChange(index, phoneData.copy(countryCode = newCode))
+                            },
+                            activeThemeColor = activeThemeColor
+                        )
 
-                    // 2. Phone National Number Input
-                    OutlinedTextField(
-                        value = phoneData.nationalNumber,
-                        onValueChange = { rawInput ->
-                            val clean = BusinessPhoneFormatter.cleanDigits(rawInput).replace("+", "")
-                            if (clean.length <= 15) {
-                                onPhoneDataChange(index, phoneData.copy(nationalNumber = clean))
-                            }
-                        },
-                        label = { Text(text = fieldLabel, fontSize = 11.5.sp) },
-                        placeholder = { Text(text = "771234567", fontSize = 11.5.sp) },
-                        isError = errorMessage != null,
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("biz_phone_input_$index"),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = activeThemeColor,
-                            focusedLabelColor = activeThemeColor,
-                            cursorColor = activeThemeColor
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone,
-                            imeAction = if (isLastItem) ImeAction.Done else ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                            onDone = { focusManager.clearFocus() }
-                        ),
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start, fontSize = 13.sp)
-                    )
-
-                    // 3. Delete button for secondary numbers
-                    if (index > 0) {
-                        IconButton(
-                            onClick = { onRemovePhone(index) },
-                            modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp),
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(id = R.string.biz_desc_delete_phone),
-                                modifier = Modifier.size(18.dp)
+                        // 2. Phone National Number Input
+                        OutlinedTextField(
+                            value = phoneData.nationalNumber,
+                            onValueChange = { rawInput ->
+                                val clean = BusinessPhoneFormatter.cleanDigits(rawInput).replace("+", "")
+                                if (clean.length <= 15) {
+                                    onPhoneDataChange(index, phoneData.copy(nationalNumber = clean))
+                                }
+                            },
+                            label = { Text(text = fieldLabel, fontSize = 11.5.sp) },
+                            placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_phone), fontSize = 11.5.sp) },
+                            isError = errorMessage != null,
+                            singleLine = true,
+                            shape = MizanDialogTokens.inputShape,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("biz_phone_input_$index"),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = activeThemeColor,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedLabelColor = activeThemeColor,
+                                cursorColor = activeThemeColor,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Phone,
+                                imeAction = if (isLastItem) ImeAction.Done else ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                                onDone = { focusManager.clearFocus() }
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = TextAlign.Start,
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
+                        )
+
+                        // 3. Delete button for secondary numbers
+                        if (index > 0) {
+                            IconButton(
+                                onClick = { onRemovePhone(index) },
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.08f))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteOutline,
+                                    contentDescription = stringResource(id = R.string.biz_desc_delete_phone),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
-                }
 
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
                 }
             }
         }
@@ -250,11 +289,11 @@ private fun CountryCodeSelector(
         Surface(
             modifier = Modifier
                 .height(56.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(MizanDialogTokens.inputShape)
                 .clickable { expanded = true },
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            shape = MizanDialogTokens.inputShape,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 10.dp),
@@ -269,7 +308,7 @@ private fun CountryCodeSelector(
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "اختر مفتاح الدولة",
+                    contentDescription = stringResource(id = R.string.biz_select_country_code_desc),
                     tint = activeThemeColor,
                     modifier = Modifier.size(18.dp)
                 )

@@ -1,14 +1,17 @@
 package com.smartledger.aldaftar.ui.screens.settings.components
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,10 +28,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.foundation.gestures.detectTransformGestures
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import java.util.Locale
 
 @Composable
 fun LogoCropDialog(
@@ -56,64 +62,70 @@ fun LogoCropDialog(
     val x0 = (kPx - wDraw) / 2f
     val y0 = (kPx - hDraw) / 2f
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = MizanDialogTokens.shape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    MizanAnimatedDialog(onDismissRequest = onDismiss) { dismissDialog ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.biz_crop_title),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            MizanDialogHeader(
+                title = stringResource(id = R.string.biz_crop_title),
+                subtitle = stringResource(id = R.string.biz_crop_subtitle),
+                icon = Icons.Default.Crop,
+                iconTint = activeThemeColor,
+                onCloseClick = dismissDialog
+            )
 
-                Box(
-                    modifier = Modifier
-                        .size(200.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant, if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp))
-                        .clip(if (cropShapeIsCircle) CircleShape else RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        bitmap = editingBitmap.asImageBitmap(),
-                        contentDescription = stringResource(id = R.string.biz_crop_preview_desc),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offsetX,
-                                translationY = offsetY
-                            )
-                            .pointerInput(Unit) {
-                                detectTransformGestures { _, pan, zoom, _ ->
-                                    scale = (scale * zoom).coerceIn(1f, 5f)
-                                    val maxTx = (centerPx - x0) * scale - centerPx
-                                    val minTx = centerPx - (x0 + wDraw - centerPx) * scale
-                                    val maxTy = (centerPx - y0) * scale - centerPx
-                                    val minTy = centerPx - (y0 + hDraw - centerPx) * scale
-                                    offsetX = (offsetX + pan.x).coerceIn(minTx, maxTx)
-                                    offsetY = (offsetY + pan.y).coerceIn(minTy, maxTy)
-                                }
-                            },
-                        contentScale = ContentScale.Crop
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        if (cropShapeIsCircle) CircleShape else RoundedCornerShape(14.dp)
                     )
-                }
+                    .border(
+                        1.5.dp,
+                        activeThemeColor.copy(alpha = 0.45f),
+                        if (cropShapeIsCircle) CircleShape else RoundedCornerShape(14.dp)
+                    )
+                    .clip(if (cropShapeIsCircle) CircleShape else RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    bitmap = editingBitmap.asImageBitmap(),
+                    contentDescription = stringResource(id = R.string.biz_crop_preview_desc),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offsetX,
+                            translationY = offsetY
+                        )
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(1f, 5f)
+                                val maxTx = (centerPx - x0) * scale - centerPx
+                                val minTx = centerPx - (x0 + wDraw - centerPx) * scale
+                                val maxTy = (centerPx - y0) * scale - centerPx
+                                val minTy = centerPx - (y0 + hDraw - centerPx) * scale
+                                offsetX = (offsetX + pan.x).coerceIn(minTx, maxTx)
+                                offsetY = (offsetY + pan.y).coerceIn(minTy, maxTy)
+                            }
+                        },
+                    contentScale = ContentScale.Crop
+                )
+            }
 
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -122,13 +134,13 @@ fun LogoCropDialog(
                     ) {
                         Text(
                             text = stringResource(R.string.biz_zoom_and_pan),
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = String.format(java.util.Locale.ENGLISH, "%.1fx", scale),
-                            fontSize = 11.sp,
+                            text = String.format(Locale.ENGLISH, stringResource(R.string.biz_scale_format), scale),
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = activeThemeColor
                         )
@@ -152,78 +164,74 @@ fun LogoCropDialog(
                         )
                     )
                 }
+            }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = { onCropShapeChange(false) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (!cropShapeIsCircle) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        contentColor = if (!cropShapeIsCircle) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                 ) {
-                    Button(
-                        onClick = { onCropShapeChange(false) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!cropShapeIsCircle) activeThemeColor else MaterialTheme.colorScheme.outlineVariant,
-                            contentColor = if (!cropShapeIsCircle) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(text = stringResource(id = R.string.biz_crop_square), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = { onCropShapeChange(true) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (cropShapeIsCircle) activeThemeColor else MaterialTheme.colorScheme.outlineVariant,
-                            contentColor = if (cropShapeIsCircle) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(text = stringResource(id = R.string.biz_crop_circle), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = {
-                            onRotate()
-                            scale = 1f
-                            offsetX = 0f
-                            offsetY = 0f
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.outlineVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.biz_rotate), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
+                    Text(text = stringResource(id = R.string.biz_crop_square), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Button(
+                    onClick = { onCropShapeChange(true) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (cropShapeIsCircle) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        contentColor = if (cropShapeIsCircle) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(text = stringResource(id = R.string.biz_btn_cancel), fontSize = 13.sp)
-                    }
+                    Text(text = stringResource(id = R.string.biz_crop_circle), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
 
-                    Button(
-                        onClick = { onApply(scale, offsetX, offsetY) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = activeThemeColor)
-                    ) {
-                        Text(text = stringResource(id = R.string.biz_btn_apply), fontSize = 13.sp)
-                    }
+                OutlinedButton(
+                    onClick = {
+                        onRotate()
+                        scale = 1f
+                        offsetX = 0f
+                        offsetY = 0f
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp),
+                    border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.35f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = activeThemeColor
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.biz_rotate), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
+
+            MizanDialogActions(
+                confirmText = stringResource(id = R.string.biz_btn_apply),
+                confirmIcon = Icons.Default.Check,
+                confirmColor = activeThemeColor,
+                onConfirm = { onApply(scale, offsetX, offsetY) },
+                cancelText = stringResource(id = R.string.biz_btn_cancel),
+                onCancel = dismissDialog
+            )
         }
     }
 }

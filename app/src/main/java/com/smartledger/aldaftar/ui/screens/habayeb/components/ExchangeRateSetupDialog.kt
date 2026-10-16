@@ -1,8 +1,6 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import android.widget.Toast
-import java.math.BigDecimal
-import java.math.RoundingMode
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -13,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,15 +22,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,30 +42,37 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
-import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
-import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.components.ConfigureDialogImeWindow
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.MizanDialogInnerCard
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.mizanColors
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun ExchangeRateSetupContent(
@@ -101,7 +101,7 @@ fun ExchangeRateSetupContent(
                 bd
             } else {
                 runCatching {
-                    BigDecimal.ONE.divide(bd, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+                    BigDecimal.ONE.divide(bd, FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
                 }.getOrDefault(bd)
             }
             HabayebMathHelper.formatActiveRateBadge(rateForDisplay)
@@ -112,9 +112,9 @@ fun ExchangeRateSetupContent(
 
     var rateTfv by remember(computedInitialRate) {
         mutableStateOf(
-            androidx.compose.ui.text.input.TextFieldValue(
+            TextFieldValue(
                 text = computedInitialRate,
-                selection = androidx.compose.ui.text.TextRange(computedInitialRate.length)
+                selection = TextRange(computedInitialRate.length)
             )
         )
     }
@@ -128,12 +128,12 @@ fun ExchangeRateSetupContent(
         isEquationFlipped = !isEquationFlipped
         if (currentBd != null && currentBd > BigDecimal.ZERO) {
             val flippedBd = runCatching {
-                BigDecimal.ONE.divide(currentBd, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+                BigDecimal.ONE.divide(currentBd, FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
             }.getOrNull()
             val newText = if (flippedBd != null) HabayebMathHelper.formatActiveRateBadge(flippedBd) else ""
-            rateTfv = androidx.compose.ui.text.input.TextFieldValue(
+            rateTfv = TextFieldValue(
                 text = newText,
-                selection = androidx.compose.ui.text.TextRange(newText.length)
+                selection = TextRange(newText.length)
             )
         }
     }
@@ -152,7 +152,7 @@ fun ExchangeRateSetupContent(
         targetValue = when {
             isChecked -> mizanColors.credit
             showUncheckedError -> mizanColors.debt
-            else -> activeThemeColor.copy(alpha = 0.85f)
+            else -> activeThemeColor
         },
         animationSpec = tween(durationMillis = 180),
         label = "statusColor"
@@ -163,46 +163,46 @@ fun ExchangeRateSetupContent(
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
-            modifier = modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            modifier = modifier.padding(horizontal = 2.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Conversion Display & Input in a compact styled Mizan card
+            // 1. Conversion Equation Studio Card
             MizanDialogInnerCard(
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surface)
                         .border(
                             width = if (isFocused) 1.5.dp else 1.dp,
-                            color = if (isFocused) activeThemeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(8.dp)
+                            color = if (isFocused) activeThemeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
+                            shape = RoundedCornerShape(12.dp)
                         )
-                        .padding(horizontal = 6.dp),
+                        .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(5.dp),
-                        color = activeThemeColor.copy(alpha = 0.10f)
+                        shape = RoundedCornerShape(8.dp),
+                        color = activeThemeColor.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "1 $displayBase =",
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = stringResource(R.string.currency_settings_dialog_unit_rate_prefix, displayBase),
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
                             color = activeThemeColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                         )
                     }
 
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = 2.dp),
+                            .padding(horizontal = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         BasicTextField(
@@ -212,7 +212,7 @@ fun ExchangeRateSetupContent(
                                 val isPartialDecimal = cleanedText.isEmpty() || cleanedText == "." || cleanedText.endsWith(".")
                                 val parsed = cleanedText.toBigDecimalOrNull()
                                 val decimalPlaces = cleanedText.substringAfter('.', "").length
-                                if (isPartialDecimal || (parsed != null && parsed > BigDecimal.ZERO && decimalPlaces <= com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale)) {
+                                if (isPartialDecimal || (parsed != null && parsed > BigDecimal.ZERO && decimalPlaces <= FinancialPolicy.rateScale)) {
                                     rateTfv = inputTfv.copy(text = cleanedText)
                                 }
                             },
@@ -221,11 +221,11 @@ fun ExchangeRateSetupContent(
                                 .onFocusChanged { isFocused = it.isFocused }
                                 .focusRequester(focusRequester),
                             singleLine = true,
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(activeThemeColor),
+                            cursorBrush = SolidColor(activeThemeColor),
                             textStyle = TextStyle(
                                 textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = activeThemeColor
                             ),
                             keyboardOptions = KeyboardOptions(
@@ -246,7 +246,7 @@ fun ExchangeRateSetupContent(
                                     if (rateStr.isEmpty()) {
                                         Text(
                                             text = stringResource(id = R.string.habayeb_exchange_rate_placeholder),
-                                            fontSize = 11.sp,
+                                            fontSize = 12.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                             textAlign = TextAlign.Center
                                         )
@@ -260,33 +260,36 @@ fun ExchangeRateSetupContent(
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(5.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                     ) {
                         Text(
                             text = displayTarget,
-                            fontSize = 11.5.sp,
+                            fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                         )
                     }
 
                     IconButton(
                         onClick = { toggleDirection() },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(activeThemeColor.copy(alpha = 0.12f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Sync,
                             contentDescription = stringResource(R.string.currency_exchange_toggle_desc),
                             tint = activeThemeColor,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 }
             }
 
-            // Compact Confirmation Check Card
+            // 2. Interactive Confirmation Check Card
             Surface(
                 onClick = {
                     isChecked = !isChecked
@@ -295,8 +298,8 @@ fun ExchangeRateSetupContent(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = if (isChecked) activeThemeColor.copy(alpha = 0.10f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(12.dp),
+                color = if (isChecked) activeThemeColor.copy(alpha = 0.10f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                 border = BorderStroke(
                     width = 1.dp,
                     color = if (isChecked) activeThemeColor else if (showUncheckedError) mizanColors.debt else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -305,13 +308,13 @@ fun ExchangeRateSetupContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(18.dp)
+                            .size(20.dp)
                             .clip(CircleShape)
                             .background(if (isChecked) activeThemeColor else Color.Transparent)
                             .border(
@@ -326,14 +329,14 @@ fun ExchangeRateSetupContent(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(11.dp)
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                     }
 
                     Text(
                         text = stringResource(id = R.string.habayeb_confirm_exchange_rate_question),
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium,
                         color = if (isChecked) activeThemeColor else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
@@ -343,71 +346,40 @@ fun ExchangeRateSetupContent(
 
             Text(
                 text = stringResource(id = R.string.habayeb_exchange_rate_hint_text),
-                fontSize = 9.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                fontSize = 10.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                lineHeight = 12.sp
+                lineHeight = 15.sp
             )
 
-            // Compact Action Buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.habayeb_cancel),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        val rateBD = try { BigDecimal(rateStr.trim()) } catch (_: Exception) { null }
-                        if (rateBD == null || rateBD.compareTo(BigDecimal.ZERO) <= 0) {
-                            Toast.makeText(context, validRateToastStr, Toast.LENGTH_SHORT).show()
-                        } else if (!isChecked) {
-                            showUncheckedError = true
-                            Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
+            // 3. Action Buttons
+            MizanDialogActions(
+                confirmText = stringResource(id = R.string.habayeb_save),
+                confirmIcon = Icons.Default.Check,
+                confirmColor = statusColor,
+                confirmContainerColor = statusColor,
+                onConfirm = {
+                    val rateBD = try { BigDecimal(rateStr.trim()) } catch (_: Exception) { null }
+                    if (rateBD == null || rateBD.compareTo(BigDecimal.ZERO) <= 0) {
+                        Toast.makeText(context, validRateToastStr, Toast.LENGTH_SHORT).show()
+                    } else if (!isChecked) {
+                        showUncheckedError = true
+                        Toast.makeText(context, confirmRateFirstToastStr, Toast.LENGTH_SHORT).show()
+                    } else {
+                        val effectiveRate = if (displayBase == selectedCurrency && displayTarget == rateTargetCurrency) {
+                            rateBD
                         } else {
-                            val effectiveRate = if (displayBase == selectedCurrency && displayTarget == rateTargetCurrency) {
-                                rateBD
-                            } else {
-                                runCatching {
-                                    BigDecimal.ONE.divide(rateBD, com.smartledger.aldaftar.domain.model.FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
-                                }.getOrDefault(rateBD)
-                            }
-                            onConfirm(effectiveRate)
+                            runCatching {
+                                BigDecimal.ONE.divide(rateBD, FinancialPolicy.rateScale, RoundingMode.HALF_EVEN)
+                            }.getOrDefault(rateBD)
                         }
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = statusColor),
-                    modifier = Modifier
-                        .weight(1.2f)
-                        .height(36.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.habayeb_save),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
+                        onConfirm(effectiveRate)
+                    }
+                },
+                cancelText = stringResource(id = R.string.habayeb_cancel),
+                onCancel = onDismiss
+            )
         }
     }
 }
@@ -425,56 +397,16 @@ fun ExchangeRateSetupDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
         MizanDialogCard(
-            maxWidth = MizanDialogTokens.compactMaxWidth
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(activeThemeColor.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MonetizationOn,
-                            contentDescription = null,
-                            tint = activeThemeColor,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Text(
-                        text = stringResource(id = R.string.currency_settings_dialog_title),
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                IconButton(
-                    onClick = dismissDialog,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.desc_close),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            }
+            MizanDialogHeader(
+                title = stringResource(id = R.string.currency_settings_dialog_title),
+                subtitle = stringResource(id = R.string.currency_setup_dialog_subtitle),
+                icon = Icons.Default.MonetizationOn,
+                iconTint = activeThemeColor,
+                onCloseClick = dismissDialog
+            )
 
             ExchangeRateSetupContent(
                 selectedCurrency = selectedCurrency,

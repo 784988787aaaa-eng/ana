@@ -936,4 +936,191 @@
     <string name="toast_items_permanently_deleted">تم الحذف نهائياً</string>
     <string name="currency_exchange_toggle_desc">تبديل اتجاه سعر الصرف</string>
     <string name="sec_desc_toggle_pin_visibility">إظهار أو إخفاء رمز المرور</string>
+    <!-- ============================================================================== -->
+    <!-- 16. نصوص الهيكلة الاحترافية للنوافذ والترخيص والأمان والعملات والنسخ الاحتياطي     -->
+    <!-- ============================================================================== -->
+
+    <!-- النسخ الاحتياطي والمزامنة -->
+    <string name="backup_auto_protection_strip">الحفظ التلقائي اليومي مفعّل ومؤمّن بتشفير قياسي</string>
+    <string name="backup_encryption_badge">مشفر AES</string>
+    <string name="backup_format_sna_badge">صيغة .SNA</string>
+    <string name="backup_snackbar_local_saved">تم حفظ الأرشيف بنجاح: %1$s</string>
+    <string name="backup_snackbar_cloud_saved">تم حفظ النسخة السحابية: %1$s</string>
+    <string name="backup_busy_connecting_drive">جارٍ الاتصال بحساب Google Drive...</string>
+    <string name="backup_busy_connecting_google">جارٍ الاتصال بحساب Google...</string>
+    <string name="backup_busy_confirming_google">جارٍ تأكيد حساب Google...</string>
+    <string name="backup_busy_disconnecting_google">جارٍ فصل حساب Google...</string>
+    <string name="backup_busy_loading_cloud_list">جارٍ تحميل قائمة النسخ من السحابة...</string>
+    <string name="backup_busy_preparing_backup">جارٍ تجهيز النسخة...</string>
+    <string name="backup_busy_uploading_drive">جارٍ الرفع إلى Google Drive...</string>
+    <string name="backup_busy_preparing_local">جارٍ تجهيز النسخة المحلية...</string>
+    <string name="backup_busy_preparing_archive">جارٍ تجهيز ملف الأرشيف...</string>
+    <string name="backup_busy_restoring">جارٍ استعادة النسخة...</string>
+    <string name="backup_busy_finding_latest">جاري البحث عن أحدث نسخة سحابية...</string>
+    <string name="backup_busy_downloading_and_restoring">جاري تنزيل النسخة وفك التشفير واستعادة السجلات...</string>
+    <string name="backup_busy_deleting">جارٍ حذف النسخة...</string>
+    <string name="backup_busy_wiping_data">جارٍ مسح البيانات...</string>
+    <string name="backup_err_connect_google_short">تعذر ربط حساب Google</string>
+    <string name="backup_err_connect_drive_short">تعذر ربط Google Drive</string>
+    <string name="backup_err_confirm_drive_short">تعذر تأكيد ربط Google Drive</string>
+    <string name="backup_err_load_cloud_list">تعذر تحميل النسخ السحابية</string>
+    <string name="backup_err_connect_drive_first">يرجى ربط حساب Google Drive أولاً</string>
+    <string name="backup_notif_uploaded_title">تم رفع النسخة إلى Google Drive</string>
+    <string name="backup_notif_uploaded_body">تم حفظ الأرشيف: %1$s في Google Drive / الدفتر الذكي.</string>
+    <string name="backup_err_operation_generic">تعذر تنفيذ العملية</string>
+    <string name="backup_archive_subtitle_header">استعراض وإدارة النسخ المحفوظة في Google Drive</string>
+
+    <!-- إعدادات القفل والأمان -->
+    <string name="sec_setup_subtitle">أدخل رمزاً سرياً من 4 أرقام لتأمين فتح الدفتر</string>
+    <string name="sec_recovery_subtitle">تُستخدم عبارة الأمان لاستعادة الدخول عند نسيان الرمز</string>
+    <string name="sec_pin_match_ok">متطابق ✓</string>
+    <string name="sec_pin_match_err">غير متطابق</string>
+    <string name="sec_pin_digits_badge">4 أرقام</string>
+    <string name="sec_recovery_badge">الاسترداد الآمن</string>
+    <string name="sec_active_shield_badge">تشفير قياسي نشط</string>
+    <string name="sec_ack_title">تأكيد حفظ بيانات الأمان</string>
+
+    <!-- بيانات النشاط التجاري -->
+    <string name="biz_logo_subtitle">يظهر في ترويسة التقارير وكشوفات الحساب PDF</string>
+    <string name="biz_logo_choose_btn">اختيار شعار</string>
+    <string name="biz_logo_change_btn">تغيير الشعار</string>
+    <string name="biz_logo_remove_btn">حذف الشعار</string>
+    <string name="biz_details_subtitle">بيانات الهوية التجارية المعتمدة في الكشوفات</string>
+    <string name="biz_phones_subtitle">تظهر أرقام التواصل في ترويسة التقارير المالية</string>
+    <string name="biz_saving_progress">جاري الحفظ...</string>
+    <string name="biz_select_country_code_desc">اختر مفتاح الدولة</string>
+    <string name="biz_char_counter_pattern">%1$d/%2$d</string>
+    <string name="biz_err_name_required">اسم النشاط التجاري مطلوب</string>
+    <string name="biz_err_enter_name_prompt">يرجى كتابة اسم النشاط التجاري</string>
+    <string name="biz_err_fix_phones">يرجى تصحيح أرقام الهواتف المدخلة</string>
+    <string name="biz_err_save_failed_fmt">حدث خطأ أثناء الحفظ: %1$s</string>
+    <string name="biz_err_reset_failed">تعذر إعادة الضبط</string>
+    <string name="biz_err_phone_length">رقم الهاتف يجب أن يتكون من 6 إلى 12 رقماً</string>
+    <string name="biz_crop_subtitle">اضبط موضع وحجم الشعار ليظهر بأفضل دقة في التقارير</string>
+    <string name="biz_scale_format">%1$.1fx</string>
+
+    <!-- إعدادات العملة وأسعار الصرف -->
+    <string name="currency_settings_dialog_subtitle">ضبط العملة الرئيسية وأسعار صرف العملات الأجنبية</string>
+    <string name="currency_primary_badge">العملة الرئيسية</string>
+    <string name="currency_edit_rate_for">تحديد عملة الصرف:</string>
+    <string name="currency_rate_equation_label">معادلة التسعير والتحويل</string>
+    <string name="currency_reciprocal_rate_pattern">%1$s (المعادل العكسي: 1 %2$s = %3$s %4$s)</string>
+    <string name="currency_direct_rate_pattern">1 %1$s = %2$s %3$s</string>
+    <string name="currency_recommended_badge">موصى به</string>
+    <string name="currency_default_option_suffix">%1$s (افتراضياً)</string>
+    <string name="currency_revalue_subtitle">اختر نطاق تطبيق سعر الصرف الجديد على السجلات</string>
+    <string name="currency_swap_direction_label">عكس الاتجاه</string>
+    <string name="currency_setup_dialog_subtitle">تحديد سعر الصرف المعتمد للتحويل التلقائي</string>
+
+    <!-- التفعيل والتراخيص وطلب الترخيص -->
+    <string name="license_title_lifetime">ترخيص مدى الحياة</string>
+    <string name="license_title_trial_active">نسخة تجريبية نشطة</string>
+    <string name="license_title_trial_expired">انتهت الفترة التجريبية</string>
+    <string name="license_title_verification_required">تحديث التحقق من الترخيص</string>
+    <string name="license_title_revoked">الترخيص غير صالح</string>
+    <string name="license_title_activate">التفعيل والتراخيص</string>
+    <string name="license_subtitle_active">الترخيص نشط ومُعتمد رسمياً</string>
+    <string name="license_subtitle_inactive">تفعيل النسخة الكاملة وحماية السجلات والبيانات</string>
+    <string name="license_badge_active">مفعّل</string>
+    <string name="license_badge_trial">تجريبي</string>
+    <string name="license_banner_limit_reached">انتهت النسخة التجريبية (%1$d/%2$d عملية) — يرجى تفعيل النسخة الكاملة لمتابعة التسجيل.</string>
+    <string name="license_banner_trial_expired">انتهت الفترة التجريبية لهذا الترخيص. يرجى التفعيل للمتابعة.</string>
+    <string name="license_banner_device_replaced">تم تفعيل الحساب على جهاز آخر، وتم إلغاء تفعيل هذا الجهاز.</string>
+    <string name="license_banner_revoked">تعذر اعتماد الترخيص الحالي. يرجى تفعيل ترخيص صالح للمتابعة.</string>
+    <string name="license_banner_verification_required">يلزم إعادة التحقق من الترخيص عبر الإنترنت لمتابعة العمليات.</string>
+    <string name="license_banner_trial_days_remaining">فترة تجريبية نشطة (متبقي %1$d يوماً).</string>
+    <string name="license_banner_trial_ops_remaining">المتبقي من النسخة التجريبية: %1$d عملية من أصل %2$d.</string>
+    <string name="license_tab_account">حساب Google السحابي</string>
+    <string name="license_tab_local_token">رمز الترخيص المحلي</string>
+    <string name="license_google_signin_desc">سجّل الدخول بحساب Google ليتم تفعيل التطبيق تلقائياً بمجرد ترخيص حسابك أو لاسترجاع ترخيصك السحابي.</string>
+    <string name="license_btn_google_signin">تسجيل الدخول بحساب Google</string>
+    <string name="license_google_connected_default">حساب Google متصل</string>
+    <string name="license_google_status_needs_code">الحساب بحاجة للتفعيل لأول مرة</string>
+    <string name="license_google_status_waiting_cloud">الحساب متصل • بانتظار الترخيص السحابي</string>
+    <string name="license_btn_signout">تسجيل الخروج</string>
+    <string name="license_btn_check_cloud">التحقق من الترخيص السحابي الآن</string>
+    <string name="license_prompt_enter_first_code">أدخل كود التفعيل لتفعيل حسابك لأول مرة:</string>
+    <string name="license_prompt_enter_link_code">أو أدخل كود التفعيل الممنوح لك لربط الترخيص بهذا الحساب:</string>
+    <string name="license_field_activation_code_label">رمز التفعيل (من المطور)</string>
+    <string name="license_field_activation_code_placeholder">أدخل رمز التفعيل هنا...</string>
+    <string name="license_btn_activate_account">تفعيل الترخيص للحساب</string>
+    <string name="license_local_section_desc">فعّل التطبيق محلياً بدون إنترنت عبر لصق رمز الترخيص المشفر الصادر لجهازك.</string>
+    <string name="license_field_local_token_label">رمز الترخيص المحلي المشفر</string>
+    <string name="license_field_local_token_placeholder">الصق رمز الترخيص الموقع هنا...</string>
+    <string name="license_btn_paste_token">لصق</string>
+    <string name="license_btn_clear_token">مسح</string>
+    <string name="license_btn_activate_local">تفعيل برمز الترخيص المحلي</string>
+    <string name="license_device_code_label">رمز الجهاز</string>
+    <string name="license_device_code_subtitle">مُعرّف الجهاز المعتمد لإصدار التراخيص</string>
+    <string name="license_btn_copy">نسخ</string>
+    <string name="license_toast_device_code_copied">تم نسخ رمز الجهاز إلى الحافظة</string>
+    <string name="license_toast_google_signin_err">تعذر تسجيل الدخول بحساب Google: %1$s</string>
+    <string name="license_btn_open_request_window">طلب ترخيص جديد للنسخة الكاملة</string>
+    <string name="license_btn_open_request_sub">إصدار ترخيص رسمي (سحابي أو محلي) وتفعيله فوراً</string>
+    <string name="license_btn_close">إغلاق</string>
+    <string name="license_btn_continue_later">المتابعة لاحقاً</string>
+    <string name="license_device_alert_title">تنبيه الأجهزة المرتبطة</string>
+    <string name="license_btn_resign_in">تسجيل الدخول مجدداً</string>
+    <string name="license_active_lifetime_badge">ترخيص مدى الحياة — نشط</string>
+    <string name="license_active_trial_badge">نسخة تجريبية — نشطة</string>
+    <string name="license_active_remaining_days">متبقي %1$d يوماً</string>
+    <string name="license_active_account_fmt">الحساب: %1$s</string>
+    <string name="license_active_code_fmt">كود الحساب: %1$s</string>
+    <string name="license_active_devices_fmt">الأجهزة: %1$d</string>
+    <string name="license_active_unlimited_note">جميع العمليات غير محدودة ومحمية بالكامل على هذا الجهاز.</string>
+
+    <!-- نافذة طلب الترخيص الاحترافية -->
+    <string name="license_req_dialog_title">طلب ترخيص النسخة الكاملة</string>
+    <string name="license_req_dialog_subtitle">اختر نوع وباقة الترخيص لإرسال طلب معتمد ببيانات جهازك</string>
+    <string name="license_req_feature_1">عمليات غير محدودة</string>
+    <string name="license_req_feature_2">مزامنة سحابية آمنة</string>
+    <string name="license_req_feature_3">حماية وتقارير احترافية</string>
+    <string name="license_req_step_type_title">١. اختر آلية ربط الترخيص</string>
+    <string name="license_req_type_cloud_title">ترخيص سحابي (مرتبط بالحساب)</string>
+    <string name="license_req_type_cloud_desc">يتفعل تلقائياً عبر بريدك في Google ويدعم المزامنة والاستعادة السحابية.</string>
+    <string name="license_req_type_local_title">ترخيص محلي (مرتبط بالجهاز)</string>
+    <string name="license_req_type_local_desc">يعمل بالكامل بدون إنترنت (أوفلاين) عبر رمز مشفر مخصص لهذا الجهاز.</string>
+    <string name="license_req_step_plan_title">٢. اختر باقة الترخيص</string>
+    <string name="license_req_plan_lifetime_title">ترخيص مدى الحياة (دائم)</string>
+    <string name="license_req_plan_lifetime_badge">الأكثر طلباً ★</string>
+    <string name="license_req_plan_lifetime_desc">تفعيل دائم ومفتوح لكافة الميزات والتحديثات دون رسوم متكررة.</string>
+    <string name="license_req_plan_trial_title">ترخيص فترة مخصصة</string>
+    <string name="license_req_plan_trial_desc">ترخيص محدد المدة لتجربة النشاط التجاري بكامل الميزات.</string>
+    <string name="license_req_summary_title">بيانات طلب الترخيص المرفقة تلقائياً</string>
+    <string name="license_req_summary_device_label">رمز الجهاز</string>
+    <string name="license_req_summary_account_label">الحساب المرتبط</string>
+    <string name="license_req_summary_account_unlinked">غير مرتبط (سيُعتمد رمز الجهاز)</string>
+    <string name="license_req_summary_account_code_label">كود الحساب</string>
+    <string name="license_req_btn_send">إرسال طلب الترخيص الآن</string>
+    <string name="license_req_btn_copy_details">نسخ بطاقة الطلب</string>
+    <string name="license_req_btn_back">العودة لنافذة التفعيل</string>
+    <string name="license_req_toast_copied">تم نسخ بطاقة طلب الترخيص إلى الحافظة</string>
+    <string name="license_req_toast_whatsapp_err">تعذر فتح تطبيق المراسلة على هذا الجهاز</string>
+    <string name="license_req_msg_header">مرحباً، أرغب في طلب تفعيل ترخيص تطبيق الدفتر الذكي:</string>
+    <string name="license_req_msg_type_fmt">• نوع الترخيص: %1$s</string>
+    <string name="license_req_msg_plan_fmt">• الباقة المطلوبة: %1$s</string>
+    <string name="license_req_msg_email_fmt">• الحساب: %1$s</string>
+    <string name="license_req_msg_account_code_fmt">• كود الحساب: %1$s</string>
+    <string name="license_req_msg_device_code_fmt">• رمز الجهاز: %1$s</string>
+
+    <!-- رسائل حالات التراخيص -->
+    <string name="license_vm_signin_paid">تم تسجيل الدخول وتفعيل الترخيص بنجاح</string>
+    <string name="license_vm_signin_needs_code">تم تسجيل الدخول. الحساب بحاجة لإدخال رمز التفعيل لأول مرة.</string>
+    <string name="license_vm_signin_ok">تم تسجيل الدخول بالحساب بنجاح</string>
+    <string name="license_vm_signin_err">تعذر تسجيل الدخول بحساب Google</string>
+    <string name="license_vm_signout_ok">تم تسجيل الخروج بنجاح</string>
+    <string name="license_vm_signout_err">تعذر تسجيل الخروج</string>
+    <string name="license_vm_signin_first">يرجى تسجيل الدخول بحساب Google أولاً</string>
+    <string name="license_vm_cloud_activated">تم التحقق وتفعيل الترخيص السحابي بنجاح</string>
+    <string name="license_vm_cloud_needs_code">الحساب بحاجة لإدخال كود التفعيل لأول مرة</string>
+    <string name="license_vm_cloud_not_registered">هذا الحساب غير مسجل بترخيص سحابي مفعل بعد</string>
+    <string name="license_vm_cloud_check_err">تعذر التحقق من الترخيص السحابي</string>
+    <string name="license_vm_activate_ok">تم تفعيل الترخيص بنجاح</string>
+    <string name="license_vm_activate_err">تعذر تفعيل الترخيص</string>
+    <string name="license_vm_invalid_token">رمز الترخيص غير صالح</string>
+    <string name="license_vm_reconnect_ok">تمت إعادة ربط الترخيص بنجاح</string>
+    <string name="license_vm_reconnect_err">تعذر إعادة ربط الترخيص</string>
+    <string name="license_vm_account_activate_ok">تم تفعيل حساب الترخيص بنجاح</string>
+    <string name="license_vm_account_activate_err">تعذر تفعيل الحساب</string>
 </resources>
+
