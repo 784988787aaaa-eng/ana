@@ -23,7 +23,8 @@ data class AddCustomerFormData(
     val applyExchangeRate: Boolean,
     val selectedCalendar: Calendar,
     val settingsRate: BigDecimal,
-    val isDuplicateName: Boolean
+    val isDuplicateName: Boolean,
+    val selectedCategory: String? = null
 )
 
 object AddCustomerSaveHelper {
@@ -47,6 +48,7 @@ object AddCustomerSaveHelper {
         val selectedCalendar = formData.selectedCalendar
         val settingsRate = formData.settingsRate
         val isDuplicateName = formData.isDuplicateName
+        val selectedCategory = formData.selectedCategory
 
         if (nameStr.trim().isBlank()) {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_enter_name), Toast.LENGTH_SHORT).show()
@@ -122,7 +124,8 @@ object AddCustomerSaveHelper {
                         foreignAmount = actualInitialAmountBd,
                         exchangeRate = exchangeRateBd,
                         isRateCalculated = isForeignSelected && applyExchangeRate,
-                        equivalentAmount = finalEquivalentAmountBd
+                        equivalentAmount = finalEquivalentAmountBd,
+                        selectedCategory = selectedCategory
                     )
 
                     if (saved) {

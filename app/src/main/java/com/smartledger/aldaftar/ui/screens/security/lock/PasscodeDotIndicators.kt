@@ -26,37 +26,54 @@ fun PasscodeDotIndicators(
     enteredLength: Int,
     shakeOffsetPx: Float,
     modifier: Modifier = Modifier,
-    totalDots: Int = 4
+    totalDots: Int = 4,
+    hasError: Boolean = false,
+    isChecking: Boolean = false
 ) {
     val mizanColors = MaterialTheme.mizanColors
 
     Row(
         modifier = modifier.offset(x = shakeOffsetPx.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         for (i in 0 until totalDots) {
             val filled = enteredLength > i
             val dotScale by animateFloatAsState(
-                targetValue = if (filled) 1.25f else 1.0f,
+                targetValue = when {
+                    isChecking && filled -> 1.15f
+                    filled -> 1.22f
+                    else -> 1.0f
+                },
                 animationSpec = spring(
                     stiffness = Spring.StiffnessHigh,
-                    dampingRatio = Spring.DampingRatioMediumBouncy
+                    dampingRatio = Spring.DampingRatioNoBouncy
                 ),
                 label = "dotScale_$i"
             )
+            val fillColor = when {
+                hasError -> mizanColors.error.copy(alpha = if (filled) 0.85f else 0.20f)
+                filled -> mizanColors.securityIndicatorFilled
+                else -> mizanColors.securityIndicatorEmpty
+            }
+            val borderColor = when {
+                hasError -> mizanColors.error
+                filled -> mizanColors.securityIndicatorFilled
+                else -> mizanColors.securityKeyBorder
+            }
             Box(
                 modifier = Modifier
                     .size(16.dp)
                     .scale(dotScale)
                     .clip(CircleShape)
-                    .background(if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityIndicatorEmpty)
+                    .background(fillColor)
                     .border(
-                        width = 1.2.dp,
-                        color = if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityIndicatorEmpty,
+                        width = 1.4.dp,
+                        color = borderColor,
                         shape = CircleShape
                     )
             )
         }
     }
 }
+

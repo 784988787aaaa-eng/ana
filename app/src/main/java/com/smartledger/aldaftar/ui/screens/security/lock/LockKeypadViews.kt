@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -33,6 +34,7 @@ import com.smartledger.aldaftar.ui.theme.mizanColors
 fun KeypadButton(
     text: String,
     isFunctional: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val mizanColors = MaterialTheme.mizanColors
@@ -42,15 +44,16 @@ fun KeypadButton(
     val textCol = remember(isFunctional, mizanColors) {
         if (isFunctional) mizanColors.securityForegroundMuted else mizanColors.securityKeyContent
     }
-    val textSize = remember(isFunctional) { if (isFunctional) 13.sp else 24.sp }
-    val fontWeight = remember(isFunctional) { if (isFunctional) FontWeight.Medium else FontWeight.ExtraBold }
+    val textSize = remember(isFunctional) { if (isFunctional) 13.sp else 23.sp }
+    val fontWeight = remember(isFunctional) { if (isFunctional) FontWeight.SemiBold else FontWeight.ExtraBold }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     Box(
         modifier = Modifier
-            .size(72.dp)
-            .scale(if (isPressed) 0.92f else 1f)
+            .size(70.dp)
+            .scale(if (isPressed && enabled) 0.92f else 1f)
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(CircleShape)
             .background(bg)
             .border(
@@ -59,6 +62,7 @@ fun KeypadButton(
                 shape = CircleShape
             )
             .clickable(
+                enabled = enabled,
                 onClick = onClick,
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true)
@@ -80,6 +84,7 @@ fun KeypadButton(
 fun KeypadIconButton(
     icon: ImageVector,
     contentDescription: String,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val mizanColors = MaterialTheme.mizanColors
@@ -88,16 +93,18 @@ fun KeypadIconButton(
 
     Box(
         modifier = Modifier
-            .size(72.dp)
-            .scale(if (isPressed) 0.92f else 1f)
+            .size(70.dp)
+            .scale(if (isPressed && enabled) 0.92f else 1f)
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(CircleShape)
-            .background(mizanColors.securityIndicatorFilled.copy(alpha = 0.15f))
+            .background(mizanColors.securityIndicatorFilled.copy(alpha = 0.16f))
             .border(
                 width = 1.dp,
-                color = mizanColors.securityIndicatorFilled.copy(alpha = 0.3f),
+                color = mizanColors.securityIndicatorFilled.copy(alpha = 0.35f),
                 shape = CircleShape
             )
             .clickable(
+                enabled = enabled,
                 onClick = onClick,
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true)
@@ -109,7 +116,7 @@ fun KeypadIconButton(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = mizanColors.securityIndicatorFilled,
-            modifier = Modifier.size(30.dp)
+            modifier = Modifier.size(28.dp)
         )
     }
 }
@@ -117,14 +124,21 @@ fun KeypadIconButton(
 @Composable
 fun KeypadRow(
     row: List<String>,
-    onKeyClick: (String) -> Unit
+    onKeyClick: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(28.dp),
+        horizontalArrangement = Arrangement.spacedBy(26.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         row.forEach { digit ->
-            KeypadButton(text = digit, isFunctional = false, onClick = { onKeyClick(digit) })
+            KeypadButton(
+                text = digit,
+                isFunctional = false,
+                enabled = enabled,
+                onClick = { onKeyClick(digit) }
+            )
         }
     }
 }
+

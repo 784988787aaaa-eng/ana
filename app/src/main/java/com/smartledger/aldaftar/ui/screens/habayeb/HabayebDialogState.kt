@@ -7,7 +7,7 @@ import com.smartledger.aldaftar.ui.state.CustomerUiState
 
 sealed interface HabayebDialogState {
     object None : HabayebDialogState
-    object AddCustomer : HabayebDialogState
+    data class AddCustomer(val initialCategory: String? = null) : HabayebDialogState
     data class AddTransaction(
         val customer: HabayebCustomer,
         val defaultType: String = TransactionType.OWED_BY_THEM.value,

@@ -12,7 +12,25 @@ object HashUtils {
     private const val SALT_SIZE = 16
     private const val KEY_SIZE_BITS = 256
     private const val FORMAT_VERSION = "pbkdf2-v1"
+    private val HEX_CHARS = "0123456789abcdef".toCharArray()
     private val random = SecureRandom()
+
+    private val keyFactoryThreadLocal = object : ThreadLocal<SecretKeyFactory>() {
+        override fun initialValue(): SecretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM)
+    }
+
+    /**
+     * Pre-warms the JCA SecretKeyFactory and SecureRandom off the UI thread
+     * so the first PIN entry or activation does not pay provider initialization latency.
+     */
+    fun warmup() {
+        runCatching {
+            keyFactoryThreadLocal.get()
+            val seed = ByteArray(1)
+            random.nextBytes(seed)
+            seed.fill(0)
+        }
+    }
 
     fun hashString(input: String): String = createPinHash(input)
 
@@ -32,6 +50,7 @@ object HashUtils {
         val parts = encoded.split(':')
         if (parts.size != 4 || parts[0] != FORMAT_VERSION) return false
         val iterations = parts[1].toIntOrNull() ?: return false
+        if (iterations <= 0) return false
         val salt = parts[2].hexToBytes() ?: return false
         val expected = parts[3].hexToBytes() ?: return false
         val actual = derive(input.toCharArray(), salt, iterations)
@@ -53,17 +72,36 @@ object HashUtils {
     private fun derive(chars: CharArray, salt: ByteArray, iterations: Int = ITERATIONS): ByteArray {
         val spec = PBEKeySpec(chars, salt, iterations, KEY_SIZE_BITS)
         return try {
-            SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec).encoded
+            val factory = keyFactoryThreadLocal.get() ?: SecretKeyFactory.getInstance(ALGORITHM)
+            factory.generateSecret(spec).encoded
         } finally {
             spec.clearPassword()
             chars.fill('\u0000')
         }
     }
 
-    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+    private fun ByteArray.toHex(): String {
+        val out = CharArray(size * 2)
+        for (i in indices) {
+            val v = this[i].toInt() and 0xFF
+            out[i * 2] = HEX_CHARS[v ushr 4]
+            out[i * 2 + 1] = HEX_CHARS[v and 0x0F]
+        }
+        return String(out)
+    }
 
     private fun String.hexToBytes(): ByteArray? {
-        if (length % 2 != 0 || any { it !in '0'..'9' && it !in 'a'..'f' && it !in 'A'..'F' }) return null
-        return ByteArray(length / 2) { index -> substring(index * 2, index * 2 + 2).toInt(16).toByte() }
+        if (length % 2 != 0) return null
+        val out = ByteArray(length / 2)
+        var i = 0
+        while (i < length) {
+            val hi = Character.digit(this[i], 16)
+            val lo = Character.digit(this[i + 1], 16)
+            if (hi == -1 || lo == -1) return null
+            out[i ushr 1] = ((hi shl 4) or lo).toByte()
+            i += 2
+        }
+        return out
     }
 }
+

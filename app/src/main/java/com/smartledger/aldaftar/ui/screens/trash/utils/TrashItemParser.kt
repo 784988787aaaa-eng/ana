@@ -1,14 +1,12 @@
 package com.smartledger.aldaftar.ui.screens.trash.utils
-import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
-import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.math.BigDecimal
 import java.util.Locale
 import org.json.JSONObject
@@ -137,8 +135,9 @@ object TrashItemParser {
                 "habayeb_transactions" -> {
                     val customerId = jsonObj.optString("customerId", "")
                     val foundCustomer = customersList.find { it.id == customerId }
-                    val resolvedName = foundCustomer?.name ?: ""
-                    phoneVal = foundCustomer?.phone ?: ""
+                    val fallbackCustomerName = jsonObj.optString("customerName", "").trim()
+                    val resolvedName = foundCustomer?.name?.takeIf { it.isNotBlank() } ?: fallbackCustomerName
+                    phoneVal = foundCustomer?.phone ?: jsonObj.optString("customerPhone", "").trim()
                     customerNameVal = resolvedName
                     customerPhoneVal = phoneVal
 
@@ -151,8 +150,8 @@ object TrashItemParser {
                     val desc = jsonObj.optString("description", "").trim()
                     val notes = jsonObj.optString("notes", "").trim()
                     val rawText = desc.ifEmpty { notes }
-                    rawDescriptionVal = rawText
                     val cleanText = stripCurrencyTag(rawText)
+                    rawDescriptionVal = cleanText
                     titleText = cleanText.ifEmpty { strings.noNotesText }
                     name = if (resolvedName.isNotEmpty()) "$resolvedName - $titleText" else titleText
 
@@ -230,11 +229,14 @@ object TrashItemParser {
                     val rawName = jsonObj.optString("name", "").trim()
                     titleText = rawName.ifEmpty { strings.unknownText }
                     name = titleText
+                    customerNameVal = titleText
 
                     phoneVal = jsonObj.optString("phone", "").trim()
+                    customerPhoneVal = phoneVal
                     amountText = ""
 
                     val notesStr = jsonObj.optString("notes", "").trim()
+                    rawDescriptionVal = notesStr
                     subText = if (notesStr.isNotEmpty()) notesStr else strings.noNotesText
                     indicatorColor = secondaryColor
 
@@ -247,9 +249,11 @@ object TrashItemParser {
                     val custObj = jsonObj.optJSONObject("customer")
                     var custName = ""
                     var custPhone = ""
+                    var custNotes = ""
                     if (custObj != null) {
                         custName = custObj.optString("name", "").trim()
                         custPhone = custObj.optString("phone", "").trim()
+                        custNotes = custObj.optString("notes", "").trim()
                     }
                     if (custName.isEmpty()) {
                         custName = jsonObj.optString("customerName", "").trim()
@@ -257,7 +261,10 @@ object TrashItemParser {
 
                     titleText = custName.ifEmpty { strings.unknownText }
                     name = titleText
+                    customerNameVal = titleText
                     phoneVal = custPhone
+                    customerPhoneVal = custPhone
+                    rawDescriptionVal = custNotes
 
                     val txsArray = jsonObj.optJSONArray("transactions")
                     val txCount = txsArray?.length() ?: 0
@@ -270,6 +277,7 @@ object TrashItemParser {
 
                     searchTokens.add(custName)
                     searchTokens.add(custPhone)
+                    searchTokens.add(custNotes)
 
                     if (txsArray != null) {
                         val currencySums = mutableMapOf<String, BigDecimal>()
@@ -362,10 +370,17 @@ object TrashItemParser {
 
                         currencyBreakdownVal.putAll(currencySums)
 
-                        val defaultCurrencySum = currencySums[currencySymbol] ?: BigDecimal.ZERO
+                        val defaultCurrencySum = currencySums[currencySymbol]
+                            ?: currencySums.entries.firstOrNull()?.value
+                            ?: BigDecimal.ZERO
+                        val primaryCurrSymbol = if (currencySums.containsKey(currencySymbol)) {
+                            currencySymbol
+                        } else {
+                            currencySums.keys.firstOrNull() ?: currencySymbol
+                        }
                         amountDec = defaultCurrencySum.abs()
                         isExpense = defaultCurrencySum < BigDecimal.ZERO
-                        amountText = "${HabayebMathHelper.formatSmart(defaultCurrencySum.abs())} $currencySymbol"
+                        amountText = "${HabayebMathHelper.formatSmart(defaultCurrencySum.abs())} $primaryCurrSymbol"
                     } else {
                         amountDec = BigDecimal.ZERO
                         amountText = "0 $currencySymbol"

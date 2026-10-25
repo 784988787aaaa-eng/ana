@@ -24,6 +24,12 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
+
 @Composable
 fun HabayebListSection(
     listState: LazyListState,
@@ -45,6 +51,7 @@ fun HabayebListSection(
     onQuickAdd: (CustomerUiState) -> Unit,
     getCustomerCategory: (String) -> String?,
     onRemoveFromCategory: (String) -> Unit,
+    onAddCustomerClick: (() -> Unit)? = null,
     highlightedCustomerId: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -107,19 +114,26 @@ fun HabayebListSection(
         } else if (filteredCustomers.isEmpty()) {
             // حالة الفراغ الحقيقي (Empty): لا تُعرض إلا بعد انتهاء استعلام قاعدة البيانات وعودة النتيجة الصريحة برقم 0
             item(key = "empty_state_${catKey}_$selectedFilterTab") {
+                val activeCustomCategory = selectedCategory?.takeIf {
+                    it.isNotBlank() && it != FinanceConstants.CATEGORY_CLOSED
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillParentMaxHeight(0.6f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🤝", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    ) {
+                        Text("🤝", fontSize = 44.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = when (selectedFilterTab) {
-                                1 -> stringResource(id = R.string.habayeb_no_debtors)
-                                2 -> stringResource(id = R.string.habayeb_no_creditors)
+                            text = when {
+                                selectedFilterTab == 1 -> stringResource(id = R.string.habayeb_no_debtors)
+                                selectedFilterTab == 2 -> stringResource(id = R.string.habayeb_no_creditors)
+                                activeCustomCategory != null -> "لا توجد حسابات في تصنيف «$activeCustomCategory» حاليًا"
                                 else -> stringResource(id = R.string.habayeb_empty_list)
                             },
                             textAlign = TextAlign.Center,
@@ -127,6 +141,37 @@ fun HabayebListSection(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 20.sp
                         )
+                        if (onAddCustomerClick != null && selectedCategory != FinanceConstants.CATEGORY_CLOSED) {
+                            Spacer(modifier = Modifier.height(14.dp))
+                            FilledTonalButton(
+                                onClick = onAddCustomerClick,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = activeThemeColor.copy(alpha = 0.12f),
+                                    contentColor = activeThemeColor
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                modifier = Modifier
+                                    .heightIn(min = 42.dp)
+                                    .testTag("empty_state_add_account_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PersonAdd,
+                                    contentDescription = stringResource(id = R.string.habayeb_add_customer_fab),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (activeCustomCategory != null) {
+                                        "إضافة حساب في «$activeCustomCategory»"
+                                    } else {
+                                        "إضافة حساب جديد"
+                                    },
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
             }

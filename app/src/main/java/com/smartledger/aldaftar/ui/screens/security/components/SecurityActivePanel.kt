@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,6 +47,7 @@ import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
+import kotlinx.coroutines.launch
 
 enum class SecurityActiveAction {
     CHANGE_PIN,
@@ -58,7 +60,8 @@ fun SecurityActivePanel(
     viewModel: SecurityViewModel,
     onChangePasscode: () -> Unit,
     onDeactivateSecurity: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isInDialog: Boolean = false
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val haptic = LocalHapticFeedback.current
@@ -71,148 +74,187 @@ fun SecurityActivePanel(
     val deactivateContent = mizanColors.debt
     val deactivateBorder = mizanColors.debtBorder
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = modifier.fillMaxWidth()
+    val containerModifier = if (isInDialog) {
+        modifier.fillMaxWidth()
+    } else {
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
+            .padding(12.dp)
+    }
+
+    Column(
+        modifier = containerModifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        // 1. Sleek Horizontal Active Protection Status Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            color = shieldBg.copy(alpha = 0.65f),
+            border = BorderStroke(1.dp, shieldBorder)
         ) {
-            // 1. Active Protection Hero Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                color = shieldBg.copy(alpha = 0.65f),
-                border = BorderStroke(1.dp, shieldBorder)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(54.dp)
+                            .size(42.dp)
                             .background(shieldTint.copy(alpha = 0.14f), CircleShape)
-                            .border(width = 1.5.dp, color = shieldBorder, shape = CircleShape),
+                            .border(width = 1.2.dp, color = shieldBorder, shape = CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.VerifiedUser,
                             contentDescription = null,
                             tint = shieldTint,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = shieldTint.copy(alpha = 0.14f)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
-                            text = stringResource(id = R.string.sec_active_shield_badge),
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeText
+                            text = stringResource(id = R.string.sec_toast_active_success),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = activeText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    }
 
-                    Text(
-                        text = stringResource(id = R.string.sec_toast_active_success),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = activeText,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Text(
-                        text = stringResource(id = R.string.sec_card_desc_warning),
-                        fontSize = 11.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 17.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            // 2. Biometric Quick Unlock Card
-            if (viewModel.isBiometricSupported) {
-                val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = BorderStroke(
-                        1.dp,
-                        if (isBiometricEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.weight(1f)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                modifier = Modifier.size(38.dp),
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                shape = RoundedCornerShape(50),
+                                color = shieldTint.copy(alpha = 0.14f)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Fingerprint,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
-                            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                                 Text(
-                                    text = stringResource(id = R.string.sec_biometric_title),
-                                    fontSize = 12.5.sp,
+                                    text = stringResource(id = R.string.sec_active_shield_badge),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = activeText
                                 )
+                            }
+
+                            val hasHint = !currentSettings.recoveryHint.isNullOrBlank()
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                            ) {
                                 Text(
-                                    text = stringResource(id = R.string.sec_biometric_desc),
-                                    fontSize = 10.5.sp,
-                                    lineHeight = 14.sp,
+                                    text = stringResource(
+                                        id = if (hasHint) R.string.sec_hint_configured_badge else R.string.sec_hint_not_configured_badge
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                        Switch(
-                            checked = isBiometricEnabled,
-                            onCheckedChange = { viewModel.toggleBiometric(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
                     }
                 }
+
+                Text(
+                    text = stringResource(id = R.string.sec_card_desc_warning),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 15.5.sp,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
+        }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), thickness = 0.6.dp)
+        // 2. Biometric Quick Unlock Card
+        if (viewModel.isBiometricSupported) {
+            val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                border = BorderStroke(
+                    1.dp,
+                    if (isBiometricEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(34.dp),
+                            shape = RoundedCornerShape(9.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Fingerprint,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.sec_biometric_title),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(id = R.string.sec_biometric_desc),
+                                fontSize = 10.sp,
+                                lineHeight = 13.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Switch(
+                        checked = isBiometricEnabled,
+                        onCheckedChange = { viewModel.toggleBiometric(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+            }
+        }
 
-            // 3. Action Buttons: Change PIN & Deactivate Lock
+        // 3. Action Buttons Side-by-Side: Change PIN & Deactivate Lock
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             OutlinedButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -224,26 +266,24 @@ fun SecurityActivePanel(
                 ),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                 shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
+                    .weight(1f)
+                    .height(44.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LockReset,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.sec_btn_change_pin),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.LockReset,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(id = R.string.sec_btn_change_pin),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             OutlinedButton(
@@ -257,26 +297,24 @@ fun SecurityActivePanel(
                 ),
                 border = BorderStroke(1.dp, deactivateBorder),
                 shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
+                    .weight(1f)
+                    .height(44.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LockOpen,
-                        contentDescription = null,
-                        modifier = Modifier.size(17.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.sec_deactivate_btn),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.LockOpen,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(id = R.string.sec_deactivate_btn),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -286,8 +324,12 @@ fun SecurityActivePanel(
         VerifyOldPinDialog(
             action = activePendingAction,
             recoveryHint = currentSettings.recoveryHint,
-            onVerify = { input ->
-                viewModel.verifyCredentials(input)
+            onVerifySuspend = { input, isRecovery ->
+                if (isRecovery) {
+                    viewModel.verifyRecoveryPhraseOffMainThread(input)
+                } else {
+                    viewModel.verifyPinOffMainThread(input)
+                }
             },
             onSuccess = {
                 val action = pendingAction
@@ -307,24 +349,52 @@ fun SecurityActivePanel(
 fun VerifyOldPinDialog(
     action: SecurityActiveAction,
     recoveryHint: String?,
-    onVerify: (String) -> Boolean,
+    onVerifySuspend: suspend (input: String, isRecoveryMode: Boolean) -> Boolean,
     onSuccess: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val mizanColors = MaterialTheme.mizanColors
+    val coroutineScope = rememberCoroutineScope()
     var pinInput by remember { mutableStateOf("") }
     var recoveryInput by remember { mutableStateOf("") }
     var showRecoveryMode by remember { mutableStateOf(false) }
     var showHint by remember { mutableStateOf(false) }
     var pinVisible by remember { mutableStateOf(false) }
+    var isVerifying by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val pinFocusRequester = remember { FocusRequester() }
     val recoveryFocusRequester = remember { FocusRequester() }
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
+    fun triggerVerification(dismissDialog: () -> Unit) {
+        if (isVerifying) return
+        val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
+        if (targetInput.isBlank()) return
+        isVerifying = true
+        errorMessage = null
+        focusManager.clearFocus()
+        coroutineScope.launch {
+            val matched = onVerifySuspend(targetInput, showRecoveryMode)
+            isVerifying = false
+            if (matched) {
+                onSuccess()
+            } else {
+                val msg = if (!showRecoveryMode) {
+                    context.getString(R.string.sec_toast_incorrect_current_pin)
+                } else {
+                    context.getString(R.string.sec_toast_incorrect_recovery)
+                }
+                errorMessage = msg
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
+            }
+        }
+    }
+
     MizanAnimatedDialog(
-        onDismissRequest = onDismiss
+        onDismissRequest = { if (!isVerifying) onDismiss() }
     ) { dismissDialog ->
         MizanDialogCard(
             maxWidth = MizanDialogTokens.compactMaxWidth,
@@ -344,7 +414,7 @@ fun VerifyOldPinDialog(
                 icon = if (!showRecoveryMode) Icons.Default.Lock else Icons.Default.Key,
                 iconTint = MaterialTheme.colorScheme.primary,
                 isCentered = false,
-                onCloseClick = dismissDialog
+                onCloseClick = { if (!isVerifying) dismissDialog() }
             )
 
             Column(
@@ -362,11 +432,16 @@ fun VerifyOldPinDialog(
                         OutlinedTextField(
                             value = pinInput,
                             onValueChange = {
-                                val clean = it.toEnglishDigits()
-                                if (clean.length <= 4 && clean.all { c -> c.isDigit() }) {
-                                    pinInput = clean
+                                if (!isVerifying) {
+                                    val clean = it.toEnglishDigits()
+                                    if (clean.length <= 4 && clean.all { c -> c.isDigit() }) {
+                                        pinInput = clean
+                                        errorMessage = null
+                                    }
                                 }
                             },
+                            enabled = !isVerifying,
+                            isError = errorMessage != null,
                             label = { Text(stringResource(id = R.string.sec_current_pin_label), fontSize = 12.sp) },
                             placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontSize = 12.sp) },
                             singleLine = true,
@@ -379,7 +454,7 @@ fun VerifyOldPinDialog(
                                 )
                             },
                             trailingIcon = {
-                                IconButton(onClick = { pinVisible = !pinVisible }) {
+                                IconButton(onClick = { pinVisible = !pinVisible }, enabled = !isVerifying) {
                                     Icon(
                                         imageVector = if (pinVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                         contentDescription = stringResource(id = R.string.sec_desc_toggle_pin_visibility),
@@ -395,7 +470,11 @@ fun VerifyOldPinDialog(
                             visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = {
-                                focusManager.clearFocus()
+                                if (pinInput.length == 4 && !isVerifying) {
+                                    triggerVerification(dismissDialog)
+                                } else {
+                                    focusManager.clearFocus()
+                                }
                             }),
                             shape = MizanDialogTokens.inputShape,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -414,7 +493,13 @@ fun VerifyOldPinDialog(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         TextButton(
-                            onClick = { showRecoveryMode = true },
+                            onClick = {
+                                if (!isVerifying) {
+                                    errorMessage = null
+                                    showRecoveryMode = true
+                                }
+                            },
+                            enabled = !isVerifying,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
@@ -434,7 +519,14 @@ fun VerifyOldPinDialog(
                     } else {
                         OutlinedTextField(
                             value = recoveryInput,
-                            onValueChange = { recoveryInput = it.toEnglishDigits() },
+                            onValueChange = {
+                                if (!isVerifying) {
+                                    recoveryInput = it.toEnglishDigits()
+                                    errorMessage = null
+                                }
+                            },
+                            enabled = !isVerifying,
+                            isError = errorMessage != null,
                             label = { Text(stringResource(id = R.string.sec_recovery_phrase_label), fontSize = 12.sp) },
                             placeholder = { Text(stringResource(id = R.string.sec_recovery_phrase_placeholder), fontSize = 12.sp) },
                             singleLine = true,
@@ -455,7 +547,11 @@ fun VerifyOldPinDialog(
                             ),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = {
-                                focusManager.clearFocus()
+                                if (recoveryInput.isNotBlank() && !isVerifying) {
+                                    triggerVerification(dismissDialog)
+                                } else {
+                                    focusManager.clearFocus()
+                                }
                             }),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -504,7 +600,13 @@ fun VerifyOldPinDialog(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         TextButton(
-                            onClick = { showRecoveryMode = false },
+                            onClick = {
+                                if (!isVerifying) {
+                                    errorMessage = null
+                                    showRecoveryMode = false
+                                }
+                            },
+                            enabled = !isVerifying,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
@@ -514,28 +616,69 @@ fun VerifyOldPinDialog(
                             )
                         }
                     }
+
+                    val activeError = errorMessage
+                    if (!activeError.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f),
+                            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = activeError,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    if (isVerifying) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.lock_verifying_pin),
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
 
                 MizanDialogActions(
                     confirmText = stringResource(id = R.string.sec_btn_confirm),
                     confirmIcon = Icons.Default.Check,
-                    onConfirm = {
-                        val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
-                        if (targetInput.isNotBlank() && onVerify(targetInput)) {
-                            onSuccess()
-                        } else {
-                            val msg = if (!showRecoveryMode) {
-                                context.getString(R.string.sec_toast_incorrect_current_pin)
-                            } else {
-                                context.getString(R.string.sec_toast_incorrect_recovery)
-                            }
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
-                        }
-                    },
-                    confirmEnabled = if (!showRecoveryMode) pinInput.length == 4 else recoveryInput.isNotBlank(),
+                    onConfirm = { triggerVerification(dismissDialog) },
+                    confirmEnabled = !isVerifying && (if (!showRecoveryMode) pinInput.length == 4 else recoveryInput.isNotBlank()),
                     cancelText = stringResource(id = R.string.sec_btn_cancel),
-                    onCancel = dismissDialog
+                    onCancel = { if (!isVerifying) dismissDialog() }
                 )
             }
         }

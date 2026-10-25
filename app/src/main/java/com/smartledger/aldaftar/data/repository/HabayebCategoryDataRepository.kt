@@ -22,24 +22,51 @@ class HabayebCategoryDataRepository(
     }
 
     fun pinnedCustomerIdsFlow(categoryId: Int?): Flow<Set<String>> =
-        dao.getPinnedCustomerIdsFlow(scopeCategoryId(categoryId)).map { it.toSet() }
+        combine(
+            dao.getAllPinnedCustomerIdsFlow(),
+            dao.getPinnedCustomerIdsFlow(scopeCategoryId(categoryId))
+        ) { allPinned, scopedPinned ->
+            (allPinned + scopedPinned).toSet()
+        }
 
     suspend fun togglePinCustomer(customerId: String, categoryId: Int?): Boolean = database.withTransaction {
-        if (dao.getCustomerByIdDirect(customerId) == null) return@withTransaction false
+        val customer = dao.getCustomerByIdDirect(customerId) ?: return@withTransaction false
         if (categoryId != null && categories.getAllCustomCategoriesDirect().none { it.id == categoryId }) return@withTransaction false
-        val scope = scopeCategoryId(categoryId)
-        val pinned = dao.getPinnedCustomerIdsDirect(scope)
-        if (customerId in pinned) {
-            dao.deletePinnedCustomer(scope, customerId)
+        val existingScopes = dao.getPinScopeCategoryIdsForCustomer(customerId)
+        if (existingScopes.isNotEmpty()) {
+            dao.deletePinsForCustomer(customerId)
             true
-        } else if (pinned.size >= MAX_PINNED_COUNT) false
-        else dao.insertPinnedCustomer(PinnedCustomer(scope, customerId)) != -1L
+        } else {
+            val allPinnedIds = dao.getAllPinnedCustomerIdsDirect().toSet()
+            if (allPinnedIds.size >= MAX_PINNED_COUNT) {
+                false
+            } else {
+                val insertedGlobal = dao.insertPinnedCustomer(PinnedCustomer(GLOBAL_SCOPE_CATEGORY_ID, customerId)) != -1L
+                val targetCategoryScope = categoryId ?: customer.categoryId
+                if (targetCategoryScope != null && targetCategoryScope != GLOBAL_SCOPE_CATEGORY_ID) {
+                    dao.insertPinnedCustomer(PinnedCustomer(scopeCategoryId(targetCategoryScope), customerId))
+                }
+                insertedGlobal || customerId in dao.getAllPinnedCustomerIdsDirect()
+            }
+        }
     }
 
     suspend fun assignCategory(customerIds: List<String>, categoryId: Int?) = database.withTransaction {
         if (customerIds.isEmpty()) return@withTransaction
         if (categoryId != null && categories.getAllCustomCategoriesDirect().none { it.id == categoryId }) return@withTransaction
         dao.assignCustomersToCategory(customerIds, categoryId)
+        for (customerId in customerIds) {
+            val existingScopes = dao.getPinScopeCategoryIdsForCustomer(customerId)
+            if (existingScopes.isNotEmpty()) {
+                existingScopes.filter { it != GLOBAL_SCOPE_CATEGORY_ID }.forEach { oldScope ->
+                    dao.deletePinnedCustomer(oldScope, customerId)
+                }
+                dao.insertPinnedCustomer(PinnedCustomer(GLOBAL_SCOPE_CATEGORY_ID, customerId))
+                if (categoryId != null && categoryId != GLOBAL_SCOPE_CATEGORY_ID) {
+                    dao.insertPinnedCustomer(PinnedCustomer(scopeCategoryId(categoryId), customerId))
+                }
+            }
+        }
     }
 
     suspend fun deleteCategory(category: CustomCategory, deleteLinkedAccounts: Boolean) = database.withTransaction {
@@ -61,6 +88,10 @@ class HabayebCategoryDataRepository(
                 dao.deleteCustomerById(customer.id)
             }
         } else {
+            val scopedPinnedIds = dao.getPinnedCustomerIdsDirect(scopeCategoryId(category.id))
+            scopedPinnedIds.forEach { pinnedId ->
+                dao.insertPinnedCustomer(PinnedCustomer(GLOBAL_SCOPE_CATEGORY_ID, pinnedId))
+            }
             dao.clearCategoryFromCustomers(category.id)
         }
         dao.deletePinsForScope(scopeCategoryId(category.id))
@@ -88,7 +119,7 @@ class HabayebCategoryDataRepository(
 
     companion object {
         const val GLOBAL_SCOPE_CATEGORY_ID = 0
-        const val MAX_PINNED_COUNT = 3
+        const val MAX_PINNED_COUNT = 100
         fun scopeCategoryId(categoryId: Int?): Int = categoryId ?: GLOBAL_SCOPE_CATEGORY_ID
     }
 }

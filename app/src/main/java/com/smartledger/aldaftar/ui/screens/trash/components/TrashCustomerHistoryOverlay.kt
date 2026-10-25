@@ -1,30 +1,33 @@
 package com.smartledger.aldaftar.ui.screens.trash.components
 
-import java.math.BigDecimal
-
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.helper.getInitialColor
@@ -32,6 +35,7 @@ import com.smartledger.aldaftar.ui.screens.trash.utils.ParsedTrashData
 import com.smartledger.aldaftar.ui.theme.financialCreditColor
 import com.smartledger.aldaftar.ui.theme.financialDebtColor
 import com.smartledger.aldaftar.ui.theme.isDark
+import java.math.BigDecimal
 
 @Composable
 fun TrashCustomerHistoryOverlay(
@@ -44,7 +48,6 @@ fun TrashCustomerHistoryOverlay(
     onRestoreSingleTx: (String) -> Unit
 ) {
     BackHandler { onDismiss() }
-
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -69,23 +72,26 @@ fun TrashCustomerHistoryOverlay(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp
+                tonalElevation = 2.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        IconButton(onClick = onDismiss) {
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowForward,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(id = R.string.trash_back),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -93,7 +99,7 @@ fun TrashCustomerHistoryOverlay(
 
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(36.dp)
                                 .clip(CircleShape)
                                 .background(avatarColor.copy(alpha = 0.15f))
                                 .border(1.dp, avatarColor, CircleShape),
@@ -102,20 +108,29 @@ fun TrashCustomerHistoryOverlay(
                             Text(
                                 text = firstLetter,
                                 color = avatarColor,
-                                fontSize = 16.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
 
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = parsedData.titleText,
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            if (parsedData.phone.isNotBlank()) {
+                                Text(
+                                    text = parsedData.phone,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
 
@@ -127,12 +142,13 @@ fun TrashCustomerHistoryOverlay(
                             onClick = onRestoreFullAccount,
                             colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                             shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.height(34.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.RestoreFromTrash,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(15.dp),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -147,7 +163,7 @@ fun TrashCustomerHistoryOverlay(
                         IconButton(
                             onClick = onDeleteFullAccountPermanently,
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(34.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(errorColor.copy(alpha = 0.1f))
                         ) {
@@ -155,7 +171,7 @@ fun TrashCustomerHistoryOverlay(
                                 imageVector = Icons.Default.DeleteForever,
                                 contentDescription = stringResource(id = R.string.trash_delete_permanently),
                                 tint = errorColor,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         }
                     }
@@ -166,7 +182,8 @@ fun TrashCustomerHistoryOverlay(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -174,12 +191,12 @@ fun TrashCustomerHistoryOverlay(
                         val isNeg = sum < BigDecimal.ZERO
                         val chipBg = if (isNeg) debtColor.copy(alpha = 0.1f) else creditColor.copy(alpha = 0.1f)
                         val chipText = if (isNeg) debtColor else creditColor
-                        val formattedSum = com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatSmart(sum.abs())
+                        val formattedSum = HabayebMathHelper.formatSmart(sum.abs())
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = chipBg,
-                            border = androidx.compose.foundation.BorderStroke(0.5.dp, chipText.copy(alpha = 0.3f))
+                            border = BorderStroke(0.5.dp, chipText.copy(alpha = 0.3f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -187,7 +204,13 @@ fun TrashCustomerHistoryOverlay(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(
-                                    text = if (sum.compareTo(BigDecimal.ZERO) == 0) stringResource(id = R.string.trash_status_balanced) else if (isNeg) stringResource(id = R.string.trash_status_due_prefix) else stringResource(id = R.string.trash_status_owed_prefix),
+                                    text = if (sum.compareTo(BigDecimal.ZERO) == 0) {
+                                        stringResource(id = R.string.trash_status_balanced)
+                                    } else if (isNeg) {
+                                        stringResource(id = R.string.trash_status_due_prefix)
+                                    } else {
+                                        stringResource(id = R.string.trash_status_owed_prefix)
+                                    },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = chipText
@@ -206,7 +229,7 @@ fun TrashCustomerHistoryOverlay(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 24.dp),
+                contentPadding = PaddingValues(start = 14.dp, top = 8.dp, end = 14.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(parsedData.bundleTransactions, key = { it.id }) { tx ->
@@ -214,26 +237,28 @@ fun TrashCustomerHistoryOverlay(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+                        border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(
                                 modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Text(
                                     text = tx.description,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = if (!tx.hasNotes) FontWeight.Normal else FontWeight.Bold,
                                     color = if (!tx.hasNotes) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    lineHeight = 17.sp
                                 )
 
                                 Row(
@@ -242,7 +267,7 @@ fun TrashCustomerHistoryOverlay(
                                 ) {
                                     Text(
                                         text = tx.dateText,
-                                        fontSize = 11.sp,
+                                        fontSize = 10.5.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
 
@@ -251,11 +276,11 @@ fun TrashCustomerHistoryOverlay(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
                                                 .background(creditColor.copy(alpha = 0.12f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                .padding(horizontal = 6.dp, vertical = 1.5.dp)
                                         ) {
                                             Text(
                                                 text = stringResource(id = R.string.trash_rate_active_format, tx.exchangeRateText),
-                                                fontSize = 10.sp,
+                                                fontSize = 9.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = creditColor
                                             )
@@ -263,6 +288,8 @@ fun TrashCustomerHistoryOverlay(
                                     }
                                 }
                             }
+
+                            Spacer(modifier = Modifier.width(8.dp))
 
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -282,13 +309,13 @@ fun TrashCustomerHistoryOverlay(
                                     ) {
                                         Text(
                                             text = tx.displayAmountText,
-                                            fontSize = 14.sp,
+                                            fontSize = 13.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = txColor
                                         )
                                         Text(
                                             text = arrowSymbol,
-                                            fontSize = 12.sp,
+                                            fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = txColor
                                         )
@@ -297,7 +324,7 @@ fun TrashCustomerHistoryOverlay(
                                     if (tx.equivalentAmountText.isNotEmpty()) {
                                         Text(
                                             text = tx.equivalentAmountText,
-                                            fontSize = 11.sp,
+                                            fontSize = 10.5.sp,
                                             color = txColor.copy(alpha = 0.8f)
                                         )
                                     }
@@ -314,7 +341,7 @@ fun TrashCustomerHistoryOverlay(
                                         imageVector = Icons.Default.Restore,
                                         contentDescription = stringResource(id = R.string.trash_action_restore_btn),
                                         tint = primaryColor,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
                             }

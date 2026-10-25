@@ -35,10 +35,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,10 +44,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.ui.helper.getInitialColor
 import com.smartledger.aldaftar.ui.screens.trash.utils.ParsedTrashData
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.financialCreditColor
 import com.smartledger.aldaftar.ui.theme.financialDebtColor
 import com.smartledger.aldaftar.ui.theme.isDark
@@ -66,7 +63,6 @@ fun TrashTransactionDetailBottomSheet(
     onPermanentDelete: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
-
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
     val isDark = MaterialTheme.isDark
@@ -86,7 +82,7 @@ fun TrashTransactionDetailBottomSheet(
         dragHandle = {
             Box(
                 modifier = Modifier
-                    .padding(top = 12.dp, bottom = 8.dp)
+                    .padding(top = 10.dp, bottom = 6.dp)
                     .size(width = 36.dp, height = 4.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
@@ -97,9 +93,9 @@ fun TrashTransactionDetailBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -112,7 +108,7 @@ fun TrashTransactionDetailBottomSheet(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(34.dp)
                             .clip(CircleShape)
                             .background(primaryColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
@@ -121,12 +117,12 @@ fun TrashTransactionDetailBottomSheet(
                             imageVector = Icons.Default.ReceiptLong,
                             contentDescription = null,
                             tint = primaryColor,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     Text(
                         text = stringResource(R.string.trash_tx_detail_title),
-                        fontSize = 17.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -134,13 +130,13 @@ fun TrashTransactionDetailBottomSheet(
 
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.desc_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
             }
@@ -169,7 +165,7 @@ fun TrashTransactionDetailBottomSheet(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium,
-                        lineHeight = 20.sp
+                        lineHeight = 19.sp
                     )
                 }
             }
@@ -183,19 +179,18 @@ fun TrashTransactionDetailBottomSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
                     onClick = {
                         onRestore()
-                        onDismiss()
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(14.dp),
+                        .height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = primaryColor
                     )
@@ -203,7 +198,7 @@ fun TrashTransactionDetailBottomSheet(
                     Icon(
                         imageVector = Icons.Default.RestoreFromTrash,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -217,8 +212,8 @@ fun TrashTransactionDetailBottomSheet(
                     onClick = { onPermanentDelete() },
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(14.dp),
+                        .height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = errorColor
                     ),
@@ -227,7 +222,7 @@ fun TrashTransactionDetailBottomSheet(
                     Icon(
                         imageVector = Icons.Default.DeleteForever,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -238,7 +233,7 @@ fun TrashTransactionDetailBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
         }
     }
 }

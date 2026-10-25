@@ -90,12 +90,12 @@ class FinanceViewModel(
 
     init {
         viewModelScope.launch {
-            combine(
-                settingsState,
+            kotlinx.coroutines.flow.combine(
+                settingsRepository.settingsFlow,
                 habayebRepository.customersFlow
-            ) { settings, customers ->
-                settings to customers
-            }.collect { (settings, _) ->
+            ) { rawSettings, _ ->
+                rawSettings ?: AppSettings()
+            }.collect { settings ->
                 _themeModeState.value = settings.themeMode
                 _isPasscodeEnabled.value = settings.isPasscodeEnabled
                 _isFirstLaunch.value = settings.isFirstLaunch

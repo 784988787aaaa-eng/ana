@@ -179,9 +179,13 @@ object HabayebFinancialCalculator {
         for (customerUi in uiState.customers) {
             val isClosed = customerUi.isClosed
             val linkedCat = categoryMap[customerUi.id]
+            val isPinned = params.pinnedIds.contains(customerUi.id)
 
             if (isClosed) {
                 closedCount++
+                if ((isPinned || customerUi.totalTransactions == 0) && linkedCat != null) {
+                    counts[linkedCat] = (counts[linkedCat] ?: 0) + 1
+                }
             } else {
                 activeCustomersCount++
                 if (linkedCat != null) {
@@ -218,9 +222,9 @@ object HabayebFinancialCalculator {
             if (!matchesTab) continue
 
             val matchesCategory = when (selectedCat) {
-                null -> !isClosed
+                null -> !isClosed || isPinned
                 CATEGORY_CLOSED -> isClosed
-                else -> !isClosed && linkedCat == selectedCat
+                else -> (!isClosed || isPinned || customerUi.totalTransactions == 0) && linkedCat == selectedCat
             }
             if (!matchesCategory) continue
 
@@ -239,22 +243,22 @@ object HabayebFinancialCalculator {
 
         counts[CATEGORY_CLOSED] = closedCount
 
-        val finalFilteredList = if (params.pinnedIds.isEmpty()) {
+        val sortComparator: (List<CustomerUiState>) -> List<CustomerUiState> = { list ->
             when {
-                params.finSort == 1 -> baseFilteredList.sortedByDescending { it.defaultCurrencyTotalAbs }
-                params.finSort == 2 -> baseFilteredList.sortedBy { it.defaultCurrencyTotalAbs }
-                params.histSort == 2 -> baseFilteredList.sortedBy { it.lastTransactionTimestamp }
-                else -> baseFilteredList.sortedByDescending { it.lastTransactionTimestamp }
+                params.finSort == 1 -> list.sortedByDescending { it.defaultCurrencyTotalAbs }
+                params.finSort == 2 -> list.sortedBy { it.defaultCurrencyTotalAbs }
+                params.histSort == 2 -> list.sortedBy { it.lastTransactionTimestamp }
+                else -> list.sortedByDescending { it.lastTransactionTimestamp }
             }
+        }
+
+        val finalFilteredList = if (params.pinnedIds.isEmpty()) {
+            sortComparator(baseFilteredList).distinctBy { it.id }
         } else {
             val (pinnedList, unpinnedList) = baseFilteredList.partition { params.pinnedIds.contains(it.id) }
-            val sortedUnpinned = when {
-                params.finSort == 1 -> unpinnedList.sortedByDescending { it.defaultCurrencyTotalAbs }
-                params.finSort == 2 -> unpinnedList.sortedBy { it.defaultCurrencyTotalAbs }
-                params.histSort == 2 -> unpinnedList.sortedBy { it.lastTransactionTimestamp }
-                else -> unpinnedList.sortedByDescending { it.lastTransactionTimestamp }
-            }
-            pinnedList.sortedByDescending { it.lastTransactionTimestamp } + sortedUnpinned
+            val sortedPinned = sortComparator(pinnedList)
+            val sortedUnpinned = sortComparator(unpinnedList)
+            (sortedPinned + sortedUnpinned).distinctBy { it.id }
         }
 
         return FilteredResult(

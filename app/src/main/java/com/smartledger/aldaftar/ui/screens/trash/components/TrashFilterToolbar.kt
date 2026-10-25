@@ -12,13 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.AutoDelete
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.People
@@ -41,6 +42,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
@@ -62,20 +64,21 @@ fun TrashFilterToolbar(
     var showCleanupMenu by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
+    val isFilterActive = selectedFilter != TrashFilterType.ALL
+    val isSortCustom = selectedSort != TrashSortType.NEWEST_DELETED
+    val isCleanupActive = !autoCleanupPeriod.equals("never", ignoreCase = true) && autoCleanupPeriod.isNotBlank()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 14.dp, vertical = 5.dp)
             .horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // ==========================================
-        // 1. زر مدمج للتصنيف (الكل، العمليات، الحسابات)
-        // ==========================================
-        val isFilterActive = selectedFilter != TrashFilterType.ALL
+        // 1. Category / Type Filter Chip
         val filterLabel = when (selectedFilter) {
-            TrashFilterType.ALL -> stringResource(id = R.string.trash_filter_all_label)
+            TrashFilterType.ALL -> stringResource(id = R.string.trash_filter_type_label, stringResource(id = R.string.trash_filter_all_label))
             TrashFilterType.TRANSACTIONS -> stringResource(id = R.string.trash_filter_transactions)
             TrashFilterType.CUSTOMERS -> stringResource(id = R.string.trash_filter_customers)
         }
@@ -86,26 +89,26 @@ fun TrashFilterToolbar(
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     showFilterMenu = true
                 },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = if (isFilterActive) {
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
                 },
                 border = BorderStroke(
-                    width = 1.dp,
+                    width = 0.8.dp,
                     color = if (isFilterActive) {
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                     } else {
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                     }
                 ),
-                modifier = Modifier.height(34.dp)
+                modifier = Modifier.height(32.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Icon(
                         imageVector = when (selectedFilter) {
@@ -114,20 +117,22 @@ fun TrashFilterToolbar(
                             TrashFilterType.CUSTOMERS -> Icons.Default.People
                         },
                         contentDescription = null,
-                        tint = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                        modifier = Modifier.size(15.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = stringResource(id = R.string.trash_filter_type_label, filterLabel),
-                        fontSize = 11.5.sp,
+                        text = filterLabel,
+                        fontSize = 11.sp,
                         fontWeight = if (isFilterActive) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isFilterActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                        color = if (isFilterActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
                         tint = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
@@ -136,10 +141,11 @@ fun TrashFilterToolbar(
                 expanded = showFilterMenu,
                 onDismissRequest = { showFilterMenu = false },
                 modifier = Modifier
+                    .widthIn(min = 175.dp)
                     .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                         RoundedCornerShape(14.dp)
                     )
             ) {
@@ -157,7 +163,7 @@ fun TrashFilterToolbar(
                                 imageVector = icon,
                                 contentDescription = null,
                                 tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         },
                         text = {
@@ -169,7 +175,7 @@ fun TrashFilterToolbar(
                                 Text(
                                     text = label,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 12.5.sp,
+                                    fontSize = 12.sp,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
                                 if (isSelected) {
@@ -177,12 +183,12 @@ fun TrashFilterToolbar(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
                                 }
                             }
                         },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onFilterSelected(type)
@@ -193,9 +199,7 @@ fun TrashFilterToolbar(
             }
         }
 
-        // ==========================================
-        // 2. زر الترتيب المدمج
-        // ==========================================
+        // 2. Sort Order Chip
         val sortLabel = when (selectedSort) {
             TrashSortType.NEWEST_DELETED -> stringResource(id = R.string.trash_sort_newest)
             TrashSortType.OLDEST_DELETED -> stringResource(id = R.string.trash_sort_oldest)
@@ -209,33 +213,46 @@ fun TrashFilterToolbar(
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     showSortMenu = true
                 },
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                modifier = Modifier.height(34.dp)
+                shape = RoundedCornerShape(10.dp),
+                color = if (isSortCustom) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
+                },
+                border = BorderStroke(
+                    width = 0.8.dp,
+                    color = if (isSortCustom) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    }
+                ),
+                modifier = Modifier.height(32.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Sort,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = stringResource(id = R.string.trash_sort_btn_label) + ": " + sortLabel,
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = sortLabel,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSortCustom) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isSortCustom) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        modifier = Modifier.size(15.dp)
+                        tint = if (isSortCustom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
@@ -244,10 +261,11 @@ fun TrashFilterToolbar(
                 expanded = showSortMenu,
                 onDismissRequest = { showSortMenu = false },
                 modifier = Modifier
+                    .widthIn(min = 175.dp)
                     .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                         RoundedCornerShape(14.dp)
                     )
             ) {
@@ -270,7 +288,7 @@ fun TrashFilterToolbar(
                                 Text(
                                     text = label,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 12.5.sp,
+                                    fontSize = 12.sp,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
                                 if (isSelected) {
@@ -278,12 +296,12 @@ fun TrashFilterToolbar(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
                                 }
                             }
                         },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onSortSelected(sortType)
@@ -294,9 +312,7 @@ fun TrashFilterToolbar(
             }
         }
 
-        // ==========================================
-        // 3. زر التنظيف التلقائي المدمج
-        // ==========================================
+        // 3. Auto-Cleanup Chip
         val selectedCleanupLabel = when (autoCleanupPeriod.lowercase()) {
             "week", "7_days" -> stringResource(R.string.trash_auto_cleanup_week)
             "month", "30_days" -> stringResource(R.string.trash_auto_cleanup_month)
@@ -312,33 +328,46 @@ fun TrashFilterToolbar(
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     showCleanupMenu = true
                 },
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                modifier = Modifier.height(34.dp)
+                shape = RoundedCornerShape(10.dp),
+                color = if (isCleanupActive) {
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
+                },
+                border = BorderStroke(
+                    width = 0.8.dp,
+                    color = if (isCleanupActive) {
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    }
+                ),
+                modifier = Modifier.height(32.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.AutoDelete,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(15.dp)
+                        tint = if (isCleanupActive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = stringResource(R.string.trash_auto_cleanup_label, selectedCleanupLabel),
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontSize = 11.sp,
+                        fontWeight = if (isCleanupActive) FontWeight.Bold else FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
@@ -347,11 +376,11 @@ fun TrashFilterToolbar(
                 expanded = showCleanupMenu,
                 onDismissRequest = { showCleanupMenu = false },
                 modifier = Modifier
-                    .width(180.dp)
+                    .widthIn(min = 175.dp)
                     .background(MaterialTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                         RoundedCornerShape(14.dp)
                     )
             ) {
@@ -375,7 +404,7 @@ fun TrashFilterToolbar(
                             ) {
                                 Text(
                                     text = periodName,
-                                    fontSize = 12.5.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
@@ -384,17 +413,52 @@ fun TrashFilterToolbar(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
                                 }
                             }
                         },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onAutoCleanupPeriodChanged(periodKey)
                             showCleanupMenu = false
                         }
+                    )
+                }
+            }
+        }
+
+        // Quick Reset Chip when a filter or custom sort is active
+        if (isFilterActive || isSortCustom) {
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onFilterSelected(TrashFilterType.ALL)
+                    onSortSelected(TrashSortType.NEWEST_DELETED)
+                },
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = stringResource(id = R.string.trash_filter_reset_short),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 1
                     )
                 }
             }

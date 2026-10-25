@@ -36,6 +36,8 @@ class UiRefactorMasterPlanContractTest {
         assertTrue(content.contains("10. خطة التنفيذ المرحلية (الدفعات التنفيذية 1 إلى 11)"))
         assertTrue(content.contains("12. سجل التحقق التفصيلي"))
         assertTrue(content.contains("13. المشكلات المتبقية أو العوائق"))
+        assertTrue(content.contains("14. توجيه تنفيذي إضافي — تحسين الحسابات المثبتة والإنشاء الذكي للحسابات"))
+        assertFalse("All checklist items in UI_REFACTOR_MASTER_PLAN.md must be completed", content.contains("- [ ]"))
         assertTrue(content.contains("VERIFIED"))
     }
 

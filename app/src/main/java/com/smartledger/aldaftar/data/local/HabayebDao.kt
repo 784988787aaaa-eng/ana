@@ -62,6 +62,12 @@ interface HabayebDao {
     @Query("SELECT * FROM pinned_habayeb_customers")
     suspend fun getAllPinsDirect(): List<PinnedCustomer>
 
+    @Query("SELECT DISTINCT customerId FROM pinned_habayeb_customers")
+    fun getAllPinnedCustomerIdsFlow(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT customerId FROM pinned_habayeb_customers")
+    suspend fun getAllPinnedCustomerIdsDirect(): List<String>
+
     @Query("SELECT customerId FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope")
     fun getPinnedCustomerIdsFlow(scope: Int): Flow<List<String>>
 

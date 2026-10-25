@@ -305,6 +305,18 @@ fun HabayebScreen(
         }
     }
 
+    val openAddCustomerForCurrentCategory: () -> Unit = remember(viewModel, uiState.selectedCategory) {
+        {
+            if (!viewModel.isEligibleToCreate()) {
+                viewModel.triggerLicensePrompt()
+            } else {
+                activeDialogState = HabayebDialogState.AddCustomer(
+                    initialCategory = viewModel.resolveInitialCategoryForNewAccount(uiState.selectedCategory)
+                )
+            }
+        }
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(
             modifier = Modifier
@@ -384,6 +396,7 @@ fun HabayebScreen(
                     onQuickAdd = onQuickAddRemembered,
                     getCustomerCategory = viewModel::getCustomerCategory,
                     onRemoveFromCategory = { customerId -> viewModel.assignCategoryToCustomers(listOf(customerId), null) },
+                    onAddCustomerClick = openAddCustomerForCurrentCategory,
                     highlightedCustomerId = highlightedCustomerId,
                     modifier = Modifier.weight(1f)
                 )
@@ -397,13 +410,7 @@ fun HabayebScreen(
                 haptic = haptic,
                 isMultiSelectActive = isMultiSelectActive,
                 isHistoryTxMultiSelectActive = isHistoryTxMultiSelectActive,
-                onAddCustomerClick = {
-                    if (!viewModel.isEligibleToCreate()) {
-                        viewModel.triggerLicensePrompt()
-                    } else {
-                        activeDialogState = HabayebDialogState.AddCustomer
-                    }
-                },
+                onAddCustomerClick = openAddCustomerForCurrentCategory,
                 onAddTransactionForCustomer = { c ->
                     if (!viewModel.isEligibleToCreate()) {
                         viewModel.triggerLicensePrompt()

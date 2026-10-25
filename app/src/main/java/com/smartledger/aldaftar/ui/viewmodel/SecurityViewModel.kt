@@ -33,13 +33,19 @@ class SecurityViewModel(
     private val _isBiometricEnabled = MutableStateFlow(false)
     val isBiometricEnabled: StateFlow<Boolean> = _isBiometricEnabled.asStateFlow()
 
+    val failedAttemptsState: StateFlow<Int> = securityManager.failedAttemptsFlow
+    val lockoutUntilState: StateFlow<Long> = securityManager.lockoutUntilFlow
+
     val isPrivacyModeEnabled = MutableStateFlow(true)
 
     init {
-        // Pre-warm security storage on IO thread asynchronously to eliminate main-thread keystore stalls
+        // Pre-warm security storage on IO thread and JCA PBKDF2 provider on Default thread
         viewModelScope.launch(Dispatchers.IO) {
             securityManager.warmupStorage()
             _isBiometricEnabled.value = securityManager.isBiometricEnabled()
+        }
+        viewModelScope.launch(Dispatchers.Default) {
+            HashUtils.warmup()
         }
     }
 
@@ -57,6 +63,9 @@ class SecurityViewModel(
     fun saveSettings(settings: AppSettings) {
         viewModelScope.launch(Dispatchers.IO) {
             securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
+            if (settings.isPasscodeEnabled) {
+                securityManager.resetFailedAttempts()
+            }
             repository.saveSettings(settings)
         }
     }
@@ -64,9 +73,14 @@ class SecurityViewModel(
     suspend fun saveSettingsSync(settings: AppSettings) {
         withContext(Dispatchers.IO) {
             securityManager.setFastPasscodeEnabled(settings.isPasscodeEnabled)
+            if (settings.isPasscodeEnabled) {
+                securityManager.resetFailedAttempts()
+            }
             repository.saveSettings(settings)
         }
     }
+
+    fun getFailedAttemptsCount(): Int = securityManager.getFailedAttempts()
 
     fun getLockoutTimeRemainingMs(): Long {
         val until = securityManager.getLockoutUntil()
@@ -91,6 +105,62 @@ class SecurityViewModel(
         securityManager.resetFailedAttempts()
     }
 
+    /**
+     * Verifies a 4-digit PIN off the Main UI thread with a single PBKDF2 derivation.
+     */
+    suspend fun verifyPinOffMainThread(pin: String): Boolean {
+        val cleanPin = pin.trim()
+        if (cleanPin.length != 4) return false
+        val passChars = cleanPin.toCharArray()
+        val targetHash = settingsState.value.passcodeHash?.takeIf { it.isNotBlank() }
+            ?: withContext(Dispatchers.IO) { repository.getSettingsDirect()?.passcodeHash }
+        return withContext(Dispatchers.Default) {
+            try {
+                HashUtils.verifyPin(String(passChars), targetHash)
+            } finally {
+                HashUtils.wipeCharArray(passChars)
+            }
+        }
+    }
+
+    /**
+     * Verifies a recovery phrase off the Main UI thread with a single PBKDF2 derivation.
+     */
+    suspend fun verifyRecoveryPhraseOffMainThread(phrase: String): Boolean {
+        val cleanPhrase = phrase.trim()
+        if (cleanPhrase.isEmpty()) return false
+        val recoveryChars = cleanPhrase.toCharArray()
+        val targetHash = settingsState.value.recoveryPhraseHash?.takeIf { it.isNotBlank() }
+            ?: withContext(Dispatchers.IO) { repository.getSettingsDirect()?.recoveryPhraseHash }
+        return withContext(Dispatchers.Default) {
+            try {
+                HashUtils.verifyPin(String(recoveryChars), targetHash)
+            } finally {
+                HashUtils.wipeCharArray(recoveryChars)
+            }
+        }
+    }
+
+    /**
+     * Atomically disables the passcode lock after a valid recovery phrase verification.
+     */
+    suspend fun disablePasscodeAfterRecovery(fallbackSettings: AppSettings) {
+        _isBiometricEnabled.value = false
+        withContext(Dispatchers.IO) {
+            val latest = repository.getSettingsDirect() ?: settingsState.value.takeIf { it != AppSettings() } ?: fallbackSettings
+            val updated = latest.copy(
+                isPasscodeEnabled = false,
+                passcodeHash = null,
+                recoveryPhraseHash = null,
+                recoveryHint = null
+            )
+            securityManager.resetFailedAttempts()
+            securityManager.setFastPasscodeEnabled(false)
+            securityManager.setBiometricEnabled(false)
+            repository.saveSettings(updated)
+        }
+    }
+
     fun verifyCredentials(input: String): Boolean {
         val inputChars = input.trim().toCharArray()
         return try {
@@ -103,3 +173,4 @@ class SecurityViewModel(
         }
     }
 }
+

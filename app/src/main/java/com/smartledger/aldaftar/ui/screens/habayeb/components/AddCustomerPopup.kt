@@ -43,23 +43,46 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.util.Calendar
 import kotlinx.coroutines.launch
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
+import com.smartledger.aldaftar.data.local.entities.CustomCategory
+
 @Composable
 fun AddCustomerPopup(
     viewModel: HabayebFinanceViewModel,
     onDismiss: () -> Unit,
     onCustomerAdded: (String) -> Unit = {},
     activeThemeColor: Color,
-    activeSubColor: Color
+    activeSubColor: Color,
+    initialCategory: String? = viewModel.resolveInitialCategoryForNewAccount(),
+    customCategories: List<CustomCategory>? = null
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    val observedCategories by viewModel.customCategoriesState.collectAsStateWithLifecycle()
+    val availableCategories = customCategories ?: observedCategories
 
     var nameStr by rememberSaveable { mutableStateOf("") }
     var phoneStr by rememberSaveable { mutableStateOf("") }
     var notesStr by rememberSaveable { mutableStateOf("") }
     var initialAmountStr by rememberSaveable { mutableStateOf("") }
     var initialType by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCategoryName by rememberSaveable(initialCategory) {
+        mutableStateOf(viewModel.resolveInitialCategoryForNewAccount(initialCategory))
+    }
+    var isCategoryPickerExpanded by rememberSaveable { mutableStateOf(false) }
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val debtRed = mizanColors.debt
@@ -226,6 +249,20 @@ fun AddCustomerPopup(
                                 Spacer(modifier = Modifier.size(44.dp))
                             }
 
+                            if (availableCategories.isNotEmpty() || selectedCategoryName != null) {
+                                AddCustomerCategorySelectorBar(
+                                    selectedCategoryName = selectedCategoryName,
+                                    availableCategories = availableCategories,
+                                    isExpanded = isCategoryPickerExpanded,
+                                    activeThemeColor = dynamicThemeColor,
+                                    onToggleExpand = { isCategoryPickerExpanded = !isCategoryPickerExpanded },
+                                    onSelectCategory = { newCat ->
+                                        selectedCategoryName = newCat
+                                        isCategoryPickerExpanded = false
+                                    }
+                                )
+                            }
+
                             val performSave: () -> Unit = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 val formData = AddCustomerFormData(
@@ -239,7 +276,8 @@ fun AddCustomerPopup(
                                     applyExchangeRate = applyExchangeRate,
                                     selectedCalendar = selectedCalendar,
                                     settingsRate = settingsRate,
-                                    isDuplicateName = isDuplicateName
+                                    isDuplicateName = isDuplicateName,
+                                    selectedCategory = selectedCategoryName
                                 )
                                 coroutineScope.launch {
                                     AddCustomerSaveHelper.handleSave(
@@ -329,5 +367,153 @@ fun AddCustomerPopup(
             activeThemeColor = dynamicThemeColor,
             activeSubColor = activeSubColor
         )
+    }
+}
+
+@Composable
+private fun AddCustomerCategorySelectorBar(
+    selectedCategoryName: String?,
+    availableCategories: List<CustomCategory>,
+    isExpanded: Boolean,
+    activeThemeColor: Color,
+    onToggleExpand: () -> Unit,
+    onSelectCategory: (String?) -> Unit
+) {
+    val hasCategory = !selectedCategoryName.isNullOrBlank()
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (hasCategory) {
+            activeThemeColor.copy(alpha = 0.08f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        },
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (hasCategory) {
+                activeThemeColor.copy(alpha = 0.28f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            }
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("add_customer_category_bar")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(enabled = availableCategories.isNotEmpty()) { onToggleExpand() }
+                    .testTag("add_customer_category_selector"),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = if (hasCategory) activeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = if (hasCategory) {
+                            "التصنيف: $selectedCategoryName"
+                        } else {
+                            "التصنيف: ${stringResource(id = R.string.context_menu_no_category)}"
+                        },
+                        fontSize = 12.5.sp,
+                        fontWeight = if (hasCategory) FontWeight.Bold else FontWeight.Medium,
+                        color = if (hasCategory) activeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag("add_customer_selected_category_label")
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (hasCategory) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
+                                .clickable { onSelectCategory(null) }
+                                .testTag("add_customer_clear_category_button"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(id = R.string.context_menu_no_category),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                    if (availableCategories.isNotEmpty()) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            AnimatedVisibility(visible = isExpanded && availableCategories.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val isNoneSelected = !hasCategory
+                    FilterChip(
+                        selected = isNoneSelected,
+                        onClick = { onSelectCategory(null) },
+                        label = {
+                            Text(
+                                text = stringResource(id = R.string.context_menu_no_category),
+                                fontSize = 11.5.sp
+                            )
+                        },
+                        modifier = Modifier
+                            .height(30.dp)
+                            .testTag("add_customer_category_chip_none")
+                    )
+                    availableCategories.forEach { cat ->
+                        val isCatSelected = selectedCategoryName == cat.name
+                        FilterChip(
+                            selected = isCatSelected,
+                            onClick = { onSelectCategory(cat.name) },
+                            label = {
+                                Text(
+                                    text = cat.name,
+                                    fontSize = 11.5.sp
+                                )
+                            },
+                            modifier = Modifier
+                                .height(30.dp)
+                                .testTag("add_customer_category_chip_${cat.name}")
+                        )
+                    }
+                }
+            }
+        }
     }
 }

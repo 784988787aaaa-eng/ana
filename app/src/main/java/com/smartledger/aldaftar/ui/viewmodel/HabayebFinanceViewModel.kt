@@ -96,7 +96,7 @@ class HabayebFinanceViewModel(
     val selectedCustomerIdsState = MutableStateFlow<List<String>>(emptyList())
 
     val customerCategoryMapState: StateFlow<Map<String, String>> = categoryUseCase.categoryMapFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     private val selectedCategoryIdFlow: Flow<Int?> = combine(selectedCategoryFilter, categoriesRepository.customCategoriesFlow) { name, categories ->
         name?.let { selected -> categories.firstOrNull { it.name == selected }?.id }
@@ -104,7 +104,13 @@ class HabayebFinanceViewModel(
 
     val pinnedCustomerIds: StateFlow<Set<String>> = selectedCategoryIdFlow
         .flatMapLatest { categoryUseCase.pinnedCustomerIdsFlow(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    fun resolveInitialCategoryForNewAccount(selectedCategory: String? = selectedCategoryFilter.value): String? {
+        return selectedCategory?.trim()?.takeIf {
+            it.isNotEmpty() && it != FinanceConstants.CATEGORY_CLOSED
+        }
+    }
 
     suspend fun recurringByOriginalTransaction(id: String) = recurringRepository.byOriginalTransaction(id)
     suspend fun saveRecurring(config: com.smartledger.aldaftar.domain.model.RecurringConfig) = recurringRepository.save(config)
@@ -362,16 +368,27 @@ class HabayebFinanceViewModel(
         customer: HabayebCustomer, initialAmount: BigDecimal, initialType: String,
         customTimestamp: Long = System.currentTimeMillis() / 1000, initialDetails: String = "",
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
-        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
+        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO,
+        selectedCategory: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
+        val normalizedCategoryName = resolveInitialCategoryForNewAccount(selectedCategory)
+        val resolvedCategoryId = customer.categoryId ?: normalizedCategoryName?.let { catName ->
+            categoriesRepository.getAllCustomCategoriesDirect()
+                .firstOrNull { !it.isSystemClosed && it.name == catName }?.id
+        }
+        val customerWithCategory = if (customer.categoryId != resolvedCategoryId) {
+            customer.copy(categoryId = resolvedCategoryId)
+        } else {
+            customer
+        }
         val created = transactionUseCase.saveHabayebCustomer(
-            customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
-            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
+            customerWithCategory, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
+            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, normalizedCategoryName, settingsState.value
         )
         if (!created) return@withContext false
         resetFiltersToDefault(resetCategory = false)
         VibrationHelper.triggerSuccessVibration(getApplication())
-        emitScrollToAccount(customer.id)
+        emitScrollToAccount(customerWithCategory.id)
         true
     }
 

@@ -1122,5 +1122,29 @@
     <string name="license_vm_reconnect_err">تعذر إعادة ربط الترخيص</string>
     <string name="license_vm_account_activate_ok">تم تفعيل حساب الترخيص بنجاح</string>
     <string name="license_vm_account_activate_err">تعذر تفعيل الحساب</string>
+
+    <!-- نصوص التحسين الجذري لنافذتي الأمان وسلة المحذوفات -->
+    <string name="sec_pin_mismatch_inline">رمزا المرور غير متطابقين، يرجى التأكد من تطابقهما</string>
+    <string name="sec_pin_incomplete_inline">يجب أن يتكون رمز المرور من 4 أرقام</string>
+    <string name="sec_recovery_required_inline">أدخل عبارة استرداد لاستعادة الوصول عند نسيان الرمز</string>
+    <string name="sec_cancel_edit_btn">إلغاء التعديل</string>
+    <string name="sec_hint_configured_badge">تلميح الاسترداد مضاف</string>
+    <string name="sec_hint_not_configured_badge">بدون تلميح استرداد</string>
+    <string name="trash_empty_search_title">لا توجد نتائج مطابقة للبحث</string>
+    <string name="trash_empty_search_subtitle">لم يتم العثور على سجلات محذوفة تطابق «%1$s»</string>
+    <string name="trash_clear_search_btn">مسح البحث</string>
+    <string name="trash_empty_filter_title">لا توجد عناصر في هذا التصنيف</string>
+    <string name="trash_empty_filter_subtitle">لا توجد سجلات محذوفة ضمن التصنيف المحدد حالياً</string>
+    <string name="trash_reset_filter_btn">عرض الكل</string>
+    <string name="trash_loading_message">جارٍ تحميل المحذوفات...</string>
+    <string name="trash_restore_short">استعادة</string>
+    <string name="trash_empty_short">إفراغ</string>
+    <string name="trash_tx_count_badge">%1$d معاملات</string>
+    <string name="trash_filter_reset_short">إعادة ضبط</string>
+    <string name="lock_verifying_pin">جاري التحقق من الرمز...</string>
+    <string name="lock_verifying_recovery">جاري التحقق من عبارة الأمان...</string>
+    <string name="lock_attempts_remaining_warning">رمز المرور غير صحيح (متبقي %1$d محاولات قبل الإيقاف المؤقت)</string>
+    <string name="lock_security_badge">حماية مشفرة</string>
+    <string name="lock_biometric_quick_btn">البصمة</string>
 </resources>
 

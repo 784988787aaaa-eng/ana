@@ -75,9 +75,43 @@ fun SmartLedgerApp(
         else -> systemDark
     }
 
-    var isUnlocked by rememberSaveable(settingsLoaded, settings.isPasscodeEnabled) {
-        mutableStateOf(!settings.isPasscodeEnabled)
+    var hasInitializedLockState by rememberSaveable { mutableStateOf(false) }
+    var isUnlocked by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(settingsLoaded, settings.isPasscodeEnabled) {
+        if (settingsLoaded) {
+            if (!hasInitializedLockState) {
+                isUnlocked = !settings.isPasscodeEnabled
+                hasInitializedLockState = true
+            } else if (!settings.isPasscodeEnabled) {
+                // When lock is disabled (via settings or recovery), session is unlocked.
+                isUnlocked = true
+            }
+            // Note: When settings.isPasscodeEnabled transitions from false -> true while
+            // the user is already inside an active unlocked session (activating PIN in
+            // SecurityScreen/SecurityDialog), isUnlocked remains true so MainAppLayout
+            // is not torn down mid-session.
+        }
     }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner, settingsLoaded, settings.isPasscodeEnabled) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                com.smartledger.aldaftar.platform.security.BiometricAuthHelper.cancelActiveAuthentication()
+                val activity = context as? Activity
+                val isConfigChange = activity?.isChangingConfigurations == true
+                if (!isConfigChange && settingsLoaded && settings.isPasscodeEnabled) {
+                    isUnlocked = false
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     var showOnboarding by rememberSaveable { mutableStateOf(false) }
     val firstLaunch = settingsLoaded && settings.isFirstLaunch && !financeViewModel.hasShownOnboarding()
 
@@ -137,18 +171,15 @@ fun SmartLedgerApp(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {}
-            } else if (settings.isPasscodeEnabled && !isUnlocked) {
+            } else if (settings.isPasscodeEnabled && (!hasInitializedLockState || !isUnlocked)) {
                 AppLockScreen(
                     viewModel = securityViewModel,
-                    onUnlockSuccess = { isUnlocked = true },
+                    onUnlockSuccess = {
+                        hasInitializedLockState = true
+                        isUnlocked = true
+                    },
                     onUnlockBypassedAndDisabled = {
-                        securityViewModel.saveSettings(
-                            settings.copy(
-                                isPasscodeEnabled = false,
-                                passcodeHash = null,
-                                recoveryPhraseHash = null
-                            )
-                        )
+                        hasInitializedLockState = true
                         isUnlocked = true
                     }
                 )
@@ -167,3 +198,4 @@ fun SmartLedgerApp(
         }
     }
 }
+

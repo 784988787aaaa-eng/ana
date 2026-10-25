@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,12 +18,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.FilterAltOff
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,12 +50,36 @@ data class TrashWrapper(
 
 @Composable
 fun TrashEmptyView(
+    hasAnyItemsInTrash: Boolean = false,
+    searchQuery: String = "",
+    selectedFilter: TrashFilterType = TrashFilterType.ALL,
+    onClearSearch: () -> Unit = {},
+    onResetFilter: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val isSearchEmpty = hasAnyItemsInTrash && searchQuery.isNotBlank()
+    val isFilterEmpty = hasAnyItemsInTrash && !isSearchEmpty && selectedFilter != TrashFilterType.ALL
+
+    val icon = when {
+        isSearchEmpty -> Icons.Default.SearchOff
+        isFilterEmpty -> Icons.Default.FilterAltOff
+        else -> Icons.Outlined.DeleteSweep
+    }
+    val title = when {
+        isSearchEmpty -> stringResource(id = R.string.trash_empty_search_title)
+        isFilterEmpty -> stringResource(id = R.string.trash_empty_filter_title)
+        else -> stringResource(id = R.string.trash_empty_message)
+    }
+    val subtitle = when {
+        isSearchEmpty -> stringResource(id = R.string.trash_empty_search_subtitle, searchQuery)
+        isFilterEmpty -> stringResource(id = R.string.trash_empty_filter_subtitle)
+        else -> stringResource(id = R.string.trash_clean_empty_subtitle)
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            .padding(horizontal = 28.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -62,42 +88,70 @@ fun TrashEmptyView(
         ) {
             Box(
                 modifier = Modifier
-                    .size(88.dp)
+                    .size(76.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(54.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.DeleteSweep,
+                        imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(28.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
-                text = stringResource(id = R.string.trash_empty_message),
-                fontSize = 17.sp,
+                text = title,
+                fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = stringResource(id = R.string.trash_clean_empty_subtitle),
-                fontSize = 12.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                text = subtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                 textAlign = TextAlign.Center,
-                lineHeight = 18.sp
+                lineHeight = 17.sp
             )
+
+            if (isSearchEmpty) {
+                Spacer(modifier = Modifier.height(14.dp))
+                OutlinedButton(
+                    onClick = onClearSearch,
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.trash_clear_search_btn),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else if (isFilterEmpty) {
+                Spacer(modifier = Modifier.height(14.dp))
+                OutlinedButton(
+                    onClick = onResetFilter,
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.trash_reset_filter_btn),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }
@@ -121,33 +175,68 @@ fun TrashItemListSection(
     onOpenCustomerOverlay: (TrashWrapper) -> Unit,
     onOpenTransactionDetail: (TrashWrapper) -> Unit = {},
     onLoadMore: () -> Unit,
+    hasAnyItemsInTrash: Boolean = processedItems.isNotEmpty(),
+    searchQuery: String = "",
+    isLoading: Boolean = false,
+    onClearSearch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        TrashFilterToolbar(
-            selectedFilter = selectedFilter,
-            selectedSort = selectedSort,
-            autoCleanupPeriod = autoCleanupPeriod,
-            onFilterSelected = onFilterSelected,
-            onSortSelected = onSortSelected,
-            onAutoCleanupPeriodChanged = onAutoCleanupPeriodChanged
-        )
+        if (hasAnyItemsInTrash || selectedFilter != TrashFilterType.ALL || selectedSort != TrashSortType.NEWEST_DELETED) {
+            TrashFilterToolbar(
+                selectedFilter = selectedFilter,
+                selectedSort = selectedSort,
+                autoCleanupPeriod = autoCleanupPeriod,
+                onFilterSelected = onFilterSelected,
+                onSortSelected = onSortSelected,
+                onAutoCleanupPeriodChanged = onAutoCleanupPeriodChanged
+            )
+        }
 
-        if (processedItems.isEmpty()) {
+        if (isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                TrashEmptyView()
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(30.dp),
+                        strokeWidth = 2.5.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(id = R.string.trash_loading_message),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else if (processedItems.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                TrashEmptyView(
+                    hasAnyItemsInTrash = hasAnyItemsInTrash,
+                    searchQuery = searchQuery,
+                    selectedFilter = selectedFilter,
+                    onClearSearch = onClearSearch,
+                    onResetFilter = { onFilterSelected(TrashFilterType.ALL) }
+                )
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 14.dp),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 90.dp),
+                    .padding(horizontal = 12.dp),
+                contentPadding = PaddingValues(top = 4.dp, bottom = 84.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(processedItems, key = { it.entity.id }) { wrapper ->
