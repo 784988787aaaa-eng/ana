@@ -21,13 +21,23 @@ class HabayebCategoryDataRepository(
         customers.mapNotNull { c -> c.categoryId?.let { id -> names[id]?.let { c.id to it } } }.toMap()
     }
 
-    fun pinnedCustomerIdsFlow(categoryId: Int?): Flow<Set<String>> =
-        combine(
-            dao.getAllPinnedCustomerIdsFlow(),
-            dao.getPinnedCustomerIdsFlow(scopeCategoryId(categoryId))
-        ) { allPinned, scopedPinned ->
-            (allPinned + scopedPinned).toSet()
+    fun pinnedCustomerIdsFlow(categoryId: Int?): Flow<Set<String>> {
+        val targetScope = scopeCategoryId(categoryId)
+        return if (targetScope == GLOBAL_SCOPE_CATEGORY_ID) {
+            dao.getAllPinnedCustomerIdsFlow().map { it.toSet() }
+        } else {
+            combine(
+                dao.getAllPinnedCustomerIdsFlow(),
+                dao.getPinnedCustomerIdsFlow(targetScope)
+            ) { allPinned, scopedPinned ->
+                (allPinned + scopedPinned).toSet()
+            }
         }
+    }
+
+    suspend fun getAllPinnedCustomerIdsDirect(): Set<String> =
+        dao.getAllPinnedCustomerIdsDirect().toSet()
+
 
     suspend fun togglePinCustomer(customerId: String, categoryId: Int?): Boolean = database.withTransaction {
         val customer = dao.getCustomerByIdDirect(customerId) ?: return@withTransaction false

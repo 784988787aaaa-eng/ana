@@ -367,4 +367,55 @@ class PinnedAccountsAndSmartCategoryCreationTest {
                 vmSource.contains("customer.copy(categoryId = resolvedCategoryId)")
         )
     }
+
+    @Test
+    fun categoryMoving_inRtlLayout_movesRightTowardsZeroAndLeftTowardsHigherIndex() = runBlocking {
+        categoryUseCase.saveCustomCategory("تصنيف أ")
+        categoryUseCase.saveCustomCategory("تصنيف ب")
+        categoryUseCase.saveCustomCategory("تصنيف ج")
+
+        val initialCats = categoryRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }
+        val idA = initialCats[0].id
+        val idB = initialCats[1].id
+        val idC = initialCats[2].id
+        val initialOrder = listOf(idA, idB, idC)
+
+        // In Arabic RTL, moving "ب" (middle) RIGHT must move it towards index 0 (visually right)
+        categoryUseCase.moveCategoryRight(initialOrder, idB)
+        var updated = categoryRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }.map { it.id }
+        assertEquals(listOf(idB, idA, idC), updated)
+
+        // Moving "ب" LEFT in RTL must move it towards index 1 (visually left)
+        categoryUseCase.moveCategoryLeft(updated, idB)
+        updated = categoryRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }.map { it.id }
+        assertEquals(listOf(idA, idB, idC), updated)
+
+        // Moving "أ" (already at rightmost index 0) further RIGHT cannot move beyond bounds
+        categoryUseCase.moveCategoryRight(updated, idA)
+        val sameOrder = categoryRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }.map { it.id }
+        assertEquals(listOf(idA, idB, idC), sameOrder)
+    }
+
+    @Test
+    fun coldStartPinnedAccounts_immediatelyAccessibleWithoutFlowDelay() = runBlocking {
+        val customer = HabayebCustomer(
+            id = "cust_pinned_cold",
+            name = "عميل مثبت فوري",
+            phone = "777000111",
+            notes = "",
+            createdAt = 1000L,
+            initialType = TransactionType.OWED_BY_THEM.value,
+            categoryId = null
+        )
+        db.habayebDao().insertCustomer(customer)
+        categoryUseCase.togglePinCustomer(customer.id, null)
+
+        // Direct synchronous access returns pinned ID immediately
+        val directPins = categoryUseCase.getAllPinnedCustomerIdsDirect()
+        assertTrue(directPins.contains("cust_pinned_cold"))
+
+        // Flow query emits the pinned ID immediately on initial emission
+        val flowPins = categoryUseCase.pinnedCustomerIdsFlow(null).first()
+        assertTrue(flowPins.contains("cust_pinned_cold"))
+    }
 }

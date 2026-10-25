@@ -98,12 +98,21 @@ class HabayebFinanceViewModel(
     val customerCategoryMapState: StateFlow<Map<String, String>> = categoryUseCase.categoryMapFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    private val selectedCategoryIdFlow: Flow<Int?> = combine(selectedCategoryFilter, categoriesRepository.customCategoriesFlow) { name, categories ->
-        name?.let { selected -> categories.firstOrNull { it.name == selected }?.id }
-    }
+    private val selectedCategoryIdFlow: Flow<Int?> = selectedCategoryFilter.flatMapLatest { selectedName ->
+        if (selectedName == null || selectedName == FinanceConstants.CATEGORY_CLOSED) {
+            flowOf(null)
+        } else {
+            categoriesRepository.customCategoriesFlow.map { categories ->
+                categories.firstOrNull { it.name == selectedName }?.id
+            }
+        }
+    }.distinctUntilChanged()
+
+    private val isPinsInitialLoadComplete = MutableStateFlow(false)
 
     val pinnedCustomerIds: StateFlow<Set<String>> = selectedCategoryIdFlow
         .flatMapLatest { categoryUseCase.pinnedCustomerIdsFlow(it) }
+        .onEach { isPinsInitialLoadComplete.value = true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     fun resolveInitialCategoryForNewAccount(selectedCategory: String? = selectedCategoryFilter.value): String? {
@@ -127,6 +136,10 @@ class HabayebFinanceViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             categoryUseCase.ensureClosedCategoryExists()
+            try {
+                categoryUseCase.getAllPinnedCustomerIdsDirect()
+                isPinsInitialLoadComplete.value = true
+            } catch (_: Exception) {}
         }
     }
 
@@ -270,9 +283,9 @@ class HabayebFinanceViewModel(
             CustomersUiState(isLoading = true, isInitialized = false)
         )
 
-    val isInitialDataReady: StateFlow<Boolean> = customersUiState
-        .map { it.isInitialized }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val isInitialDataReady: StateFlow<Boolean> = combine(customersUiState, isPinsInitialLoadComplete) { currentCustomersUi, pinsLoaded ->
+        currentCustomersUi.isInitialized && pinsLoaded
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val debouncedSearchQuery = searchQuery
         .debounce { query ->
@@ -283,6 +296,15 @@ class HabayebFinanceViewModel(
     private val filterGroup2Flow = combine(temporarilyHiddenCustomerIds, selectedCategoryFilter, pinnedCustomerIds) { hid, cat, pin -> HabayebFilterGroup2(hid, cat, pin) }
     private val filterParametersFlow = combine(filterGroup1Flow, filterGroup2Flow) { g1, g2 ->
         HabayebFilterParameters(g1.query, g1.tab, g1.finSort, g1.histSort, g2.hiddenIds, g2.selectedCat, g2.pinnedIds)
+    }
+
+    private data class CustomersAndPinsState(
+        val uiState: CustomersUiState,
+        val pinsLoaded: Boolean
+    )
+
+    private val customersAndPinsFlow = combine(customersUiState, isPinsInitialLoadComplete) { ui, pinsLoaded ->
+        CustomersAndPinsState(ui, pinsLoaded)
     }
 
     private data class CategoryUiData(
@@ -300,17 +322,21 @@ class HabayebFinanceViewModel(
     }
 
     val uiState: StateFlow<HabayebUiState> = combine(
-        customersUiState,
+        customersAndPinsFlow,
         filterParametersFlow,
         categoryUseCase.categoryMapFlow,
         categoryUiDataFlow,
         selectedCustomerIdsState
-    ) { currentCustomersUi, filterParams, categoryMap, categoryData, selectedIds ->
+    ) { customersAndPins, filterParams, categoryMap, categoryData, selectedIds ->
+        val currentCustomersUi = customersAndPins.uiState
+        val pinsLoaded = customersAndPins.pinsLoaded
         val filteredRes = HabayebFinancialCalculator.calculateFilteredResult(
             currentCustomersUi,
             filterParams,
             categoryMap
         )
+        val fullyInitialized = currentCustomersUi.isInitialized && pinsLoaded
+        val stillLoading = currentCustomersUi.isLoading || !pinsLoaded
         HabayebUiState(
             customers = currentCustomersUi.customers,
             filteredCustomers = filteredRes.filteredCustomers,
@@ -328,8 +354,8 @@ class HabayebFinanceViewModel(
             selectedCategory = filterParams.selectedCat,
             selectedCustomerIds = selectedIds,
             activeCustomersCount = filteredRes.activeCustomersCount,
-            isInitialized = currentCustomersUi.isInitialized,
-            isLoading = currentCustomersUi.isLoading
+            isInitialized = fullyInitialized,
+            isLoading = stillLoading
         )
     }
         .distinctUntilChanged()

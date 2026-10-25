@@ -32,8 +32,9 @@ class HabayebCategoryUseCase(
         if (category.name != newName) data.saveCategory(category.copy(name = newName))
     }
     suspend fun deleteCustomCategoryWithChoice(category: CustomCategory, deleteLinkedAccounts: Boolean) = data.deleteCategory(category, deleteLinkedAccounts)
-    suspend fun moveCategoryLeft(currentOrder: List<Int>, categoryId: Int) = move(currentOrder, categoryId, -1)
-    suspend fun moveCategoryRight(currentOrder: List<Int>, categoryId: Int) = move(currentOrder, categoryId, 1)
+    suspend fun getAllPinnedCustomerIdsDirect(): Set<String> = data.getAllPinnedCustomerIdsDirect()
+    suspend fun moveCategoryLeft(currentOrder: List<Int>, categoryId: Int) = move(currentOrder, categoryId, 1)
+    suspend fun moveCategoryRight(currentOrder: List<Int>, categoryId: Int) = move(currentOrder, categoryId, -1)
     private suspend fun move(order: List<Int>, id: Int, delta: Int) {
         val index = order.indexOf(id); val target = index + delta
         if (index !in order.indices || target !in order.indices) return
