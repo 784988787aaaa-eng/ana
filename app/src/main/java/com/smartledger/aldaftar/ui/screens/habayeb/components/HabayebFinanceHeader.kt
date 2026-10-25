@@ -118,18 +118,18 @@ fun HabayebFinanceHeader(
                     searchHint = stringResource(id = R.string.habayeb_search_hint)
                 )
             } else {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 14.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.Center
                 ) {
                     IconButton(
                         onClick = {
                             onMenuClick()
                         },
                         modifier = Modifier
+                            .align(Alignment.CenterStart)
                             .size(38.dp)
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f), CircleShape)
                     ) {
@@ -145,8 +145,9 @@ fun HabayebFinanceHeader(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp)
+                            .align(Alignment.Center)
+                            .fillMaxWidth()
+                            .padding(horizontal = 74.dp)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {
@@ -165,54 +166,69 @@ fun HabayebFinanceHeader(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             IconButton(
                                 onClick = onTogglePrivacy,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(30.dp)
                             ) {
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = stringResource(id = R.string.common_visibility_desc),
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(18.dp)
+                                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                                    modifier = Modifier.size(17.dp)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
 
-                            AnimatedContent(
-                                targetState = formattedNetDebt,
-                                transitionSpec = {
-                                    if (targetState == PRIVACY_MASK || initialState == PRIVACY_MASK) {
-                                        fadeIn(animationSpec = tween(90)).togetherWith(fadeOut(animationSpec = tween(60)))
-                                    } else {
-                                        (fadeIn(animationSpec = tween(150)) + slideInVertically(animationSpec = tween(150)) { height -> height / 3 })
-                                            .togetherWith(fadeOut(animationSpec = tween(100)) + slideOutVertically(animationSpec = tween(100)) { height -> -height / 3 })
-                                    }
-                                },
-                                label = "net_debt_anim"
-                            ) { animatedBalance ->
-                                AutoScaleText(
-                                    text = animatedBalance,
-                                    baseFontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.Center
-                                )
+                            Box(
+                                modifier = Modifier.weight(1f, fill = false),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AnimatedContent(
+                                    targetState = formattedNetDebt,
+                                    transitionSpec = {
+                                        if (targetState == PRIVACY_MASK || initialState == PRIVACY_MASK) {
+                                            fadeIn(animationSpec = tween(90)).togetherWith(fadeOut(animationSpec = tween(60)))
+                                        } else {
+                                            (fadeIn(animationSpec = tween(150)) + slideInVertically(animationSpec = tween(150)) { height -> height / 3 })
+                                                .togetherWith(fadeOut(animationSpec = tween(100)) + slideOutVertically(animationSpec = tween(100)) { height -> -height / 3 })
+                                        }
+                                    },
+                                    label = "net_debt_anim"
+                                ) { animatedBalance ->
+                                    AutoScaleText(
+                                        text = animatedBalance,
+                                        baseFontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        maxLines = 1,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            Spacer(
+                                modifier = Modifier.size(30.dp)
+                            )
                         }
                     }
 
                     Row(
+                        modifier = Modifier.align(Alignment.CenterEnd),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
