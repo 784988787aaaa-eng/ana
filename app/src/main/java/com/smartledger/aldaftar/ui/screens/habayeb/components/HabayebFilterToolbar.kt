@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -108,7 +109,7 @@ fun HabayebFilterToolbar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(32.dp)
+                .heightIn(min = 34.dp)
                 .padding(horizontal = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -268,7 +269,7 @@ fun HabayebFilterToolbar(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
                         .clickable {
                             onAddCategoryClick()
@@ -277,7 +278,7 @@ fun HabayebFilterToolbar(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(26.dp)
+                            .size(28.dp)
                             .clip(CircleShape)
                             .background(activeThemeColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
@@ -298,7 +299,7 @@ fun HabayebFilterToolbar(
 
                     Box(
                         modifier = Modifier
-                            .size(30.dp)
+                            .size(34.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 isSortMenuExpanded = true
@@ -307,7 +308,7 @@ fun HabayebFilterToolbar(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(26.dp)
+                                .size(28.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(sortBtnBg),
                             contentAlignment = Alignment.Center

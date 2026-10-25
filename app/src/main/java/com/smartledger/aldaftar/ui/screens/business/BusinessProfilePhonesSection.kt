@@ -75,16 +75,16 @@ fun BusinessProfilePhonesSection(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
         tonalElevation = if (isDialog) 0.dp else 1.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Section Header Row
             Row(
@@ -98,7 +98,7 @@ fun BusinessProfilePhonesSection(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Surface(
-                        modifier = Modifier.size(30.dp),
+                        modifier = Modifier.size(28.dp),
                         shape = RoundedCornerShape(8.dp),
                         color = activeThemeColor.copy(alpha = 0.12f)
                     ) {
@@ -107,42 +107,35 @@ fun BusinessProfilePhonesSection(
                                 imageVector = Icons.Default.Phone,
                                 contentDescription = null,
                                 tint = activeThemeColor,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                     }
 
-                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.biz_phones_section),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.testTag("biz_phones_section")
-                            )
-                            val validCount = phoneInputs.count { it.nationalNumber.isNotBlank() }
-                            if (validCount > 0) {
-                                Text(
-                                    text = validCount.toString(),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = activeThemeColor,
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(activeThemeColor.copy(alpha = 0.14f))
-                                        .padding(horizontal = 7.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
-                            text = stringResource(id = R.string.biz_phones_subtitle),
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(id = R.string.biz_phones_section),
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.testTag("biz_phones_section")
                         )
+                        val validCount = phoneInputs.count { it.nationalNumber.isNotBlank() }
+                        if (validCount > 0) {
+                            Text(
+                                text = validCount.toString(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = activeThemeColor,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(activeThemeColor.copy(alpha = 0.14f))
+                                    .padding(horizontal = 7.dp, vertical = 1.dp)
+                            )
+                        }
                     }
                 }
 

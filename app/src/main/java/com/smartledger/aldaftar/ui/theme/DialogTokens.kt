@@ -27,8 +27,8 @@ object MizanDialogTokens {
     val dialogVertical: Dp = 16.dp
     val headerContentGap: Dp = 16.dp
 
-    val enterDuration: Int = 120
-    val exitDuration: Int = 90
+    val enterDuration: Int = MizanAnimationTokens.DURATION_DIALOG_ENTER
+    val exitDuration: Int = MizanAnimationTokens.DURATION_DIALOG_EXIT
     const val enterScale: Float = 0.92f
     const val exitScale: Float = 0.98f
 
@@ -47,6 +47,7 @@ object MizanDialogTokens {
     val buttonRadius: Dp = actionRadius
 
     val shape = RoundedCornerShape(dialogRadius)
+    val sheetShape = RoundedCornerShape(topStart = sheetTopRadius, topEnd = sheetTopRadius)
     val innerCardShape = RoundedCornerShape(innerCardRadius)
     val inputShape = RoundedCornerShape(inputRadius)
     val buttonShape = RoundedCornerShape(actionRadius)

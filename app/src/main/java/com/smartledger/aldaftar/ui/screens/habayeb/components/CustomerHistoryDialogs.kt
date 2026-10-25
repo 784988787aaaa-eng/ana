@@ -5,6 +5,8 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +20,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import com.smartledger.aldaftar.ui.theme.MizanAnimationTokens
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import java.math.BigDecimal
 
 @Composable
@@ -74,20 +80,23 @@ fun ExchangeRateModifyDialog(
         Pair(curr, isRelevant)
     }
 
-    Dialog(onDismissRequest = {
+    MizanAnimatedDialog(onDismissRequest = {
         onDismissRequest()
         showRateSetupOverlay = false
-    }) {
+    }) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier
-                    .width(260.dp)
-                    .padding(8.dp)
+            MizanDialogCard(
+                maxWidth = MizanDialogTokens.compactMaxWidth,
+                contentPadding = PaddingValues(
+                    horizontal = MizanDialogTokens.dialogHorizontal,
+                    vertical = MizanDialogTokens.dialogVertical
+                )
             ) {
-                Crossfade(targetState = showRateSetupOverlay, label = "RateModifyTransition") { isSetup ->
+                Crossfade(
+                    targetState = showRateSetupOverlay,
+                    animationSpec = androidx.compose.animation.core.tween(MizanAnimationTokens.DURATION_CROSSFADE),
+                    label = "RateModifyTransition"
+                ) { isSetup ->
                     if (isSetup) {
                         BackHandler {
                             showRateSetupOverlay = false
@@ -108,13 +117,17 @@ fun ExchangeRateModifyDialog(
                         )
                     } else {
                         if (isExchangeRateRelevant) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
+                                com.smartledger.aldaftar.ui.components.MizanDialogHeader(
+                                    title = stringResource(id = R.string.currency_update_rate_title),
+                                    subtitle = txCurrency,
+                                    icon = androidx.compose.material.icons.Icons.Default.Sync,
+                                    iconTint = activeThemeColor,
+                                    onCloseClick = dismissDialog
+                                )
                                 if (!tx.isRateCalculated) {
                                     Button(
                                         onClick = {
@@ -132,15 +145,15 @@ fun ExchangeRateModifyDialog(
                                             containerColor = MaterialTheme.colorScheme.tertiary,
                                             contentColor = MaterialTheme.colorScheme.onTertiary
                                         ),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = MizanDialogTokens.buttonShape,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(38.dp),
+                                            .height(MizanDialogTokens.buttonHeight),
                                         contentPadding = PaddingValues(0.dp)
                                     ) {
                                         Text(
                                             text = stringResource(id = R.string.habayeb_activate_exchange),
-                                            fontSize = 11.sp,
+                                            fontSize = 12.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onTertiary
                                         )
@@ -154,15 +167,15 @@ fun ExchangeRateModifyDialog(
                                             containerColor = MaterialTheme.colorScheme.error,
                                             contentColor = MaterialTheme.colorScheme.onError
                                         ),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = MizanDialogTokens.buttonShape,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(38.dp),
+                                            .height(MizanDialogTokens.buttonHeight),
                                         contentPadding = PaddingValues(0.dp)
                                     ) {
                                         Text(
                                             text = stringResource(id = R.string.habayeb_deactivate_exchange),
-                                            fontSize = 11.sp,
+                                            fontSize = 12.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onError
                                         )

@@ -33,7 +33,7 @@ class BuildHygieneContractTest {
         val gradleFile = sequenceOf(
             File(root, "app/build.gradle.kts"),
             File(root, "build.gradle.kts")
-        ).firstOrNull { it.exists() && it.readText().contains("namespace = "com.smartledger.aldaftar"") }
+        ).firstOrNull { it.exists() && it.readText().contains("namespace = \"com.smartledger.aldaftar\"") }
             ?: error("app/build.gradle.kts not found")
         val content = gradleFile.readText()
         assertFalse("Server admin secret must never be embedded in client BuildConfig", content.contains("SMARTLEDGER_ADMIN_SECRET"))

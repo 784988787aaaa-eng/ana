@@ -245,7 +245,7 @@ fun BackupRestoreBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            shape = MizanDialogTokens.sheetShape,
             dragHandle = {
                 Box(
                     modifier = Modifier
@@ -1412,7 +1412,7 @@ private fun CloudArchiveBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+        shape = MizanDialogTokens.sheetShape
     ) {
         Column(
             modifier = Modifier

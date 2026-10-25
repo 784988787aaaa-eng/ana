@@ -21,66 +21,15 @@ fun RestoreWarningDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = MizanDialogTokens.shape,
-        icon = {
-            Icon(
-                imageVector = Icons.Default.CloudDownload,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(28.dp)
-            )
+    com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog(
+        title = stringResource(R.string.backup_restore_warn_title),
+        message = stringResource(R.string.backup_restore_warn_desc),
+        confirmText = stringResource(R.string.backup_restore_confirm_btn),
+        icon = Icons.Default.CloudDownload,
+        onConfirm = {
+            onConfirm()
+            onDismiss()
         },
-        title = {
-            Text(
-                text = stringResource(R.string.backup_restore_warn_title),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Text(
-                text = stringResource(R.string.backup_restore_warn_desc),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 18.sp,
-                textAlign = TextAlign.Right
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.backup_restore_confirm_btn),
-                    color = MaterialTheme.colorScheme.onError,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
-            }
-        },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.backup_reset_cancel_btn),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-            }
-        }
+        onDismiss = onDismiss
     )
 }

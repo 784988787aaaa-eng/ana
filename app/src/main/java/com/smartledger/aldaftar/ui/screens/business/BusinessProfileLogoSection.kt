@@ -59,24 +59,24 @@ fun BusinessProfileLogoSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
-        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Avatar / Logo Frame
             Box(
                 modifier = Modifier
-                    .size(if (isDialog) 62.dp else 72.dp)
+                    .size(if (isDialog) 52.dp else 62.dp)
                     .clip(CircleShape)
                     .background(activeThemeColor.copy(alpha = 0.10f))
-                    .border(2.dp, activeThemeColor.copy(alpha = 0.35f), CircleShape)
+                    .border(1.8.dp, activeThemeColor.copy(alpha = 0.35f), CircleShape)
                     .clickable {
                         galleryLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -97,33 +97,24 @@ fun BusinessProfileLogoSection(
                         imageVector = Icons.Default.AddPhotoAlternate,
                         contentDescription = stringResource(id = R.string.biz_logo_desc),
                         tint = activeThemeColor,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(23.dp)
                     )
                 }
             }
 
-            // Title, Subtitle & Action Pills
+            // Title & Action Pills (Subtitle omitted in dialog mode to prevent header duplication)
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(
-                        text = stringResource(id = R.string.biz_logo_title),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = stringResource(id = R.string.biz_logo_subtitle),
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = stringResource(id = R.string.biz_logo_title),
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -135,8 +126,8 @@ fun BusinessProfileLogoSection(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
                         },
-                        modifier = Modifier.height(32.dp),
-                        shape = RoundedCornerShape(9.dp),
+                        modifier = Modifier.height(30.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = activeThemeColor.copy(alpha = 0.14f),
                             contentColor = activeThemeColor
@@ -161,8 +152,8 @@ fun BusinessProfileLogoSection(
                     if (logoBitmapState != null) {
                         OutlinedButton(
                             onClick = onDeleteLogo,
-                            modifier = Modifier.height(32.dp),
-                            shape = RoundedCornerShape(9.dp),
+                            modifier = Modifier.height(30.dp),
+                            shape = RoundedCornerShape(8.dp),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.06f),

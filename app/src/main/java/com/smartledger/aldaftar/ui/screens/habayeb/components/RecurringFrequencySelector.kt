@@ -184,31 +184,31 @@ private fun WeeklyDayPicker(
     activeColor: Color,
     onDayToggle: (Int) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             daysOfWeek.forEach { (dayInt, name) ->
                 val isSelected = selectedDays.contains(dayInt)
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) activeColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(if (isSelected) activeColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         .border(
                             1.dp,
-                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                            RoundedCornerShape(8.dp)
+                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                            RoundedCornerShape(9.dp)
                         )
                         .clickable { onDayToggle(dayInt) }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = name,
                         color = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -229,28 +229,28 @@ private fun MonthlyDayGrid(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             daysList.forEach { dayNum ->
                 val isSelected = selectedDays.contains(dayNum)
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .background(if (isSelected) activeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                         .border(
-                            0.5.dp,
-                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            0.75.dp,
+                            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                             CircleShape
                         )
                         .clickable { onDayToggle(dayNum) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = dayNum.toString(),
+                        text = String.format(java.util.Locale.ENGLISH, "%d", dayNum),
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

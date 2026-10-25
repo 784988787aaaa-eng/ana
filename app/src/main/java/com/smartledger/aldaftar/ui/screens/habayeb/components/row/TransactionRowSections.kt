@@ -83,11 +83,12 @@ fun TransactionRowDateSection(
                     .padding(horizontal = 3.dp, vertical = 0.5.dp)
             )
             if (hasActiveRecurring) {
-                Spacer(modifier = Modifier.width(2.dp))
+                Spacer(modifier = Modifier.width(3.dp))
                 Box(
                     modifier = Modifier
-                        .size(13.dp)
+                        .size(22.dp)
                         .background(activeThemeColor.copy(alpha = 0.12f), CircleShape)
+                        .clip(CircleShape)
                         .clickable { onScheduleClick(tx) },
                     contentAlignment = Alignment.Center
                 ) {
@@ -95,7 +96,7 @@ fun TransactionRowDateSection(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = stringResource(id = R.string.habayeb_recurring_source),
                         tint = activeThemeColor,
-                        modifier = Modifier.size(8.dp)
+                        modifier = Modifier.size(12.dp)
                     )
                 }
             }
@@ -119,7 +120,7 @@ fun TransactionRowDateSection(
 
         Text(
             text = annotatedDate,
-            fontSize = 8.5.sp,
+            fontSize = 9.5.sp,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -127,7 +128,7 @@ fun TransactionRowDateSection(
 
         Text(
             text = cached.timeStr,
-            fontSize = 7.5.sp,
+            fontSize = 8.5.sp,
             color = mizanColors.contentSecondary,
             fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
@@ -157,7 +158,7 @@ fun TransactionRowDetailsSection(
     ) {
         Text(
             text = stringResource(id = cached.typeResId),
-            fontSize = 8.5.sp,
+            fontSize = 9.5.sp,
             color = cached.indicatorColor,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -165,7 +166,7 @@ fun TransactionRowDetailsSection(
 
         Text(
             text = cached.cleanDescription.ifEmpty { stringResource(id = R.string.habayeb_no_notes) },
-            fontSize = 10.5.sp,
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -184,13 +185,13 @@ fun TransactionRowDetailsSection(
                 if (hasActiveRecurring) {
                     Box(
                         modifier = Modifier
-                            .background(mizanColors.alertGoldBackground, RoundedCornerShape(3.dp))
-                            .border(0.5.dp, mizanColors.alertGoldBorder, RoundedCornerShape(3.dp))
-                            .padding(horizontal = 3.dp, vertical = 0.5.dp)
+                            .background(mizanColors.alertGoldBackground, RoundedCornerShape(4.dp))
+                            .border(0.5.dp, mizanColors.alertGoldBorder, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.habayeb_recurring_source),
-                            fontSize = 7.5.sp,
+                            fontSize = 8.5.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false,
@@ -200,13 +201,13 @@ fun TransactionRowDetailsSection(
                 } else if (parentTxSeq != null && parentTxSeq > 0 && !tx.linkedMainTxId.isNullOrBlank() && !tx.linkedMainTxId.equals("null", ignoreCase = true) && tx.linkedMainTxId != tx.id) {
                     Box(
                         modifier = Modifier
-                            .background(mizanColors.infoBlueBackground, RoundedCornerShape(3.dp))
-                            .border(0.5.dp, mizanColors.infoBlueBorder, RoundedCornerShape(3.dp))
-                            .padding(horizontal = 3.dp, vertical = 0.5.dp)
+                            .background(mizanColors.infoBlueBackground, RoundedCornerShape(4.dp))
+                            .border(0.5.dp, mizanColors.infoBlueBorder, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.habayeb_auto_generated_sub, parentTxSeq),
-                            fontSize = 7.5.sp,
+                            fontSize = 8.5.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false,
@@ -219,7 +220,7 @@ fun TransactionRowDetailsSection(
                     val isCalculated = cached.isCalculated
                     Row(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
+                            .clip(RoundedCornerShape(4.dp))
                             .background(
                                 if (isCalculated) mizanColors.successGreenBackground
                                 else mizanColors.appSurfaceVariant
@@ -228,10 +229,10 @@ fun TransactionRowDetailsSection(
                                 0.5.dp,
                                 if (isCalculated) mizanColors.successGreenBorder
                                 else mizanColors.border,
-                                RoundedCornerShape(3.dp)
+                                RoundedCornerShape(4.dp)
                             )
                             .clickable { onExchangeRateClick(tx) }
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                            .padding(horizontal = 5.dp, vertical = 1.5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -239,7 +240,7 @@ fun TransactionRowDetailsSection(
                             imageVector = if (isCalculated) Icons.Default.Check else Icons.Default.Close,
                             contentDescription = null,
                             tint = if (isCalculated) mizanColors.successGreenBorder else mizanColors.debtBorder.copy(alpha = 0.8f),
-                            modifier = Modifier.size(8.dp)
+                            modifier = Modifier.size(9.dp)
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
@@ -248,7 +249,7 @@ fun TransactionRowDetailsSection(
                             } else {
                                 stringResource(id = R.string.habayeb_rate_inactive_clean)
                             },
-                            fontSize = 7.5.sp,
+                            fontSize = 8.5.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false,

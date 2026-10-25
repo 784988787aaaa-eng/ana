@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -310,22 +311,22 @@ private fun CompactPrimaryCurrencyCard(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(11.dp),
+                            .heightIn(min = 56.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                         border = BorderStroke(
                             width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                         ),
                         shadowElevation = if (isSelected) 2.dp else 0.dp
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 4.dp, vertical = 3.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp, vertical = 6.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -335,20 +336,23 @@ private fun CompactPrimaryCurrencyCard(
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
-                                        modifier = Modifier.size(12.dp)
+                                        modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(3.dp))
                                 }
                                 Text(
                                     text = symbol,
-                                    fontSize = 12.sp,
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 15.sp,
                                     fontWeight = FontWeight.ExtraBold
                                 )
                             }
                             Text(
                                 text = currencyName,
-                                fontSize = 9.5.sp,
+                                fontSize = 10.sp,
+                                lineHeight = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                textAlign = TextAlign.Center,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -388,7 +392,7 @@ private fun CompactExchangeRateCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -441,7 +445,7 @@ private fun CompactExchangeRateCard(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(36.dp),
+                                .heightIn(min = 40.dp),
                             shape = RoundedCornerShape(10.dp),
                             color = if (isSelected) {
                                 MaterialTheme.colorScheme.secondaryContainer
@@ -449,18 +453,18 @@ private fun CompactExchangeRateCard(
                                 MaterialTheme.colorScheme.surface
                             },
                             border = BorderStroke(
-                                width = if (isSelected) 1.2.dp else 0.8.dp,
+                                width = if (isSelected) 1.2.dp else 1.dp,
                                 color = if (isSelected) {
                                     MaterialTheme.colorScheme.secondary
                                 } else {
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                    MaterialTheme.colorScheme.outlineVariant
                                 }
                             )
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 8.dp),
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
@@ -474,6 +478,7 @@ private fun CompactExchangeRateCard(
                                 Text(
                                     text = symbol,
                                     fontSize = 12.sp,
+                                    lineHeight = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
@@ -481,6 +486,7 @@ private fun CompactExchangeRateCard(
                                 Text(
                                     text = "($currencyName)",
                                     fontSize = 10.sp,
+                                    lineHeight = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,

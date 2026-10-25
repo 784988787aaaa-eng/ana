@@ -115,8 +115,9 @@ fun CustomerHistoryFilterSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = MizanDialogTokens.sheetTopRadius, topEnd = MizanDialogTokens.sheetTopRadius),
-        containerColor = MaterialTheme.colorScheme.surface
+        shape = MizanDialogTokens.sheetShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -283,11 +284,11 @@ fun CustomerHistoryFilterSheet(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
             Text(
                 text = stringResource(id = R.string.habayeb_filter_by_type),
-                fontSize = 14.sp,
+                fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -300,15 +301,16 @@ fun CustomerHistoryFilterSheet(
             ) {
                 typeModes.forEach { (mode, label) ->
                     val isSelected = typeFilterMode == mode
-                    val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.outlineVariant
+                    val chipBg = if (isSelected) activeThemeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     val chipText = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
+                            .defaultMinSize(minHeight = 36.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(chipBg)
                             .clickable { onTypeFilterModeChange(mode) }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)

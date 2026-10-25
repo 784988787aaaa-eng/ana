@@ -32,11 +32,9 @@ import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 import com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
-import com.smartledger.aldaftar.ui.theme.CreditContainerLight
-import com.smartledger.aldaftar.ui.theme.CreditGreen
-import com.smartledger.aldaftar.ui.theme.DebtContainerLight
-import com.smartledger.aldaftar.ui.theme.DebtRed
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
+import com.smartledger.aldaftar.ui.theme.mizanColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,12 +58,14 @@ fun CustomerHistoryShareBottomSheet(
     if (!showShareSheet) return
 
     val context = LocalContext.current
+    val mizanColors = MaterialTheme.mizanColors
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
     val isPhoneValid = remember(activeCustomer.phone) { CustomerPhoneHelper.isValidDestination(activeCustomer.phone) }
     val scrollState = androidx.compose.foundation.rememberScrollState()
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        shape = MizanDialogTokens.sheetShape,
         containerColor = MaterialTheme.colorScheme.surface,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -145,8 +145,8 @@ fun CustomerHistoryShareBottomSheet(
                             else -> stringResource(id = R.string.habayeb_balanced)
                         }
                         val statusColor = when {
-                            netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> DebtRed
-                            netDebt.compareTo(java.math.BigDecimal.ZERO) < 0 -> CreditGreen
+                            netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> mizanColors.debt
+                            netDebt.compareTo(java.math.BigDecimal.ZERO) < 0 -> mizanColors.credit
                             else -> MaterialTheme.colorScheme.outline
                         }
 
@@ -187,8 +187,8 @@ fun CustomerHistoryShareBottomSheet(
 
             FileShareOptionRow(
                 icon = Icons.Default.PictureAsPdf,
-                iconTint = DebtRed,
-                iconBgColor = DebtRed.copy(alpha = 0.12f),
+                iconTint = mizanColors.debt,
+                iconBgColor = mizanColors.debt.copy(alpha = 0.12f),
                 title = stringResource(id = R.string.share_pdf_title),
                 description = stringResource(id = R.string.share_pdf_desc),
                 isPhoneAvailable = isPhoneAvailable,
@@ -205,8 +205,8 @@ fun CustomerHistoryShareBottomSheet(
 
             FileShareOptionRow(
                 icon = Icons.Default.GridOn,
-                iconTint = CreditGreen,
-                iconBgColor = CreditGreen.copy(alpha = 0.12f),
+                iconTint = mizanColors.credit,
+                iconBgColor = mizanColors.credit.copy(alpha = 0.12f),
                 title = stringResource(id = R.string.share_csv_title),
                 description = stringResource(id = R.string.share_csv_desc),
                 isPhoneAvailable = isPhoneAvailable,

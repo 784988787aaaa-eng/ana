@@ -59,9 +59,9 @@ fun BusinessProfileInfoSection(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
         tonalElevation = if (isDialog) 0.dp else 1.dp
     ) {
         Column(
@@ -70,37 +70,32 @@ fun BusinessProfileInfoSection(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Section Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Surface(
-                    modifier = Modifier.size(30.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = activeThemeColor.copy(alpha = 0.12f)
+            // Only show inner section header in full-screen mode to avoid duplicating the Dialog header
+            if (!isDialog) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Business,
-                            contentDescription = null,
-                            tint = activeThemeColor,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    Surface(
+                        modifier = Modifier.size(28.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = activeThemeColor.copy(alpha = 0.12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Business,
+                                contentDescription = null,
+                                tint = activeThemeColor,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
                     }
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text(
                         text = stringResource(id = R.string.biz_details_section),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(id = R.string.biz_details_subtitle),
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -118,13 +113,13 @@ fun BusinessProfileInfoSection(
                         modifier = Modifier.size(19.dp)
                     )
                 },
-                supportingText = {
+                trailingIcon = {
                     Text(
                         text = stringResource(id = R.string.biz_char_counter_pattern, bizName.length, MAX_BIZ_NAME_LENGTH),
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                 },
                 singleLine = true,
@@ -167,13 +162,13 @@ fun BusinessProfileInfoSection(
                         modifier = Modifier.size(19.dp)
                     )
                 },
-                supportingText = {
+                trailingIcon = {
                     Text(
                         text = stringResource(id = R.string.biz_char_counter_pattern, bizDesc.length, MAX_BIZ_DESC_LENGTH),
-                        fontSize = 10.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                 },
                 singleLine = true,

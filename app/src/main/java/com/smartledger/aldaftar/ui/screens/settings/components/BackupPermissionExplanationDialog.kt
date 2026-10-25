@@ -29,90 +29,96 @@ fun BackupPermissionExplanationDialog(
     onGrantPermissions: () -> Unit,
     onUseInternalStorage: () -> Unit
 ) {
-    AlertDialog(
-        shape = MizanDialogTokens.shape,
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                stringResource(R.string.settings_permissions_dialog_title),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Right,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    stringResource(R.string.settings_permissions_dialog_desc),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp,
-                    textAlign = TextAlign.Right,
-                    modifier = Modifier.fillMaxWidth()
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl
+        ) {
+            com.smartledger.aldaftar.ui.components.MizanDialogCard(
+                maxWidth = MizanDialogTokens.compactMaxWidth,
+                contentPadding = PaddingValues(
+                    horizontal = MizanDialogTokens.dialogHorizontal,
+                    vertical = MizanDialogTokens.dialogVertical
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically,
+            ) {
+                com.smartledger.aldaftar.ui.components.MizanDialogHeader(
+                    title = stringResource(R.string.settings_permissions_dialog_title),
+                    icon = Icons.Default.Folder,
+                    iconTint = BrandPrimary,
+                    onCloseClick = dismissDialog
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.settings_permissions_storage_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                    Icon(Icons.Default.Folder, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
-                }
-                
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Text(
+                        text = stringResource(R.string.settings_permissions_dialog_desc),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp,
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.settings_permissions_manage_files_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                        Icon(Icons.Default.SettingsSuggest, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(16.dp))
+                    )
+
+                    com.smartledger.aldaftar.ui.components.MizanDialogInnerCard {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Folder, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
+                                Text(stringResource(R.string.settings_permissions_storage_label), fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                            }
+
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.SettingsSuggest, contentDescription = null, tint = StatusInfoBlue, modifier = Modifier.size(16.dp))
+                                    Text(stringResource(R.string.settings_permissions_manage_files_label), fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            }
+
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = StatusWarningAmber, modifier = Modifier.size(16.dp))
+                                    Text(stringResource(R.string.settings_permissions_notifications_label), fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            }
+                        }
                     }
-                }
-                
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
+
+                    Text(
+                        text = stringResource(R.string.settings_permissions_fallback_note),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 16.sp,
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.settings_permissions_notifications_label), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Right)
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = StatusWarningAmber, modifier = Modifier.size(16.dp))
-                    }
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    com.smartledger.aldaftar.ui.components.MizanDialogActions(
+                        confirmText = stringResource(R.string.settings_permissions_grant_btn),
+                        onConfirm = onGrantPermissions,
+                        cancelText = stringResource(R.string.settings_permissions_internal_storage_btn),
+                        onCancel = onUseInternalStorage
+                    )
                 }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.settings_permissions_fallback_note),
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 16.sp,
-                    textAlign = TextAlign.Right,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onGrantPermissions,
-                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
-            ) {
-                Text(stringResource(R.string.settings_permissions_grant_btn), fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onUseInternalStorage
-            ) {
-                Text(stringResource(R.string.settings_permissions_internal_storage_btn), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-    )
+    }
 }

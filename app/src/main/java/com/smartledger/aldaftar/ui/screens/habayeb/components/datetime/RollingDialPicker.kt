@@ -83,9 +83,9 @@ fun RollingDialPicker(
         Icon(
             imageVector = Icons.Default.KeyboardArrowUp,
             contentDescription = stringResource(id = R.string.datetime_picker_increase),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
             modifier = Modifier
-                .size(18.dp)
+                .size(24.dp)
                 .clip(CircleShape)
                 .clickable {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -98,15 +98,15 @@ fun RollingDialPicker(
 
         Box(
             modifier = Modifier
-                .padding(vertical = 1.dp)
-                .width(if (range.last >= 1000) 52.dp else 42.dp)
-                .height(30.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                .padding(vertical = 2.dp)
+                .width(if (range.last >= 1000) 56.dp else 44.dp)
+                .height(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 .border(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                    RoundedCornerShape(6.dp)
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                    RoundedCornerShape(8.dp)
                 )
                 .pointerInput(range) {
                     detectVerticalDragGestures(
@@ -143,7 +143,7 @@ fun RollingDialPicker(
                         }
                     },
                     textStyle = LocalTextStyle.current.copy(
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
@@ -172,7 +172,7 @@ fun RollingDialPicker(
                 }
                 Text(
                     text = formattedText,
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -182,9 +182,9 @@ fun RollingDialPicker(
         Icon(
             imageVector = Icons.Default.KeyboardArrowDown,
             contentDescription = stringResource(id = R.string.datetime_picker_decrease),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
             modifier = Modifier
-                .size(18.dp)
+                .size(24.dp)
                 .clip(CircleShape)
                 .clickable {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)

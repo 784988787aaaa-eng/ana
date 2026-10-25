@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
+import com.smartledger.aldaftar.ui.theme.MizanElevation
 
 @Composable
 fun ExitConfirmDialog(
@@ -40,14 +41,14 @@ fun ExitConfirmDialog(
         Card(
             shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = MizanElevation.dialog),
             border = BorderStroke(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             ),
             modifier = Modifier
-                .widthIn(max = 330.dp)
-                .fillMaxWidth(0.88f)
+                .widthIn(max = MizanDialogTokens.compactMaxWidth)
+                .fillMaxWidth(0.92f)
         ) {
             Column(
                 modifier = Modifier

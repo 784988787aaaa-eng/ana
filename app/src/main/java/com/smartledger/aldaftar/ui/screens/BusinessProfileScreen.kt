@@ -193,7 +193,7 @@ fun BusinessProfileDialog(
             MizanDialogHeader(
                 title = stringResource(id = R.string.biz_title),
                 subtitle = stringResource(id = R.string.biz_desc_header),
-                icon = Icons.Default.Business,
+                icon = Icons.Default.Storefront,
                 iconTint = MaterialTheme.colorScheme.primary,
                 isCentered = false,
                 onCloseClick = dismissDialog
@@ -336,7 +336,7 @@ private fun BusinessProfileForm(
                 }
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         BusinessProfileLogoSection(
             logoBitmapState = logoBitmapState,

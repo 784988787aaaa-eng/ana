@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,32 +52,27 @@ fun CustomDateTimePickerDialog(
 
     MizanAnimatedDialog(
         onDismissRequest = onDismiss
-    ) {
+    ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Surface(
-                shape = MizanDialogTokens.shape,
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .padding(horizontal = 4.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            com.smartledger.aldaftar.ui.components.MizanDialogCard(
+                maxWidth = MizanDialogTokens.maxWidth,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = MizanDialogTokens.dialogHorizontal,
+                    vertical = MizanDialogTokens.dialogVertical
                 )
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(vertical = 16.dp, horizontal = 16.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .verticalScroll( androidx.compose.foundation.rememberScrollState() ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = title ?: stringResource(id = R.string.datetime_picker_title),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                    com.smartledger.aldaftar.ui.components.MizanDialogHeader(
+                        title = title ?: stringResource(id = R.string.datetime_picker_title),
+                        subtitle = com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DateTimeArabicHelper.formatArabicDateFull(calendarState),
+                        icon = androidx.compose.material.icons.Icons.Default.CalendarToday,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        onCloseClick = dismissDialog
                     )
 
                     DateAndTimeSection(
@@ -82,10 +81,46 @@ fun CustomDateTimePickerDialog(
                         showTime = showTime
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Surface(
+                        onClick = {
+                            calendarState = Calendar.getInstance()
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(36.dp)
+                    ) {
+                        androidx.compose.foundation.layout.Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Today,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(end = 6.dp).height(15.dp)
+                            )
+                            Text(
+                                text = stringResource(id = R.string.datetime_picker_quick_today),
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     DialogActionButtons(
-                        onDismiss = onDismiss,
+                        onDismiss = dismissDialog,
                         onConfirm = { onDateTimeSelected(calendarState.timeInMillis) }
                     )
                 }
