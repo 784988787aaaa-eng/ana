@@ -1,7 +1,7 @@
 package com.smartledger.aldaftar.domain
 
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 fun evaluateSimpleExpression(expr: String): BigDecimal? {
     val trimmed = expr.trim()
@@ -73,7 +73,7 @@ fun evaluateSimpleExpression(expr: String): BigDecimal? {
                     prevNum.multiply(nextNum)
                 } else {
                     if (nextNum.compareTo(BigDecimal.ZERO) == 0) return null
-                    prevNum.divide(nextNum, 10, RoundingMode.HALF_UP)
+                    prevNum.divide(nextNum, 10, FinancialPolicy.rounding)
                 }
                 numbers2.add(res)
             } else {

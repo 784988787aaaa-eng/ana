@@ -83,37 +83,30 @@ object CustomerShareHelper {
         allCustomerTxs: List<HabayebTransaction> = emptyList(),
         businessName: String? = null
     ): String {
+        val normDefault = com.smartledger.aldaftar.domain.model.FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
+        val calcResult = if (allCustomerTxs.isNotEmpty()) {
+            CustomerHistoryCalculator.calculate(
+                allCustomerTxs = allCustomerTxs,
+                currencySymbol = normDefault,
+                exchangeRatesJson = null
+            )
+        } else null
+
+        val primaryNet = calcResult?.netDebtBigDecimalMap?.get(normDefault)
+            ?: com.smartledger.aldaftar.domain.model.FinancialPolicy.normalize(netDebt)
+
         val debtStatus = when {
-            netDebt.compareTo(java.math.BigDecimal.ZERO) > 0 -> context.getString(R.string.habayeb_statement_status_owed_by_them, formatCurrency(netDebt.abs(), currencySymbol))
-            netDebt.compareTo(java.math.BigDecimal.ZERO) < 0 -> context.getString(R.string.habayeb_statement_status_owed_to_them, formatCurrency(netDebt.abs(), currencySymbol))
-            else -> context.getString(R.string.habayeb_statement_status_balanced_new, formatCurrency(java.math.BigDecimal.ZERO, currencySymbol))
+            primaryNet.compareTo(java.math.BigDecimal.ZERO) > 0 -> context.getString(R.string.habayeb_statement_status_owed_by_them, formatCurrency(primaryNet.abs(), normDefault))
+            primaryNet.compareTo(java.math.BigDecimal.ZERO) < 0 -> context.getString(R.string.habayeb_statement_status_owed_to_them, formatCurrency(primaryNet.abs(), normDefault))
+            else -> context.getString(R.string.habayeb_statement_status_balanced_new, formatCurrency(java.math.BigDecimal.ZERO, normDefault))
         }
         val title = context.getString(R.string.habayeb_statement_header, customer.name)
         val footer = context.getString(R.string.habayeb_statement_footer)
 
         val foreignLines = mutableListOf<String>()
-        if (allCustomerTxs.isNotEmpty()) {
-            val isAccountOwedToThem = customer.initialType == "OWED_TO_THEM"
-            val foreignMap = mutableMapOf<String, java.math.BigDecimal>()
-            for (t in allCustomerTxs) {
-                val (tCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(t, currencySymbol)
-                val normCurrency = CurrencyConfig.getBySymbol(tCurrency)?.symbol ?: tCurrency
-                val normDefault = CurrencyConfig.getBySymbol(currencySymbol)?.symbol ?: currencySymbol
-
-                if (normCurrency != normDefault) {
-                    val safeBd = bdAmount.setScale(4, java.math.RoundingMode.HALF_EVEN)
-                    val currVal = foreignMap[normCurrency] ?: java.math.BigDecimal.ZERO
-                    when (t.type) {
-                        "OWED_BY_THEM" -> foreignMap[normCurrency] = currVal.add(safeBd)
-                        "PAYMENT_BY_THEM" -> foreignMap[normCurrency] = currVal.subtract(safeBd)
-                        "OWED_TO_THEM" -> foreignMap[normCurrency] = currVal.subtract(safeBd)
-                        "PAYMENT_TO_THEM" -> foreignMap[normCurrency] = currVal.add(safeBd)
-                    }
-                }
-            }
-
-            for ((fSymbol, fNetBd) in foreignMap) {
-                if (fNetBd.compareTo(java.math.BigDecimal.ZERO) != 0) {
+        if (calcResult != null) {
+            for ((fSymbol, fNetBd) in calcResult.netDebtBigDecimalMap) {
+                if (fSymbol != normDefault && fNetBd.compareTo(java.math.BigDecimal.ZERO) != 0) {
                     val foreignTotalPrefix = if (fNetBd.compareTo(java.math.BigDecimal.ZERO) > 0) {
                         context.getString(R.string.msg_foreign_total_against)
                     } else {

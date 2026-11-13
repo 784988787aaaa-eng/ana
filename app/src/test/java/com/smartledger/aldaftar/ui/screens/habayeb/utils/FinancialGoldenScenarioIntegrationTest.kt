@@ -111,12 +111,12 @@ class FinancialGoldenScenarioIntegrationTest {
         insertExchanged("yer-usd", "ر.ي", "$", "55000", "0.001818181818", "99.999999990000")
 
         val balances = db.habayebDao().getAllCustomerBalancesFlow("$").first()
-        assertBalance(balances, "$", "126.667")
+        assertBalance(balances, "$", "126.6667")
 
         val state = HabayebFinancialCalculator.calculateCustomersUiState(
             listOf(customer), balances, AppSettings(currencySymbol = "$")
         ).customers.single()
-        MoneyAssertions.numeric("126.667", state.defaultCurrencyTotal)
+        MoneyAssertions.exact("126.6667", state.defaultCurrencyTotal)
     }
 
     @Test

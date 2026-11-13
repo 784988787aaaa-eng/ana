@@ -104,31 +104,51 @@ fun CustomDateRangePickerContent(
 
     MizanAnimatedDialog(
         onDismissRequest = onDismiss
-    ) { dismissDialog ->
+    ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            com.smartledger.aldaftar.ui.components.MizanDialogCard(
-                maxWidth = MizanDialogTokens.maxWidth,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = MizanDialogTokens.dialogHorizontal,
-                    vertical = MizanDialogTokens.dialogVertical
+            Surface(
+                shape = MizanDialogTokens.shape,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .fillMaxWidth(0.94f)
+                    .widthIn(max = MizanDialogTokens.maxWidth)
+                    .padding(horizontal = 4.dp)
+                    .imePadding(),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
             ) {
                 Column(
                     modifier = Modifier
+                        .padding(vertical = 12.dp, horizontal = 14.dp)
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    com.smartledger.aldaftar.ui.components.MizanDialogHeader(
-                        title = title ?: if (includeTime) {
-                            stringResource(id = R.string.datetime_picker_schedule_title)
-                        } else {
-                            stringResource(id = R.string.datetime_picker_filter_title)
-                        },
-                        icon = Icons.Default.CalendarToday,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        onCloseClick = dismissDialog
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = title ?: if (includeTime) {
+                                stringResource(id = R.string.datetime_picker_schedule_title)
+                            } else {
+                                stringResource(id = R.string.datetime_picker_filter_title)
+                            },
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
 
                     Row(
                         modifier = Modifier

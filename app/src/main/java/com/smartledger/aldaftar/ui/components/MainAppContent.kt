@@ -1,11 +1,8 @@
 package com.smartledger.aldaftar.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInVertically
@@ -51,7 +48,6 @@ fun MainAppContent(
     onHistoryOverlayActiveChanged: (Boolean) -> Unit = {},
     isHistorySearchActive: Boolean = false,
     onHistorySearchActiveChanged: (Boolean) -> Unit = {},
-    onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val drawerStateHolder = rememberMainAppContentState(
@@ -127,8 +123,7 @@ fun MainAppContent(
                         isHistoryOverlayActive = isHistoryOverlayActive,
                         onHistoryOverlayActiveChanged = onHistoryOverlayActiveChanged,
                         isHistorySearchActive = isHistorySearchActive,
-                        onHistorySearchActiveChanged = onHistorySearchActiveChanged,
-                        onFabOverlayChanged = onFabOverlayChanged
+                        onHistorySearchActiveChanged = onHistorySearchActiveChanged
                     )
                 }
                 Screen.SETTINGS -> {

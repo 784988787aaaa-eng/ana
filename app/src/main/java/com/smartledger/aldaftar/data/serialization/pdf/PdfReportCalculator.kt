@@ -57,7 +57,7 @@ object PdfReportCalculator {
             exchangeRatesJson = exchangeRatesJson
         )
 
-        val normDefaultSymbol = CurrencyConfig.getBySymbol(currencySymbol)?.symbol ?: currencySymbol
+        val normDefaultSymbol = com.smartledger.aldaftar.domain.model.FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
         val sortedTxs = transactions.sortedWith(compareBy<HabayebTransaction> { it.timestamp }.thenBy { it.id })
 
         val processedList = ArrayList<ProcessedTransaction>(sortedTxs.size)
@@ -65,14 +65,14 @@ object PdfReportCalculator {
         var totalPaymentsBase = BigDecimal.ZERO
 
         for (tx in sortedTxs) {
-            val (resolvedCurrency, resolvedAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, currencySymbol)
+            val (resolvedCurrency, resolvedAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, normDefaultSymbol)
             val affectsReportPrimaryCurrency = (resolvedCurrency == normDefaultSymbol)
 
             val baseCurrencyAmount = if (affectsReportPrimaryCurrency) resolvedAmount else BigDecimal.ZERO
 
-            val isTxForeign = (tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && 
-                               tx.currencyCode.isNotBlank() && 
-                               tx.currencyCode != normDefaultSymbol) || 
+            val isTxForeign = (tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE &&
+                               tx.currencyCode.isNotBlank() &&
+                               com.smartledger.aldaftar.domain.model.FinancialPolicy.canonicalCurrencySymbol(tx.currencyCode) != normDefaultSymbol) ||
                               tx.isRateCalculated
 
             // The resolved amount is the single source of truth for reporting:

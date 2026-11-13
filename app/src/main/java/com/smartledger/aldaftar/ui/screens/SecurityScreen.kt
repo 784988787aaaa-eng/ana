@@ -1,25 +1,25 @@
 package com.smartledger.aldaftar.ui.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,27 +31,33 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.HashUtils
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.screens.security.components.SecurityActivePanel
 import com.smartledger.aldaftar.ui.screens.security.components.SecuritySetupForm
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private suspend fun buildSecuritySettings(
     passcode: String,
@@ -79,8 +85,8 @@ fun SecurityScreen(
     contentPadding: PaddingValues = PaddingValues()
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
-    val mizanColors = MaterialTheme.mizanColors
 
     val currentSettings by viewModel.settingsState.collectAsStateWithLifecycle()
     val isAlreadyPasscodeEnabled = currentSettings.isPasscodeEnabled
@@ -98,47 +104,16 @@ fun SecurityScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(end = 48.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Surface(
-                            modifier = Modifier.size(32.dp),
-                            shape = RoundedCornerShape(9.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = if (isAlreadyPasscodeEnabled) Icons.Default.VerifiedUser else Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
                         Text(
                             text = stringResource(id = R.string.sec_title),
-                            fontSize = 15.5.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            textAlign = TextAlign.Center
                         )
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = if (isAlreadyPasscodeEnabled) mizanColors.creditContainer else MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    id = if (isAlreadyPasscodeEnabled) R.string.sec_status_active else R.string.sec_status_inactive
-                                ),
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isAlreadyPasscodeEnabled) mizanColors.credit else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
                     }
                 },
                 navigationIcon = {
@@ -161,7 +136,7 @@ fun SecurityScreen(
                     scrolledContainerColor = MaterialTheme.colorScheme.surface
                 ),
                 modifier = Modifier.border(
-                    width = 0.5.dp,
+                    width = 0.5.dp, 
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                 )
             )
@@ -175,7 +150,7 @@ fun SecurityScreen(
                 .navigationBarsPadding()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -192,18 +167,12 @@ fun SecurityScreen(
                     checkAcknowledged = checkAcknowledged,
                     onCheckAcknowledgedChange = { checkAcknowledged = it },
                     isSaving = isSaving,
-                    isInDialog = false,
-                    onCancelEdit = if (isEditingPasscode && isAlreadyPasscodeEnabled) {
-                        { isEditingPasscode = false }
-                    } else {
-                        null
-                    },
                     onSave = {
                         val isValid = passcode.length == 4 &&
-                            confirmPasscode == passcode &&
-                            recoveryPhrase.isNotBlank() &&
-                            checkAcknowledged &&
-                            !isSaving
+                                confirmPasscode == passcode &&
+                                recoveryPhrase.isNotBlank() &&
+                                checkAcknowledged &&
+                                !isSaving
                         if (isValid) {
                             isSaving = true
                             coroutineScope.launch {
@@ -216,11 +185,7 @@ fun SecurityScreen(
                                     onBack()
                                 } catch (e: Exception) {
                                     isSaving = false
-                                    Toast.makeText(
-                                        context,
-                                        e.message ?: context.getString(R.string.toast_operation_failed),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast.makeText(context, e.message ?: "Error", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
@@ -230,35 +195,21 @@ fun SecurityScreen(
                 SecurityActivePanel(
                     currentSettings = currentSettings,
                     viewModel = viewModel,
-                    isInDialog = false,
                     onChangePasscode = {
                         passcode = ""
                         confirmPasscode = ""
-                        recoveryPhrase = ""
-                        recoveryHint = currentSettings.recoveryHint ?: ""
-                        checkAcknowledged = false
                         isEditingPasscode = true
                     },
                     onDeactivateSecurity = {
-                        coroutineScope.launch {
-                            try {
-                                val updated = currentSettings.copy(
-                                    isPasscodeEnabled = false,
-                                    passcodeHash = null,
-                                    recoveryPhraseHash = null,
-                                    recoveryHint = null
-                                )
-                                viewModel.saveSettingsSync(updated)
-                                isEditingPasscode = false
-                                Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                            } catch (e: Exception) {
-                                Toast.makeText(
-                                    context,
-                                    e.message ?: context.getString(R.string.toast_operation_failed),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
+                        val updated = currentSettings.copy(
+                            isPasscodeEnabled = false,
+                            passcodeHash = null,
+                            recoveryPhraseHash = null,
+                            recoveryHint = null
+                        )
+                        viewModel.saveSettings(updated)
+                        isEditingPasscode = false
+                        Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -274,6 +225,7 @@ fun SecurityDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
     val currentSettings by viewModel.settingsState.collectAsStateWithLifecycle()
@@ -291,62 +243,16 @@ fun SecurityDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
         MizanDialogCard(
-            maxWidth = MizanDialogTokens.maxWidth,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+            maxWidth = MizanDialogTokens.compactMaxWidth,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            // Ultra-Compact Single-Line Bar (Eliminates redundant multi-line header & description)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = if (isAlreadyPasscodeEnabled && !isEditingPasscodeInDialog) {
-                            Icons.Default.VerifiedUser
-                        } else {
-                            Icons.Default.Security
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(19.dp)
-                    )
-                    Text(
-                        text = stringResource(id = R.string.sec_title),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        if (isEditingPasscodeInDialog && isAlreadyPasscodeEnabled) {
-                            isEditingPasscodeInDialog = false
-                        } else {
-                            dismissDialog()
-                        }
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(id = R.string.desc_close),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                thickness = 0.6.dp
+            MizanDialogHeader(
+                title = stringResource(id = R.string.sec_title),
+                subtitle = null,
+                icon = null,
+                isCentered = true,
+                onCloseClick = dismissDialog,
+                closeButtonAlignment = Alignment.TopStart
             )
 
             Column(
@@ -354,7 +260,7 @@ fun SecurityDialog(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 if (!isAlreadyPasscodeEnabled || isEditingPasscodeInDialog) {
                     SecuritySetupForm(
@@ -369,36 +275,21 @@ fun SecurityDialog(
                         checkAcknowledged = checkAcknowledged,
                         onCheckAcknowledgedChange = { checkAcknowledged = it },
                         isSaving = isSaving,
-                        isInDialog = true,
-                        onCancelEdit = if (isEditingPasscodeInDialog && isAlreadyPasscodeEnabled) {
-                            { isEditingPasscodeInDialog = false }
-                        } else {
-                            null
-                        },
                         onSave = {
                             val isValid = passcode.length == 4 &&
-                                confirmPasscode == passcode &&
-                                recoveryPhrase.isNotBlank() &&
-                                checkAcknowledged &&
-                                !isSaving
+                                    confirmPasscode == passcode &&
+                                    recoveryPhrase.isNotBlank() &&
+                                    checkAcknowledged &&
+                                    !isSaving
                             if (isValid) {
                                 isSaving = true
                                 coroutineScope.launch {
-                                    try {
-                                        val updated = buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
-                                        viewModel.saveSettingsSync(updated)
-                                        isSaving = false
-                                        isEditingPasscodeInDialog = false
-                                        Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                        onDismiss()
-                                    } catch (e: Exception) {
-                                        isSaving = false
-                                        Toast.makeText(
-                                            context,
-                                            e.message ?: context.getString(R.string.toast_operation_failed),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
+                                    val updated = buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
+                                    viewModel.saveSettings(updated)
+                                    isSaving = false
+                                    isEditingPasscodeInDialog = false
+                                    Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
+                                    onDismiss()
                                 }
                             }
                         }
@@ -407,35 +298,21 @@ fun SecurityDialog(
                     SecurityActivePanel(
                         currentSettings = currentSettings,
                         viewModel = viewModel,
-                        isInDialog = true,
                         onChangePasscode = {
                             passcode = ""
                             confirmPasscode = ""
-                            recoveryPhrase = ""
-                            recoveryHint = currentSettings.recoveryHint ?: ""
-                            checkAcknowledged = false
                             isEditingPasscodeInDialog = true
                         },
                         onDeactivateSecurity = {
-                            coroutineScope.launch {
-                                try {
-                                    val updated = currentSettings.copy(
-                                        isPasscodeEnabled = false,
-                                        passcodeHash = null,
-                                        recoveryPhraseHash = null,
-                                        recoveryHint = null
-                                    )
-                                    viewModel.saveSettingsSync(updated)
-                                    isEditingPasscodeInDialog = false
-                                    Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
-                                } catch (e: Exception) {
-                                    Toast.makeText(
-                                        context,
-                                        e.message ?: context.getString(R.string.toast_operation_failed),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
+                            val updated = currentSettings.copy(
+                                isPasscodeEnabled = false,
+                                passcodeHash = null,
+                                recoveryPhraseHash = null,
+                                recoveryHint = null
+                            )
+                            viewModel.saveSettings(updated)
+                            isEditingPasscodeInDialog = false
+                            Toast.makeText(context, context.getString(R.string.sec_toast_disabled), Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
@@ -443,3 +320,4 @@ fun SecurityDialog(
         }
     }
 }
+

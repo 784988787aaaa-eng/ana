@@ -23,11 +23,11 @@
 
 ## Test count
 
-67 Kotlin test files + 2 test architecture documents, including dedicated security responsiveness contracts added in Phase 6. The count includes broad-stack financial scenario tests for YER/SAR/USD under every default currency, historical-vs-new data, reciprocal directions, and source-level build hygiene.
+98 Kotlin test files + 2 test architecture documents, including dedicated security responsiveness contracts added in Phase 6 and the `FullThreeCurrencyLifecycleContractTest` release blocker contract. The count includes broad-stack financial scenario tests for YER/SAR/USD under every default currency, historical-vs-new data, historical batch revaluation, reciprocal directions, and cross-layer UI/Room/PDF/Excel/Backup/Trash/Notifications parity.
 
 ## Required execution
 
-Run the complete `testDebugUnitTest` suite repeatedly. Any failure is a release blocker until the root cause is understood and the implementation or test contract is corrected deliberately.
+Run the complete `testDebugUnitTest` suite repeatedly. Any failure—especially in `FullThreeCurrencyLifecycleContractTest`—is a release blocker until the root cause is understood and the implementation or test contract is corrected deliberately.
 
 ## Mandatory golden scenarios
 

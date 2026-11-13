@@ -5,8 +5,8 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
 import com.smartledger.aldaftar.data.local.entities.DatabaseDefaults
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -141,13 +141,14 @@ object FormatUtils {
     private val DECIMAL_SYMBOLS = DecimalFormatSymbols(Locale.ENGLISH)
 
     private val formatterInteger = ThreadLocal.withInitial { DecimalFormat("#,##0", DECIMAL_SYMBOLS) }
-    private val formatterDecimal = ThreadLocal.withInitial { DecimalFormat("#,##0.##", DECIMAL_SYMBOLS) }
+    private val formatterDecimal = ThreadLocal.withInitial { DecimalFormat("#,##0.####", DECIMAL_SYMBOLS) }
 
     private fun formatNumberInternal(value: BigDecimal): String {
         return runCatching {
-            val rounded = value.setScale(2, RoundingMode.HALF_EVEN)
+            val rounded = FinancialPolicy.normalize(value)
             val hasFraction = rounded.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) != 0
-            val formatter = if (hasFraction) formatterDecimal.get() else formatterInteger.get()
+            val formatter = (if (hasFraction) formatterDecimal.get() else formatterInteger.get())
+                ?: DecimalFormat(if (hasFraction) "#,##0.####" else "#,##0", DECIMAL_SYMBOLS)
             formatter.format(rounded)
         }.getOrDefault(value.toPlainString())
     }

@@ -8,7 +8,9 @@ sealed interface CurrencyDialogState {
 
     data class RevalueConfirm(
         val targetCurrency: String,
-        val newRate: BigDecimal = BigDecimal.ZERO
+        val newRate: BigDecimal = BigDecimal.ZERO,
+        val modifiedPairs: List<Pair<String, BigDecimal>> =
+            if (targetCurrency.isNotBlank()) listOf(targetCurrency to newRate) else emptyList()
     ) : CurrencyDialogState
 }
 

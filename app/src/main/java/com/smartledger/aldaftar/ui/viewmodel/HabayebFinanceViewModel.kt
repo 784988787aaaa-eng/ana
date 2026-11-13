@@ -3,7 +3,6 @@ package com.smartledger.aldaftar.ui.viewmodel
 import android.app.Application
 import com.smartledger.aldaftar.data.license.LicenseRepository
 import com.smartledger.aldaftar.ui.helper.VibrationHelper
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartledger.aldaftar.data.local.entities.*
@@ -91,35 +90,19 @@ class HabayebFinanceViewModel(
     val selectedFilterTab = MutableStateFlow(0)
     val financialSortMode = MutableStateFlow(0)
     val historicalSortMode = MutableStateFlow(1)
-    val temporarilyHiddenCustomerIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedCategoryFilter = MutableStateFlow<String?>(null)
     val selectedCustomerIdsState = MutableStateFlow<List<String>>(emptyList())
 
     val customerCategoryMapState: StateFlow<Map<String, String>> = categoryUseCase.categoryMapFlow
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    private val selectedCategoryIdFlow: Flow<Int?> = selectedCategoryFilter.flatMapLatest { selectedName ->
-        if (selectedName == null || selectedName == FinanceConstants.CATEGORY_CLOSED) {
-            flowOf(null)
-        } else {
-            categoriesRepository.customCategoriesFlow.map { categories ->
-                categories.firstOrNull { it.name == selectedName }?.id
-            }
-        }
-    }.distinctUntilChanged()
-
-    private val isPinsInitialLoadComplete = MutableStateFlow(false)
+    private val selectedCategoryIdFlow: Flow<Int?> = combine(selectedCategoryFilter, categoriesRepository.customCategoriesFlow) { name, categories ->
+        name?.let { selected -> categories.firstOrNull { it.name == selected }?.id }
+    }
 
     val pinnedCustomerIds: StateFlow<Set<String>> = selectedCategoryIdFlow
         .flatMapLatest { categoryUseCase.pinnedCustomerIdsFlow(it) }
-        .onEach { isPinsInitialLoadComplete.value = true }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
-
-    fun resolveInitialCategoryForNewAccount(selectedCategory: String? = selectedCategoryFilter.value): String? {
-        return selectedCategory?.trim()?.takeIf {
-            it.isNotEmpty() && it != FinanceConstants.CATEGORY_CLOSED
-        }
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     suspend fun recurringByOriginalTransaction(id: String) = recurringRepository.byOriginalTransaction(id)
     suspend fun saveRecurring(config: com.smartledger.aldaftar.domain.model.RecurringConfig) = recurringRepository.save(config)
@@ -136,10 +119,6 @@ class HabayebFinanceViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             categoryUseCase.ensureClosedCategoryExists()
-            try {
-                categoryUseCase.getAllPinnedCustomerIdsDirect()
-                isPinsInitialLoadComplete.value = true
-            } catch (_: Exception) {}
         }
     }
 
@@ -151,15 +130,6 @@ class HabayebFinanceViewModel(
     val habayebCustomersState: StateFlow<List<HabayebCustomer>> = habayebRepository.customersFlow
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-
-    private val _linkHabayebDebtsState = MutableStateFlow(false)
-    val linkHabayebDebtsState = _linkHabayebDebtsState.asStateFlow()
-
-    fun toggleLinkHabayebDebts(enabled: Boolean) {
-        _linkHabayebDebtsState.value = enabled
-        
-    }
 
     val totalTransactionsCount: StateFlow<Int> = habayebRepository.getHabayebTransactionsCountFlow()
         .flowOn(Dispatchers.Default)
@@ -230,7 +200,12 @@ class HabayebFinanceViewModel(
     }
 
     fun assignCategoryToCustomers(customerIds: List<String>, category: String?) {
-        viewModelScope.launch { val categoryId = category?.let { selected -> categoriesRepository.getAllCustomCategoriesDirect().firstOrNull { it.name == selected }?.id }; categoryUseCase.assignCategoryToCustomers(customerIds, categoryId) }
+        viewModelScope.launch {
+            val categoryId = category?.let { selected ->
+                categoriesRepository.getAllCustomCategoriesDirect().firstOrNull { it.name == selected }?.id
+            }
+            categoryUseCase.assignCategoryToCustomers(customerIds, categoryId)
+        }
     }
 
     fun getCustomerCategory(customerId: String): String? = customerCategoryMapState.value[customerId]
@@ -258,9 +233,29 @@ class HabayebFinanceViewModel(
     fun saveCustomCategory(name: String) { viewModelScope.launch { categoryUseCase.saveCustomCategory(name) } }
     fun renameCustomCategory(category: CustomCategory, newName: String) { viewModelScope.launch { categoryUseCase.renameCustomCategory(category, newName) } }
     fun deleteCustomCategoryWithChoice(category: CustomCategory, deleteLinked: Boolean) { viewModelScope.launch { categoryUseCase.deleteCustomCategoryWithChoice(category, deleteLinked) } }
-    fun moveCategoryLeft(categoryName: String) { viewModelScope.launch { val list = categoriesRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }; val id = list.firstOrNull { it.name == categoryName }?.id ?: return@launch; categoryUseCase.moveCategoryLeft(list.map { it.id }, id) } }
-    fun moveCategoryRight(categoryName: String) { viewModelScope.launch { val list = categoriesRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }; val id = list.firstOrNull { it.name == categoryName }?.id ?: return@launch; categoryUseCase.moveCategoryRight(list.map { it.id }, id) } }
-    fun reorderCategories(newList: List<String>) { viewModelScope.launch { val all = categoriesRepository.getAllCustomCategoriesDirect(); val ids = newList.mapNotNull { name -> all.firstOrNull { it.name == name }?.id }; categoryUseCase.reorderCategories(ids) } }
+    fun moveCategoryLeft(categoryName: String) {
+        viewModelScope.launch {
+            val list = categoriesRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }
+            val id = list.firstOrNull { it.name == categoryName }?.id ?: return@launch
+            categoryUseCase.moveCategoryLeft(list.map { it.id }, id)
+        }
+    }
+
+    fun moveCategoryRight(categoryName: String) {
+        viewModelScope.launch {
+            val list = categoriesRepository.getAllCustomCategoriesDirect().sortedBy { it.displayOrder }
+            val id = list.firstOrNull { it.name == categoryName }?.id ?: return@launch
+            categoryUseCase.moveCategoryRight(list.map { it.id }, id)
+        }
+    }
+
+    fun reorderCategories(newList: List<String>) {
+        viewModelScope.launch {
+            val all = categoriesRepository.getAllCustomCategoriesDirect()
+            val ids = newList.mapNotNull { name -> all.firstOrNull { it.name == name }?.id }
+            categoryUseCase.reorderCategories(ids)
+        }
+    }
 
     val customersUiState: StateFlow<CustomersUiState> = combine(
         habayebRepository.customersFlow,
@@ -283,28 +278,27 @@ class HabayebFinanceViewModel(
             CustomersUiState(isLoading = true, isInitialized = false)
         )
 
-    val isInitialDataReady: StateFlow<Boolean> = combine(customersUiState, isPinsInitialLoadComplete) { currentCustomersUi, pinsLoaded ->
-        currentCustomersUi.isInitialized && pinsLoaded
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val isInitialDataReady: StateFlow<Boolean> = customersUiState
+        .map { it.isInitialized }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val debouncedSearchQuery = searchQuery
         .debounce { query ->
             if (query.isEmpty()) 0L else 120L
         }
 
-    private val filterGroup1Flow = combine(debouncedSearchQuery, selectedFilterTab, financialSortMode, historicalSortMode) { q, t, f, h -> HabayebFilterGroup1(q, t, f, h) }
-    private val filterGroup2Flow = combine(temporarilyHiddenCustomerIds, selectedCategoryFilter, pinnedCustomerIds) { hid, cat, pin -> HabayebFilterGroup2(hid, cat, pin) }
+    private val filterGroup1Flow = combine(
+        debouncedSearchQuery,
+        selectedFilterTab,
+        financialSortMode,
+        historicalSortMode
+    ) { q, t, f, h -> HabayebFilterGroup1(q, t, f, h) }
+    private val filterGroup2Flow = combine(
+        selectedCategoryFilter,
+        pinnedCustomerIds
+    ) { cat, pin -> HabayebFilterGroup2(emptySet(), cat, pin) }
     private val filterParametersFlow = combine(filterGroup1Flow, filterGroup2Flow) { g1, g2 ->
         HabayebFilterParameters(g1.query, g1.tab, g1.finSort, g1.histSort, g2.hiddenIds, g2.selectedCat, g2.pinnedIds)
-    }
-
-    private data class CustomersAndPinsState(
-        val uiState: CustomersUiState,
-        val pinsLoaded: Boolean
-    )
-
-    private val customersAndPinsFlow = combine(customersUiState, isPinsInitialLoadComplete) { ui, pinsLoaded ->
-        CustomersAndPinsState(ui, pinsLoaded)
     }
 
     private data class CategoryUiData(
@@ -322,21 +316,17 @@ class HabayebFinanceViewModel(
     }
 
     val uiState: StateFlow<HabayebUiState> = combine(
-        customersAndPinsFlow,
+        customersUiState,
         filterParametersFlow,
         categoryUseCase.categoryMapFlow,
         categoryUiDataFlow,
         selectedCustomerIdsState
-    ) { customersAndPins, filterParams, categoryMap, categoryData, selectedIds ->
-        val currentCustomersUi = customersAndPins.uiState
-        val pinsLoaded = customersAndPins.pinsLoaded
+    ) { currentCustomersUi, filterParams, categoryMap, categoryData, selectedIds ->
         val filteredRes = HabayebFinancialCalculator.calculateFilteredResult(
             currentCustomersUi,
             filterParams,
             categoryMap
         )
-        val fullyInitialized = currentCustomersUi.isInitialized && pinsLoaded
-        val stillLoading = currentCustomersUi.isLoading || !pinsLoaded
         HabayebUiState(
             customers = currentCustomersUi.customers,
             filteredCustomers = filteredRes.filteredCustomers,
@@ -354,8 +344,8 @@ class HabayebFinanceViewModel(
             selectedCategory = filterParams.selectedCat,
             selectedCustomerIds = selectedIds,
             activeCustomersCount = filteredRes.activeCustomersCount,
-            isInitialized = fullyInitialized,
-            isLoading = stillLoading
+            isInitialized = currentCustomersUi.isInitialized,
+            isLoading = currentCustomersUi.isLoading
         )
     }
         .distinctUntilChanged()
@@ -372,49 +362,20 @@ class HabayebFinanceViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val habayebOwedByThemTotalState: StateFlow<BigDecimal> = uiState
-        .map { it.totalOwedByThem }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, BigDecimal.ZERO)
-
-    val habayebOwedToThemTotalState: StateFlow<BigDecimal> = uiState
-        .map { it.totalOwedToThem }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, BigDecimal.ZERO)
-
-    val categoryCountsState: StateFlow<Map<String, Int>> = uiState
-        .map { it.categoryCounts }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
-
     suspend fun saveHabayebCustomer(
         customer: HabayebCustomer, initialAmount: BigDecimal, initialType: String,
         customTimestamp: Long = System.currentTimeMillis() / 1000, initialDetails: String = "",
         isForeign: Boolean = false, currencyCode: String = "DEFAULT", foreignAmount: BigDecimal = BigDecimal.ZERO,
-        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO,
-        selectedCategory: String? = null
+        exchangeRate: BigDecimal = BigDecimal.ZERO, isRateCalculated: Boolean = false, equivalentAmount: BigDecimal = BigDecimal.ZERO
     ): Boolean = withContext(Dispatchers.IO) {
-        val normalizedCategoryName = resolveInitialCategoryForNewAccount(selectedCategory)
-        val resolvedCategoryId = customer.categoryId ?: normalizedCategoryName?.let { catName ->
-            categoriesRepository.getAllCustomCategoriesDirect()
-                .firstOrNull { !it.isSystemClosed && it.name == catName }?.id
-        }
-        val customerWithCategory = if (customer.categoryId != resolvedCategoryId) {
-            customer.copy(categoryId = resolvedCategoryId)
-        } else {
-            customer
-        }
         val created = transactionUseCase.saveHabayebCustomer(
-            customerWithCategory, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
-            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, normalizedCategoryName, settingsState.value
+            customer, initialAmount, initialType, customTimestamp, initialDetails, isForeign, currencyCode,
+            foreignAmount, exchangeRate, isRateCalculated, equivalentAmount, null, settingsState.value
         )
         if (!created) return@withContext false
         resetFiltersToDefault(resetCategory = false)
         VibrationHelper.triggerSuccessVibration(getApplication())
-        emitScrollToAccount(customerWithCategory.id)
+        emitScrollToAccount(customer.id)
         true
     }
 
@@ -541,6 +502,10 @@ class HabayebFinanceViewModel(
 
     fun revalueHistoricalTransactions(baseCurrencyCode: String, targetCurrencyCode: String, newRate: BigDecimal) {
         viewModelScope.launch { transactionUseCase.revalueHistoricalTransactions(baseCurrencyCode, targetCurrencyCode, newRate) }
+    }
+
+    fun revalueHistoricalPairs(baseCurrencyCode: String, pairs: List<Pair<String, BigDecimal>>) {
+        viewModelScope.launch { transactionUseCase.revalueHistoricalTransactionsBatch(baseCurrencyCode, pairs) }
     }
 
     fun updateHabayebCustomerName(customerId: String, newName: String) { viewModelScope.launch { transactionUseCase.updateCustomerName(customerId, newName) } }

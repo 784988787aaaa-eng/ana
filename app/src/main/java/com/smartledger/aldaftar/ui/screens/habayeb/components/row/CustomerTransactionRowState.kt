@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
@@ -37,7 +38,10 @@ data class TransactionRowCachedData(
     val timeStr: String,
     val isTxForeign: Boolean,
     val isCalculated: Boolean,
-    val typeResId: Int
+    val typeResId: Int,
+    val runningBalanceText: String? = null,
+    val runningBalanceStatusResId: Int? = null,
+    val runningBalanceSign: Int = 0
 )
 
 object CustomerTransactionRowStateCalculator {
@@ -46,19 +50,22 @@ object CustomerTransactionRowStateCalculator {
         currencySymbol: String,
         initialType: String,
         debtColor: Color,
-        creditColor: Color
+        creditColor: Color,
+        runningBalance: BigDecimal? = null
     ): TransactionRowCachedData {
+        val normDefaultSymbol = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
         val parsedCurrencyInfo = CurrencyConfig.parseTransactionCurrency(tx.description, CURRENCY_NONE_TAG)
-        val txCurrencySymbol = if (tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.currencyCode.isNotBlank()) {
+        val rawTxCurrencySymbol = if (tx.currencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.currencyCode.isNotBlank()) {
             tx.currencyCode
         } else if (parsedCurrencyInfo.first != CURRENCY_NONE_TAG) {
             parsedCurrencyInfo.first
         } else if (tx.baseCurrencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.baseCurrencyCode.isNotBlank()) {
             tx.baseCurrencyCode
         } else {
-            currencySymbol
+            normDefaultSymbol
         }
-        val isTxForeign = txCurrencySymbol != currencySymbol
+        val txCurrencySymbol = FinancialPolicy.canonicalCurrencySymbol(rawTxCurrencySymbol)
+        val isTxForeign = txCurrencySymbol != normDefaultSymbol
         val cleanDescription = if (parsedCurrencyInfo.first != CURRENCY_NONE_TAG) parsedCurrencyInfo.second else tx.description
 
         val txType = TransactionType.fromValue(tx.type)
@@ -81,11 +88,12 @@ object CustomerTransactionRowStateCalculator {
         val sourceAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
 
         if (tx.isRateCalculated) {
-            val baseCurrency = if (tx.baseCurrencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.baseCurrencyCode.isNotBlank()) {
+            val rawBaseCurrency = if (tx.baseCurrencyCode != FinanceConstants.DEFAULT_CURRENCY_CODE && tx.baseCurrencyCode.isNotBlank()) {
                 tx.baseCurrencyCode
             } else {
-                FinanceConstants.FALLBACK_CURRENCY_SYMBOL
+                normDefaultSymbol
             }
+            val baseCurrency = FinancialPolicy.canonicalCurrencySymbol(rawBaseCurrency)
             val origCurrency = txCurrencySymbol
             
             displayAmount = sourceAmount
@@ -119,6 +127,20 @@ object CustomerTransactionRowStateCalculator {
             else -> R.string.habayeb_pdf_tx_generic
         }
 
+        val balanceCurrency = if (tx.isRateCalculated) equivalentCurrency ?: currencySymbol else displayCurrency
+        val normRunningBalance = runningBalance?.let { FinancialPolicy.normalize(it) }
+        val runningBalanceSign = normRunningBalance?.compareTo(BigDecimal.ZERO) ?: 0
+        val runningBalanceStatusResId = if (normRunningBalance != null) {
+            when {
+                runningBalanceSign > 0 -> R.string.habayeb_owed
+                runningBalanceSign < 0 -> R.string.habayeb_to_them
+                else -> R.string.habayeb_status_balanced_short
+            }
+        } else null
+        val runningBalanceText = if (normRunningBalance != null) {
+            "${HabayebMathHelper.formatSmart(normRunningBalance.abs())} $balanceCurrency"
+        } else null
+
         return TransactionRowCachedData(
             cleanDescription = cleanDescription,
             indicatorColor = indicatorColor,
@@ -131,7 +153,10 @@ object CustomerTransactionRowStateCalculator {
             timeStr = timeStr,
             isTxForeign = isTxForeign,
             isCalculated = tx.isRateCalculated,
-            typeResId = typeResId
+            typeResId = typeResId,
+            runningBalanceText = runningBalanceText,
+            runningBalanceStatusResId = runningBalanceStatusResId,
+            runningBalanceSign = runningBalanceSign
         )
     }
 
@@ -139,12 +164,14 @@ object CustomerTransactionRowStateCalculator {
         tx: HabayebTransaction,
         isDark: Boolean,
         currencySymbol: String,
-        initialType: String
+        initialType: String,
+        runningBalance: BigDecimal? = null
     ): TransactionRowCachedData = calculate(
         tx = tx,
         currencySymbol = currencySymbol,
         initialType = initialType,
         debtColor = financialDebtColor(isDark),
-        creditColor = financialCreditColor(isDark)
+        creditColor = financialCreditColor(isDark),
+        runningBalance = runningBalance
     )
 }

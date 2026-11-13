@@ -4,28 +4,27 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.account.UnifiedAccountSession
 import com.smartledger.aldaftar.data.account.UnifiedAccountSessionRepository
 import com.smartledger.aldaftar.data.backup.BackupEngine
 import com.smartledger.aldaftar.data.backup.PublicBackupStore
+import com.smartledger.aldaftar.platform.notifications.BackupNotificationManager
 import com.smartledger.aldaftar.data.cloud.CloudArchiveStore
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.repository.DataMaintenanceRepository
 import com.smartledger.aldaftar.domain.model.CloudBackupFile
-import com.smartledger.aldaftar.platform.notifications.BackupNotificationManager
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 enum class BackupOperationState {
     Idle,
@@ -47,8 +46,7 @@ class BackupSyncViewModel(
     private val publicBackupStore: PublicBackupStore = PublicBackupStore(application.applicationContext)
 ) : AndroidViewModel(application) {
 
-    private val appContext = application.applicationContext
-    private val backupNotifications = BackupNotificationManager(appContext)
+    private val backupNotifications = BackupNotificationManager(application.applicationContext)
 
     val session: StateFlow<UnifiedAccountSession> = unifiedAccountRepository.session
 
@@ -110,14 +108,14 @@ class BackupSyncViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             _operationState.value = BackupOperationState.Preparing
-            _busyMessage.value = appContext.getString(R.string.backup_busy_connecting_drive)
+            _busyMessage.value = "جارٍ الاتصال بحساب Google Drive..."
             _error.value = null
             try {
                 unifiedAccountRepository.signInWithGoogle(account, serverAuthCode)
                 refreshCloud()
                 withContext(Dispatchers.Main) { onDone(true) }
             } catch (e: Exception) {
-                _error.value = e.message ?: appContext.getString(R.string.backup_err_connect_google_short)
+                _error.value = e.message ?: "تعذر ربط حساب Google"
                 withContext(Dispatchers.Main) { onDone(false) }
             } finally {
                 _operationState.value = BackupOperationState.Idle
@@ -130,7 +128,7 @@ class BackupSyncViewModel(
         if (connectJob?.isActive == true) return
         connectJob = viewModelScope.launch(Dispatchers.IO) {
             _operationState.value = BackupOperationState.Preparing
-            _busyMessage.value = appContext.getString(R.string.backup_busy_connecting_google)
+            _busyMessage.value = "جارٍ الاتصال بحساب Google..."
             _error.value = null
             val ok = runCatching {
                 val success = cloud.connect()
@@ -139,7 +137,7 @@ class BackupSyncViewModel(
                 }
                 success
             }.getOrElse {
-                _error.value = it.message ?: appContext.getString(R.string.backup_err_connect_drive_short)
+                _error.value = it.message ?: "تعذر ربط Google Drive"
                 false
             }
             _operationState.value = BackupOperationState.Idle
@@ -153,7 +151,7 @@ class BackupSyncViewModel(
 
     fun connectCloudWithServerAuthCode(code: String, email: String?, onComplete: (Boolean) -> Unit = {}) {
         if (connectJob?.isActive == true) return
-        if (!tryBeginOperation(BackupOperationState.Preparing, appContext.getString(R.string.backup_busy_confirming_google))) return
+        if (!tryBeginOperation(BackupOperationState.Preparing, "جارٍ تأكيد حساب Google...")) return
         connectJob = viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val ok = runCatching {
@@ -164,7 +162,7 @@ class BackupSyncViewModel(
                 }
                 success
             }.getOrElse {
-                _error.value = it.message ?: appContext.getString(R.string.backup_err_confirm_drive_short)
+                _error.value = it.message ?: "تعذر تأكيد ربط Google Drive"
                 false
             }
             if (ok) {
@@ -183,7 +181,7 @@ class BackupSyncViewModel(
     }
 
     fun disconnectCloud(onComplete: (Boolean) -> Unit = {}) {
-        if (!tryBeginOperation(BackupOperationState.Preparing, appContext.getString(R.string.backup_busy_disconnecting_google))) return
+        if (!tryBeginOperation(BackupOperationState.Preparing, "جارٍ فصل حساب Google...")) return
         viewModelScope.launch(Dispatchers.IO) {
             val ok = runCatching {
                 unifiedAccountRepository.signOutUnified()
@@ -210,9 +208,9 @@ class BackupSyncViewModel(
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
-            _busyMessage.value = appContext.getString(R.string.backup_busy_loading_cloud_list)
+            _busyMessage.value = "جارٍ تحميل قائمة النسخ من السحابة..."
             val result = runCatching { cloud.list(_cloudSearch.value) }
-            result.exceptionOrNull()?.let { _error.value = it.message ?: appContext.getString(R.string.backup_err_load_cloud_list) }
+            result.exceptionOrNull()?.let { _error.value = it.message ?: "تعذر تحميل النسخ السحابية" }
             _cloudBackups.value = result.getOrDefault(emptyList())
             if (_operationState.value == BackupOperationState.Refreshing) {
                 completeOperation(result.isSuccess)
@@ -224,41 +222,33 @@ class BackupSyncViewModel(
 
     fun createCloudBackup(onComplete: (CloudBackupFile?, File?) -> Unit = { _, _ -> }) {
         launchBusy({ pair -> onComplete(pair?.first, pair?.second) }) {
-            _busyMessage.value = appContext.getString(R.string.backup_busy_preparing_backup)
+            _busyMessage.value = "جارٍ تجهيز النسخة..."
             _operationState.value = BackupOperationState.Preparing
             val file = engine.createManual()
             val publicUri = publicBackupStore.publish(file)
             if (!cloud.connected()) {
-                throw IllegalStateException(appContext.getString(R.string.backup_err_connect_drive_first))
+                throw IllegalStateException("يرجى ربط حساب Google Drive أولاً")
             }
             _operationState.value = BackupOperationState.Uploading
-            _busyMessage.value = appContext.getString(R.string.backup_busy_uploading_drive)
+            _busyMessage.value = "جارٍ الرفع إلى Google Drive..."
             val remote = cloud.upload(file, file.name)
             _cloudBackups.value = listOf(remote) + _cloudBackups.value.filterNot { it.id == remote.id }
             backupNotifications.show(
-                appContext.getString(R.string.backup_notif_uploaded_title),
-                appContext.getString(R.string.backup_notif_uploaded_body, file.name),
+                "تم رفع النسخة إلى Google Drive",
+                "تم حفظ الأرشيف: ${file.name} في Google Drive / الدفتر الذكي.",
                 publicUri
             )
             remote to file
         }
     }
 
-    fun createLocalBackup(onComplete: (File?) -> Unit = {}) = launchBusy(
-        onComplete,
-        BackupOperationState.Preparing,
-        appContext.getString(R.string.backup_busy_preparing_local)
-    ) {
+    fun createLocalBackup(onComplete: (File?) -> Unit = {}) = launchBusy(onComplete, BackupOperationState.Preparing, "جارٍ تجهيز النسخة المحلية...") {
         val file = engine.createManual()
         publicBackupStore.publish(file)
         file
     }
 
-    fun exportBackupBytes(onComplete: (ByteArray?) -> Unit = {}) = launchBusy(
-        onComplete,
-        BackupOperationState.Preparing,
-        appContext.getString(R.string.backup_busy_preparing_archive)
-    ) {
+    fun exportBackupBytes(onComplete: (ByteArray?) -> Unit = {}) = launchBusy(onComplete, BackupOperationState.Preparing, "جارٍ تجهيز ملف الأرشيف...") {
         engine.createManual().readBytes()
     }
 
@@ -267,7 +257,7 @@ class BackupSyncViewModel(
         recoveryCode: String? = null,
         onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }
     ) {
-        if (!tryBeginOperation(BackupOperationState.Restoring, appContext.getString(R.string.backup_busy_restoring))) return
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جارٍ استعادة النسخة...")) return
         viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val result = runCatching { engine.restoreBytes(bytes, recoveryCode) }
@@ -283,7 +273,7 @@ class BackupSyncViewModel(
         recoveryCode: String? = null,
         onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }
     ) {
-        if (!tryBeginOperation(BackupOperationState.Restoring, appContext.getString(R.string.backup_busy_restoring))) return
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جارٍ استعادة النسخة...")) return
         viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val result = runCatching { engine.restoreBytes(file.readBytes(), recoveryCode) }
@@ -298,9 +288,9 @@ class BackupSyncViewModel(
         onConfirmationRequired: (CloudBackupFile) -> Unit,
         onError: (Int) -> Unit
     ) {
-        if (!tryBeginOperation(BackupOperationState.Restoring, appContext.getString(R.string.backup_busy_finding_latest))) return
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جاري البحث عن أحدث نسخة سحابية...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busyMessage.value = appContext.getString(R.string.backup_busy_finding_latest)
+            _busyMessage.value = "جاري البحث عن أحدث نسخة سحابية..."
             _error.value = null
             val currentList = _cloudBackups.value
             val list = if (currentList.isNotEmpty()) {
@@ -321,7 +311,7 @@ class BackupSyncViewModel(
                 if (latest != null) {
                     onConfirmationRequired(latest)
                 } else {
-                    onError(R.string.backup_err_no_backups_found)
+                    onError(com.smartledger.aldaftar.R.string.backup_err_no_backups_found)
                 }
             }
         }
@@ -332,9 +322,9 @@ class BackupSyncViewModel(
         recoveryCode: String? = null,
         onComplete: (Boolean, AppSettings?, String?) -> Unit = { _, _, _ -> }
     ) {
-        if (!tryBeginOperation(BackupOperationState.Restoring, appContext.getString(R.string.backup_busy_downloading_and_restoring))) return
+        if (!tryBeginOperation(BackupOperationState.Restoring, "جاري تنزيل النسخة وفك التشفير واستعادة السجلات...")) return
         viewModelScope.launch(Dispatchers.IO) {
-            _busyMessage.value = appContext.getString(R.string.backup_busy_downloading_and_restoring)
+            _busyMessage.value = "جاري تنزيل النسخة وفك التشفير واستعادة السجلات..."
             _error.value = null
             val result = runCatching { engine.restoreBytes(cloud.download(item.id), recoveryCode) }
             completeOperation(result.isSuccess)
@@ -344,19 +334,11 @@ class BackupSyncViewModel(
         }
     }
 
-    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy(
-        { onComplete(it ?: 0) },
-        BackupOperationState.Deleting,
-        appContext.getString(R.string.backup_busy_deleting)
-    ) {
+    fun deleteCloudBackups(ids: Set<String>, onComplete: (Int) -> Unit = {}) = launchBusy({ onComplete(it ?: 0) }, BackupOperationState.Deleting, "جارٍ حذف النسخة...") {
         ids.chunked(100).sumOf { cloud.delete(it.toSet()) }.also { refreshCloud() }
     }
 
-    fun clearLocalCopyAndWipeMemory(onComplete: (Boolean) -> Unit = {}) = launchBusy(
-        { onComplete(it == true) },
-        BackupOperationState.Deleting,
-        appContext.getString(R.string.backup_busy_wiping_data)
-    ) {
+    fun clearLocalCopyAndWipeMemory(onComplete: (Boolean) -> Unit = {}) = launchBusy({ onComplete(it == true) }, BackupOperationState.Deleting, "جارٍ مسح البيانات...") {
         maintenanceRepository.deleteAllData()
         true
     }
@@ -399,7 +381,7 @@ class BackupSyncViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val result = runCatching { block() }
-                .onFailure { _error.value = it.message ?: appContext.getString(R.string.backup_err_operation_generic) }
+                .onFailure { _error.value = it.message ?: "تعذر تنفيذ العملية" }
                 .getOrNull()
             completeOperation(result != null)
             withContext(Dispatchers.Main) { onComplete(result) }

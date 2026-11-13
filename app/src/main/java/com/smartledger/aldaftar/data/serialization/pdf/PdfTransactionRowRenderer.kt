@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.text.Layout
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.serialization.pdf.PdfDrawingUtils.drawArabicText
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
@@ -39,11 +40,17 @@ object PdfTransactionRowRenderer {
                 append(cleanDetails)
             }
             if (tx.isRateCalculated) {
-                val origCurrency = CurrencyConfig.getBySymbol(tx.currencyCode)?.symbol ?: tx.currencyCode
+                val origCurrency = FinancialPolicy.canonicalCurrencySymbol(tx.currencyCode)
+                val targetBaseCurrency = FinancialPolicy.canonicalCurrencySymbol(
+                    tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != FinancialPolicy.DEFAULT_CURRENCY_CODE }
+                        ?: origCurrency
+                )
                 val origAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
+                val equivAmount = if (tx.equivalentAmount.compareTo(BigDecimal.ZERO) > 0) tx.equivalentAmount else tx.amount
                 val formattedAmount = HabayebMathHelper.formatSmart(origAmount)
                 val formattedRate = HabayebMathHelper.formatRate(tx.exchangeRate)
-                append("\n[ صرف: $formattedAmount $origCurrency × $formattedRate ]")
+                val formattedEquiv = HabayebMathHelper.formatSmart(equivAmount)
+                append("\n[ صرف: $formattedAmount $origCurrency × $formattedRate = $formattedEquiv $targetBaseCurrency ]")
             }
         }
     }

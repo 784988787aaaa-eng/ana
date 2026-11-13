@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.MizanElevation
 
 /**
  * Standard Dialog Container Surface
@@ -61,13 +60,13 @@ fun MizanDialogCard(
             modifier = sizeModifier
                 .navigationBarsPadding()
                 .imePadding(),
-            shape = MizanDialogTokens.shape,
+            shape = RoundedCornerShape(MizanDialogTokens.dialogRadius),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             ),
-            shadowElevation = MizanElevation.dialog,
+            shadowElevation = 8.dp,
             tonalElevation = 2.dp
         ) {
             Column(

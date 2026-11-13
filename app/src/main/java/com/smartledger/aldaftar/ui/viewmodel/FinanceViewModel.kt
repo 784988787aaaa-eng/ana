@@ -30,10 +30,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
-
-
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
 class FinanceViewModel(
     application: Application,
     private val licenseRepository: LicenseRepository,
@@ -90,12 +87,12 @@ class FinanceViewModel(
 
     init {
         viewModelScope.launch {
-            kotlinx.coroutines.flow.combine(
-                settingsRepository.settingsFlow,
+            combine(
+                settingsState,
                 habayebRepository.customersFlow
-            ) { rawSettings, _ ->
-                rawSettings ?: AppSettings()
-            }.collect { settings ->
+            ) { settings, customers ->
+                settings to customers
+            }.collect { (settings, _) ->
                 _themeModeState.value = settings.themeMode
                 _isPasscodeEnabled.value = settings.isPasscodeEnabled
                 _isFirstLaunch.value = settings.isFirstLaunch
@@ -120,12 +117,6 @@ class FinanceViewModel(
                 )
             )
         }
-    }
-
-    /** @deprecated Use completeOnboarding() so both first-run flags change together. */
-    @Deprecated("Use completeOnboarding()")
-    fun markOnboardingShown() {
-        completeOnboarding()
     }
 
     fun saveSettings(settings: AppSettings) {
@@ -168,11 +159,14 @@ class FinanceViewModel(
     }
 
     fun cleanLedgerTrashItems() {
-        viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch(Dispatchers.IO) {
             val period = settingsState.value.trashAutoCleanupPeriod
-            val duration = com.smartledger.aldaftar.TrashCleanupWorker.getPeriodDurationMillis(period)
-            if (duration <= 0L) return@launch
-            val threshold = System.currentTimeMillis() - duration
+            val threshold = when (period) {
+                "1_DAY" -> System.currentTimeMillis() - 86400000L
+                "7_DAYS" -> System.currentTimeMillis() - 86400000L * 7
+                "30_DAYS" -> System.currentTimeMillis() - 86400000L * 30
+                else -> return@launch
+            }
             trashRepository.removeExpiredBefore(threshold)
         }
     }
@@ -180,13 +174,6 @@ class FinanceViewModel(
     fun updateAutoCleanupPeriod(period: String) {
         viewModelScope.launch(Dispatchers.IO) {
             settingsRepository.saveSettings(settingsState.value.copy(trashAutoCleanupPeriod = period))
-            runCatching {
-                com.smartledger.aldaftar.TrashCleanupWorker.schedulePeriodicCleanup(getApplication(), period)
-            }
-            val duration = com.smartledger.aldaftar.TrashCleanupWorker.getPeriodDurationMillis(period)
-            if (duration > 0L) {
-                trashRepository.removeExpiredBefore(System.currentTimeMillis() - duration)
-            }
         }
     }
 
@@ -232,17 +219,9 @@ class FinanceViewModel(
         }
     }
 
-    
-
-    
-
     fun deleteAllData() {
         viewModelScope.launch(Dispatchers.IO) {
             maintenanceRepository.deleteAllData()
         }
-    }
-    
-    companion object {
-        const val TEST = 1
     }
 }

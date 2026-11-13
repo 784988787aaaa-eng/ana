@@ -25,6 +25,7 @@ import com.smartledger.aldaftar.ui.screens.habayeb.components.row.TransactionRow
 import com.smartledger.aldaftar.ui.screens.habayeb.components.row.TransactionRowDateSection
 import com.smartledger.aldaftar.ui.screens.habayeb.components.row.TransactionRowDetailsSection
 import com.smartledger.aldaftar.ui.theme.mizanColors
+import java.math.BigDecimal
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -44,16 +45,18 @@ fun CustomerTransactionRow(
     onScheduleClick: (HabayebTransaction) -> Unit,
     onExchangeRateClick: (HabayebTransaction) -> Unit,
     modifier: Modifier = Modifier,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    runningBalance: BigDecimal? = null
 ) {
     val mizanColors = MaterialTheme.mizanColors
-    val cached = remember(tx, currencySymbol, initialType, mizanColors.debt, mizanColors.credit) {
+    val cached = remember(tx, currencySymbol, initialType, runningBalance, mizanColors.debt, mizanColors.credit) {
         CustomerTransactionRowStateCalculator.calculate(
             tx = tx,
             currencySymbol = currencySymbol,
             initialType = initialType,
             debtColor = mizanColors.debt,
-            creditColor = mizanColors.credit
+            creditColor = mizanColors.credit,
+            runningBalance = runningBalance
         )
     }
 

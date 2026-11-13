@@ -60,7 +60,8 @@ fun AddCustomerTypeAndCurrencySelector(
     exchangeRatesJson: String,
     onRequestRateSetup: (String) -> Unit,
     modifier: Modifier = Modifier,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    manualOverrideRate: BigDecimal? = null
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -198,13 +199,16 @@ fun AddCustomerTypeAndCurrencySelector(
                 }
 
                 if (applyExchangeRate) {
-                    val rateState = remember(exchangeRatesJson, currencySymbol, selectedTransactionCurrency, context) {
-                        val has = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
-                        val rate = ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
+                    val rateState = remember(exchangeRatesJson, currencySymbol, selectedTransactionCurrency, manualOverrideRate, context) {
+                        val hasManualOverride = manualOverrideRate != null && manualOverrideRate.compareTo(BigDecimal.ZERO) > 0
+                        val has = hasManualOverride || ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
+                        val rate = manualOverrideRate?.takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
+                            ?: ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
                         val displayText = ExchangeRateHelper.formatCompactRateBadge(
                             jsonStr = exchangeRatesJson,
                             currencyA = selectedTransactionCurrency,
-                            currencyB = currencySymbol
+                            currencyB = currencySymbol,
+                            overrideRate = manualOverrideRate?.takeIf { it.compareTo(BigDecimal.ZERO) > 0 }
                         )
                         Triple(has, rate, displayText)
                     }
@@ -219,7 +223,7 @@ fun AddCustomerTypeAndCurrencySelector(
                                 .background(activeThemeColor.copy(alpha = 0.06f))
                                 .border(BorderStroke(0.8.dp, activeThemeColor.copy(alpha = 0.2f)), RoundedCornerShape(6.dp))
                                 .clickable {
-                                    onRequestRateSetup(currentRate.toString())
+                                    onRequestRateSetup(com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatRate(currentRate))
                                 }
                                 .padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {

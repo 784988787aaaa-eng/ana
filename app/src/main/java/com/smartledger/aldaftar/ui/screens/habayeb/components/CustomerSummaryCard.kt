@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 import com.smartledger.aldaftar.domain.model.TransactionType
@@ -51,13 +50,7 @@ fun AutoSizeText(
 
     Text(
         text = text,
-        style = TextStyle(
-            fontFamily = CairoFontFamily,
-            fontSize = fontSizeState,
-            fontWeight = fontWeight,
-            color = color,
-            letterSpacing = 0.sp
-        ),
+        style = TextStyle(fontSize = fontSizeState, fontWeight = fontWeight, color = color),
         textAlign = textAlign,
         maxLines = maxLines,
         overflow = TextOverflow.Clip,
@@ -70,7 +63,7 @@ fun AutoSizeText(
         onTextLayout = { textLayoutResult ->
             if (textLayoutResult.hasVisualOverflow) {
                 val currentSize = fontSizeState.value
-                if (currentSize > 10f) {
+                if (currentSize > 8f) {
                     fontSizeState = (currentSize - 0.5f).sp
                 } else {
                     readyToDraw = true

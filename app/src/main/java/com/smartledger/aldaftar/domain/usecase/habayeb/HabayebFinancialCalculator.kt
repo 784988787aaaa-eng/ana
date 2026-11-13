@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.domain.usecase.habayeb
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.platform.contacts.StringUtils
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toWesternDigits
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerHistoryCalculator
@@ -10,7 +11,6 @@ import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import com.smartledger.aldaftar.ui.state.CustomersUiState
 import java.math.BigDecimal
-import java.math.RoundingMode
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
 
@@ -55,7 +55,7 @@ object HabayebFinancialCalculator {
         settings: AppSettings
     ): CustomersUiState {
         val defaultCurrency = settings.currencySymbol
-        val normDefaultCurrency = com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.getBySymbol(defaultCurrency)?.symbol ?: defaultCurrency
+        val normDefaultCurrency = FinancialPolicy.canonicalCurrencySymbol(defaultCurrency)
 
         class CustomerAggregatedData(
             val netDebtBDMap: MutableMap<String, BigDecimal> = HashMap(2),
@@ -66,9 +66,9 @@ object HabayebFinancialCalculator {
         for (bal in customerBalances) {
             val agg = aggBalancesMap.getOrPut(bal.customerId) { CustomerAggregatedData() }
             val rawCurr = bal.currencyCode.ifBlank { normDefaultCurrency }
-            val curr = CurrencyConfig.getBySymbol(rawCurr)?.symbol ?: rawCurr
-            val amount = bal.netAmount.setScale(4, RoundingMode.HALF_EVEN)
-            agg.netDebtBDMap[curr] = (agg.netDebtBDMap[curr] ?: BigDecimal.ZERO).add(amount)
+            val curr = FinancialPolicy.canonicalCurrencySymbol(rawCurr)
+            val amount = FinancialPolicy.normalize(bal.netAmount)
+            agg.netDebtBDMap[curr] = FinancialPolicy.normalize((agg.netDebtBDMap[curr] ?: BigDecimal.ZERO).add(amount))
             if (bal.lastTimestamp > agg.maxTimestamp) {
                 agg.maxTimestamp = bal.lastTimestamp
             }
@@ -85,7 +85,7 @@ object HabayebFinancialCalculator {
             val maxTimestamp = if (agg != null && agg.maxTimestamp > customer.createdAt) agg.maxTimestamp else customer.createdAt
             val totalTxs = agg?.totalTxs ?: 0
 
-            val defaultCurrencyTotal = netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO
+            val defaultCurrencyTotal = FinancialPolicy.normalize(netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO)
             val defaultCurrencyTotalAbs = defaultCurrencyTotal.abs()
             
             // A customer is NOT closed merely because the default/local currency is zero.
@@ -94,7 +94,7 @@ object HabayebFinancialCalculator {
             val activeForeignDebts = netDebtBDMap
                 .filterKeys { it != normDefaultCurrency }
                 .filterValues { bd ->
-                    bd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0
+                    FinancialPolicy.normalize(bd).compareTo(BigDecimal.ZERO) != 0
                 }
 
             // Determine primary display currency and net debt
@@ -109,7 +109,7 @@ object HabayebFinancialCalculator {
                 // the largest outstanding absolute balance. Do not rely on HashMap iteration
                 // order: the primary currency must be deterministic and financially meaningful.
                 val nonZeroForeignEntry = activeForeignDebts.entries
-                    .maxByOrNull { it.value.abs() }
+                    .maxWithOrNull(compareBy<Map.Entry<String, BigDecimal>> { it.value.abs() }.thenBy { it.key })
                 if (nonZeroForeignEntry != null) {
                     displayCurrency = nonZeroForeignEntry.key
                     displayNetDebt = nonZeroForeignEntry.value
@@ -152,8 +152,8 @@ object HabayebFinancialCalculator {
 
         return CustomersUiState(
             customers = customerStates,
-            totalOwedByThem = globalTotalOwedByThem.setScale(4, RoundingMode.HALF_EVEN),
-            totalOwedToThem = globalTotalOwedToThem.setScale(4, RoundingMode.HALF_EVEN),
+            totalOwedByThem = FinancialPolicy.normalize(globalTotalOwedByThem),
+            totalOwedToThem = FinancialPolicy.normalize(globalTotalOwedToThem),
             isLoading = false,
             isInitialized = true
         )
@@ -179,13 +179,9 @@ object HabayebFinancialCalculator {
         for (customerUi in uiState.customers) {
             val isClosed = customerUi.isClosed
             val linkedCat = categoryMap[customerUi.id]
-            val isPinned = params.pinnedIds.contains(customerUi.id)
 
             if (isClosed) {
                 closedCount++
-                if ((isPinned || customerUi.totalTransactions == 0) && linkedCat != null) {
-                    counts[linkedCat] = (counts[linkedCat] ?: 0) + 1
-                }
             } else {
                 activeCustomersCount++
                 if (linkedCat != null) {
@@ -222,9 +218,9 @@ object HabayebFinancialCalculator {
             if (!matchesTab) continue
 
             val matchesCategory = when (selectedCat) {
-                null -> !isClosed || isPinned
+                null -> !isClosed
                 CATEGORY_CLOSED -> isClosed
-                else -> (!isClosed || isPinned || customerUi.totalTransactions == 0) && linkedCat == selectedCat
+                else -> !isClosed && linkedCat == selectedCat
             }
             if (!matchesCategory) continue
 
@@ -243,22 +239,22 @@ object HabayebFinancialCalculator {
 
         counts[CATEGORY_CLOSED] = closedCount
 
-        val sortComparator: (List<CustomerUiState>) -> List<CustomerUiState> = { list ->
-            when {
-                params.finSort == 1 -> list.sortedByDescending { it.defaultCurrencyTotalAbs }
-                params.finSort == 2 -> list.sortedBy { it.defaultCurrencyTotalAbs }
-                params.histSort == 2 -> list.sortedBy { it.lastTransactionTimestamp }
-                else -> list.sortedByDescending { it.lastTransactionTimestamp }
-            }
-        }
-
         val finalFilteredList = if (params.pinnedIds.isEmpty()) {
-            sortComparator(baseFilteredList).distinctBy { it.id }
+            when {
+                params.finSort == 1 -> baseFilteredList.sortedByDescending { it.defaultCurrencyTotalAbs }
+                params.finSort == 2 -> baseFilteredList.sortedBy { it.defaultCurrencyTotalAbs }
+                params.histSort == 2 -> baseFilteredList.sortedBy { it.lastTransactionTimestamp }
+                else -> baseFilteredList.sortedByDescending { it.lastTransactionTimestamp }
+            }
         } else {
             val (pinnedList, unpinnedList) = baseFilteredList.partition { params.pinnedIds.contains(it.id) }
-            val sortedPinned = sortComparator(pinnedList)
-            val sortedUnpinned = sortComparator(unpinnedList)
-            (sortedPinned + sortedUnpinned).distinctBy { it.id }
+            val sortedUnpinned = when {
+                params.finSort == 1 -> unpinnedList.sortedByDescending { it.defaultCurrencyTotalAbs }
+                params.finSort == 2 -> unpinnedList.sortedBy { it.defaultCurrencyTotalAbs }
+                params.histSort == 2 -> unpinnedList.sortedBy { it.lastTransactionTimestamp }
+                else -> unpinnedList.sortedByDescending { it.lastTransactionTimestamp }
+            }
+            pinnedList.sortedByDescending { it.lastTransactionTimestamp } + sortedUnpinned
         }
 
         return FilteredResult(

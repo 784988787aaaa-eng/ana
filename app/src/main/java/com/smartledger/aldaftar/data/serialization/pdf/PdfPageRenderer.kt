@@ -17,18 +17,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-data class PdfBusinessHeaderData(
-    val displayedName: String,
-    val displayedDesc: String,
-    val phonesStr: String,
-    val hasLogo: Boolean,
-    val scaledLogo: Bitmap?,
-    val logoW: Float,
-    val logoH: Float,
-    val docDateText: String,
-    val docTimeText: String
-)
-
 object PdfPageRenderer {
 
     private val dayFormatAr = SimpleDateFormat("EEEE", Locale("ar"))
@@ -198,21 +186,6 @@ object PdfPageRenderer {
         return dividerY + 10f
     }
 
-    fun drawBusinessHeader(canvas: Canvas, headerData: PdfBusinessHeaderData): Float {
-        return drawBusinessHeader(
-            canvas = canvas,
-            displayedName = headerData.displayedName,
-            displayedDesc = headerData.displayedDesc,
-            phonesStr = headerData.phonesStr,
-            hasLogo = headerData.hasLogo,
-            scaledLogo = headerData.scaledLogo,
-            logoW = headerData.logoW,
-            logoH = headerData.logoH,
-            docDateText = headerData.docDateText,
-            docTimeText = headerData.docTimeText
-        )
-    }
-
     fun drawBusinessHeader(
         canvas: Canvas,
         displayedName: String,
@@ -302,35 +275,6 @@ object PdfPageRenderer {
         drawArabicText(canvas, context.getString(R.string.pdf_col_other_currencies), 105f, y + 7f, 125, paintAllCustomersHeaderText, Layout.Alignment.ALIGN_CENTER)
         drawArabicText(canvas, context.getString(R.string.pdf_col_status), 25f, y + 7f, 80, paintAllCustomersHeaderText, Layout.Alignment.ALIGN_CENTER)
     }
-
-    fun drawSingleTransactionRow(
-        canvas: Canvas,
-        context: Context,
-        index: Int,
-        pt: ProcessedTransaction,
-        currentY: Float,
-        rowHeight: Float,
-        runningBal: BigDecimal
-    ) = PdfRowRenderer.drawSingleTransactionRow(canvas, context, index, pt, currentY, rowHeight, runningBal)
-
-    fun drawCustomerSummaryRow(
-        canvas: Canvas,
-        context: Context,
-        index: Int,
-        c: CustomerUiState,
-        currentY: Float,
-        rowHeight: Float,
-        currencySymbol: String
-    ) = PdfRowRenderer.drawCustomerSummaryRow(canvas, context, index, c, currentY, rowHeight, currencySymbol)
-
-    fun drawComprehensiveSummaryCard(
-        canvas: Canvas,
-        context: Context,
-        primaryColorHex: String,
-        summary: ComprehensivePdfSummary,
-        totalItems: Int,
-        currencySymbol: String
-    ) = PdfRowRenderer.drawComprehensiveSummaryCard(canvas, context, primaryColorHex, summary, totalItems, currencySymbol)
 
     fun drawCustomerReportIntro(
         canvas: Canvas?,

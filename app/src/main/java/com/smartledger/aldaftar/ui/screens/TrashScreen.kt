@@ -1,13 +1,11 @@
 package com.smartledger.aldaftar.ui.screens
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -18,23 +16,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
-import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashCustomerHistoryOverlay
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashDialogsManager
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashItemListSection
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashTopBarSection
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashTransactionDetailBottomSheet
 import com.smartledger.aldaftar.ui.screens.trash.components.TrashWrapper
+import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
 import com.smartledger.aldaftar.ui.screens.trash.utils.TrashItemParser
 import com.smartledger.aldaftar.ui.screens.trash.utils.TrashStrings
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.ExperimentalMaterial3Api
 
 enum class TrashFilterType {
     ALL, TRANSACTIONS, CUSTOMERS
@@ -63,7 +61,6 @@ fun TrashScreen(
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues()
 ) {
-    val context = LocalContext.current
     val items by viewModel.deletedItemsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val customersList by habayebViewModel.habayebCustomersState.collectAsStateWithLifecycle()
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
@@ -103,8 +100,6 @@ fun TrashScreen(
     var processedItems by remember { mutableStateOf(emptyList<TrashWrapper>()) }
     var itemsLimit by remember { mutableStateOf(50) }
     var totalFilteredCount by remember { mutableStateOf(0) }
-    var totalHabayebTrashCount by remember { mutableStateOf(0) }
-    var isProcessingItems by remember { mutableStateOf(false) }
 
     val unknownText = stringResource(id = R.string.trash_item_unknown)
     val noPhoneText = stringResource(id = R.string.trash_no_phone)
@@ -163,10 +158,7 @@ fun TrashScreen(
         selectedFilter, selectedSort, trashStrings, primaryColor, secondaryColor,
         errorColor, outlineColor
     ) {
-        if (processedItems.isEmpty() && items.isNotEmpty()) {
-            isProcessingItems = true
-        }
-        val (habayebTotal, filtered) = withContext(Dispatchers.Default) {
+        val filtered = withContext(Dispatchers.Default) {
             val habayebOnly = items.filter {
                 it.sourceSystem == systemHabayeb || it.originalTableName.startsWith("habayeb_")
             }
@@ -206,26 +198,15 @@ fun TrashScreen(
                 }
             }
 
-            val sorted = when (selectedSort) {
+            when (selectedSort) {
                 TrashSortType.NEWEST_DELETED -> list.sortedByDescending { it.entity.deletedAt }
                 TrashSortType.OLDEST_DELETED -> list.sortedBy { it.entity.deletedAt }
                 TrashSortType.HIGHEST_AMOUNT -> list.sortedWith { a, b -> b.parsed.amount.compareTo(a.parsed.amount) }
                 TrashSortType.ALPHABETICAL -> list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.parsed.name })
             }
-
-            habayebOnly.size to sorted
         }
-        totalHabayebTrashCount = habayebTotal
         totalFilteredCount = filtered.size
         processedItems = filtered.take(itemsLimit)
-        isProcessingItems = false
-
-        // Keep selection synchronized if items were removed
-        val validIds = filtered.map { it.entity.id }.toSet()
-        selectedItemIds.retainAll(validIds)
-        if (selectedItemIds.isEmpty() && isSelectionMode) {
-            isSelectionMode = false
-        }
     }
 
     val handleBackAction = {
@@ -259,8 +240,8 @@ fun TrashScreen(
                 isSelectionMode = isSelectionMode,
                 searchQuery = searchQuery,
                 selectedCount = selectedItemIds.size,
-                totalCount = if (isSelectionMode) processedItems.size else totalHabayebTrashCount,
-                hasItems = totalHabayebTrashCount > 0,
+                totalCount = processedItems.size,
+                hasItems = items.isNotEmpty(),
                 onSearchQueryChange = { searchQuery = it },
                 onSearchToggle = { isSearchActive = it },
                 onClearSelection = { clearSelection() },
@@ -277,10 +258,7 @@ fun TrashScreen(
                 onBack = handleBackAction,
                 onRestoreSelected = {
                     val selectedItems = items.filter { selectedItemIds.contains(it.id) }
-                    if (selectedItems.isNotEmpty()) {
-                        viewModel.restoreMultipleItems(selectedItems)
-                        Toast.makeText(context, context.getString(R.string.toast_items_restored), Toast.LENGTH_SHORT).show()
-                    }
+                    viewModel.restoreMultipleItems(selectedItems)
                     clearSelection()
                 },
                 onDeleteSelectedPermanently = {
@@ -319,27 +297,11 @@ fun TrashScreen(
                         toggleSelection(itemId)
                     }
                 },
-                onRestoreItem = { item ->
-                    viewModel.restoreDeletedItem(item)
-                    Toast.makeText(context, context.getString(R.string.toast_item_restored), Toast.LENGTH_SHORT).show()
-                },
-                onPermanentDeleteItem = { item ->
-                    activeDialogState = TrashDialogState.PermanentDeleteConfirm(listOf(item.id))
-                },
-                onOpenCustomerOverlay = { wrapper ->
-                    activeDialogState = TrashDialogState.CustomerHistoryOverlay(wrapper)
-                },
-                onOpenTransactionDetail = { wrapper ->
-                    activeDialogState = TrashDialogState.TransactionDetail(wrapper)
-                },
-                onLoadMore = { itemsLimit += 50 },
-                hasAnyItemsInTrash = totalHabayebTrashCount > 0,
-                searchQuery = searchQuery,
-                isLoading = isProcessingItems,
-                onClearSearch = {
-                    searchQuery = ""
-                    isSearchActive = false
-                }
+                onRestoreItem = { item -> viewModel.restoreDeletedItem(item) },
+                onPermanentDeleteItem = { item -> activeDialogState = TrashDialogState.PermanentDeleteConfirm(listOf(item.id)) },
+                onOpenCustomerOverlay = { wrapper -> activeDialogState = TrashDialogState.CustomerHistoryOverlay(wrapper) },
+                onOpenTransactionDetail = { wrapper -> activeDialogState = TrashDialogState.TransactionDetail(wrapper) },
+                onLoadMore = { itemsLimit += 50 }
             )
         }
     }
@@ -368,7 +330,6 @@ fun TrashScreen(
                 onDismiss = { activeDialogState = TrashDialogState.None },
                 onRestoreFullAccount = {
                     viewModel.restoreDeletedItem(currentEntity)
-                    Toast.makeText(context, context.getString(R.string.toast_item_restored), Toast.LENGTH_SHORT).show()
                     activeDialogState = TrashDialogState.None
                 },
                 onDeleteFullAccountPermanently = {
@@ -376,7 +337,6 @@ fun TrashScreen(
                 },
                 onRestoreSingleTx = { txId ->
                     viewModel.restoreSingleTransactionFromBundle(currentEntity.id, txId, currentEntity)
-                    Toast.makeText(context, context.getString(R.string.toast_item_restored), Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -406,7 +366,6 @@ fun TrashScreen(
                 onDismiss = { activeDialogState = TrashDialogState.None },
                 onRestore = {
                     viewModel.restoreDeletedItem(currentEntity)
-                    Toast.makeText(context, context.getString(R.string.toast_item_restored), Toast.LENGTH_SHORT).show()
                     activeDialogState = TrashDialogState.None
                 },
                 onPermanentDelete = {
@@ -421,7 +380,6 @@ fun TrashScreen(
         onDismissEmptyConfirm = { activeDialogState = TrashDialogState.None },
         onConfirmEmptyTrash = {
             viewModel.emptyTrash()
-            Toast.makeText(context, context.getString(R.string.toast_trash_emptied), Toast.LENGTH_SHORT).show()
             activeDialogState = TrashDialogState.None
         }
     )
@@ -439,8 +397,6 @@ fun TrashScreen(
             onConfirm = {
                 val selected = items.filter { state.itemIds.contains(it.id) }
                 viewModel.permanentlyDeleteMultipleItems(selected)
-                val msgId = if (count == 1) R.string.toast_item_permanently_deleted else R.string.toast_items_permanently_deleted
-                Toast.makeText(context, context.getString(msgId), Toast.LENGTH_SHORT).show()
                 clearSelection()
                 activeDialogState = TrashDialogState.None
             },

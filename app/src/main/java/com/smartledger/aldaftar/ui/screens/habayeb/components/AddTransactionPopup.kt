@@ -41,7 +41,9 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.CalculatorDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
@@ -87,32 +89,41 @@ fun AddTransactionPopup(
     }
     val historicalBaseCurrency = editingTransaction?.baseCurrencyCode?.takeIf { it.isNotBlank() && it != "DEFAULT" }
     val editingOriginalCurrency = historicalTransactionCurrency
-    val rateBaseCurrency = if (editingTransaction != null && selectedTransactionCurrency == editingOriginalCurrency) {
+    val isCalculatedOnOriginal = editingTransaction != null &&
+        editingTransaction.isRateCalculated &&
+        selectedTransactionCurrency == editingOriginalCurrency
+    val rateBaseCurrency = if (isCalculatedOnOriginal) {
         historicalBaseCurrency ?: currencySymbol
-    } else currencySymbol
-
-    val isForeignSelected = if (editingTransaction != null && selectedTransactionCurrency == editingOriginalCurrency) {
-        editingTransaction.isForeign
     } else {
-        selectedTransactionCurrency != currencySymbol
+        currencySymbol
     }
+
+    val isForeignSelected = (selectedTransactionCurrency != currencySymbol) || isCalculatedOnOriginal
     var applyExchangeRate by rememberSaveable { mutableStateOf(editingTransaction?.isRateCalculated ?: false) }
+    var manualEditedRateStr by rememberSaveable(editingTransaction?.id, selectedTransactionCurrency) {
+        mutableStateOf<String?>(null)
+    }
 
     val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency)
     val settingsRate = currentRateVal
+    val manualOverrideRate = manualEditedRateStr?.toBigDecimalOrNull()?.takeIf { it > BigDecimal.ZERO }
 
-    val effectiveRateBd = remember(editingTransaction, selectedTransactionCurrency, settingsRate) {
-        if (editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
-            editingTransaction.exchangeRate
-        } else {
-            settingsRate
+    val effectiveRateBd = remember(editingTransaction, selectedTransactionCurrency, settingsRate, manualOverrideRate) {
+        when {
+            manualOverrideRate != null -> manualOverrideRate
+            editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0 ->
+                editingTransaction.exchangeRate
+            else -> settingsRate
         }
     }
 
     val initialAmountText = remember(editingTransaction) {
         editingTransaction?.let {
-            val fa = it.foreignAmount
-            if (fa.scale() <= 0 || fa.stripTrailingZeros().scale() <= 0) fa.toBigInteger().toString() else fa.toPlainString()
+            val source = if (it.foreignAmount.compareTo(BigDecimal.ZERO) > 0) it.foreignAmount else it.amount
+            val orig = source.stripTrailingZeros()
+            if (orig.compareTo(BigDecimal.ZERO) == 0) "0"
+            else if (orig.scale() <= 0) orig.toBigInteger().toString()
+            else orig.toPlainString()
         } ?: INITIAL_EMPTY_TEXT
     }
     val initialDescText = remember(editingTransaction) {
@@ -139,26 +150,12 @@ fun AddTransactionPopup(
 
     val onSanitizedAmountChange: (TextFieldValue) -> Unit = { newTfv ->
         val raw = newTfv.text
-        if (raw.isEmpty()) {
-            amountTfv = newTfv
-        } else {
-            val normalized = CurrencyConfig.normalizeDigits(raw).replace(" ", "")
-            val dotCount = normalized.count { it == '.' }
-            val isValidChars = normalized.all { it.isDigit() || it == '.' }
-            val dotIdx = normalized.indexOf('.')
-            val validDecimals = dotIdx == -1 || (normalized.length - dotIdx - 1 <= 2)
-            if (isValidChars && dotCount <= 1 && validDecimals) {
-                val cleanedText = if (normalized.startsWith("0") && normalized.length > 1 && normalized[1] != '.') {
-                    normalized.trimStart('0').ifEmpty { "0" }
-                } else if (normalized.startsWith(".")) {
-                    "0$normalized"
-                } else {
-                    normalized
-                }
-                val diff = cleanedText.length - raw.length
-                val newCursor = (newTfv.selection.end + diff).coerceIn(0, cleanedText.length)
-                amountTfv = TextFieldValue(text = cleanedText, selection = TextRange(newCursor))
-            }
+        val cleanedText = HabayebMathHelper.sanitizeAmountInput(raw)
+        if (cleanedText != null) {
+            val rawEnd = newTfv.selection.end.coerceIn(0, raw.length)
+            val prefixCleaned = HabayebMathHelper.normalizeAmountDigits(raw.substring(0, rawEnd))
+            val newCursor = prefixCleaned.length.coerceIn(0, cleanedText.length)
+            amountTfv = TextFieldValue(text = cleanedText, selection = TextRange(newCursor))
         }
     }
 
@@ -191,9 +188,11 @@ fun AddTransactionPopup(
             focusManager.clearFocus()
             softwareKeyboardController?.hide()
 
-            val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
-            val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
-            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency)
+            val cleanAmountStr = HabayebMathHelper.normalizeAmountDigits(amountStr).trim()
+            val rawAmountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+            val amountBd = rawAmountBd?.let { FinancialPolicy.normalize(it) }
+            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency) ||
+                effectiveRateBd.compareTo(BigDecimal.ZERO) > 0
             if (amountBd == null) {
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
                 isSaving = false
@@ -246,8 +245,8 @@ fun AddTransactionPopup(
 
     val handleActionClick = { type: String ->
         if (!isSaving) {
-            val cleanAmountStr = CurrencyConfig.normalizeDigits(amountStr).trim()
-            val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+            val cleanAmountStr = HabayebMathHelper.normalizeAmountDigits(amountStr).trim()
+            val amountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)?.let { FinancialPolicy.normalize(it) }
             if (amountBd == null) {
                 Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
             } else if (amountBd <= BigDecimal.ZERO && descStr.trim().isBlank()) {
@@ -267,12 +266,11 @@ fun AddTransactionPopup(
     ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Card(
-                shape = MizanDialogTokens.shape,
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = MizanDialogTokens.maxWidth)
                     .navigationBarsPadding()
                     .imePadding()
                     .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -300,6 +298,7 @@ fun AddTransactionPopup(
                                 applyExchangeRate = false
                             },
                             onConfirm = { newRate ->
+                                manualEditedRateStr = FinancialPolicy.normalizeRate(newRate).toPlainString()
                                 val newSettings = settings.copy(
                                     exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency, newRate)
                                 )
@@ -391,12 +390,14 @@ fun AddTransactionPopup(
                                 onCurrencySelected = { sym ->
                                     selectedTransactionCurrency = sym
                                     applyExchangeRate = false
+                                    manualEditedRateStr = null
                                 },
                                 onApplyExchangeRateChange = { applyExchangeRate = it },
                                 onSetupRateClick = { rate ->
                                     tempRateStr = rate
                                     showRateSetupOverlay = true
-                                }
+                                },
+                                manualOverrideRate = manualOverrideRate
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -410,8 +411,8 @@ fun AddTransactionPopup(
                                     onClick = { handleActionClick(if (isLendOperationSelected) TransactionType.OWED_BY_THEM.value else TransactionType.OWED_TO_THEM.value) },
                                     colors = ButtonDefaults.buttonColors(containerColor = debtRedColor, contentColor = mizanColors.onDebt),
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = MizanDialogTokens.buttonShape,
-                                    modifier = Modifier.weight(1f).height(MizanDialogTokens.buttonHeight)
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f).height(42.dp)
                                 ) {
                                     Text(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
@@ -448,10 +449,13 @@ fun AddTransactionPopup(
         CalculatorDialog(
             onDismiss = { showCalculator = false },
             onValueConfirmed = { value ->
-                val calcStr = if (value.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
-                    value.toBigInteger().toString()
+                val normalized = FinancialPolicy.normalize(value).stripTrailingZeros()
+                val calcStr = if (normalized.compareTo(BigDecimal.ZERO) == 0) {
+                    "0"
+                } else if (normalized.scale() <= 0) {
+                    normalized.toBigInteger().toString()
                 } else {
-                    value.stripTrailingZeros().toPlainString()
+                    normalized.toPlainString()
                 }
                 amountTfv = TextFieldValue(text = calcStr, selection = TextRange(calcStr.length))
                 showCalculator = false

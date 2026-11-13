@@ -52,7 +52,7 @@ fun RecurringDateTimeSection(
     var selectedTab by remember { mutableStateOf(RangeTab.START) }
 
     val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH) }
-    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.ENGLISH) }
+    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale("ar")) }
 
     val formattedStartDate = remember(startDateMillis) {
         dateFormatter.format(Date(startDateMillis))
@@ -66,11 +66,6 @@ fun RecurringDateTimeSection(
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
         }
-    }
-    val formattedTime = remember(timeCalendar.timeInMillis) {
-        timeFormatter.format(timeCalendar.time)
-            .replace("AM", "ص")
-            .replace("PM", "م")
     }
 
     if (showRangeDialog) {
@@ -91,47 +86,42 @@ fun RecurringDateTimeSection(
         )
     }
 
-    androidx.compose.foundation.layout.Column(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            DateTimePill(
-                icon = Icons.Default.CalendarToday,
-                text = stringResource(R.string.recurring_from_prefix, formattedStartDate),
-                iconTint = activeThemeColor,
-                onClick = {
-                    selectedTab = RangeTab.START
-                    showRangeDialog = true
-                },
-                modifier = Modifier.weight(1f)
-            )
-
-            DateTimePill(
-                icon = Icons.Default.CalendarMonth,
-                text = stringResource(R.string.recurring_to_prefix, formattedEndDate),
-                iconTint = MaterialTheme.colorScheme.primary,
-                onClick = {
-                    selectedTab = RangeTab.END
-                    showRangeDialog = true
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
-
         DateTimePill(
             icon = Icons.Default.Schedule,
-            text = "${stringResource(R.string.datetime_picker_time_section)}: $formattedTime",
+            text = timeFormatter.format(timeCalendar.time),
             iconTint = activeThemeColor,
             onClick = {
                 selectedTab = RangeTab.START
                 showRangeDialog = true
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.weight(1f)
+        )
+
+        DateTimePill(
+            icon = Icons.Default.CalendarToday,
+            text = stringResource(R.string.recurring_from_prefix, formattedStartDate),
+            iconTint = activeThemeColor,
+            onClick = {
+                selectedTab = RangeTab.START
+                showRangeDialog = true
+            },
+            modifier = Modifier.weight(1.15f)
+        )
+
+        DateTimePill(
+            icon = Icons.Default.CalendarMonth,
+            text = stringResource(R.string.recurring_to_prefix, formattedEndDate),
+            iconTint = MaterialTheme.colorScheme.primary,
+            onClick = {
+                selectedTab = RangeTab.END
+                showRangeDialog = true
+            },
+            modifier = Modifier.weight(1.15f)
         )
     }
 }
@@ -147,27 +137,23 @@ private fun DateTimePill(
     Card(
         modifier = modifier.clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        shape = RoundedCornerShape(10.dp)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 9.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier
-                    .padding(end = 6.dp)
-                    .size(15.dp)
+                modifier = Modifier.size(13.dp)
             )
             Text(
                 text = text,
-                fontSize = 11.5.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,

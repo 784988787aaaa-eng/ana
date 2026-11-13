@@ -5,14 +5,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.ui.components.*
 import com.smartledger.aldaftar.ui.navigation.Screen
@@ -63,10 +61,7 @@ fun MainAppLayout(
 
     var showExitConfirmDialog by rememberSaveable { mutableStateOf(false) }
     var showBackupRestoreSheet by rememberSaveable { mutableStateOf(false) }
-    var showCurrencyBallSelector by rememberSaveable { mutableStateOf(false) }
     var showLicenseDialog by rememberSaveable { mutableStateOf(false) }
-    var forceLicenseDialog by rememberSaveable { mutableStateOf(false) }
-    val licenseSnapshot by licenseViewModel.snapshot.collectAsStateWithLifecycle()
     // Selection is owned by the Habayeb ViewModel so Back can cancel it globally
     // before the normal navigation/exit behavior is reached.
     val selectedCustomerIds by habayebViewModel.selectedCustomerIdsState.collectAsStateWithLifecycle()
@@ -75,7 +70,6 @@ fun MainAppLayout(
     var isSearchActive by remember { mutableStateOf(false) }
     var isHistoryOverlayActive by remember { mutableStateOf(false) }
     var isHistorySearchActive by remember { mutableStateOf(false) }
-    var habayebFabOverlay by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
     val activity = context as? android.app.Activity
     LaunchedEffect(activity) {
@@ -139,7 +133,10 @@ fun MainAppLayout(
                 settings = settings,
                 securityViewModel = securityViewModel,
                 licenseViewModel = licenseViewModel,
-                onLicenseClick = { scope.launch { drawerState.close() }; forceLicenseDialog = false; showLicenseDialog = true },
+                onLicenseClick = {
+                    scope.launch { drawerState.close() }
+                    showLicenseDialog = true
+                },
                 businessProfileViewModel = businessProfileViewModel,
                 onSaveSettings = { updated, targetCurrency, newRate, revalueHistorical ->
                     viewModel.saveSettings(updated)
@@ -212,14 +209,9 @@ fun MainAppLayout(
                         onHistoryOverlayActiveChanged = { isHistoryOverlayActive = it },
                         isHistorySearchActive = isHistorySearchActive,
                         onHistorySearchActiveChanged = { isHistorySearchActive = it },
-                        onFabOverlayChanged = { habayebFabOverlay = it },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-            }
-
-            if (currentScreen == Screen.HABAYEB) {
-                habayebFabOverlay?.invoke()
             }
 
             val hideBubble = if (isHistoryOverlayActive) isHistorySearchActive else isSearchActive
@@ -288,6 +280,9 @@ fun MainAppLayout(
                 if (revalueHistorical && targetCurrency.isNotEmpty() && newRate.compareTo(java.math.BigDecimal.ZERO) > 0) {
                     habayebViewModel.revalueHistoricalTransactions(updated.currencySymbol, targetCurrency, newRate)
                 }
+            },
+            onRevalueHistoricalPairs = { baseCurrency, pairs ->
+                habayebViewModel.revalueHistoricalPairs(baseCurrency, pairs)
             },
             onDismiss = { showCurrencySettingsDialog = false }
         )

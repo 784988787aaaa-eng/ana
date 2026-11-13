@@ -103,7 +103,6 @@ abstract class TrashDao {
                 deleteItem(item)
             } else {
                 root.put("transactions", remainingTxs)
-                root.put("totalTransactions", remainingTxs.length())
                 val updatedItem = item.copy(jsonData = root.toString())
                 insertDeletedItem(updatedItem)
             }

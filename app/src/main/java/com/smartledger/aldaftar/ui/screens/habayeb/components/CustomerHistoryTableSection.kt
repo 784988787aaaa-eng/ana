@@ -83,6 +83,7 @@ fun CustomerHistoryTableSection(
                         isDark = isDark,
                         currencySymbol = currencySymbol,
                         initialType = activeCustomer.initialType,
+                        runningBalance = runningBalances[tx.id],
                         isSelected = isSelected,
                         isTxMultiSelectActive = isTxMultiSelectActive,
                         hasActiveRecurring = hasActiveRecurring,

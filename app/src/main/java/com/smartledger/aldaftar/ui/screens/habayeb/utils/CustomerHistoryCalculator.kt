@@ -1,9 +1,9 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.utils
 
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 @androidx.compose.runtime.Immutable
 data class CustomerSummaryResult(
@@ -39,6 +39,7 @@ object CustomerHistoryCalculator {
         currencySymbol: String,
         exchangeRatesJson: String?
     ): CustomerHistoryCalculationResult {
+        val normDefaultCurrency = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
         val safeRatesJson = exchangeRatesJson ?: ""
         val totalCount = allCustomerTxs.size
 
@@ -52,7 +53,7 @@ object CustomerHistoryCalculator {
         val paymentToThemBD = HashMap<String, BigDecimal>(4)
 
         val currencySet = LinkedHashSet<String>(4)
-        currencySet.add(currencySymbol)
+        currencySet.add(normDefaultCurrency)
 
         val balancesMap = HashMap<String, BigDecimal>(totalCount)
         val currentBalBDMap = HashMap<String, BigDecimal>(4)
@@ -60,10 +61,11 @@ object CustomerHistoryCalculator {
 
         var seq = 1
         for (tx in chronological) {
-            val (txCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, currencySymbol, safeRatesJson)
+            val (rawTxCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, normDefaultCurrency, safeRatesJson)
+            val txCurrency = FinancialPolicy.canonicalCurrencySymbol(rawTxCurrency)
             currencySet.add(txCurrency)
 
-            val safeBd = bdAmount.setScale(4, RoundingMode.HALF_EVEN)
+            val safeBd = FinancialPolicy.normalize(bdAmount)
             val txType = TransactionType.fromValue(tx.type)
 
             when (txType) {
@@ -75,11 +77,13 @@ object CustomerHistoryCalculator {
             }
 
             var currentBalBD = currentBalBDMap[txCurrency] ?: BigDecimal.ZERO
-            currentBalBD = when (txType) {
-                TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> currentBalBD.add(safeBd)
-                TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> currentBalBD.subtract(safeBd)
-                else -> currentBalBD
-            }.setScale(4, RoundingMode.HALF_EVEN)
+            currentBalBD = FinancialPolicy.normalize(
+                when (txType) {
+                    TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> currentBalBD.add(safeBd)
+                    TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> currentBalBD.subtract(safeBd)
+                    else -> currentBalBD
+                }
+            )
 
             currentBalBDMap[txCurrency] = currentBalBD
             balancesMap[tx.id] = currentBalBD
@@ -97,17 +101,17 @@ object CustomerHistoryCalculator {
         val netDebtBDMap = HashMap<String, BigDecimal>(numCurrencies)
 
         for (curr in currencyKeys) {
-            val owedBy = (owedByThemBD[curr] ?: BigDecimal.ZERO).setScale(4, RoundingMode.HALF_EVEN)
-            val payBy = (paymentByThemBD[curr] ?: BigDecimal.ZERO).setScale(4, RoundingMode.HALF_EVEN)
-            val owedTo = (owedToThemBD[curr] ?: BigDecimal.ZERO).setScale(4, RoundingMode.HALF_EVEN)
-            val payTo = (paymentToThemBD[curr] ?: BigDecimal.ZERO).setScale(4, RoundingMode.HALF_EVEN)
+            val owedBy = FinancialPolicy.normalize(owedByThemBD[curr] ?: BigDecimal.ZERO)
+            val payBy = FinancialPolicy.normalize(paymentByThemBD[curr] ?: BigDecimal.ZERO)
+            val owedTo = FinancialPolicy.normalize(owedToThemBD[curr] ?: BigDecimal.ZERO)
+            val payTo = FinancialPolicy.normalize(paymentToThemBD[curr] ?: BigDecimal.ZERO)
 
             owedByThemMap[curr] = owedBy
             paymentByThemMap[curr] = payBy
             owedToThemMap[curr] = owedTo
             paymentToThemMap[curr] = payTo
 
-            val netDebtBD = owedBy.subtract(payBy).subtract(owedTo).add(payTo).setScale(4, RoundingMode.HALF_EVEN)
+            val netDebtBD = FinancialPolicy.normalize(owedBy.subtract(payBy).subtract(owedTo).add(payTo))
             netDebtMap[curr] = netDebtBD
             netDebtBDMap[curr] = netDebtBD
         }
@@ -115,19 +119,19 @@ object CustomerHistoryCalculator {
         val primaryDisplayCurrency: String
         val netDebt: BigDecimal
 
-        val baseNetBd = netDebtBDMap[currencySymbol] ?: BigDecimal.ZERO
-        if (baseNetBd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0) {
-            primaryDisplayCurrency = currencySymbol
+        val baseNetBd = FinancialPolicy.normalize(netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO)
+        if (baseNetBd.compareTo(BigDecimal.ZERO) != 0) {
+            primaryDisplayCurrency = normDefaultCurrency
             netDebt = baseNetBd
         } else {
             val nonZeroForeignEntry = netDebtBDMap.entries
-                .filter { (k, v) -> k != currencySymbol && v.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0 }
+                .filter { (k, v) -> k != normDefaultCurrency && FinancialPolicy.normalize(v).compareTo(BigDecimal.ZERO) != 0 }
                 .maxWithOrNull(compareBy<Map.Entry<String, BigDecimal>> { it.value.abs() }.thenBy { it.key })
             if (nonZeroForeignEntry != null) {
                 primaryDisplayCurrency = nonZeroForeignEntry.key
                 netDebt = nonZeroForeignEntry.value
             } else {
-                primaryDisplayCurrency = currencySymbol
+                primaryDisplayCurrency = normDefaultCurrency
                 netDebt = BigDecimal.ZERO
             }
         }
@@ -157,10 +161,11 @@ object CustomerHistoryCalculator {
         exchangeRatesJson: String?,
         fallbackCreatedAt: Long
     ): CustomerSummaryResult {
+        val normDefaultCurrency = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
         if (allCustomerTxs.isEmpty()) {
             return CustomerSummaryResult(
                 netDebtBigDecimalMap = emptyMap(),
-                primaryDisplayCurrency = currencySymbol,
+                primaryDisplayCurrency = normDefaultCurrency,
                 netDebt = BigDecimal.ZERO,
                 lastTimestamp = fallbackCreatedAt
             )
@@ -172,7 +177,7 @@ object CustomerHistoryCalculator {
         val owedToThemBD = HashMap<String, BigDecimal>(2)
         val paymentToThemBD = HashMap<String, BigDecimal>(2)
         val currencySet = LinkedHashSet<String>(2)
-        currencySet.add(currencySymbol)
+        currencySet.add(normDefaultCurrency)
 
         var maxTime = fallbackCreatedAt
 
@@ -180,10 +185,11 @@ object CustomerHistoryCalculator {
             if (tx.timestamp > maxTime) {
                 maxTime = tx.timestamp
             }
-            val (txCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, currencySymbol, safeRatesJson)
+            val (rawTxCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, normDefaultCurrency, safeRatesJson)
+            val txCurrency = FinancialPolicy.canonicalCurrencySymbol(rawTxCurrency)
             currencySet.add(txCurrency)
 
-            val safeBd = bdAmount.setScale(4, RoundingMode.HALF_EVEN)
+            val safeBd = FinancialPolicy.normalize(bdAmount)
             when (TransactionType.fromValue(tx.type)) {
                 TransactionType.OWED_BY_THEM -> owedByThemBD[txCurrency] = (owedByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
                 TransactionType.PAYMENT_BY_THEM -> paymentByThemBD[txCurrency] = (paymentByThemBD[txCurrency] ?: BigDecimal.ZERO).add(safeBd)
@@ -199,24 +205,24 @@ object CustomerHistoryCalculator {
             val payBy = paymentByThemBD[curr] ?: BigDecimal.ZERO
             val owedTo = owedToThemBD[curr] ?: BigDecimal.ZERO
             val payTo = paymentToThemBD[curr] ?: BigDecimal.ZERO
-            netDebtBDMap[curr] = owedBy.subtract(payBy).subtract(owedTo).add(payTo).setScale(4, RoundingMode.HALF_EVEN)
+            netDebtBDMap[curr] = FinancialPolicy.normalize(owedBy.subtract(payBy).subtract(owedTo).add(payTo))
         }
 
         val primaryDisplayCurrency: String
         val netDebt: BigDecimal
-        val baseNetBd = netDebtBDMap[currencySymbol] ?: BigDecimal.ZERO
-        if (baseNetBd.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0) {
-            primaryDisplayCurrency = currencySymbol
+        val baseNetBd = FinancialPolicy.normalize(netDebtBDMap[normDefaultCurrency] ?: BigDecimal.ZERO)
+        if (baseNetBd.compareTo(BigDecimal.ZERO) != 0) {
+            primaryDisplayCurrency = normDefaultCurrency
             netDebt = baseNetBd
         } else {
             val nonZeroForeignEntry = netDebtBDMap.entries
-                .filter { (k, v) -> k != currencySymbol && v.setScale(4, RoundingMode.HALF_EVEN).compareTo(BigDecimal.ZERO) != 0 }
+                .filter { (k, v) -> k != normDefaultCurrency && FinancialPolicy.normalize(v).compareTo(BigDecimal.ZERO) != 0 }
                 .maxWithOrNull(compareBy<Map.Entry<String, BigDecimal>> { it.value.abs() }.thenBy { it.key })
             if (nonZeroForeignEntry != null) {
                 primaryDisplayCurrency = nonZeroForeignEntry.key
                 netDebt = nonZeroForeignEntry.value
             } else {
-                primaryDisplayCurrency = currencySymbol
+                primaryDisplayCurrency = normDefaultCurrency
                 netDebt = BigDecimal.ZERO
             }
         }

@@ -21,8 +21,7 @@ fun HabayebFabHost(
     onAddCustomerClick: () -> Unit,
     onAddTransactionForCustomer: (HabayebCustomer) -> Unit,
     persisted: com.smartledger.aldaftar.data.repository.FloatingAddState,
-    onPersist: (com.smartledger.aldaftar.data.repository.FloatingAddState) -> Unit,
-    onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null
+    onPersist: (com.smartledger.aldaftar.data.repository.FloatingAddState) -> Unit
 ) {
     if (!isMultiSelectActive && !isHistoryTxMultiSelectActive) {
         HabayebFab(

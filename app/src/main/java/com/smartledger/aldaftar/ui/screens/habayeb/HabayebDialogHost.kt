@@ -42,8 +42,6 @@ fun HabayebDialogHost(
     when (val dialogState = activeDialogState) {
         is HabayebDialogState.None -> {}
         is HabayebDialogState.AddCustomer -> {
-            val resolvedInitialCategory = dialogState.initialCategory
-                ?: viewModel.resolveInitialCategoryForNewAccount(selectedCategory)
             AddCustomerPopup(
                 viewModel = viewModel,
                 onDismiss = onDismissDialog,
@@ -52,9 +50,7 @@ fun HabayebDialogHost(
                     onDismissDialog()
                 },
                 activeThemeColor = activeThemeColor,
-                activeSubColor = activeSubColor,
-                initialCategory = resolvedInitialCategory,
-                customCategories = customCategories
+                activeSubColor = activeSubColor
             )
         }
         is HabayebDialogState.AddTransaction -> {

@@ -4,6 +4,8 @@ import android.content.Context
 import android.widget.Toast
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
+import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
@@ -23,8 +25,7 @@ data class AddCustomerFormData(
     val applyExchangeRate: Boolean,
     val selectedCalendar: Calendar,
     val settingsRate: BigDecimal,
-    val isDuplicateName: Boolean,
-    val selectedCategory: String? = null
+    val isDuplicateName: Boolean
 )
 
 object AddCustomerSaveHelper {
@@ -48,7 +49,6 @@ object AddCustomerSaveHelper {
         val selectedCalendar = formData.selectedCalendar
         val settingsRate = formData.settingsRate
         val isDuplicateName = formData.isDuplicateName
-        val selectedCategory = formData.selectedCategory
 
         if (nameStr.trim().isBlank()) {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_enter_name), Toast.LENGTH_SHORT).show()
@@ -62,12 +62,12 @@ object AddCustomerSaveHelper {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_select_type), Toast.LENGTH_SHORT).show()
             return
         }
-        val cleanAmountStr = CurrencyConfig.normalizeDigits(initialAmountStr).trim()
+        val cleanAmountStr = HabayebMathHelper.normalizeAmountDigits(initialAmountStr).trim()
         if (cleanAmountStr.isBlank()) {
             Toast.makeText(context, context.getString(R.string.habayeb_required_field), Toast.LENGTH_SHORT).show()
             return
         }
-        val actualInitialAmountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)
+        val actualInitialAmountBd = CurrencyConfig.parseBigDecimalOrNull(cleanAmountStr)?.let { FinancialPolicy.normalize(it) }
         if (actualInitialAmountBd == null) {
             Toast.makeText(context, context.getString(R.string.habayeb_toast_valid_amount), Toast.LENGTH_SHORT).show()
             return
@@ -80,7 +80,8 @@ object AddCustomerSaveHelper {
         val isForeignSelected = selectedTransactionCurrency != currencySymbol
         if (isForeignSelected && applyExchangeRate) {
             val settings = viewModel.settingsState.value
-            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
+            val hasStoredRate = ExchangeRateHelper.hasRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol) ||
+                settingsRate.compareTo(BigDecimal.ZERO) > 0
             if (!hasStoredRate) {
                 onShowRateSetup("")
                 return
@@ -124,8 +125,7 @@ object AddCustomerSaveHelper {
                         foreignAmount = actualInitialAmountBd,
                         exchangeRate = exchangeRateBd,
                         isRateCalculated = isForeignSelected && applyExchangeRate,
-                        equivalentAmount = finalEquivalentAmountBd,
-                        selectedCategory = selectedCategory
+                        equivalentAmount = finalEquivalentAmountBd
                     )
 
                     if (saved) {

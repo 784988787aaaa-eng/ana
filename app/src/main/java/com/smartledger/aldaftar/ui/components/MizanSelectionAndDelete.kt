@@ -41,9 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.MizanElevation
-import com.smartledger.aldaftar.ui.theme.MizanRadii
-import com.smartledger.aldaftar.ui.theme.MizanSpacing
 
 /**
  * Unified selection surface for lists throughout the app.
@@ -64,12 +61,12 @@ fun MizanSelectionBar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = MizanSpacing.lg, vertical = MizanSpacing.sm),
-        shape = MizanRadii.shapeMd,
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
-        tonalElevation = MizanElevation.cardResting,
-        shadowElevation = MizanElevation.floatingControl
+        tonalElevation = 1.dp,
+        shadowElevation = 3.dp
     ) {
         Row(
             modifier = Modifier

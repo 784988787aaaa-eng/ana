@@ -1,6 +1,5 @@
 package com.smartledger.aldaftar.ui.screens
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,13 +13,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -29,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,19 +33,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
@@ -89,8 +80,7 @@ fun HabayebScreen(
     isHistoryOverlayActive: Boolean = false,
     onHistoryOverlayActiveChanged: (Boolean) -> Unit = {},
     isHistorySearchActive: Boolean = false,
-    onHistorySearchActiveChanged: (Boolean) -> Unit = {},
-    onFabOverlayChanged: (((@Composable () -> Unit)?) -> Unit)? = null
+    onHistorySearchActiveChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -305,18 +295,6 @@ fun HabayebScreen(
         }
     }
 
-    val openAddCustomerForCurrentCategory: () -> Unit = remember(viewModel, uiState.selectedCategory) {
-        {
-            if (!viewModel.isEligibleToCreate()) {
-                viewModel.triggerLicensePrompt()
-            } else {
-                activeDialogState = HabayebDialogState.AddCustomer(
-                    initialCategory = viewModel.resolveInitialCategoryForNewAccount(uiState.selectedCategory)
-                )
-            }
-        }
-    }
-
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(
             modifier = Modifier
@@ -396,7 +374,6 @@ fun HabayebScreen(
                     onQuickAdd = onQuickAddRemembered,
                     getCustomerCategory = viewModel::getCustomerCategory,
                     onRemoveFromCategory = { customerId -> viewModel.assignCategoryToCustomers(listOf(customerId), null) },
-                    onAddCustomerClick = openAddCustomerForCurrentCategory,
                     highlightedCustomerId = highlightedCustomerId,
                     modifier = Modifier.weight(1f)
                 )
@@ -410,7 +387,13 @@ fun HabayebScreen(
                 haptic = haptic,
                 isMultiSelectActive = isMultiSelectActive,
                 isHistoryTxMultiSelectActive = isHistoryTxMultiSelectActive,
-                onAddCustomerClick = openAddCustomerForCurrentCategory,
+                onAddCustomerClick = {
+                    if (!viewModel.isEligibleToCreate()) {
+                        viewModel.triggerLicensePrompt()
+                    } else {
+                        activeDialogState = HabayebDialogState.AddCustomer
+                    }
+                },
                 onAddTransactionForCustomer = { c ->
                     if (!viewModel.isEligibleToCreate()) {
                         viewModel.triggerLicensePrompt()
@@ -419,8 +402,7 @@ fun HabayebScreen(
                     }
                 },
                 persisted = viewModel.floatingAddState(),
-                onPersist = viewModel::saveFloatingAddState,
-                onFabOverlayChanged = onFabOverlayChanged
+                onPersist = viewModel::saveFloatingAddState
             )
 
             if (isMultiSelectActive && selectedCustomerIds.isNotEmpty()) {

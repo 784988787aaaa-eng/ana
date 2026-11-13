@@ -1,12 +1,15 @@
 package com.smartledger.aldaftar.ui.screens.trash.utils
+import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
 
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import com.smartledger.aldaftar.data.local.entities.DeletedItemEntity
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
-import com.smartledger.aldaftar.presentation.formatters.AppDateTimeFormatter
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
+import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
+import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.math.BigDecimal
 import java.util.Locale
 import org.json.JSONObject
@@ -135,9 +138,8 @@ object TrashItemParser {
                 "habayeb_transactions" -> {
                     val customerId = jsonObj.optString("customerId", "")
                     val foundCustomer = customersList.find { it.id == customerId }
-                    val fallbackCustomerName = jsonObj.optString("customerName", "").trim()
-                    val resolvedName = foundCustomer?.name?.takeIf { it.isNotBlank() } ?: fallbackCustomerName
-                    phoneVal = foundCustomer?.phone ?: jsonObj.optString("customerPhone", "").trim()
+                    val resolvedName = foundCustomer?.name ?: ""
+                    phoneVal = foundCustomer?.phone ?: ""
                     customerNameVal = resolvedName
                     customerPhoneVal = phoneVal
 
@@ -150,8 +152,8 @@ object TrashItemParser {
                     val desc = jsonObj.optString("description", "").trim()
                     val notes = jsonObj.optString("notes", "").trim()
                     val rawText = desc.ifEmpty { notes }
+                    rawDescriptionVal = rawText
                     val cleanText = stripCurrencyTag(rawText)
-                    rawDescriptionVal = cleanText
                     titleText = cleanText.ifEmpty { strings.noNotesText }
                     name = if (resolvedName.isNotEmpty()) "$resolvedName - $titleText" else titleText
 
@@ -179,9 +181,12 @@ object TrashItemParser {
                         "تابع لحساب: $displayName ($typeAr)"
                     }
 
+                    val normDefaultCurrency = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
                     isForeignVal = jsonObj.optBoolean("is_foreign", false)
                     val rawCurrencyCode = jsonObj.optString("currency_code", "DEFAULT")
-                    val effectiveCurrency = if (rawCurrencyCode == "DEFAULT" || rawCurrencyCode.isBlank()) currencySymbol else rawCurrencyCode
+                    val effectiveCurrency = FinancialPolicy.canonicalCurrencySymbol(
+                        if (rawCurrencyCode == "DEFAULT" || rawCurrencyCode.isBlank()) normDefaultCurrency else rawCurrencyCode
+                    )
 
                     if (isForeignVal) {
                         val foreignAmountStr = jsonObj.optString("foreign_amount", "0")
@@ -193,11 +198,13 @@ object TrashItemParser {
                             val equivalentValStr = jsonObj.optString("equivalent_amount", "0")
                             val equivalentValDec = HabayebMathHelper.toBigDecimal(equivalentValStr)
                             val baseCurrencyRaw = jsonObj.optString("base_currency_code", "DEFAULT")
-                            val baseCurrencyCode = if (baseCurrencyRaw == "DEFAULT" || baseCurrencyRaw.isBlank()) currencySymbol else baseCurrencyRaw
+                            val baseCurrencyCode = FinancialPolicy.canonicalCurrencySymbol(
+                                if (baseCurrencyRaw == "DEFAULT" || baseCurrencyRaw.isBlank()) normDefaultCurrency else baseCurrencyRaw
+                            )
                             baseCurrencyCodeVal = baseCurrencyCode
                             val rateStr = jsonObj.optString("exchange_rate", "0")
                             val rateDec = HabayebMathHelper.toBigDecimal(rateStr)
-                            exchangeRateVal = HabayebMathHelper.formatSmart(rateDec)
+                            exchangeRateVal = HabayebMathHelper.formatRate(rateDec)
                             equivalentAmountTextVal = "${HabayebMathHelper.formatSmart(equivalentValDec)} $baseCurrencyCode"
                             exchangeInfoText = String.format(
                                 Locale.getDefault(),
@@ -229,14 +236,11 @@ object TrashItemParser {
                     val rawName = jsonObj.optString("name", "").trim()
                     titleText = rawName.ifEmpty { strings.unknownText }
                     name = titleText
-                    customerNameVal = titleText
 
                     phoneVal = jsonObj.optString("phone", "").trim()
-                    customerPhoneVal = phoneVal
                     amountText = ""
 
                     val notesStr = jsonObj.optString("notes", "").trim()
-                    rawDescriptionVal = notesStr
                     subText = if (notesStr.isNotEmpty()) notesStr else strings.noNotesText
                     indicatorColor = secondaryColor
 
@@ -249,11 +253,9 @@ object TrashItemParser {
                     val custObj = jsonObj.optJSONObject("customer")
                     var custName = ""
                     var custPhone = ""
-                    var custNotes = ""
                     if (custObj != null) {
                         custName = custObj.optString("name", "").trim()
                         custPhone = custObj.optString("phone", "").trim()
-                        custNotes = custObj.optString("notes", "").trim()
                     }
                     if (custName.isEmpty()) {
                         custName = jsonObj.optString("customerName", "").trim()
@@ -261,10 +263,7 @@ object TrashItemParser {
 
                     titleText = custName.ifEmpty { strings.unknownText }
                     name = titleText
-                    customerNameVal = titleText
                     phoneVal = custPhone
-                    customerPhoneVal = custPhone
-                    rawDescriptionVal = custNotes
 
                     val txsArray = jsonObj.optJSONArray("transactions")
                     val txCount = txsArray?.length() ?: 0
@@ -277,8 +276,8 @@ object TrashItemParser {
 
                     searchTokens.add(custName)
                     searchTokens.add(custPhone)
-                    searchTokens.add(custNotes)
 
+                    val normDefaultCurrency = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
                     if (txsArray != null) {
                         val currencySums = mutableMapOf<String, BigDecimal>()
 
@@ -305,19 +304,25 @@ object TrashItemParser {
 
                             if (txIsForeign && txIsRateCalculated) {
                                 val baseCurrencyRaw = txObj.optString("base_currency_code", "DEFAULT")
-                                effectiveCurrency = if (baseCurrencyRaw == "DEFAULT" || baseCurrencyRaw.isBlank()) currencySymbol else baseCurrencyRaw
+                                effectiveCurrency = FinancialPolicy.canonicalCurrencySymbol(
+                                    if (baseCurrencyRaw == "DEFAULT" || baseCurrencyRaw.isBlank()) normDefaultCurrency else baseCurrencyRaw
+                                )
                                 val equivStr = txObj.optString("equivalent_amount", "0")
                                 val equivDec = HabayebMathHelper.toBigDecimal(equivStr)
                                 effectiveAmountDec = if (equivDec.compareTo(BigDecimal.ZERO) > 0) equivDec else txAmountDec
                             } else if (txIsForeign) {
                                 val currCode = txObj.optString("currency_code", "DEFAULT")
-                                effectiveCurrency = if (currCode == "DEFAULT" || currCode.isBlank()) currencySymbol else currCode
+                                effectiveCurrency = FinancialPolicy.canonicalCurrencySymbol(
+                                    if (currCode == "DEFAULT" || currCode.isBlank()) normDefaultCurrency else currCode
+                                )
                                 val foreignAmountStr = txObj.optString("foreign_amount", "0")
                                 val foreignAmountDec = HabayebMathHelper.toBigDecimal(foreignAmountStr)
                                 effectiveAmountDec = if (foreignAmountDec.compareTo(BigDecimal.ZERO) > 0) foreignAmountDec else txAmountDec
                             } else {
                                 val currCode = txObj.optString("currency_code", "DEFAULT")
-                                effectiveCurrency = if (currCode == "DEFAULT" || currCode.isBlank()) currencySymbol else currCode
+                                effectiveCurrency = FinancialPolicy.canonicalCurrencySymbol(
+                                    if (currCode == "DEFAULT" || currCode.isBlank()) normDefaultCurrency else currCode
+                                )
                                 effectiveAmountDec = txAmountDec
                             }
 
@@ -331,7 +336,9 @@ object TrashItemParser {
                                 val foreignAmountStr = txObj.optString("foreign_amount", "0")
                                 val foreignAmountDec = HabayebMathHelper.toBigDecimal(foreignAmountStr)
                                 val currCode = txObj.optString("currency_code", "DEFAULT")
-                                val displayCurr = if (currCode == "DEFAULT" || currCode.isBlank()) currencySymbol else currCode
+                                val displayCurr = FinancialPolicy.canonicalCurrencySymbol(
+                                    if (currCode == "DEFAULT" || currCode.isBlank()) normDefaultCurrency else currCode
+                                )
                                 "${HabayebMathHelper.formatSmart(foreignAmountDec)} $displayCurr"
                             } else {
                                 "${HabayebMathHelper.formatSmart(txAmountDec)} $effectiveCurrency"
@@ -343,7 +350,7 @@ object TrashItemParser {
                                 val formattedEquiv = HabayebMathHelper.formatSmart(effectiveAmountDec)
                                 val exchangeRateStr = txObj.optString("exchange_rate", "0")
                                 val exchangeRateDec = HabayebMathHelper.toBigDecimal(exchangeRateStr)
-                                val formattedRate = HabayebMathHelper.formatSmart(exchangeRateDec)
+                                val formattedRate = HabayebMathHelper.formatRate(exchangeRateDec)
                                 equivStr = "($formattedEquiv $effectiveCurrency)"
                                 rateStr = formattedRate
                             }
@@ -370,20 +377,13 @@ object TrashItemParser {
 
                         currencyBreakdownVal.putAll(currencySums)
 
-                        val defaultCurrencySum = currencySums[currencySymbol]
-                            ?: currencySums.entries.firstOrNull()?.value
-                            ?: BigDecimal.ZERO
-                        val primaryCurrSymbol = if (currencySums.containsKey(currencySymbol)) {
-                            currencySymbol
-                        } else {
-                            currencySums.keys.firstOrNull() ?: currencySymbol
-                        }
+                        val defaultCurrencySum = currencySums[normDefaultCurrency] ?: BigDecimal.ZERO
                         amountDec = defaultCurrencySum.abs()
                         isExpense = defaultCurrencySum < BigDecimal.ZERO
-                        amountText = "${HabayebMathHelper.formatSmart(defaultCurrencySum.abs())} $primaryCurrSymbol"
+                        amountText = "${HabayebMathHelper.formatSmart(defaultCurrencySum.abs())} $normDefaultCurrency"
                     } else {
                         amountDec = BigDecimal.ZERO
-                        amountText = "0 $currencySymbol"
+                        amountText = "0 $normDefaultCurrency"
                     }
                 }
 

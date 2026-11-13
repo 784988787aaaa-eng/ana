@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.account.UnifiedAccountSession
 import com.smartledger.aldaftar.data.account.UnifiedAccountSessionRepository
 import com.smartledger.aldaftar.data.license.LicenseRepository
@@ -23,8 +22,6 @@ class LicenseViewModel(
     private val unifiedAccountRepository: UnifiedAccountSessionRepository,
     private val habayebRepository: HabayebRepository
 ) : AndroidViewModel(application) {
-
-    private val appContext = application.applicationContext
 
     val session: StateFlow<UnifiedAccountSession> = unifiedAccountRepository.session
 
@@ -100,15 +97,15 @@ class LicenseViewModel(
                 val newSession = unifiedAccountRepository.signInWithGoogle(account, serverAuthCode)
                 _snapshot.value = newSession.licenseSnapshot
                 if (newSession.licenseSnapshot.isPaid) {
-                    _message.value = appContext.getString(R.string.license_vm_signin_paid)
+                    _message.value = "تم تسجيل الدخول وتفعيل الترخيص بنجاح"
                 } else if (newSession.licenseSnapshot.activationRequired) {
-                    _message.value = appContext.getString(R.string.license_vm_signin_needs_code)
+                    _message.value = "تم تسجيل الدخول. الحساب بحاجة لإدخال رمز التفعيل لأول مرة."
                 } else {
-                    _message.value = appContext.getString(R.string.license_vm_signin_ok)
+                    _message.value = "تم تسجيل الدخول بالحساب بنجاح"
                 }
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_signin_err)
+                _message.value = e.message ?: "تعذر تسجيل الدخول بحساب Google"
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -122,9 +119,9 @@ class LicenseViewModel(
             try {
                 unifiedAccountRepository.signOutUnified()
                 _snapshot.value = repository.snapshot()
-                _message.value = appContext.getString(R.string.license_vm_signout_ok)
+                _message.value = "تم تسجيل الخروج بنجاح"
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_signout_err)
+                _message.value = e.message ?: "تعذر تسجيل الخروج"
             } finally {
                 _busy.value = false
             }
@@ -135,7 +132,7 @@ class LicenseViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val email = session.value.email
             if (email.isNullOrBlank()) {
-                _message.value = appContext.getString(R.string.license_vm_signin_first)
+                _message.value = "يرجى تسجيل الدخول بحساب Google أولاً"
                 onDone(false)
                 return@launch
             }
@@ -146,19 +143,19 @@ class LicenseViewModel(
                 if (newSnap != null && newSnap.isPaid) {
                     _snapshot.value = newSnap
                     unifiedAccountRepository.updateLicenseSnapshot(newSnap)
-                    _message.value = appContext.getString(R.string.license_vm_cloud_activated)
+                    _message.value = "تم التحقق وتفعيل الترخيص السحابي بنجاح"
                     onDone(true)
                 } else if (newSnap != null && newSnap.activationRequired) {
                     _snapshot.value = newSnap
                     unifiedAccountRepository.updateLicenseSnapshot(newSnap)
-                    _message.value = appContext.getString(R.string.license_vm_cloud_needs_code)
+                    _message.value = "الحساب بحاجة لإدخال كود التفعيل لأول مرة"
                     onDone(false)
                 } else {
-                    _message.value = appContext.getString(R.string.license_vm_cloud_not_registered)
+                    _message.value = "هذا الحساب غير مسجل بترخيص سحابي مفعل بعد"
                     onDone(false)
                 }
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_cloud_check_err)
+                _message.value = e.message ?: "تعذر التحقق من الترخيص السحابي"
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -175,10 +172,10 @@ class LicenseViewModel(
                 val newSnap = repository.activateWithAccountOrCode(activationCode, email)
                 _snapshot.value = newSnap
                 unifiedAccountRepository.updateLicenseSnapshot(newSnap)
-                _message.value = appContext.getString(R.string.license_vm_activate_ok)
+                _message.value = "تم تفعيل الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_activate_err)
+                _message.value = e.message ?: "تعذر تفعيل الترخيص"
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -194,10 +191,10 @@ class LicenseViewModel(
                 val newSnap = repository.applySignedToken(token)
                 _snapshot.value = newSnap
                 unifiedAccountRepository.updateLicenseSnapshot(newSnap)
-                _message.value = appContext.getString(R.string.license_vm_activate_ok)
+                _message.value = "تم تفعيل الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_invalid_token)
+                _message.value = e.message ?: "رمز الترخيص غير صالح"
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -213,10 +210,10 @@ class LicenseViewModel(
                 val newSnap = repository.reconnectAccountOnline(accountCode)
                 _snapshot.value = newSnap
                 unifiedAccountRepository.updateLicenseSnapshot(newSnap)
-                _message.value = appContext.getString(R.string.license_vm_reconnect_ok)
+                _message.value = "تمت إعادة ربط الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_reconnect_err)
+                _message.value = e.message ?: "تعذر إعادة ربط الترخيص"
                 onDone(false)
             } finally {
                 _busy.value = false
@@ -233,10 +230,10 @@ class LicenseViewModel(
                 val newSnap = repository.activateAccountOnline(accountCode, activationCode, email)
                 _snapshot.value = newSnap
                 unifiedAccountRepository.updateLicenseSnapshot(newSnap)
-                _message.value = appContext.getString(R.string.license_vm_account_activate_ok)
+                _message.value = "تم تفعيل حساب الترخيص بنجاح"
                 onDone(true)
             } catch (e: Exception) {
-                _message.value = e.message ?: appContext.getString(R.string.license_vm_account_activate_err)
+                _message.value = e.message ?: "تعذر تفعيل الحساب"
                 onDone(false)
             } finally {
                 _busy.value = false

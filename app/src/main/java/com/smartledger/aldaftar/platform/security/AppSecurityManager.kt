@@ -5,39 +5,12 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.smartledger.aldaftar.domain.HashUtils
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppSecurityManager private constructor(context: Context) {
     private val appContext = context.applicationContext
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val securePrefs: SharedPreferences by lazy { initEncryptedPreferences() }
-
-    private val isWarmupComplete = AtomicBoolean(false)
-    private val failedAttemptsDirty = AtomicBoolean(false)
-    private val lockoutUntilDirty = AtomicBoolean(false)
-    private val biometricDirty = AtomicBoolean(false)
-    private val fastPasscodeDirty = AtomicBoolean(false)
-
-    private val cachedBiometricEnabled = AtomicBoolean(false)
-    private val cachedFastPasscodeEnabled = AtomicBoolean(false)
-    private val cachedFailedAttempts = AtomicInteger(0)
-    private val cachedLockoutUntil = AtomicLong(0L)
-
-    private val _failedAttemptsFlow = MutableStateFlow(0)
-    val failedAttemptsFlow: StateFlow<Int> = _failedAttemptsFlow.asStateFlow()
-
-    private val _lockoutUntilFlow = MutableStateFlow(0L)
-    val lockoutUntilFlow: StateFlow<Long> = _lockoutUntilFlow.asStateFlow()
 
     private fun initEncryptedPreferences(): SharedPreferences {
         return runCatching {
@@ -55,100 +28,42 @@ class AppSecurityManager private constructor(context: Context) {
     }
 
     /**
-     * Pre-warms EncryptedSharedPreferences off the main thread to eliminate UI thread lag
-     * and hydrates the fast in-memory atomic state.
+     * Pre-warms EncryptedSharedPreferences off the main thread to eliminate UI thread lag.
      */
     suspend fun warmupStorage() {
         withContext(Dispatchers.IO) {
+            // Touch securePrefs to trigger lazy initialization on IO dispatcher
             securePrefs.contains("warmup_check")
-            if (!biometricDirty.get()) {
-                cachedBiometricEnabled.set(securePrefs.getBoolean(PREF_BIOMETRIC_ENABLED, false))
-            }
-            if (!fastPasscodeDirty.get()) {
-                cachedFastPasscodeEnabled.set(securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false))
-            }
-            if (!failedAttemptsDirty.get()) {
-                val attempts = securePrefs.getInt(PREF_FAILED_PIN_ATTEMPTS, 0)
-                cachedFailedAttempts.set(attempts)
-                _failedAttemptsFlow.value = attempts
-            }
-            if (!lockoutUntilDirty.get()) {
-                val until = securePrefs.getLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
-                cachedLockoutUntil.set(until)
-                _lockoutUntilFlow.value = until
-            }
-            isWarmupComplete.set(true)
         }
     }
 
-    fun isBiometricEnabled(): Boolean {
-        return if (isWarmupComplete.get() || biometricDirty.get()) {
-            cachedBiometricEnabled.get()
-        } else {
-            val value = securePrefs.getBoolean(PREF_BIOMETRIC_ENABLED, false)
-            cachedBiometricEnabled.set(value)
-            value
-        }
-    }
-
+    fun isBiometricEnabled(): Boolean = securePrefs.getBoolean(PREF_BIOMETRIC_ENABLED, false)
+    
     fun setBiometricEnabled(enabled: Boolean) {
-        biometricDirty.set(true)
-        cachedBiometricEnabled.set(enabled)
-        ioScope.launch {
-            securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply()
-        }
+        securePrefs.edit().putBoolean(PREF_BIOMETRIC_ENABLED, enabled).apply()
     }
 
-    fun isFastPasscodeEnabled(): Boolean {
-        return if (isWarmupComplete.get() || fastPasscodeDirty.get()) {
-            cachedFastPasscodeEnabled.get()
-        } else {
-            val value = securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
-            cachedFastPasscodeEnabled.set(value)
-            value
-        }
-    }
+    fun isFastPasscodeEnabled(): Boolean = securePrefs.getBoolean(PREF_FAST_PASSCODE_ENABLED, false)
 
     fun setFastPasscodeEnabled(enabled: Boolean) {
-        fastPasscodeDirty.set(true)
-        cachedFastPasscodeEnabled.set(enabled)
-        ioScope.launch {
-            securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply()
-        }
+        securePrefs.edit().putBoolean(PREF_FAST_PASSCODE_ENABLED, enabled).apply()
     }
 
-    fun getFailedAttempts(): Int = cachedFailedAttempts.get()
+    fun getFailedAttempts(): Int = securePrefs.getInt(PREF_FAILED_PIN_ATTEMPTS, 0)
 
     fun incrementFailedAttempts() {
-        failedAttemptsDirty.set(true)
-        val next = cachedFailedAttempts.incrementAndGet()
-        _failedAttemptsFlow.value = next
-        ioScope.launch {
-            securePrefs.edit().putInt(PREF_FAILED_PIN_ATTEMPTS, next).apply()
-        }
+        val next = getFailedAttempts() + 1
+        securePrefs.edit().putInt(PREF_FAILED_PIN_ATTEMPTS, next).apply()
     }
 
     fun resetFailedAttempts() {
-        failedAttemptsDirty.set(true)
-        lockoutUntilDirty.set(true)
-        cachedFailedAttempts.set(0)
-        cachedLockoutUntil.set(0L)
-        _failedAttemptsFlow.value = 0
-        _lockoutUntilFlow.value = 0L
-        ioScope.launch {
-            securePrefs.edit().remove(PREF_FAILED_PIN_ATTEMPTS).remove(PREF_LOCKOUT_UNTIL_TIMESTAMP).apply()
-        }
+        securePrefs.edit().remove(PREF_FAILED_PIN_ATTEMPTS).remove(PREF_LOCKOUT_UNTIL_TIMESTAMP).apply()
     }
 
-    fun getLockoutUntil(): Long = cachedLockoutUntil.get()
+    fun getLockoutUntil(): Long = securePrefs.getLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, 0L)
 
     fun setLockoutUntil(timestamp: Long) {
-        lockoutUntilDirty.set(true)
-        cachedLockoutUntil.set(timestamp)
-        _lockoutUntilFlow.value = timestamp
-        ioScope.launch {
-            securePrefs.edit().putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, timestamp).apply()
-        }
+        securePrefs.edit().putLong(PREF_LOCKOUT_UNTIL_TIMESTAMP, timestamp).apply()
     }
 
     fun hasAdminPin(): Boolean = !securePrefs.getString(PREF_ADMIN_PIN_HASH, null).isNullOrBlank()
@@ -179,4 +94,3 @@ class AppSecurityManager private constructor(context: Context) {
         }
     }
 }
-

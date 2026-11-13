@@ -52,19 +52,21 @@ fun TransactionCurrencySelector(
     haptic: HapticFeedback,
     onCurrencySelected: (String) -> Unit,
     onApplyExchangeRateChange: (Boolean) -> Unit,
-    onSetupRateClick: (String) -> Unit
+    onSetupRateClick: (String) -> Unit,
+    manualOverrideRate: BigDecimal? = null
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val historicalCurrency = editingTransaction?.let {
         it.currencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
             ?: it.baseCurrencyCode.takeIf { code -> code.isNotBlank() && code != "DEFAULT" }
     }
-    val rateBaseCurrency = if (editingTransaction != null && selectedTransactionCurrency == historicalCurrency) {
-        editingTransaction.baseCurrencyCode.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
+    val isCalculatedOnOriginal = editingTransaction != null &&
+        editingTransaction.isRateCalculated &&
+        selectedTransactionCurrency == historicalCurrency
+    val rateBaseCurrency = if (isCalculatedOnOriginal) {
+        editingTransaction?.baseCurrencyCode?.takeIf { it.isNotBlank() && it != "DEFAULT" } ?: currencySymbol
     } else currencySymbol
-    val isForeignSelected = if (editingTransaction != null && selectedTransactionCurrency == historicalCurrency) {
-        editingTransaction.isForeign
-    } else selectedTransactionCurrency != currencySymbol
+    val isForeignSelected = (selectedTransactionCurrency != currencySymbol) || isCalculatedOnOriginal
 
     val yerSym = stringResource(R.string.currency_yer)
     val yerLabel = stringResource(R.string.currency_label_yer)
@@ -182,11 +184,17 @@ fun TransactionCurrencySelector(
                 }
 
                 if (applyExchangeRate) {
-                    val rateInfo = remember(editingTransaction, exchangeRatesJson, currencySymbol, selectedTransactionCurrency, context) {
+                    val rateInfo = remember(editingTransaction, exchangeRatesJson, currencySymbol, selectedTransactionCurrency, manualOverrideRate, context) {
+                        val hasManualOverride = manualOverrideRate != null && manualOverrideRate.compareTo(BigDecimal.ZERO) > 0
                         val isEditingHistoricalRate = editingTransaction != null && editingTransaction.currencyCode == selectedTransactionCurrency && editingTransaction.exchangeRate.compareTo(BigDecimal.ZERO) > 0
-                        val hasStoredRate = ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency) || isEditingHistoricalRate
-                        val overrideRate = if (isEditingHistoricalRate) editingTransaction.exchangeRate else null
-                        val currentRateRaw = if (isEditingHistoricalRate) editingTransaction.exchangeRate.toPlainString() else ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency).toString()
+                        val hasStoredRate = hasManualOverride || ExchangeRateHelper.hasRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency) || isEditingHistoricalRate
+                        val overrideRate = when {
+                            hasManualOverride -> manualOverrideRate
+                            isEditingHistoricalRate -> editingTransaction?.exchangeRate
+                            else -> null
+                        }
+                        val rateBigDec = overrideRate ?: ExchangeRateHelper.getRate(exchangeRatesJson, selectedTransactionCurrency, rateBaseCurrency)
+                        val currentRateRaw = if (rateBigDec.compareTo(BigDecimal.ZERO) > 0) com.smartledger.aldaftar.ui.helper.HabayebMathHelper.formatRate(rateBigDec) else ""
                         val displayText = ExchangeRateHelper.formatCompactRateBadge(
                             jsonStr = exchangeRatesJson,
                             currencyA = selectedTransactionCurrency,

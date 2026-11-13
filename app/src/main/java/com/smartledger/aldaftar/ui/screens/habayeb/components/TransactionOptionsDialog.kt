@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
@@ -58,10 +57,7 @@ import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 import com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper
 import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
-import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
-import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 private data class TransactionHeaderSummary(
@@ -96,19 +92,23 @@ fun TransactionOptionsDialog(
     var showShareMenu by remember { mutableStateOf(false) }
     val isPhoneValid = remember(customerPhone) { CustomerPhoneHelper.isValidDestination(customerPhone) }
 
-    MizanAnimatedDialog(onDismissRequest = onDismiss) {
-        MizanDialogCard(
-            maxWidth = MizanDialogTokens.maxWidth,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                horizontal = MizanDialogTokens.dialogHorizontal,
-                vertical = 14.dp
-            )
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+    Dialog(onDismissRequest = onDismiss) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -215,18 +215,6 @@ fun TransactionOptionsDialog(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
                                 color = headerSummary.amountColor
-                            )
-                        }
-
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(38.dp)
-                        ) {
-                            Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
-                                contentDescription = stringResource(id = R.string.desc_close),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -354,6 +342,7 @@ fun TransactionOptionsDialog(
                 }
             }
         }
+    }
 }
 
 @Composable
@@ -366,36 +355,37 @@ fun ActionCircleItem(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .width(76.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp)
+            .width(72.dp)
+            .clickable(
+                onClick = onClick,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            )
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
-                .background(containerColor, RoundedCornerShape(13.dp))
-                .border(0.8.dp, iconColor.copy(alpha = 0.28f), RoundedCornerShape(13.dp))
-                .clip(RoundedCornerShape(13.dp)),
+                .size(42.dp)
+                .background(containerColor, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
                 tint = iconColor,
-                modifier = Modifier.size(19.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
         Text(
             text = title,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            lineHeight = 14.sp,
+            lineHeight = 13.sp,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }

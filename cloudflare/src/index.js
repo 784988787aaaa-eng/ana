@@ -727,19 +727,17 @@ async function checkLicenseStatus(request, env) {
 
 // --- 8. Admin Security & Operations ---
 
-async function adminAuthorized(request, env) {
+function adminAuthorized(request, env) {
   const expected = String(env.SMARTLEDGER_ADMIN_SECRET || "").trim();
   const supplied = String(request.headers.get("X-SMARTLEDGER-ADMIN") || "").trim();
-  if (expected.length === 0 || supplied.length === 0) return false;
-  const [expectedHash, suppliedHash] = await Promise.all([hexHash(expected), hexHash(supplied)]);
-  return expectedHash === suppliedHash;
+  return expected.length > 0 && supplied.length > 0 && supplied === expected;
 }
 
 async function requireAdmin(request, env) {
   if (!String(env.SMARTLEDGER_ADMIN_SECRET || "").trim()) {
     return json(500, { error: "admin_secret_missing" });
   }
-  if (!(await adminAuthorized(request, env))) {
+  if (!adminAuthorized(request, env)) {
     return json(401, { error: "unauthorized" });
   }
   return null;
@@ -1160,17 +1158,14 @@ async function listFiles(token, search, env) {
   const root = await ensureFolder(token, "root", DRIVE_ROOT, env);
   const folderQuery = `'${root.id}' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'`;
   const folderData = await driveJson(token, "GET", `files?pageSize=100&fields=files(id,name,mimeType)&q=${encodeURIComponent(folderQuery)}`, env);
-  const containers = [
-    { id: root.id, name: "" },
-    ...(folderData.files || [])
-  ];
   const items = [];
 
-  for (const folder of containers) {
+  for (const folder of folderData.files || []) {
     const qParts = [
       `'${folder.id}' in parents`,
       "trashed = false",
-      "mimeType != 'application/vnd.google-apps.folder'"
+      "mimeType = 'application/vnd.smartledger.backup'",
+      "name contains 'SNA_'"
     ];
     if (lower && /^[a-z0-9_.-]+$/i.test(lower)) {
       qParts.push(`name contains '${lower.replace(/'/g, "\\'")}'`);
@@ -1179,13 +1174,12 @@ async function listFiles(token, search, env) {
     for (const item of data.files || []) {
       if (!BACKUP_PATTERN.test(item.name || "")) continue;
       if (lower && !String(item.name).toLowerCase().includes(lower) && !String(folder.name).toLowerCase().includes(lower)) continue;
-      const inferredMonth = folder.name || monthFolderName(String(item.name).slice(4, 11));
       items.push({
         id: item.id,
         name: item.name,
         size: Number(item.size || 0),
         modifiedTime: Date.parse(item.modifiedTime || "") || 0,
-        month: inferredMonth
+        month: folder.name
       });
     }
   }

@@ -31,7 +31,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.platform.contacts.StringUtils
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
 import com.smartledger.aldaftar.ui.screens.CalculatorDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
@@ -40,22 +42,9 @@ import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import java.math.BigDecimal
 import java.util.Calendar
 import kotlinx.coroutines.launch
-
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextOverflow
-import com.smartledger.aldaftar.data.local.entities.CustomCategory
 
 @Composable
 fun AddCustomerPopup(
@@ -63,26 +52,17 @@ fun AddCustomerPopup(
     onDismiss: () -> Unit,
     onCustomerAdded: (String) -> Unit = {},
     activeThemeColor: Color,
-    activeSubColor: Color,
-    initialCategory: String? = viewModel.resolveInitialCategoryForNewAccount(),
-    customCategories: List<CustomCategory>? = null
+    activeSubColor: Color
 ) {
     val mizanColors = MaterialTheme.mizanColors
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-    val observedCategories by viewModel.customCategoriesState.collectAsStateWithLifecycle()
-    val availableCategories = customCategories ?: observedCategories
 
     var nameStr by rememberSaveable { mutableStateOf("") }
     var phoneStr by rememberSaveable { mutableStateOf("") }
     var notesStr by rememberSaveable { mutableStateOf("") }
     var initialAmountStr by rememberSaveable { mutableStateOf("") }
     var initialType by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedCategoryName by rememberSaveable(initialCategory) {
-        mutableStateOf(viewModel.resolveInitialCategoryForNewAccount(initialCategory))
-    }
-    var isCategoryPickerExpanded by rememberSaveable { mutableStateOf(false) }
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val debtRed = mizanColors.debt
@@ -101,10 +81,11 @@ fun AddCustomerPopup(
     var applyExchangeRate by rememberSaveable { mutableStateOf(false) }
     var showRateSetupOverlay by rememberSaveable { mutableStateOf(false) }
     var tempRateStr by rememberSaveable { mutableStateOf("") }
+    var manualEditedRateStr by rememberSaveable(selectedTransactionCurrency) { mutableStateOf<String?>(null) }
 
-    val settingsRate = remember(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency) {
-        val currentRateVal = ExchangeRateHelper.getRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
-        currentRateVal
+    val manualOverrideRate = manualEditedRateStr?.toBigDecimalOrNull()?.takeIf { it > BigDecimal.ZERO }
+    val settingsRate = remember(settings.exchangeRatesJson, currencySymbol, selectedTransactionCurrency, manualOverrideRate) {
+        manualOverrideRate ?: ExchangeRateHelper.getRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol)
     }
 
     var showCalculator by rememberSaveable { mutableStateOf(false) }
@@ -145,24 +126,8 @@ fun AddCustomerPopup(
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
 
     val onSanitizedInitialAmountChange: (String) -> Unit = { raw ->
-        if (raw.isEmpty()) {
-            initialAmountStr = ""
-        } else {
-            val normalized = CurrencyConfig.normalizeDigits(raw).replace(" ", "")
-            val dotCount = normalized.count { it == '.' }
-            val isValidChars = normalized.all { it.isDigit() || it == '.' }
-            val dotIdx = normalized.indexOf('.')
-            val validDecimals = dotIdx == -1 || (normalized.length - dotIdx - 1 <= 2)
-            if (isValidChars && dotCount <= 1 && validDecimals) {
-                val cleaned = if (normalized.startsWith("0") && normalized.length > 1 && normalized[1] != '.') {
-                    normalized.trimStart('0').ifEmpty { "0" }
-                } else if (normalized.startsWith(".")) {
-                    "0$normalized"
-                } else {
-                    normalized
-                }
-                initialAmountStr = cleaned
-            }
+        HabayebMathHelper.sanitizeAmountInput(raw)?.let { cleaned ->
+            initialAmountStr = cleaned
         }
     }
 
@@ -207,6 +172,7 @@ fun AddCustomerPopup(
                                 applyExchangeRate = false
                             },
                             onConfirm = { newRate ->
+                                manualEditedRateStr = FinancialPolicy.normalizeRate(newRate).toPlainString()
                                 val newSettings = settings.copy(
                                     exchangeRatesJson = ExchangeRateHelper.setRate(settings.exchangeRatesJson, selectedTransactionCurrency, currencySymbol, newRate)
                                 )
@@ -249,20 +215,6 @@ fun AddCustomerPopup(
                                 Spacer(modifier = Modifier.size(44.dp))
                             }
 
-                            if (availableCategories.isNotEmpty() || selectedCategoryName != null) {
-                                AddCustomerCategorySelectorBar(
-                                    selectedCategoryName = selectedCategoryName,
-                                    availableCategories = availableCategories,
-                                    isExpanded = isCategoryPickerExpanded,
-                                    activeThemeColor = dynamicThemeColor,
-                                    onToggleExpand = { isCategoryPickerExpanded = !isCategoryPickerExpanded },
-                                    onSelectCategory = { newCat ->
-                                        selectedCategoryName = newCat
-                                        isCategoryPickerExpanded = false
-                                    }
-                                )
-                            }
-
                             val performSave: () -> Unit = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 val formData = AddCustomerFormData(
@@ -276,8 +228,7 @@ fun AddCustomerPopup(
                                     applyExchangeRate = applyExchangeRate,
                                     selectedCalendar = selectedCalendar,
                                     settingsRate = settingsRate,
-                                    isDuplicateName = isDuplicateName,
-                                    selectedCategory = selectedCategoryName
+                                    isDuplicateName = isDuplicateName
                                 )
                                 coroutineScope.launch {
                                     AddCustomerSaveHelper.handleSave(
@@ -332,6 +283,7 @@ fun AddCustomerPopup(
                                 onCurrencySelected = {
                                     selectedTransactionCurrency = it
                                     applyExchangeRate = false
+                                    manualEditedRateStr = null
                                 },
                                 applyExchangeRate = applyExchangeRate,
                                 onApplyExchangeRateChange = { applyExchangeRate = it },
@@ -344,7 +296,8 @@ fun AddCustomerPopup(
                                 onRequestRateSetup = { rate ->
                                     tempRateStr = rate
                                     showRateSetupOverlay = true
-                                }
+                                },
+                                manualOverrideRate = manualOverrideRate
                             )
                         }
                     }
@@ -357,163 +310,18 @@ fun AddCustomerPopup(
         CalculatorDialog(
             onDismiss = { showCalculator = false },
             onValueConfirmed = { value ->
-                initialAmountStr = if (value.remainder(java.math.BigDecimal.ONE).compareTo(java.math.BigDecimal.ZERO) == 0) {
-                    value.toBigInteger().toString()
+                val normalized = FinancialPolicy.normalize(value).stripTrailingZeros()
+                initialAmountStr = if (normalized.compareTo(BigDecimal.ZERO) == 0) {
+                    "0"
+                } else if (normalized.scale() <= 0) {
+                    normalized.toBigInteger().toString()
                 } else {
-                    value.stripTrailingZeros().toPlainString()
+                    normalized.toPlainString()
                 }
                 showCalculator = false
             },
             activeThemeColor = dynamicThemeColor,
             activeSubColor = activeSubColor
         )
-    }
-}
-
-@Composable
-private fun AddCustomerCategorySelectorBar(
-    selectedCategoryName: String?,
-    availableCategories: List<CustomCategory>,
-    isExpanded: Boolean,
-    activeThemeColor: Color,
-    onToggleExpand: () -> Unit,
-    onSelectCategory: (String?) -> Unit
-) {
-    val hasCategory = !selectedCategoryName.isNullOrBlank()
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = if (hasCategory) {
-            activeThemeColor.copy(alpha = 0.08f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        },
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (hasCategory) {
-                activeThemeColor.copy(alpha = 0.28f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            }
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("add_customer_category_bar")
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(enabled = availableCategories.isNotEmpty()) { onToggleExpand() }
-                    .testTag("add_customer_category_selector"),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Folder,
-                        contentDescription = null,
-                        tint = if (hasCategory) activeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = if (hasCategory) {
-                            "التصنيف: $selectedCategoryName"
-                        } else {
-                            "التصنيف: ${stringResource(id = R.string.context_menu_no_category)}"
-                        },
-                        fontSize = 12.5.sp,
-                        fontWeight = if (hasCategory) FontWeight.Bold else FontWeight.Medium,
-                        color = if (hasCategory) activeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.testTag("add_customer_selected_category_label")
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (hasCategory) {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
-                                .clickable { onSelectCategory(null) }
-                                .testTag("add_customer_clear_category_button"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(id = R.string.context_menu_no_category),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-                    if (availableCategories.isNotEmpty()) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-
-            AnimatedVisibility(visible = isExpanded && availableCategories.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(top = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val isNoneSelected = !hasCategory
-                    FilterChip(
-                        selected = isNoneSelected,
-                        onClick = { onSelectCategory(null) },
-                        label = {
-                            Text(
-                                text = stringResource(id = R.string.context_menu_no_category),
-                                fontSize = 11.5.sp
-                            )
-                        },
-                        modifier = Modifier
-                            .height(30.dp)
-                            .testTag("add_customer_category_chip_none")
-                    )
-                    availableCategories.forEach { cat ->
-                        val isCatSelected = selectedCategoryName == cat.name
-                        FilterChip(
-                            selected = isCatSelected,
-                            onClick = { onSelectCategory(cat.name) },
-                            label = {
-                                Text(
-                                    text = cat.name,
-                                    fontSize = 11.5.sp
-                                )
-                            },
-                            modifier = Modifier
-                                .height(30.dp)
-                                .testTag("add_customer_category_chip_${cat.name}")
-                        )
-                    }
-                }
-            }
-        }
     }
 }

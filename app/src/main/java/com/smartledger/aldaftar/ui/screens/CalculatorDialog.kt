@@ -1,19 +1,20 @@
 package com.smartledger.aldaftar.ui.screens
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -24,14 +25,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.evaluateSimpleExpression
-import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
-import com.smartledger.aldaftar.ui.components.MizanDialogCard
-import com.smartledger.aldaftar.ui.components.MizanDialogHeader
-import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.mizanColors
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
+
 import java.math.BigDecimal
+import com.smartledger.aldaftar.ui.theme.mizanColors
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
 fun CalculatorDialog(
@@ -41,7 +42,7 @@ fun CalculatorDialog(
     activeSubColor: Color? = null
 ) {
     var rawExpression by remember { mutableStateOf("") }
-
+    
     val brandPrimary = activeThemeColor ?: MaterialTheme.colorScheme.primary
 
     val calculatedResult = remember(rawExpression) {
@@ -93,10 +94,11 @@ fun CalculatorDialog(
     fun evaluate() {
         val result = calculatedResult ?: evaluateSimpleExpression(rawExpression)
         if (result != null) {
-            rawExpression = if (result.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
-                result.toBigInteger().toString()
+            val normalized = FinancialPolicy.normalize(result).stripTrailingZeros()
+            rawExpression = if (normalized.scale() <= 0) {
+                normalized.toBigInteger().toString()
             } else {
-                result.toPlainString()
+                normalized.toPlainString()
             }
         }
     }
@@ -105,21 +107,27 @@ fun CalculatorDialog(
         if (!isExpressionValid) return
         val finalBigDecimal = calculatedResult ?: evaluateSimpleExpression(rawExpression)
         val finalValue: BigDecimal = finalBigDecimal ?: (rawExpression.toBigDecimalOrNull() ?: BigDecimal.ZERO)
-        onValueConfirmed(finalValue)
+        onValueConfirmed(FinancialPolicy.normalize(finalValue))
     }
 
     val mizanColors = MaterialTheme.mizanColors
     val isIncomeTheme = remember(activeThemeColor, mizanColors) {
-        activeThemeColor == mizanColors.credit ||
-            activeThemeColor == com.smartledger.aldaftar.ui.theme.CreditGreen ||
-            activeThemeColor == com.smartledger.aldaftar.ui.theme.FinancialSelectionGreen
+        activeThemeColor == mizanColors.credit || activeThemeColor == com.smartledger.aldaftar.ui.theme.CreditGreen || activeThemeColor == com.smartledger.aldaftar.ui.theme.FinancialSelectionGreen
     }
     val isExpenseTheme = remember(activeThemeColor, mizanColors) {
-        activeThemeColor == mizanColors.debt ||
-            activeThemeColor == com.smartledger.aldaftar.ui.theme.DebtRed
+        activeThemeColor == mizanColors.debt || activeThemeColor == com.smartledger.aldaftar.ui.theme.DebtRed
     }
 
-    val accentColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, brandPrimary) {
+    val surfaceVarColor = MaterialTheme.colorScheme.surfaceVariant
+    val calcBgColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, surfaceVarColor) {
+        when {
+            isIncomeTheme -> mizanColors.creditContainer
+            isExpenseTheme -> mizanColors.debtContainer
+            else -> surfaceVarColor
+        }
+    }
+
+    val calcBorderColor = remember(isIncomeTheme, isExpenseTheme, mizanColors, brandPrimary) {
         when {
             isIncomeTheme -> mizanColors.credit
             isExpenseTheme -> mizanColors.debt
@@ -127,138 +135,177 @@ fun CalculatorDialog(
         }
     }
 
-    MizanAnimatedDialog(
+    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
-        MizanDialogCard(
-            maxWidth = 350.dp,
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = calcBgColor
+            ),
+            border = BorderStroke(1.dp, calcBorderColor.copy(alpha = 0.8f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // دون ارتفاع. to remove automatic gray overlays
+            modifier = Modifier
+                .widthIn(max = 360.dp)
+                .fillMaxWidth(0.92f)
+                .padding(4.dp)
         ) {
-            MizanDialogHeader(
-                title = stringResource(id = R.string.calc_title),
-                icon = Icons.Default.Calculate,
-                iconTint = accentColor,
-                onCloseClick = dismissDialog
-            )
-
-            // Financial Expression & Result Display Screen (LTR math direction)
-            Surface(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 84.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
-                border = BorderStroke(1.2.dp, accentColor.copy(alpha = 0.45f))
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = dismissDialog) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(id = R.string.calc_close_desc),
+                            tint = brandPrimary
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(id = R.string.calc_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = brandPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val displayBgColor = MaterialTheme.colorScheme.surface
+                
+                val displayBorderColor = when {
+                    isIncomeTheme -> mizanColors.credit.copy(alpha = 0.6f)
+                    isExpenseTheme -> mizanColors.debt.copy(alpha = 0.6f)
+                    else -> MaterialTheme.colorScheme.outlineVariant
+                }
+
+                val displayTextColor = MaterialTheme.colorScheme.onSurface
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = displayBgColor),
+                    border = BorderStroke(1.5.dp, displayBorderColor)
+                ) {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.End
                     ) {
-                        Text(
-                            text = rawExpression.ifEmpty { stringResource(id = R.string.calc_default_zero) },
-                            fontSize = 26.sp,
-                            lineHeight = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (rawExpression.isEmpty()) {
-                                MaterialTheme.mizanColors.contentTertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            textAlign = TextAlign.End,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End,
                             modifier = Modifier.fillMaxWidth()
-                        )
+                        ) {
+                            Text(
+                                text = rawExpression.ifEmpty { stringResource(id = R.string.calc_default_zero) },
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (rawExpression.isEmpty()) MaterialTheme.mizanColors.contentTertiary else displayTextColor,
+                                textAlign = TextAlign.Right,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
 
                         if (calculatedResult != null && calculatedResult.toPlainString() != rawExpression) {
-                            val formattedPreview = if (calculatedResult.remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0) {
-                                calculatedResult.toBigInteger().toString()
+                            val normalizedPreview = FinancialPolicy.normalize(calculatedResult).stripTrailingZeros()
+                            val formattedPreview = if (normalizedPreview.scale() <= 0) {
+                                normalizedPreview.toBigInteger().toString()
                             } else {
-                                calculatedResult.toPlainString()
+                                normalizedPreview.toPlainString()
                             }
-                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "= $formattedPreview",
-                                fontSize = 15.sp,
-                                lineHeight = 19.sp,
-                                color = accentColor,
+                                fontSize = 16.sp,
+                                color = brandPrimary,
                                 fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.fillMaxWidth()
+                                textAlign = TextAlign.Right
                             )
                         }
                     }
                 }
-            }
 
-            if (rawExpression.isNotEmpty() && !isExpressionValid) {
-                Text(
-                    text = stringResource(R.string.calc_invalid_expression),
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-            }
+                if (rawExpression.isNotEmpty() && !isExpressionValid) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.calc_invalid_expression),
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
 
-            // Keypad Grid
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Spacer(modifier = Modifier.height(16.dp))
+
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        CalcButton(text = "⌫", isBackspace = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleBackspace() }
-                        CalcButton(text = "9", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("9") }
-                        CalcButton(text = "8", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("8") }
-                        CalcButton(text = "7", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("7") }
-                    }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CalcButton(text = "⌫", isBackspace = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleBackspace() }
+                            CalcButton(text = "9", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("9") }
+                            CalcButton(text = "8", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("8") }
+                            CalcButton(text = "7", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("7") }
+                        }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        CalcButton(text = "×", isOp = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleOperator("×") }
-                        CalcButton(text = "6", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("6") }
-                        CalcButton(text = "5", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("5") }
-                        CalcButton(text = "4", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("4") }
-                    }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CalcButton(text = "×", isOp = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleOperator("×") }
+                            CalcButton(text = "6", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("6") }
+                            CalcButton(text = "5", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("5") }
+                            CalcButton(text = "4", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("4") }
+                        }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        CalcButton(text = "-", isOp = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleOperator("-") }
-                        CalcButton(text = "3", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("3") }
-                        CalcButton(text = "2", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("2") }
-                        CalcButton(text = "1", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("1") }
-                    }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CalcButton(text = "-", isOp = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleOperator("-") }
+                            CalcButton(text = "3", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("3") }
+                            CalcButton(text = "2", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("2") }
+                            CalcButton(text = "1", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("1") }
+                        }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        CalcButton(text = "+", isOp = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleOperator("+") }
-                        CalcButton(text = "C", isClear = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleClear() }
-                        CalcButton(text = "0", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit("0") }
-                        CalcButton(text = ".", isNumber = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleDigit(".") }
-                    }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CalcButton(text = "+", isOp = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleOperator("+") }
+                            CalcButton(text = "C", isOp = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleClear() }
+                            CalcButton(text = "0", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit("0") }
+                            CalcButton(text = ".", isNumber = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleDigit(".") }
+                        }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        CalcButton(text = "=", isEquals = true, brandPrimary = accentColor, modifier = Modifier.weight(1.6f)) { evaluate() }
-                        CalcButton(text = "÷", isOp = true, brandPrimary = accentColor, modifier = Modifier.weight(1f)) { handleOperator("÷") }
-                        CalcButton(text = "OK", isAction = true, brandPrimary = accentColor, enabled = isExpressionValid, modifier = Modifier.weight(1.4f)) { confirmAndDismiss() }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CalcButton(text = "=", isEquals = true, brandPrimary = brandPrimary, modifier = Modifier.weight(2f)) { evaluate() }
+                            CalcButton(text = "÷", isOp = true, brandPrimary = brandPrimary, modifier = Modifier.weight(1f)) { handleOperator("÷") }
+                            CalcButton(text = "OK", isAction = true, brandPrimary = brandPrimary, enabled = isExpressionValid, modifier = Modifier.weight(1f)) { confirmAndDismiss() }
+                        }
                     }
                 }
             }
@@ -273,85 +320,74 @@ fun CalcButton(
     isNumber: Boolean = false,
     isOp: Boolean = false,
     isBackspace: Boolean = false,
-    isClear: Boolean = false,
     isAction: Boolean = false,
     isEquals: Boolean = false,
     brandPrimary: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
+    val isIncomeTheme = brandPrimary == MaterialTheme.mizanColors.credit || brandPrimary == MaterialTheme.mizanColors.selection
+    val isExpenseTheme = brandPrimary == MaterialTheme.mizanColors.debt
+
     val backgroundColor = when {
-        isAction -> brandPrimary
-        isEquals -> brandPrimary.copy(alpha = 0.16f)
-        isClear || isBackspace -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
-        isOp -> brandPrimary.copy(alpha = 0.12f)
-        else -> MaterialTheme.colorScheme.surface
+        isEquals -> brandPrimary
+        isBackspace || isOp || isAction -> {
+            if (isIncomeTheme) MaterialTheme.mizanColors.creditContainer
+            else if (isExpenseTheme) MaterialTheme.mizanColors.debtContainer
+            else MaterialTheme.colorScheme.surfaceVariant
+        }
+        else -> { // Numbers
+            if (isIncomeTheme) MaterialTheme.mizanColors.creditContainer
+            else if (isExpenseTheme) MaterialTheme.mizanColors.debtContainer
+            else MaterialTheme.colorScheme.surface
+        }
     }
 
     val textColor = when {
-        isAction -> MaterialTheme.mizanColors.contentOnBrand
-        isEquals -> brandPrimary
-        isClear || isBackspace -> MaterialTheme.colorScheme.error
-        isOp -> brandPrimary
+        isEquals -> MaterialTheme.mizanColors.contentOnBrand
+        isBackspace || isOp || isAction -> brandPrimary
         else -> MaterialTheme.colorScheme.onSurface
     }
 
     val buttonBorderColor = when {
-        isAction -> brandPrimary
-        isEquals || isOp -> brandPrimary.copy(alpha = 0.35f)
-        isClear || isBackspace -> MaterialTheme.colorScheme.error.copy(alpha = 0.35f)
+        isIncomeTheme -> MaterialTheme.mizanColors.creditBorder
+        isExpenseTheme -> MaterialTheme.mizanColors.debtBorder
         else -> MaterialTheme.colorScheme.outlineVariant
     }
 
     val haptic = LocalHapticFeedback.current
+    val clickableModifier = if (enabled) {
+        Modifier.clickable {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        }
+    } else {
+        Modifier
+    }
 
-    Surface(
-        onClick = {
-            if (enabled) {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onClick()
-            }
-        },
-        enabled = enabled,
-        modifier = modifier.height(48.dp),
+    Card(
+        modifier = modifier
+            .heightIn(min = 52.dp)
+            .wrapContentHeight()
+            .then(clickableModifier),
         shape = MizanDialogTokens.buttonShape,
-        color = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.4f),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f)
+        ),
         border = BorderStroke(1.dp, if (enabled) buttonBorderColor else buttonBorderColor.copy(alpha = 0.3f)),
-        shadowElevation = if (isNumber && enabled) 0.5.dp else 0.dp
+        elevation = CardDefaults.cardElevation(defaultElevation = if (enabled) 1.dp else 0.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            if (isAction) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = if (enabled) textColor else textColor.copy(alpha = 0.4f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = text,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (enabled) textColor else textColor.copy(alpha = 0.4f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                Text(
-                    text = text,
-                    fontSize = if (isClear || isBackspace) 17.sp else 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (enabled) textColor else textColor.copy(alpha = 0.4f),
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = text,
+                fontSize = if (isAction) 16.sp else 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (enabled) textColor else textColor.copy(alpha = 0.4f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

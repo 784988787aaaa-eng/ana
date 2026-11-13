@@ -3,11 +3,7 @@ package com.smartledger.aldaftar.data.serialization.pdf
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
-import android.text.Layout
 import android.util.Log
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.state.CustomerUiState
@@ -100,8 +96,6 @@ object MasterBookletPdfEngine {
             )
 
             val txCacheMap = mutableMapOf<String, List<com.smartledger.aldaftar.data.local.entities.HabayebTransaction>>()
-
-            val summary = PdfReportCalculator.calculateComprehensiveReport(targetCustomers)
 
             var totalPagesInDryRun = 1
             run {
@@ -229,104 +223,6 @@ object MasterBookletPdfEngine {
             } catch (e: Exception) {
                 Log.e(TAG, "Error recycling bitmaps", e)
             }
-        }
-    }
-
-    private fun drawCoverAndIndexDryRun(ctx: BookletDrawingContext, customers: List<CustomerUiState>) {
-        val headerBottomY = PdfPageRenderer.calculateHeaderBottomY(
-            ctx.displayedName, ctx.displayedDesc, ctx.phonesStr, ctx.hasLogo, ctx.logoH
-        )
-        ctx.currentY = headerBottomY
-        ctx.currentY += 22f
-        ctx.currentY += 18f
-
-        ctx.currentY += 18f
-        ctx.currentY += 24f
-
-        customers.forEachIndexed { _, customer ->
-            val rowHeight = PdfRowRenderer.calculateBookletIndexRowHeight(customer)
-            if (ctx.currentY + rowHeight > 780f) {
-                ctx.startNewPage()
-                ctx.currentY = 69f
-            }
-            ctx.currentY += rowHeight
-        }
-    }
-
-    private fun drawCoverAndIndexReal(
-        ctx: BookletDrawingContext,
-        customers: List<CustomerUiState>,
-        summary: com.smartledger.aldaftar.data.serialization.pdf.ComprehensivePdfSummary
-    ) {
-        val context = ctx.context
-        val canvas = ctx.currentPageCanvas ?: return
-
-        val headerBottomY = PdfPageRenderer.drawBusinessHeader(
-            canvas, ctx.displayedName, ctx.displayedDesc, ctx.phonesStr,
-            ctx.hasLogo, ctx.scaledLogo, ctx.logoW, ctx.logoH, ctx.docDateText, ctx.docTimeText
-        )
-        ctx.currentY = headerBottomY
-
-        val paintTitle = Paint().apply {
-            color = Color.parseColor(ctx.primaryColorHex)
-            textSize = 14f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-        PdfDrawingUtils.drawArabicText(
-            canvas, context.getString(R.string.pdf_booklet_title),
-            25f, ctx.currentY, 545, paintTitle, Layout.Alignment.ALIGN_CENTER
-        )
-        ctx.currentY += 22f
-
-        val paintSub = Paint().apply {
-            color = Color.parseColor(PdfColors.TEXT_MEDIUM)
-            textSize = 9.5f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            isAntiAlias = true
-        }
-        PdfDrawingUtils.drawArabicText(
-            canvas, context.getString(R.string.pdf_booklet_subtitle),
-            25f, ctx.currentY, 545, paintSub, Layout.Alignment.ALIGN_CENTER
-        )
-        ctx.currentY += 18f
-
-        val paintIndexTitle = Paint().apply {
-            color = Color.parseColor(ctx.primaryColorHex)
-            textSize = 10.5f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-        PdfDrawingUtils.drawArabicText(
-            canvas, context.getString(R.string.pdf_index_title),
-            25f, ctx.currentY, 545, paintIndexTitle, Layout.Alignment.ALIGN_NORMAL
-        )
-        ctx.currentY += 18f
-
-        PdfRowRenderer.drawBookletIndexHeader(canvas, ctx.currentY, context)
-        ctx.currentY += 24f
-
-        customers.forEachIndexed { index, customer ->
-            val rowHeight = PdfRowRenderer.calculateBookletIndexRowHeight(customer)
-            if (ctx.currentY + rowHeight > 780f) {
-                ctx.startNewPage()
-                val nextCanvas = ctx.currentPageCanvas ?: return@forEachIndexed
-                PdfRowRenderer.drawBookletIndexHeader(nextCanvas, 45f, context)
-                ctx.currentY = 69f
-            }
-
-            val currentCanvas = ctx.currentPageCanvas ?: return@forEachIndexed
-            PdfRowRenderer.drawBookletIndexRow(
-                canvas = currentCanvas,
-                context = context,
-                index = index,
-                customer = customer,
-                currentY = ctx.currentY,
-                rowHeight = rowHeight,
-                currencySymbol = ctx.currencySymbol
-            )
-
-            ctx.currentY += rowHeight
         }
     }
 

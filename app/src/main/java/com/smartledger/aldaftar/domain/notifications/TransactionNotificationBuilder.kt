@@ -150,7 +150,7 @@ object TransactionNotificationBuilder {
         // Lines 3 & 4: Exchange Rate & Converted Equivalent (if applicable)
         if (hasActiveConversion) {
             val sourceUnit = if (sourceCurrency == "$" || sourceCurrency == "USD") "1$" else "1 $sourceCurrency"
-            val rateFormatted = HabayebMathHelper.formatActiveRateBadge(tx.exchangeRate)
+            val rateFormatted = HabayebMathHelper.formatRate(tx.exchangeRate)
             val rateText = "$sourceUnit = $rateFormatted $targetCurrency"
 
             if (isRichText) {

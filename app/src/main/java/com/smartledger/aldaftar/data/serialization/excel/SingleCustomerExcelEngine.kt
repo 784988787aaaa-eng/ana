@@ -149,7 +149,8 @@ object SingleCustomerExcelEngine {
             val owedRowsByCurrency = LinkedHashMap<String, MutableList<Int>>()
             val dueRowsByCurrency = LinkedHashMap<String, MutableList<Int>>()
 
-            val baseCurrencyCode = CurrencyConfig.getBySymbol(currencySymbol)?.code ?: currencySymbol
+            val normBaseSymbol = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
+            val baseCurrencyCode = CurrencyConfig.getBySymbol(normBaseSymbol)?.code ?: normBaseSymbol
 
             sortedTxs.forEachIndexed { index, pt ->
                 val tx = pt.tx
@@ -163,11 +164,16 @@ object SingleCustomerExcelEngine {
                 val rawTxCurrency = if (tx.currencyCode.isNotBlank() && tx.currencyCode != FinancialPolicy.DEFAULT_CURRENCY_CODE) {
                     tx.currencyCode
                 } else {
-                    tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != FinancialPolicy.DEFAULT_CURRENCY_CODE } ?: currencySymbol
+                    tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != FinancialPolicy.DEFAULT_CURRENCY_CODE } ?: normBaseSymbol
                 }
-                val originalCurrency = CurrencyConfig.getBySymbol(rawTxCurrency)
-                val currencyCode = originalCurrency?.code ?: rawTxCurrency
+                val canonicalTxSymbol = FinancialPolicy.canonicalCurrencySymbol(rawTxCurrency)
+                val originalCurrency = CurrencyConfig.getBySymbol(canonicalTxSymbol)
+                val currencyCode = originalCurrency?.code ?: canonicalTxSymbol
                 currencyCodesInOrder.add(currencyCode)
+
+                val rawTxBase = tx.baseCurrencyCode.takeIf { it.isNotBlank() && it != FinancialPolicy.DEFAULT_CURRENCY_CODE } ?: normBaseSymbol
+                val canonicalTxBaseSymbol = FinancialPolicy.canonicalCurrencySymbol(rawTxBase)
+                val txBaseCode = CurrencyConfig.getBySymbol(canonicalTxBaseSymbol)?.code ?: canonicalTxBaseSymbol
 
                 val sourceAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) {
                     tx.foreignAmount
@@ -177,6 +183,7 @@ object SingleCustomerExcelEngine {
                 val hasConversion = tx.isRateCalculated &&
                     tx.exchangeRate > BigDecimal.ZERO &&
                     tx.equivalentAmount > BigDecimal.ZERO
+                val convertsToCurrentBase = hasConversion && txBaseCode == baseCurrencyCode
                 val cleanDetails = CurrencyConfig.getCleanDetails(tx.description)
 
                 val typeName = when (txType) {
@@ -201,6 +208,10 @@ object SingleCustomerExcelEngine {
                             .append(currencyCode)
                             .append(" × ")
                             .append(HabayebMathHelper.formatRate(tx.exchangeRate))
+                            .append(" = ")
+                            .append(HabayebMathHelper.formatSmart(tx.equivalentAmount))
+                            .append(" ")
+                            .append(txBaseCode)
                     }
                 }
 
@@ -220,7 +231,7 @@ object SingleCustomerExcelEngine {
                 )
                 row.cell(
                     6,
-                    if (hasConversion) {
+                    if (convertsToCurrentBase) {
                         XlsxOpenXmlBuilder.Formula(
                             "IF(AND(E$txRow<>\"\",F$txRow>0),E$txRow*F$txRow,\"\")"
                         )

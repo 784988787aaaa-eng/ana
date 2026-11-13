@@ -1,11 +1,11 @@
 package com.smartledger.aldaftar.ui.screens.habayeb.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,17 +46,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.state.CustomerUiState
-import com.smartledger.aldaftar.ui.theme.MizanAnimationTokens
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.MizanElevation
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
 import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CustomerContextBottomSheet(
     customer: CustomerUiState,
@@ -84,18 +85,16 @@ fun CustomerContextBottomSheet(
         Card(
             shape = MizanDialogTokens.shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = MizanElevation.dialog),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
             modifier = Modifier
-                .fillMaxWidth(0.92f)
+                .fillMaxWidth(0.90f)
                 .widthIn(max = MizanDialogTokens.compactMaxWidth)
                 .padding(horizontal = 8.dp, vertical = 6.dp)
         ) {
             AnimatedContent(
                 targetState = showCategoriesState,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(MizanAnimationTokens.DURATION_CROSSFADE)) togetherWith
-                        fadeOut(animationSpec = tween(MizanAnimationTokens.DURATION_CROSSFADE))
+                    fadeIn(animationSpec = tween(180)) with fadeOut(animationSpec = tween(180))
                 },
                 label = "contextMenuTransition"
             ) { isCategoryScreen ->
@@ -108,13 +107,11 @@ fun CustomerContextBottomSheet(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 2.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.align(Alignment.CenterStart),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.align(Alignment.TopStart),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 IconButton(
@@ -122,14 +119,13 @@ fun CustomerContextBottomSheet(
                                         onDismiss()
                                         onDelete()
                                     },
-                                    modifier = Modifier
-                                        .size(36.dp)
+                                    modifier = Modifier.size(44.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = stringResource(R.string.context_menu_delete_customer),
                                         tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(19.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
 
@@ -138,14 +134,13 @@ fun CustomerContextBottomSheet(
                                         onDismiss()
                                         onEditClick()
                                     },
-                                    modifier = Modifier
-                                        .size(36.dp)
+                                    modifier = Modifier.size(44.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Edit,
                                         contentDescription = stringResource(R.string.habayeb_edit_name_title),
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(19.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -153,7 +148,7 @@ fun CustomerContextBottomSheet(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 76.dp),
+                                    .padding(horizontal = 64.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
@@ -162,29 +157,15 @@ fun CustomerContextBottomSheet(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
-                                Spacer(modifier = Modifier.height(1.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = customer.name,
-                                    fontSize = 16.5.sp,
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            IconButton(
-                                onClick = onDismiss,
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .size(36.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.desc_close),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
@@ -205,9 +186,9 @@ fun CustomerContextBottomSheet(
                         )
 
                         HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                            thickness = 0.8.dp,
-                            modifier = Modifier.padding(vertical = 2.dp)
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f),
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(vertical = 1.dp)
                         )
 
                         Column(

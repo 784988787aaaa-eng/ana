@@ -11,7 +11,12 @@ import androidx.room.Update
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.data.local.entities.PinnedCustomer
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
+import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.math.BigDecimal
 
 @Dao
 interface HabayebDao {
@@ -62,12 +67,6 @@ interface HabayebDao {
     @Query("SELECT * FROM pinned_habayeb_customers")
     suspend fun getAllPinsDirect(): List<PinnedCustomer>
 
-    @Query("SELECT DISTINCT customerId FROM pinned_habayeb_customers")
-    fun getAllPinnedCustomerIdsFlow(): Flow<List<String>>
-
-    @Query("SELECT DISTINCT customerId FROM pinned_habayeb_customers")
-    suspend fun getAllPinnedCustomerIdsDirect(): List<String>
-
     @Query("SELECT customerId FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope")
     fun getPinnedCustomerIdsFlow(scope: Int): Flow<List<String>>
 
@@ -89,65 +88,77 @@ interface HabayebDao {
     @Query("DELETE FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope")
     suspend fun deletePinsForScope(scope: Int)
 
-    @Query("""
-        SELECT
-            customerId,
-            CASE
-                WHEN is_rate_calculated = 1 THEN
-                    CASE
-                        WHEN base_currency_code IS NULL OR base_currency_code = '' OR base_currency_code = 'DEFAULT'
-                            THEN :defaultCurrencySymbol
-                        ELSE base_currency_code
-                    END
-                WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                    THEN :defaultCurrencySymbol
-                ELSE currency_code
-            END AS currencyCode,
-            SUM(
-                CASE
-                    WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN
-                        CASE
-                            WHEN is_rate_calculated = 1 THEN equivalent_amount
-                            WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                                THEN amount
-                            WHEN is_foreign = 1 AND CAST(foreign_amount AS REAL) > 0 THEN foreign_amount
-                            ELSE amount
-                        END
-                    WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN
-                        -CASE
-                            WHEN is_rate_calculated = 1 THEN equivalent_amount
-                            WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                                THEN amount
-                            WHEN is_foreign = 1 AND CAST(foreign_amount AS REAL) > 0 THEN foreign_amount
-                            ELSE amount
-                        END
-                    ELSE 0
-                END
-            ) AS netAmount,
-            SUM(
-                CASE
-                    WHEN type = 'OWED_BY_THEM' OR type = 'PAYMENT_TO_THEM' THEN equivalent_amount
-                    WHEN type = 'OWED_TO_THEM' OR type = 'PAYMENT_BY_THEM' THEN -equivalent_amount
-                    ELSE 0
-                END
-            ) AS netEquivalentAmount,
-            MAX(timestamp) AS lastTimestamp,
-            COUNT(*) AS txCount
-        FROM habayeb_transactions
-        GROUP BY customerId,
-            CASE
-                WHEN is_rate_calculated = 1 THEN
-                    CASE
-                        WHEN base_currency_code IS NULL OR base_currency_code = '' OR base_currency_code = 'DEFAULT'
-                            THEN :defaultCurrencySymbol
-                        ELSE base_currency_code
-                    END
-                WHEN currency_code IS NULL OR currency_code = '' OR currency_code = 'DEFAULT'
-                    THEN :defaultCurrencySymbol
-                ELSE currency_code
-            END
-    """)
-    fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>>
+    @Query("SELECT * FROM habayeb_transactions")
+    fun getAllTransactionsFlow(): Flow<List<HabayebTransaction>>
+
+    fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>> {
+        val normDefault = FinancialPolicy.canonicalCurrencySymbol(defaultCurrencySymbol)
+        return getAllTransactionsFlow().map { transactions ->
+            aggregateCustomerBalancesBigDecimal(transactions, normDefault)
+        }
+    }
+
+    private fun aggregateCustomerBalancesBigDecimal(
+        transactions: List<HabayebTransaction>,
+        defaultCurrencySymbol: String
+    ): List<CustomerCurrencyBalance> {
+        if (transactions.isEmpty()) return emptyList()
+
+        class BalanceAccumulator(
+            val customerId: String,
+            val currencyCode: String,
+            var netAmount: BigDecimal = BigDecimal.ZERO,
+            var netEquivalentAmount: BigDecimal = BigDecimal.ZERO,
+            var lastTimestamp: Long = 0L,
+            var txCount: Int = 0
+        )
+
+        val grouped = LinkedHashMap<Pair<String, String>, BalanceAccumulator>(transactions.size.coerceAtLeast(4))
+        for (tx in transactions) {
+            val (rawCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, defaultCurrencySymbol)
+            val txCurrency = FinancialPolicy.canonicalCurrencySymbol(rawCurrency)
+            val safeAmount = FinancialPolicy.normalize(bdAmount)
+            val safeEquiv = FinancialPolicy.normalize(tx.equivalentAmount)
+            val txType = TransactionType.fromValue(tx.type)
+
+            val signedAmount = when (txType) {
+                TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> safeAmount
+                TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> safeAmount.negate()
+                else -> BigDecimal.ZERO
+            }
+            val signedEquiv = when (txType) {
+                TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> safeEquiv
+                TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> safeEquiv.negate()
+                else -> BigDecimal.ZERO
+            }
+
+            val key = tx.customerId to txCurrency
+            val acc = grouped.getOrPut(key) {
+                BalanceAccumulator(
+                    customerId = tx.customerId,
+                    currencyCode = txCurrency,
+                    lastTimestamp = tx.timestamp
+                )
+            }
+            acc.netAmount = acc.netAmount.add(signedAmount)
+            acc.netEquivalentAmount = acc.netEquivalentAmount.add(signedEquiv)
+            if (tx.timestamp > acc.lastTimestamp) {
+                acc.lastTimestamp = tx.timestamp
+            }
+            acc.txCount += 1
+        }
+
+        return grouped.values.map { acc ->
+            CustomerCurrencyBalance(
+                customerId = acc.customerId,
+                currencyCode = acc.currencyCode,
+                netAmount = FinancialPolicy.normalize(acc.netAmount),
+                netEquivalentAmount = FinancialPolicy.normalize(acc.netEquivalentAmount),
+                lastTimestamp = acc.lastTimestamp,
+                txCount = acc.txCount
+            )
+        }
+    }
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")
     fun getTransactionsForCustomerFlow(customerId: String): Flow<List<HabayebTransaction>>
@@ -225,24 +236,15 @@ interface HabayebDao {
     @Query("""
         UPDATE habayeb_transactions 
         SET type = CASE type 
-            WHEN 'OWED_TO_THEM' THEN 'OWED_BY_THEM' 
-            WHEN 'PAYMENT_TO_THEM' THEN 'PAYMENT_BY_THEM' 
+            WHEN 'OWED_BY_THEM' THEN 'OWED_TO_THEM'
+            WHEN 'OWED_TO_THEM' THEN 'OWED_BY_THEM'
+            WHEN 'PAYMENT_BY_THEM' THEN 'PAYMENT_TO_THEM'
+            WHEN 'PAYMENT_TO_THEM' THEN 'PAYMENT_BY_THEM'
             ELSE type 
         END 
-        WHERE customerId = :customerId AND type IN ('OWED_TO_THEM', 'PAYMENT_TO_THEM')
+        WHERE customerId = :customerId
     """)
-    suspend fun adaptTransactionsToOwedByThem(customerId: String)
-
-    @Query("""
-        UPDATE habayeb_transactions 
-        SET type = CASE type 
-            WHEN 'OWED_BY_THEM' THEN 'OWED_TO_THEM' 
-            WHEN 'PAYMENT_BY_THEM' THEN 'PAYMENT_TO_THEM' 
-            ELSE type 
-        END 
-        WHERE customerId = :customerId AND type IN ('OWED_BY_THEM', 'PAYMENT_BY_THEM')
-    """)
-    suspend fun adaptTransactionsToOwedToThem(customerId: String)
+    suspend fun invertTransactionsForCustomer(customerId: String)
 
     @Transaction
     suspend fun insertCustomerWithOpeningTransaction(customer: HabayebCustomer, transaction: HabayebTransaction?) {

@@ -128,100 +128,97 @@ fun RecurringTransactionPopup(
 
     val nextOccFormatted = remember(nextOcc) {
         if (nextOcc != null) {
-            val sdf = java.text.SimpleDateFormat("yyyy/MM/dd  hh:mm a", java.util.Locale.ENGLISH)
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd  hh:mm a", java.util.Locale.getDefault())
             sdf.format(java.util.Date(nextOcc))
-                .replace("AM", "ص")
-                .replace("PM", "م")
         } else {
             null
         }
     }
 
-    val mizanColors = com.smartledger.aldaftar.ui.theme.LocalMizanColors.current
-
-    com.smartledger.aldaftar.ui.components.MizanAnimatedDialog(
-        onDismissRequest = onDismiss
-    ) { dismissDialog ->
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            com.smartledger.aldaftar.ui.components.MizanDialogCard(
-                maxWidth = MizanDialogTokens.compactMaxWidth,
-                maxHeight = 580.dp,
-                contentPadding = PaddingValues(
-                    horizontal = MizanDialogTokens.dialogHorizontal,
-                    vertical = MizanDialogTokens.dialogVertical
-                )
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .widthIn(max = MizanDialogTokens.compactMaxWidth)
+                    .heightIn(max = 540.dp)
+                    .imePadding(),
+                shape = MizanDialogTokens.shape,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    com.smartledger.aldaftar.ui.components.MizanDialogHeader(
-                        title = stringResource(id = R.string.habayeb_recurring_title),
-                        subtitle = customerName,
-                        icon = Icons.Default.Sync,
-                        iconTint = activeThemeColor,
-                        onCloseClick = dismissDialog
-                    )
-
-                    val formattedAmount = remember(transaction.amount) {
-                        FormatUtils.formatBigDecimal(transaction.amount)
-                    }
-                    val fallbackCurrency = stringResource(id = R.string.currency_yer)
-                    val currStr = transaction.currencyCode.ifEmpty { fallbackCurrency }
-                    val isCurrentlyActive = existingConfig?.isActive == true
-
-                    com.smartledger.aldaftar.ui.components.MizanDialogInnerCard(
-                        containerColor = activeThemeColor.copy(alpha = 0.08f)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(activeThemeColor, activeSubColor)
+                                )
+                            )
+                            .padding(vertical = 9.dp, horizontal = 12.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(
-                                    text = "$formattedAmount $currStr",
-                                    color = activeThemeColor,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                                if (transaction.description.isNotBlank()) {
-                                    Text(
-                                        text = transaction.description,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 11.sp,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Sync,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
+                                Text(
+                                    text = stringResource(id = R.string.habayeb_recurring_title),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
 
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = if (isCurrentlyActive) mizanColors.successGreenBackground else activeThemeColor.copy(alpha = 0.14f),
-                                border = BorderStroke(
-                                    0.8.dp,
-                                    if (isCurrentlyActive) mizanColors.successGreenBorder else activeThemeColor.copy(alpha = 0.35f)
-                                )
+                            val formattedAmount = remember(transaction.amount) {
+                                FormatUtils.formatBigDecimal(transaction.amount)
+                            }
+                            val fallbackCurrency = stringResource(id = R.string.currency_yer)
+                            val currStr = transaction.currencyCode.ifEmpty { fallbackCurrency }
+                            Box(
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(
-                                    text = if (isCurrentlyActive) "تكرار مفعّل" else "جدولة جديدة",
-                                    color = if (isCurrentlyActive) mizanColors.successGreenBorder else activeThemeColor,
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                    text = "$customerName • $formattedAmount $currStr",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         RecurringFrequencySelector(
@@ -246,14 +243,14 @@ fun RecurringTransactionPopup(
                             activeThemeColor = activeThemeColor
                         )
 
-                        if (nextOccFormatted != null) {
+                        nextOccFormatted?.let { formattedDate ->
                             androidx.compose.material3.Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MizanDialogTokens.buttonShape,
                                 colors = androidx.compose.material3.CardDefaults.cardColors(
                                     containerColor = activeThemeColor.copy(alpha = 0.08f)
                                 ),
-                                border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.2f))
+                                border = BorderStroke(1.dp, activeThemeColor.copy(alpha = 0.15f))
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -264,45 +261,21 @@ fun RecurringTransactionPopup(
                                 ) {
                                     Text(
                                         text = stringResource(id = R.string.habayeb_recurring_next_occurrence_label),
-                                        fontSize = 11.5.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = activeThemeColor
                                     )
                                     Text(
-                                        text = nextOccFormatted,
-                                        fontSize = 11.5.sp,
+                                        text = formattedDate,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
-                        } else {
-                            androidx.compose.material3.Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = MizanDialogTokens.buttonShape,
-                                colors = androidx.compose.material3.CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
-                                ),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "لا توجد دفعة قادمة ضمن النطاق المحدد",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
                         }
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         RecurringActionsRow(
                             existingConfig = existingConfig,
@@ -318,7 +291,7 @@ fun RecurringTransactionPopup(
                             startDateMillis = startDateMillis,
                             endDateMillis = endDateMillis,
                             activeThemeColor = activeThemeColor,
-                            onDismiss = dismissDialog
+                            onDismiss = onDismiss
                         )
                     }
                 }

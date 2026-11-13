@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.helper
 
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
@@ -28,16 +29,16 @@ object HabayebMathHelper {
     }
 
     fun formatSmart(value: BigDecimal): String {
-        if (value.compareTo(BigDecimal.ZERO) == 0) return "0"
-        val rounded = value.setScale(2, RoundingMode.HALF_EVEN)
-        val stripped = rounded.stripTrailingZeros()
-        val formatter = numberFormatThreadLocal.get()
+        val normalized = FinancialPolicy.normalize(value)
+        if (normalized.compareTo(BigDecimal.ZERO) == 0) return "0"
+        val stripped = normalized.stripTrailingZeros()
+        val formatter = numberFormatThreadLocal.get() ?: NumberFormat.getNumberInstance(Locale.US)
         if (stripped.scale() <= 0) {
             formatter.minimumFractionDigits = 0
             formatter.maximumFractionDigits = 0
         } else {
             formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 2
+            formatter.maximumFractionDigits = FinancialPolicy.scale
         }
         return formatter.format(stripped)
     }
@@ -45,17 +46,44 @@ object HabayebMathHelper {
     fun formatRate(value: BigDecimal): String {
         return try {
             if (value.compareTo(BigDecimal.ZERO) <= 0) return "0"
-            if (value >= BigDecimal.ONE) {
-                value.setScale(4, RoundingMode.HALF_EVEN)
-                    .stripTrailingZeros()
-                    .toPlainString()
-            } else {
-                value.setScale(8, RoundingMode.HALF_EVEN)
-                    .stripTrailingZeros()
-                    .toPlainString()
-            }
+            val normalized = FinancialPolicy.normalizeRate(value).stripTrailingZeros()
+            if (normalized.scale() <= 0) normalized.toBigInteger().toString() else normalized.toPlainString()
         } catch (e: Exception) {
             value.toString()
+        }
+    }
+
+    fun normalizeAmountDigits(input: String): String {
+        if (input.isEmpty()) return input
+        val sb = StringBuilder(input.length)
+        for (i in 0 until input.length) {
+            when (val ch = input[i]) {
+                ',', '٬', ' ' -> {} // Thousands separator & spaces removed on paste/input
+                '٫' -> sb.append('.')
+                in '٠'..'٩' -> sb.append((ch - '٠' + '0'.code).toChar())
+                in '۰'..'۹' -> sb.append((ch - '۰' + '0'.code).toChar())
+                else -> sb.append(ch)
+            }
+        }
+        return sb.toString()
+    }
+
+    fun sanitizeAmountInput(raw: String, maxScale: Int = FinancialPolicy.scale): String? {
+        if (raw.isEmpty()) return ""
+        val normalized = normalizeAmountDigits(raw)
+        if (normalized.isEmpty()) return ""
+        val dotCount = normalized.count { it == '.' }
+        val isValidChars = normalized.all { it.isDigit() || it == '.' }
+        val dotIdx = normalized.indexOf('.')
+        val validDecimals = dotIdx == -1 || (normalized.length - dotIdx - 1 <= maxScale)
+        if (!isValidChars || dotCount > 1 || !validDecimals) return null
+
+        return if (normalized.startsWith("0") && normalized.length > 1 && normalized[1] != '.') {
+            normalized.trimStart('0').ifEmpty { "0" }
+        } else if (normalized.startsWith(".")) {
+            "0$normalized"
+        } else {
+            normalized
         }
     }
 

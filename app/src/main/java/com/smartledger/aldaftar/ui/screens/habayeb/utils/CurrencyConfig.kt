@@ -23,7 +23,13 @@ object CurrencyConfig {
     private val converter = BigDecimalConverter()
 
     fun parseBigDecimalOrNull(value: String): BigDecimal? {
-        val normalized = normalizeDigits(value).trim()
+        val trimmed = value.trim()
+        val preCleaned = if (trimmed.contains(',') && (trimmed.contains('.') || trimmed.contains('٫'))) {
+            trimmed.replace(",", "")
+        } else {
+            trimmed
+        }
+        val normalized = normalizeDigits(preCleaned).trim()
         if (normalized.isBlank()) return null
         return try { BigDecimal(normalized) } catch (_: Exception) { null }
     }
@@ -180,35 +186,35 @@ object CurrencyConfig {
         defaultCurrencySymbol: String,
         exchangeRatesJson: String = "{}"
     ): Pair<String, BigDecimal> {
-        val parsedCurrencyInfo = parseTransactionCurrency(tx.description, defaultCurrencySymbol)
+        val normDefaultSymbol = com.smartledger.aldaftar.domain.model.FinancialPolicy.canonicalCurrencySymbol(defaultCurrencySymbol)
+        val parsedCurrencyInfo = parseTransactionCurrency(tx.description, normDefaultSymbol)
         val rawTxCurrency = if (tx.currencyCode != "DEFAULT" && tx.currencyCode.isNotBlank()) {
             tx.currencyCode
-        } else if (parsedCurrencyInfo.first != defaultCurrencySymbol) {
+        } else if (parsedCurrencyInfo.first != normDefaultSymbol) {
             parsedCurrencyInfo.first
         } else if (tx.baseCurrencyCode != "DEFAULT" && tx.baseCurrencyCode.isNotBlank()) {
             tx.baseCurrencyCode
         } else {
-            defaultCurrencySymbol
+            normDefaultSymbol
         }
-        val txCurrency = getBySymbol(rawTxCurrency)?.symbol ?: rawTxCurrency
+        val txCurrency = com.smartledger.aldaftar.domain.model.FinancialPolicy.canonicalCurrencySymbol(rawTxCurrency)
 
         if (tx.isRateCalculated) {
             val baseCurrencyRaw = if (tx.baseCurrencyCode != "DEFAULT" && tx.baseCurrencyCode.isNotBlank()) {
                 tx.baseCurrencyCode
             } else {
-                defaultCurrencySymbol
+                normDefaultSymbol
             }
-            val baseCurrency = getBySymbol(baseCurrencyRaw)?.symbol ?: baseCurrencyRaw
-            return Pair(baseCurrency, tx.equivalentAmount.setScale(4, RoundingMode.HALF_EVEN))
+            val baseCurrency = com.smartledger.aldaftar.domain.model.FinancialPolicy.canonicalCurrencySymbol(baseCurrencyRaw)
+            return Pair(baseCurrency, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalize(tx.equivalentAmount))
         }
 
-        val normDefaultSymbol = getBySymbol(defaultCurrencySymbol)?.symbol ?: defaultCurrencySymbol
         val actualAmount = if (tx.foreignAmount.compareTo(BigDecimal.ZERO) > 0) tx.foreignAmount else tx.amount
 
         return if (txCurrency != normDefaultSymbol) {
-            Pair(txCurrency, actualAmount.setScale(4, RoundingMode.HALF_EVEN))
+            Pair(txCurrency, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalize(actualAmount))
         } else {
-            Pair(normDefaultSymbol, tx.amount.setScale(4, RoundingMode.HALF_EVEN))
+            Pair(normDefaultSymbol, com.smartledger.aldaftar.domain.model.FinancialPolicy.normalize(tx.amount))
         }
     }
 

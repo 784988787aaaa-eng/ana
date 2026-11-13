@@ -57,7 +57,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
@@ -146,11 +145,10 @@ fun ComprehensiveReportDialog(
                     onCloseClick = dismissDialog
                 )
 
-                    val mizanColors = MaterialTheme.mizanColors
                     val netPrimaryColor = if (netPrimary.compareTo(BigDecimal.ZERO) > 0) {
-                        mizanColors.credit
+                        if (isDark) com.smartledger.aldaftar.ui.theme.CreditGreen else MaterialTheme.colorScheme.primary
                     } else if (netPrimary.compareTo(BigDecimal.ZERO) < 0) {
-                        mizanColors.debt
+                        if (isDark) com.smartledger.aldaftar.ui.theme.DebtRed else MaterialTheme.colorScheme.error
                     } else {
                         textSecondary
                     }
@@ -378,7 +376,7 @@ fun ComprehensiveReportDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .wrapContentHeight(),
-                shape = MizanDialogTokens.shape,
+                shape = RoundedCornerShape(MizanDialogTokens.dialogRadius),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp
             ) {
@@ -408,8 +406,8 @@ fun ComprehensiveReportDialog(
                             isGeneratingPdf = false
                         },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.fillMaxWidth().height(MizanDialogTokens.buttonHeight),
-                        shape = MizanDialogTokens.buttonShape
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(MizanDialogTokens.actionRadius)
                     ) {
                         Text(stringResource(id = R.string.report_booklet_cancel_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
@@ -471,8 +469,8 @@ fun ComprehensiveReportDialog(
                             isGeneratingBooklet = false
                         },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.fillMaxWidth().height(MizanDialogTokens.buttonHeight),
-                        shape = MizanDialogTokens.buttonShape
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(MizanDialogTokens.actionRadius)
                     ) {
                         Text(stringResource(id = R.string.report_booklet_cancel_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }

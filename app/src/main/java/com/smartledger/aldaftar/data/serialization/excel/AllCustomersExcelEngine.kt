@@ -5,7 +5,9 @@ import android.util.Log
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
+import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
+import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import java.io.File
 import java.math.BigDecimal
@@ -103,13 +105,16 @@ object AllCustomersExcelEngine {
             foreignRows.add(XlsxOpenXmlBuilder.Row(3, 6))
             foreignRows.add(XlsxOpenXmlBuilder.Row(4, 28).apply { foreignHeaders.forEachIndexed { i, h -> cell(i, h, 1) } })
             var foreignRow = 5
+            val normDefaultSymbol = FinancialPolicy.canonicalCurrencySymbol(currencySymbol)
             customers.forEach { c ->
                 c.foreignDebts.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }.forEach { (curr, value) ->
+                    val canonicalCurr = FinancialPolicy.canonicalCurrencySymbol(curr)
+                    val currCode = CurrencyConfig.getBySymbol(canonicalCurr)?.code ?: canonicalCurr
                     foreignRows.add(XlsxOpenXmlBuilder.Row(foreignRow, 24).apply {
                         val positiveStyle = if (value > BigDecimal.ZERO) 2 else 3
                         val negativeStyle = if (value > BigDecimal.ZERO) 3 else 2
                         cell(0, c.name, 5)
-                        cell(1, curr, 6)
+                        cell(1, currCode, 6)
                         cell(2, if (value > BigDecimal.ZERO) value.abs() else null, positiveStyle)
                         cell(3, if (value < BigDecimal.ZERO) value.abs() else null, negativeStyle)
                         cell(4, XlsxOpenXmlBuilder.Formula("C$foreignRow-D$foreignRow"), 4)
@@ -132,7 +137,7 @@ object AllCustomersExcelEngine {
                     cell(1, XlsxOpenXmlBuilder.Formula("SUMIFS(C5:C$foreignLastRow,B5:B$foreignLastRow,\"$code\")"), 4)
                     cell(2, XlsxOpenXmlBuilder.Formula("SUMIFS(D5:D$foreignLastRow,B5:B$foreignLastRow,\"$code\")"), 4)
                     cell(3, XlsxOpenXmlBuilder.Formula("B$rowNo-C$rowNo"), 4)
-                    cell(4, if (code == currencySymbol || com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig.getBySymbol(currencySymbol)?.code == code) "العملة الأساسية" else "رصيد مستقل", 6)
+                    cell(4, if (code == normDefaultSymbol || CurrencyConfig.getBySymbol(normDefaultSymbol)?.code == code) "العملة الأساسية" else "رصيد مستقل", 6)
                 })
             }
 
