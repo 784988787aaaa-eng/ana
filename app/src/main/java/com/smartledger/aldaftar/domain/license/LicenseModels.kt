@@ -42,7 +42,7 @@ data class LicenseSnapshot(
     val trialLimit: Int = 100
 ) {
     val isLifetime: Boolean
-        get() = (plan == LicensePlan.LIFETIME || type == LicenseType.LOCAL) && status == LicenseStatus.ACTIVE && active
+        get() = plan == LicensePlan.LIFETIME && status == LicenseStatus.ACTIVE && active
 
     val isTrialPlan: Boolean
         get() = plan == LicensePlan.TRIAL

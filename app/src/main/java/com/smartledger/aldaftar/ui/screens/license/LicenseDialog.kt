@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import com.smartledger.aldaftar.R
@@ -47,6 +49,7 @@ import com.smartledger.aldaftar.data.account.UnifiedAccountSession
 import com.smartledger.aldaftar.data.cloud.GoogleDriveInternalAuth
 import com.smartledger.aldaftar.domain.license.LicenseSnapshot
 import com.smartledger.aldaftar.domain.license.LicenseStatus
+import com.smartledger.aldaftar.domain.license.RevocationReason
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
@@ -73,6 +76,39 @@ fun LicenseDialog(
     var selectedMode by rememberSaveable { mutableIntStateOf(0) }
     var activationCode by rememberSaveable { mutableStateOf("") }
     var signedToken by rememberSaveable { mutableStateOf("") }
+    var localRequestIsTrial by rememberSaveable { mutableStateOf(false) }
+
+    val deviceCode = remember { viewModel.deviceCode() }
+
+    val slicFileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                val bytes = stream.readBytes()
+                require(bytes.size <= 64 * 1024) { "ملف الترخيص كبير جداً" }
+                String(bytes, Charsets.UTF_8).trim()
+            }.orEmpty()
+        }.onSuccess { content ->
+            if (content.isBlank()) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.license_toast_slic_empty),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                signedToken = content
+                viewModel.applyToken(content)
+            }
+        }.onFailure {
+            Toast.makeText(
+                context,
+                context.getString(R.string.license_toast_slic_read_failed),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     val googleClient = remember {
         GoogleDriveInternalAuth(context).client()
@@ -117,7 +153,7 @@ fun LicenseDialog(
     ) { dismiss ->
         MizanDialogCard(
             maxWidth = 420.dp,
-            maxHeight = 640.dp,
+            maxHeight = 680.dp,
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Column(
@@ -179,37 +215,68 @@ fun LicenseDialog(
                                 viewModel.activateWithCode(activationCode)
                             }
                         )
+
+                        CompactDeviceCodeRow(
+                            deviceCode = deviceCode,
+                            onCopy = {
+                                clipboard.setText(AnnotatedString(deviceCode))
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.license_toast_device_code_copied),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+
+                        CompactWhatsAppButton(
+                            context = context,
+                            email = session.email,
+                            accountCode = session.accountCode ?: state.accountCode,
+                            deviceCode = deviceCode
+                        )
                     } else {
                         SignedTokenCompactSection(
+                            deviceCode = deviceCode,
                             token = signedToken,
                             busy = busy,
+                            requestIsTrial = localRequestIsTrial,
+                            onRequestTypeChange = { localRequestIsTrial = it },
+                            onCopyDeviceCode = {
+                                clipboard.setText(AnnotatedString(deviceCode))
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.license_toast_device_code_copied),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onTokenChange = { signedToken = it },
+                            onPasteFromClipboard = {
+                                val pasted = clipboard.getText()?.text?.trim().orEmpty()
+                                if (pasted.isBlank()) {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.license_toast_clipboard_empty),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    signedToken = pasted
+                                }
+                            },
+                            onImportSlicFile = {
+                                slicFileLauncher.launch(arrayOf("*/*", "application/octet-stream", "text/plain"))
+                            },
+                            onRequestWhatsAppActivation = {
+                                openLocalActivationWhatsApp(
+                                    context = context,
+                                    deviceCode = deviceCode,
+                                    isTrialRequest = localRequestIsTrial
+                                )
+                            },
                             onActivate = {
                                 viewModel.applyToken(signedToken)
                             }
                         )
                     }
-
-                    // 6. Compact Device Code Row
-                    CompactDeviceCodeRow(
-                        deviceCode = viewModel.deviceCode(),
-                        onCopy = {
-                            clipboard.setText(AnnotatedString(viewModel.deviceCode()))
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.license_toast_device_code_copied),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    )
-
-                    // 7. WhatsApp Support Button
-                    CompactWhatsAppButton(
-                        context = context,
-                        email = session.email,
-                        accountCode = session.accountCode ?: state.accountCode,
-                        deviceCode = viewModel.deviceCode()
-                    )
                 }
 
                 // 8. Progress Bar
@@ -406,6 +473,8 @@ private fun CompactStateBanner(
     val description = when {
         isLimitReached -> "انتهت النسخة التجريبية (100/100 عملية) .. يرجى تفعيل النسخة الكاملة لمتابعة التسجيل"
         isExpired -> "انتهت الفترة التجريبية لهذا الترخيص. يرجى التفعيل للمتابعة."
+        snapshot.revocationReason == RevocationReason.CLOCK_ROLLED_BACK ->
+            snapshot.revocationMessage ?: "تم اكتشاف تراجع في ساعة الجهاز. يرجى ضبط التاريخ والوقت الصحيحين للمتابعة."
         snapshot.isDeviceReplaced -> snapshot.revocationMessage ?: "تم تفعيل حساب SmartLedger على جهاز آخر، وتم إلغاء تفعيل هذا الجهاز."
         isRevoked -> snapshot.revocationMessage ?: "تعذر اعتماد الترخيص الحالي. يرجى تفعيل ترخيص صالح للمتابعة."
         isVerification -> "يلزم إعادة التحقق من الترخيص عبر الإنترنت لمتابعة العمليات."
@@ -727,24 +796,37 @@ private fun UnifiedAccountLoginSection(
 
 @Composable
 private fun SignedTokenCompactSection(
+    deviceCode: String,
     token: String,
     busy: Boolean,
+    requestIsTrial: Boolean,
+    onRequestTypeChange: (Boolean) -> Unit,
+    onCopyDeviceCode: () -> Unit,
     onTokenChange: (String) -> Unit,
+    onPasteFromClipboard: () -> Unit,
+    onImportSlicFile: () -> Unit,
+    onRequestWhatsAppActivation: () -> Unit,
     onActivate: () -> Unit
 ) {
     val tokenFocusRequester = remember { FocusRequester() }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        CompactDeviceCodeRow(
+            deviceCode = deviceCode,
+            onCopy = onCopyDeviceCode
+        )
+
         OutlinedTextField(
             value = token,
             onValueChange = onTokenChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(84.dp)
-                .focusRequester(tokenFocusRequester),
+                .focusRequester(tokenFocusRequester)
+                .testTag("license_local_token_input"),
             minLines = 2,
             maxLines = 3,
             enabled = !busy,
@@ -759,17 +841,109 @@ private fun SignedTokenCompactSection(
 
         RequestFocusAndShowKeyboard(focusRequester = tokenFocusRequester, enabled = !busy, autoShow = true)
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = onPasteFromClipboard,
+                enabled = !busy,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .testTag("license_paste_btn"),
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp)
+            ) {
+                Icon(Icons.Default.ContentPaste, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    text = stringResource(R.string.license_paste_from_clipboard),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            OutlinedButton(
+                onClick = onImportSlicFile,
+                enabled = !busy,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .testTag("license_import_slic_btn"),
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp)
+            ) {
+                Icon(Icons.Default.UploadFile, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    text = stringResource(R.string.license_import_slic_btn),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
         Button(
             onClick = onActivate,
             enabled = !busy && token.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
+                .height(48.dp)
+                .testTag("license_activate_local_btn"),
             shape = RoundedCornerShape(10.dp)
         ) {
             Icon(Icons.Default.VpnKey, null, Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
             Text(stringResource(R.string.license_activate_token_btn), fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.license_local_request_type_label),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FilterChip(
+                selected = !requestIsTrial,
+                onClick = { onRequestTypeChange(false) },
+                label = { Text(stringResource(R.string.license_local_plan_lifetime), fontSize = 11.sp) }
+            )
+            FilterChip(
+                selected = requestIsTrial,
+                onClick = { onRequestTypeChange(true) },
+                label = { Text(stringResource(R.string.license_local_plan_trial), fontSize = 11.sp) }
+            )
+        }
+
+        Button(
+            onClick = onRequestWhatsAppActivation,
+            enabled = !busy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .testTag("license_whatsapp_local_btn"),
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.Chat, null, Modifier.size(16.dp), tint = Color.White)
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.license_whatsapp_local_request),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
         }
     }
 }
@@ -786,7 +960,7 @@ private fun CompactDeviceCodeRow(
         border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -813,7 +987,9 @@ private fun CompactDeviceCodeRow(
             )
             IconButton(
                 onClick = onCopy,
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier
+                    .size(48.dp)
+                    .testTag("license_copy_device_code_btn")
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
@@ -839,11 +1015,11 @@ private fun CompactWhatsAppButton(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp),
+            .height(48.dp),
         shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen)
     ) {
-        Icon(Icons.Default.Chat, null, Modifier.size(16.dp), tint = Color.White)
+        Icon(Icons.AutoMirrored.Filled.Chat, null, Modifier.size(16.dp), tint = Color.White)
         Spacer(Modifier.width(6.dp))
         Text(
             text = stringResource(R.string.license_whatsapp_request_help),
@@ -1020,7 +1196,25 @@ private fun openDeveloperWhatsApp(
         }
         append("رمز الجهاز: $deviceCode")
     }
-    val uri = Uri.parse("https://api.whatsapp.com/send?phone=$SUPPORT_WHATSAPP&text=${Uri.encode(msg)}")
+    launchWhatsApp(context, msg)
+}
+
+private fun openLocalActivationWhatsApp(
+    context: Context,
+    deviceCode: String,
+    isTrialRequest: Boolean
+) {
+    val requestType = if (isTrialRequest) "ترخيص محلي مؤقت (تجريبي)" else "ترخيص محلي دائم (مدى الحياة)"
+    val msg = buildString {
+        append("مرحباً، أطلب تفعيل محلي لتطبيق الدفتر الذكي.\n")
+        append("نوع الطلب: $requestType\n")
+        append("رمز الجهاز: $deviceCode")
+    }
+    launchWhatsApp(context, msg)
+}
+
+private fun launchWhatsApp(context: Context, message: String) {
+    val uri = Uri.parse("https://api.whatsapp.com/send?phone=$SUPPORT_WHATSAPP&text=${Uri.encode(message)}")
     val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     runCatching { context.startActivity(intent) }
         .onFailure {

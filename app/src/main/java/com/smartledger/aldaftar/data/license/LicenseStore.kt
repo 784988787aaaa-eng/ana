@@ -85,6 +85,12 @@ class LicenseStore(context: Context) {
         activationRequired = false
     }
 
+    fun clearAccountMetadataOnly() {
+        accountCode = null
+        email = null
+        activationRequired = false
+    }
+
     fun clearToken() {
         token = null
     }

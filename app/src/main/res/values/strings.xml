@@ -976,4 +976,13 @@
     <string name="license_max_devices_prefix">الأجهزة: %1$d</string>
     <string name="license_active_protection_note">جميع العمليات غير محدودة ومحمية على هذا الجهاز.</string>
     <string name="license_whatsapp_unavailable">تعذر فتح واتساب على هذا الجهاز</string>
+    <string name="license_paste_from_clipboard">لصق من الحافظة</string>
+    <string name="license_import_slic_btn">استيراد ملف (.slic)</string>
+    <string name="license_whatsapp_local_request">طلب التفعيل عبر واتساب</string>
+    <string name="license_local_plan_lifetime">مدى الحياة</string>
+    <string name="license_local_plan_trial">تجريبي</string>
+    <string name="license_local_request_type_label">نوع الترخيص المطلوب:</string>
+    <string name="license_toast_clipboard_empty">الحافظة فارغة</string>
+    <string name="license_toast_slic_empty">ملف الترخيص فارغ أو غير صالح</string>
+    <string name="license_toast_slic_read_failed">تعذر قراءة ملف الترخيص</string>
 </resources>

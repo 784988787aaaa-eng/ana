@@ -17,15 +17,18 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
 
-class LicenseRepository(private val context: Context) {
+class LicenseRepository(
+    private val context: Context,
+    private val crypto: LicenseCrypto = LicenseCrypto(context)
+) {
     companion object {
         const val TRIAL_LIMIT = 100
         private const val VERIFY_DAYS = 30L * 24 * 60 * 60 * 1000
+        private const val CLOCK_ROLLBACK_TOLERANCE_MS = 5L * 60 * 1000
     }
 
     private val store = LicenseStore(context)
-    private val crypto = LicenseCrypto(context)
-    private val device = DeviceIdentity()
+    private val device = DeviceIdentity(context)
     private val creationMutex = Mutex()
 
     private val _onLicenseRequired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -66,6 +69,7 @@ class LicenseRepository(private val context: Context) {
                 "device_replaced" -> RevocationReason.DEVICE_REPLACED
                 "admin_revoked" -> RevocationReason.ADMIN_REVOKED
                 "trial_expired" -> RevocationReason.TRIAL_EXPIRED
+                "clock_rolled_back" -> RevocationReason.CLOCK_ROLLED_BACK
                 else -> RevocationReason.NONE
             }
             val status = if (revReason == RevocationReason.TRIAL_EXPIRED) {
@@ -118,37 +122,86 @@ class LicenseRepository(private val context: Context) {
 
     fun deviceFingerprint(): String = device.fingerprint()
 
-    fun applySignedToken(token: String): LicenseSnapshot {
-        val body = crypto.verify(token)
-        require(body.optString("product") == "SMARTLEDGER") { "الترخيص يخص منتجاً آخر" }
-        val type = LicenseType.valueOf(body.getString("type"))
-        if (type == LicenseType.LOCAL) {
-            require(body.getString("deviceCode") == device.deviceCode()) { "الترخيص غير مرتبط بهذا الجهاز" }
-        }
-        if (type == LicenseType.ACCOUNT) {
-            require(body.optString("accountCode").isNotBlank()) { "ترخيص الحساب ناقص" }
-            require(body.optString("deviceFingerprint") == device.fingerprint()) { "جلسة الترخيص لا تخص هذا الجهاز" }
+    fun applySignedToken(token: String, now: Long = System.currentTimeMillis()): LicenseSnapshot {
+        val cleanToken = crypto.sanitizeToken(token)
+        val body = crypto.verify(cleanToken)
+        require(body.optString("product") == LicenseCrypto.PRODUCT_SMARTLEDGER) {
+            "الترخيص يخص منتجاً آخر"
         }
 
-        val planStr = body.optString("licenseType", body.optString("plan", "LIFETIME")).uppercase()
-        val trialEndsAt = body.optLong("trialEndsAt", 0L).takeIf { it > 0 }
+        val rawType = body.optString("type").trim().uppercase()
+        val type = runCatching { LicenseType.valueOf(rawType) }
+            .getOrElse { throw IllegalArgumentException("نوع الترخيص غير صالح") }
+
+        val planStr = body.optString("plan", body.optString("licenseType")).trim().uppercase()
+        require(planStr == "LIFETIME" || planStr == "TRIAL") {
+            "خطة الترخيص غير صالحة"
+        }
+        val planEnum = if (planStr == "TRIAL") LicensePlan.TRIAL else LicensePlan.LIFETIME
+
+        val version = body.optInt("v", 0)
+        val licenseId = body.optString("licenseId").trim()
+        val iat = body.optLong("iat", 0L)
+
+        if (type == LicenseType.LOCAL) {
+            require(version >= 1) { "إصدار الترخيص غير مدعوم أو ناقص" }
+            require(licenseId.isNotBlank()) { "معرف الترخيص مفقود" }
+            require(iat > 0L) { "تاريخ إصدار الترخيص مفقود أو غير صالح" }
+
+            val rawTokenDeviceCode = body.optString("deviceCode")
+            require(rawTokenDeviceCode.isNotBlank()) { "رمز الجهاز مفقود في ملف أو كود الترخيص" }
+            val normalizedTokenDevice = DeviceIdentity.normalizeDeviceCode(rawTokenDeviceCode)
+            val currentDeviceCode = DeviceIdentity.normalizeDeviceCode(device.deviceCode())
+            require(DeviceIdentity.isValidDeviceCode(normalizedTokenDevice)) {
+                "صيغة رمز الجهاز داخل الترخيص غير صالحة"
+            }
+            require(normalizedTokenDevice == currentDeviceCode) {
+                "الترخيص لا يخص هذا الجهاز. رمز جهازك: $currentDeviceCode"
+            }
+        } else {
+            if (body.has("v")) {
+                require(version >= 1) { "إصدار الترخيص غير مدعوم" }
+            }
+            require(body.optString("accountCode").isNotBlank()) { "ترخيص الحساب ناقص" }
+            require(body.optString("deviceFingerprint") == device.fingerprint()) {
+                "جلسة الترخيص لا تخص هذا الجهاز"
+            }
+        }
+
+        val trialEndsAt = body.optLong("trialEndsAt", 0L).takeIf { it > 0L }
+        if (planEnum == LicensePlan.TRIAL) {
+            require(trialEndsAt != null) { "تاريخ انتهاء الفترة التجريبية مفقود" }
+            if (iat > 0L) {
+                require(trialEndsAt > iat) { "تاريخ انتهاء الفترة التجريبية غير صالح" }
+            }
+            require(now < trialEndsAt) { "انتهت مدة هذا الترخيص التجريبي ولا يمكن تفعيله" }
+        }
+
+        val clockRolledBack = (type == LicenseType.ACCOUNT || (type == LicenseType.LOCAL && planEnum == LicensePlan.TRIAL)) &&
+            store.lastSeenAt > 0L && now + CLOCK_ROLLBACK_TOLERANCE_MS < store.lastSeenAt
+        check(!clockRolledBack) { "تم اكتشاف تراجع في ساعة الجهاز. يرجى ضبط التاريخ والوقت الصحيحين ثم المحاولة مجدداً" }
+
+        val active = body.optBoolean("active", true)
+        val revoked = body.optBoolean("revoked", false)
+        require(active && !revoked) { "هذا الترخيص موقوف أو ملغى" }
+
         val maxDev = body.optInt("maxDevices", 1).coerceAtLeast(1)
 
-        store.token = token
+        // All validation passed before mutating persistent state so an invalid/tampered token
+        // never overwrites an existing valid license.
+        store.token = cleanToken
         store.serverRevoked = false
         store.revocationReason = null
         store.revocationMessage = null
         store.activationRequired = false
         store.plan = planStr
         store.maxDevices = maxDev
-        if (trialEndsAt != null) {
-            store.trialEndsAt = trialEndsAt
-        }
+        store.trialEndsAt = trialEndsAt ?: 0L
         store.accountCode = body.optString("accountCode").takeIf { it.isNotBlank() }
         store.email = body.optString("email").takeIf { it.isNotBlank() }
-        store.lastVerifiedAt = System.currentTimeMillis()
+        store.lastVerifiedAt = now
 
-        return parse(body, System.currentTimeMillis())
+        return parse(body, now)
     }
 
     /**
@@ -192,16 +245,19 @@ class LicenseRepository(private val context: Context) {
         }
     }
 
-
     fun supportCodes(): Pair<String, String> {
         val account = store.accountCode ?: "غير مرتبط"
         val request = "RQ-" + UUID.randomUUID().toString().replace("-", "").take(4).uppercase() + "-" +
-                UUID.randomUUID().toString().replace("-", "").take(2).uppercase()
+            UUID.randomUUID().toString().replace("-", "").take(2).uppercase()
         return account to request
     }
 
     fun signOutAccount() {
         val state = snapshot()
+        if (state.type == LicenseType.LOCAL) {
+            store.clearAccountMetadataOnly()
+            return
+        }
         if (state.type == LicenseType.ACCOUNT) {
             store.clearToken()
         }
@@ -279,8 +335,8 @@ class LicenseRepository(private val context: Context) {
     suspend fun activateWithAccountOrCode(activationInput: String, email: String? = null): LicenseSnapshot = withContext(Dispatchers.IO) {
         val trimmed = activationInput.trim()
 
-        // 1. If it's directly a signed JWT token
-        if (trimmed.startsWith("ey") && trimmed.contains(".")) {
+        // 1. If it's directly a signed local or JWT token
+        if (trimmed.startsWith("${LicenseCrypto.SLK1_PREFIX}.") || (trimmed.startsWith("ey") && trimmed.contains("."))) {
             return@withContext applySignedToken(trimmed)
         }
 
@@ -436,17 +492,48 @@ class LicenseRepository(private val context: Context) {
     }
 
     private fun parse(body: JSONObject, now: Long): LicenseSnapshot {
-        val type = LicenseType.valueOf(body.getString("type"))
-        val planStr = body.optString("licenseType", body.optString("plan", "LIFETIME")).uppercase()
+        require(body.optString("product") == LicenseCrypto.PRODUCT_SMARTLEDGER) {
+            "الترخيص يخص منتجاً آخر"
+        }
+        val type = LicenseType.valueOf(body.getString("type").trim().uppercase())
+        val planStr = body.optString("plan", body.optString("licenseType", "")).trim().uppercase()
+        require(planStr == "LIFETIME" || planStr == "TRIAL") { "خطة الترخيص غير صالحة" }
         val planEnum = if (planStr == "TRIAL") LicensePlan.TRIAL else LicensePlan.LIFETIME
+
+        if (type == LicenseType.LOCAL) {
+            require(body.optInt("v", 0) >= 1) { "إصدار الترخيص غير مدعوم" }
+            require(body.optString("licenseId").isNotBlank()) { "معرف الترخيص مفقود" }
+            val iat = body.optLong("iat", 0L)
+            require(iat > 0L) { "تاريخ إصدار الترخيص غير صالح" }
+            val normalizedTokenDevice = DeviceIdentity.normalizeDeviceCode(body.optString("deviceCode"))
+            val currentDevice = DeviceIdentity.normalizeDeviceCode(device.deviceCode())
+            require(DeviceIdentity.isValidDeviceCode(normalizedTokenDevice) && normalizedTokenDevice == currentDevice) {
+                "الترخيص لا يخص هذا الجهاز"
+            }
+        } else {
+            require(body.optString("accountCode").isNotBlank()) { "ترخيص الحساب ناقص" }
+            require(body.optString("deviceFingerprint") == device.fingerprint()) {
+                "جلسة الترخيص لا تخص هذا الجهاز"
+            }
+        }
+
         val active = body.optBoolean("active", true)
         val maxDevices = body.optInt("maxDevices", 1).coerceAtLeast(1)
-        val trialEndsAt = body.optLong("trialEndsAt", 0L).takeIf { it > 0 }
+        val trialEndsAt = body.optLong("trialEndsAt", 0L).takeIf { it > 0L }
+        if (planEnum == LicensePlan.TRIAL) {
+            require(trialEndsAt != null) { "تاريخ انتهاء الفترة التجريبية مفقود" }
+            val iat = body.optLong("iat", 0L)
+            if (iat > 0L) {
+                require(trialEndsAt > iat) { "تاريخ انتهاء الفترة التجريبية غير صالح" }
+            }
+        }
+
         val offlineUntil = body.optLong("offlineUntil", if (type == LicenseType.LOCAL) Long.MAX_VALUE else now + VERIFY_DAYS)
         val revoked = body.optBoolean("revoked", false)
         val isExpired = planEnum == LicensePlan.TRIAL && trialEndsAt != null && now >= trialEndsAt
 
-        val clockRolledBack = type == LicenseType.ACCOUNT && store.lastSeenAt > 0L && now + 5 * 60 * 1000L < store.lastSeenAt
+        val clockRolledBack = (type == LicenseType.ACCOUNT || (type == LicenseType.LOCAL && planEnum == LicensePlan.TRIAL)) &&
+            store.lastSeenAt > 0L && now + CLOCK_ROLLBACK_TOLERANCE_MS < store.lastSeenAt
         if (now >= store.lastSeenAt) store.lastSeenAt = now
 
         val status = when {
@@ -457,6 +544,21 @@ class LicenseRepository(private val context: Context) {
             else -> LicenseStatus.ACTIVE
         }
 
+        val revocationReason = when {
+            revoked -> RevocationReason.ADMIN_REVOKED
+            isExpired -> RevocationReason.TRIAL_EXPIRED
+            clockRolledBack -> RevocationReason.CLOCK_ROLLED_BACK
+            else -> RevocationReason.NONE
+        }
+
+        val revocationMessage = when (revocationReason) {
+            RevocationReason.CLOCK_ROLLED_BACK ->
+                "تم اكتشاف تراجع في ساعة الجهاز. يرجى ضبط التاريخ والوقت الصحيحين للمتابعة."
+            RevocationReason.TRIAL_EXPIRED ->
+                "انتهت الفترة التجريبية لهذا الترخيص."
+            else -> null
+        }
+
         return LicenseSnapshot(
             type = type,
             plan = planEnum,
@@ -464,7 +566,7 @@ class LicenseRepository(private val context: Context) {
             licenseId = body.optString("licenseId").takeIf { it.isNotBlank() },
             accountCode = body.optString("accountCode").takeIf { it.isNotBlank() },
             email = body.optString("email").takeIf { it.isNotBlank() },
-            deviceCode = body.optString("deviceCode").takeIf { it.isNotBlank() } ?: device.deviceCode(),
+            deviceCode = body.optString("deviceCode").takeIf { it.isNotBlank() }?.let(DeviceIdentity::normalizeDeviceCode) ?: device.deviceCode(),
             lastVerifiedAt = store.lastVerifiedAt,
             offlineUntil = offlineUntil,
             trialEndsAt = trialEndsAt,
@@ -473,7 +575,8 @@ class LicenseRepository(private val context: Context) {
             } else null,
             maxDevices = maxDevices,
             active = active,
-            revocationReason = if (revoked) RevocationReason.ADMIN_REVOKED else RevocationReason.NONE,
+            revocationReason = revocationReason,
+            revocationMessage = revocationMessage,
             trialUsed = store.trialUsed
         )
     }
