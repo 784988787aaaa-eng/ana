@@ -10,6 +10,7 @@ import android.text.Layout
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.serialization.pdf.PdfDrawingUtils.drawArabicText
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.state.CustomerUiState
 import java.math.BigDecimal
@@ -19,9 +20,9 @@ import java.util.Locale
 
 object PdfPageRenderer {
 
-    private val dayFormatAr = SimpleDateFormat("EEEE", Locale("ar"))
+    private val dayFormatAr = SimpleDateFormat("EEEE", WesternDigits.ARABIC_LATN_LOCALE)
     private val dateFormatEn = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
-    private val timeFormatAr = SimpleDateFormat("hh:mm a", Locale("ar"))
+    private val timeFormatAr = SimpleDateFormat("hh:mm a", WesternDigits.ARABIC_LATN_LOCALE)
 
     private val paintHeaderBg = Paint().apply {
         color = Color.parseColor(PdfColors.HEADER_BG)
@@ -97,13 +98,13 @@ object PdfPageRenderer {
     }
 
     @Synchronized
-    fun formatDayAr(date: Date): String = dayFormatAr.format(date)
+    fun formatDayAr(date: Date): String = WesternDigits.normalize(dayFormatAr.format(date))
 
     @Synchronized
-    fun formatDateEn(date: Date): String = dateFormatEn.format(date)
+    fun formatDateEn(date: Date): String = WesternDigits.normalize(dateFormatEn.format(date))
 
     @Synchronized
-    fun formatTimeAr(date: Date): String = timeFormatAr.format(date)
+    fun formatTimeAr(date: Date): String = WesternDigits.normalize(timeFormatAr.format(date))
 
     fun drawTableHeader(canvas: Canvas, y: Float, context: Context, initialType: String = TransactionType.OWED_BY_THEM.value) {
         canvas.drawRect(25f, y, 570f, y + 25f, paintHeaderBg)

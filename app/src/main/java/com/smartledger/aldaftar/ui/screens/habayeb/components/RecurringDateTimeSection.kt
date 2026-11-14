@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -52,13 +53,13 @@ fun RecurringDateTimeSection(
     var selectedTab by remember { mutableStateOf(RangeTab.START) }
 
     val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH) }
-    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale("ar")) }
+    val timeFormatter = remember { SimpleDateFormat("hh:mm a", WesternDigits.ARABIC_LATN_LOCALE) }
 
     val formattedStartDate = remember(startDateMillis) {
-        dateFormatter.format(Date(startDateMillis))
+        WesternDigits.normalize(dateFormatter.format(Date(startDateMillis)))
     }
     val formattedEndDate = remember(endDateMillis) {
-        dateFormatter.format(Date(endDateMillis))
+        WesternDigits.normalize(dateFormatter.format(Date(endDateMillis)))
     }
 
     val timeCalendar = remember(hour, minute) {
@@ -93,7 +94,7 @@ fun RecurringDateTimeSection(
     ) {
         DateTimePill(
             icon = Icons.Default.Schedule,
-            text = timeFormatter.format(timeCalendar.time),
+            text = WesternDigits.normalize(timeFormatter.format(timeCalendar.time)),
             iconTint = activeThemeColor,
             onClick = {
                 selectedTab = RangeTab.START

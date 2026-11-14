@@ -6,6 +6,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.BusinessProfile
 import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import com.smartledger.aldaftar.ui.state.CustomerUiState
@@ -18,13 +19,12 @@ import java.util.Locale
 object AllCustomersExcelEngine {
 
     private const val TAG = "AllCustomersExcel"
-    private const val LOCALE_AR = "ar"
     private const val LOCALE_EN = "en"
     private const val FILE_PREFIX_ALL = "all_accounts_"
 
     private val DATE_FORMATTER_EN = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale(LOCALE_EN)) }
-    private val TIME_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", Locale(LOCALE_AR)) }
-    private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", Locale(LOCALE_AR)) }
+    private val TIME_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", WesternDigits.ARABIC_LATN_LOCALE) }
+    private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", WesternDigits.ARABIC_LATN_LOCALE) }
 
     fun generate(
         context: Context,
@@ -38,9 +38,9 @@ object AllCustomersExcelEngine {
         try {
             val bizHeader = BusinessProfileLoader.load(context, businessProfile)
             val now = Date()
-            val dayName = try { DAY_FORMATTER_AR.get().format(now) } catch (e: Exception) { "" }
-            val dateFormatted = try { DATE_FORMATTER_EN.get().format(now) } catch (e: Exception) { "" }
-            val timeFormatted = try { TIME_FORMATTER_AR.get().format(now) } catch (e: Exception) { "" }
+            val dayName = try { WesternDigits.normalize(DAY_FORMATTER_AR.get().format(now)) } catch (e: Exception) { "" }
+            val dateFormatted = try { WesternDigits.normalize(DATE_FORMATTER_EN.get().format(now)) } catch (e: Exception) { "" }
+            val timeFormatted = try { WesternDigits.normalize(TIME_FORMATTER_AR.get().format(now)) } catch (e: Exception) { "" }
             val docDateText = "$dayName $dateFormatted"
 
             val accountHeaders = listOf(

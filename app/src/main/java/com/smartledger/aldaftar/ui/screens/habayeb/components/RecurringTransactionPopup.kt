@@ -128,8 +128,13 @@ fun RecurringTransactionPopup(
 
     val nextOccFormatted = remember(nextOcc) {
         if (nextOcc != null) {
-            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd  hh:mm a", java.util.Locale.getDefault())
-            sdf.format(java.util.Date(nextOcc))
+            val sdf = java.text.SimpleDateFormat(
+                "yyyy-MM-dd  hh:mm a",
+                com.smartledger.aldaftar.presentation.formatters.WesternDigits.ARABIC_LATN_LOCALE
+            )
+            com.smartledger.aldaftar.presentation.formatters.WesternDigits.normalize(
+                sdf.format(java.util.Date(nextOcc))
+            )
         } else {
             null
         }

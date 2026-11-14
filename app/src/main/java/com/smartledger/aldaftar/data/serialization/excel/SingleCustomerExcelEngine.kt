@@ -10,6 +10,7 @@ import com.smartledger.aldaftar.data.serialization.pdf.BusinessProfileLoader
 import com.smartledger.aldaftar.data.serialization.pdf.PdfReportCalculator
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.io.File
@@ -37,12 +38,11 @@ import java.util.Locale
 object SingleCustomerExcelEngine {
 
     private const val TAG = "SingleCustomerExcel"
-    private const val LOCALE_AR = "ar"
     private const val LOCALE_EN = "en"
     private const val FILE_PREFIX = "statement_"
 
     private val DATE_FORMATTER_EN = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale(LOCALE_EN)) }
-    private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", Locale(LOCALE_AR)) }
+    private val DAY_FORMATTER_AR = ThreadLocal.withInitial { SimpleDateFormat("EEEE", WesternDigits.ARABIC_LATN_LOCALE) }
 
     /**
      * ينشئ كشف الحساب اعتماداً على آخر بيانات التطبيق كما هي، مع الحفاظ على قابلية
@@ -63,8 +63,8 @@ object SingleCustomerExcelEngine {
         try {
             val bizHeader = BusinessProfileLoader.load(context, businessProfile)
             val now = Date()
-            val dayName = try { DAY_FORMATTER_AR.get().format(now) } catch (_: Exception) { "" }
-            val dateFormatted = try { DATE_FORMATTER_EN.get().format(now) } catch (_: Exception) { "" }
+            val dayName = try { WesternDigits.normalize(DAY_FORMATTER_AR.get().format(now)) } catch (_: Exception) { "" }
+            val dateFormatted = try { WesternDigits.normalize(DATE_FORMATTER_EN.get().format(now)) } catch (_: Exception) { "" }
             val docDateText = "$dayName $dateFormatted"
 
             val isOwedToThemAccount = customer.initialType == TransactionType.OWED_TO_THEM.value
@@ -216,7 +216,7 @@ object SingleCustomerExcelEngine {
                 }
 
                 val date = Date(if (tx.timestamp > 1_000_000_000_000L) tx.timestamp else tx.timestamp * 1000)
-                val dateText = "${DAY_FORMATTER_AR.get().format(date)} ${DATE_FORMATTER_EN.get().format(date)}"
+                val dateText = WesternDigits.normalize("${DAY_FORMATTER_AR.get().format(date)} ${DATE_FORMATTER_EN.get().format(date)}")
                 val row = XlsxOpenXmlBuilder.Row(txRow, 24)
 
                 row.cell(0, index + 1, 6)

@@ -9,15 +9,14 @@ import java.util.Locale
 
 object AppDateTimeFormatter {
 
-    private val arabicLocale = Locale("ar")
-
+    private val arabicLocale: Locale = WesternDigits.ARABIC_LATN_LOCALE
 
     private val dateArabicFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", arabicLocale) }
-    private val dateDefaultFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()) }
+    private val dateDefaultFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd", arabicLocale) }
     private val dateShortFormatter = ThreadLocal.withInitial { SimpleDateFormat("yy/MM/dd", Locale.ENGLISH) }
     private val dateIsoFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH) }
     private val time12hFormatter = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", arabicLocale) }
-    private val time12hDefaultFormatter = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+    private val time12hDefaultFormatter = ThreadLocal.withInitial { SimpleDateFormat("hh:mm a", arabicLocale) }
     private val fullDateTimeArabicFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy/MM/dd hh:mm a", arabicLocale) }
     private val dayOfWeekFormatter = ThreadLocal.withInitial { SimpleDateFormat("EEEE", arabicLocale) }
     private val monthNameFormatter = ThreadLocal.withInitial { SimpleDateFormat("MMMM", arabicLocale) }
@@ -25,9 +24,8 @@ object AppDateTimeFormatter {
     private val yearMonthFormatter = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM", Locale.ENGLISH) }
     private val calendarLocal = ThreadLocal.withInitial { Calendar.getInstance() }
 
-
     fun formatDateArabic(date: Date): String {
-        return dateArabicFormatter.get().format(date)
+        return WesternDigits.normalize(dateArabicFormatter.get().format(date))
     }
 
     fun formatDateArabic(timestampSeconds: Long): String {
@@ -35,7 +33,7 @@ object AppDateTimeFormatter {
     }
 
     fun formatDateDefault(date: Date): String {
-        return dateDefaultFormatter.get().format(date)
+        return WesternDigits.normalize(dateDefaultFormatter.get().format(date))
     }
 
     fun formatDateDefault(timestampSeconds: Long): String {
@@ -43,7 +41,7 @@ object AppDateTimeFormatter {
     }
 
     fun formatShortDate(date: Date): String {
-        return dateShortFormatter.get().format(date)
+        return WesternDigits.normalize(dateShortFormatter.get().format(date))
     }
 
     fun formatShortDate(timestampSeconds: Long): String {
@@ -51,16 +49,15 @@ object AppDateTimeFormatter {
     }
 
     fun formatDateIso(date: Date): String {
-        return dateIsoFormatter.get().format(date)
+        return WesternDigits.normalize(dateIsoFormatter.get().format(date))
     }
 
     fun formatDateIso(timestampSeconds: Long): String {
         return formatDateIso(Date(normalizeToMillis(timestampSeconds)))
     }
 
-
     fun formatTime12h(date: Date): String {
-        return time12hDefaultFormatter.get().format(date)
+        return WesternDigits.normalize(time12hDefaultFormatter.get().format(date))
     }
 
     fun formatTime12h(timestampSeconds: Long): String {
@@ -68,11 +65,11 @@ object AppDateTimeFormatter {
     }
 
     fun formatTime12hArabic(date: Date): String {
-        return time12hFormatter.get().format(date)
+        return WesternDigits.normalize(time12hFormatter.get().format(date))
     }
 
     fun formatFullDateTime(date: Date): String {
-        return fullDateTimeArabicFormatter.get().format(date)
+        return WesternDigits.normalize(fullDateTimeArabicFormatter.get().format(date))
     }
 
     fun formatFullDateTime(timestampMillisOrSeconds: Long): String {
@@ -85,9 +82,8 @@ object AppDateTimeFormatter {
         }
     }
 
-
     fun getDayOfWeekArabic(timestampSeconds: Long): String =
-        dayOfWeekFormatter.get().format(Date(normalizeToMillis(timestampSeconds)))
+        WesternDigits.normalize(dayOfWeekFormatter.get().format(Date(normalizeToMillis(timestampSeconds))))
 
     fun getDayOfWeekResId(timestampSeconds: Long): Int {
         val cal = calendarLocal.get().apply {
@@ -112,28 +108,28 @@ object AppDateTimeFormatter {
 
     fun getMonthNameArabic(timestampSeconds: Long): String {
         val date = Date(normalizeToMillis(timestampSeconds))
-        return "${monthNameFormatter.get().format(date)} ${yearOnlyFormatter.get().format(date)}"
+        return WesternDigits.normalize("${monthNameFormatter.get().format(date)} ${yearOnlyFormatter.get().format(date)}")
     }
 
     fun getYearMonthKey(timestampSeconds: Long): String =
-        yearMonthFormatter.get().format(Date(normalizeToMillis(timestampSeconds)))
+        WesternDigits.normalize(yearMonthFormatter.get().format(Date(normalizeToMillis(timestampSeconds))))
 
     fun formatDurationBetween(newerSec: Long, olderSec: Long, context: Context? = null): String {
         val diffSec = (newerSec - olderSec).coerceAtLeast(0)
         val days = diffSec / 86400
         val hours = (diffSec % 86400) / 3600
 
-        return when {
+        val raw = when {
             days > 30 -> context?.getString(R.string.date_diff_over_month).orEmpty()
             days > 1 -> context?.getString(R.string.date_diff_days_pattern, days).orEmpty()
             days == 1L -> context?.getString(R.string.date_diff_one_day).orEmpty()
             hours > 1 -> context?.getString(R.string.date_diff_hours_pattern, hours).orEmpty()
             else -> context?.getString(R.string.date_diff_very_close).orEmpty()
         }
+        return WesternDigits.normalize(raw)
     }
 
     private fun normalizeToMillis(timestamp: Long): Long {
         return if (timestamp in 1..999999999999L) timestamp * 1000L else timestamp
     }
 }
-

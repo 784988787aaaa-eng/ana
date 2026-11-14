@@ -8,10 +8,10 @@ import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.math.BigDecimal
-import java.util.Locale
 import org.json.JSONObject
 
 @androidx.compose.runtime.Immutable
@@ -176,7 +176,7 @@ object TrashItemParser {
 
                     val displayName = if (resolvedName.isNotEmpty()) resolvedName else strings.unknownText
                     subText = try {
-                        String.format(Locale.getDefault(), strings.customerLabelText, "$displayName ($typeAr)")
+                        WesternDigits.format(strings.customerLabelText, "$displayName ($typeAr)")
                     } catch (e: Exception) {
                         "تابع لحساب: $displayName ($typeAr)"
                     }
@@ -206,8 +206,7 @@ object TrashItemParser {
                             val rateDec = HabayebMathHelper.toBigDecimal(rateStr)
                             exchangeRateVal = HabayebMathHelper.formatRate(rateDec)
                             equivalentAmountTextVal = "${HabayebMathHelper.formatSmart(equivalentValDec)} $baseCurrencyCode"
-                            exchangeInfoText = String.format(
-                                Locale.getDefault(),
+                            exchangeInfoText = WesternDigits.format(
                                 strings.equivalentInfoTemplate,
                                 equivalentAmountTextVal,
                                 exchangeRateVal
@@ -268,7 +267,7 @@ object TrashItemParser {
                     val txsArray = jsonObj.optJSONArray("transactions")
                     val txCount = txsArray?.length() ?: 0
                     subText = try {
-                        String.format(Locale.getDefault(), strings.customerBundleDescTemplate, txCount)
+                        WesternDigits.format(strings.customerBundleDescTemplate, txCount)
                     } catch (e: Exception) {
                         "عدد المعاملات: $txCount"
                     }

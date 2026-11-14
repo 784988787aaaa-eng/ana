@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import androidx.work.WorkManager
 import androidx.work.Constraints
 import android.content.Context
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.viewmodel.AppViewModelFactory
 import com.smartledger.aldaftar.data.backup.BackupScheduler
 import java.util.concurrent.TimeUnit
@@ -25,7 +26,13 @@ class FinanceApplication : Application(), Configuration.Provider {
         AppViewModelFactory(this, container)
     }
 
+    override fun attachBaseContext(base: Context?) {
+        WesternDigits.applyAppWesternLocale()
+        super.attachBaseContext(base?.let { WesternDigits.wrapContextWithWesternDigits(it) })
+    }
+
     override fun onCreate() {
+        WesternDigits.applyAppWesternLocale()
         super.onCreate()
         CoroutineScope(Dispatchers.Default).launch {
             try {
