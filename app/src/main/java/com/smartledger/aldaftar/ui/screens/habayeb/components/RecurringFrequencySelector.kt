@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 import java.util.Calendar
 
@@ -100,7 +102,8 @@ fun RecurringFrequencySelector(
                     text = label,
                     color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily
                 )
             }
         }
@@ -170,6 +173,7 @@ private fun DailyInfoBanner() {
         Text(
             text = stringResource(id = R.string.habayeb_recurring_daily_desc),
             fontSize = 11.sp,
+            fontFamily = CairoFontFamily,
             color = MaterialTheme.colorScheme.onSecondaryContainer,
             lineHeight = 15.sp
         )
@@ -209,7 +213,8 @@ private fun WeeklyDayPicker(
                         text = name,
                         color = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily
                     )
                 }
             }
@@ -251,7 +256,9 @@ private fun MonthlyDayGrid(
                         text = dayNum.toString(),
                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
+                        style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum")
                     )
                 }
             }

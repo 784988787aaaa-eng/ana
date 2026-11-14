@@ -16,11 +16,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.math.BigDecimal
 
 @Composable
@@ -74,18 +76,14 @@ fun ExchangeRateModifyDialog(
         Pair(curr, isRelevant)
     }
 
-    Dialog(onDismissRequest = {
+    MizanAnimatedDialog(onDismissRequest = {
         onDismissRequest()
         showRateSetupOverlay = false
-    }) {
+    }) { _ ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier
-                    .width(260.dp)
-                    .padding(8.dp)
+            MizanDialogCard(
+                maxWidth = 280.dp,
+                contentPadding = PaddingValues(8.dp)
             ) {
                 Crossfade(targetState = showRateSetupOverlay, label = "RateModifyTransition") { isSetup ->
                     if (isSetup) {
@@ -110,7 +108,7 @@ fun ExchangeRateModifyDialog(
                         if (isExchangeRateRelevant) {
                             Row(
                                 modifier = Modifier
-                                    .padding(8.dp)
+                                    .padding(4.dp)
                                     .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
@@ -135,13 +133,14 @@ fun ExchangeRateModifyDialog(
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(38.dp),
+                                            .height(40.dp),
                                         contentPadding = PaddingValues(0.dp)
                                     ) {
                                         Text(
                                             text = stringResource(id = R.string.habayeb_activate_exchange),
-                                            fontSize = 11.sp,
+                                            fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
+                                            fontFamily = CairoFontFamily,
                                             color = MaterialTheme.colorScheme.onTertiary
                                         )
                                     }
@@ -157,13 +156,14 @@ fun ExchangeRateModifyDialog(
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(38.dp),
+                                            .height(40.dp),
                                         contentPadding = PaddingValues(0.dp)
                                     ) {
                                         Text(
                                             text = stringResource(id = R.string.habayeb_deactivate_exchange),
-                                            fontSize = 11.sp,
+                                            fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
+                                            fontFamily = CairoFontFamily,
                                             color = MaterialTheme.colorScheme.onError
                                         )
                                     }

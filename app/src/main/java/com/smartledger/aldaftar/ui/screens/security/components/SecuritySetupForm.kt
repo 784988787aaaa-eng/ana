@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 
 private const val TAG = "SecuritySetupForm"
@@ -96,6 +96,7 @@ fun SecuritySetupForm(
         ) {
             Text(
                 text = stringResource(id = R.string.sec_setup_title),
+                fontFamily = CairoFontFamily,
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -116,8 +117,8 @@ fun SecuritySetupForm(
                         }
                     }
                 },
-                label = { Text(stringResource(id = R.string.sec_label_code), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontSize = 12.sp) },
+                label = { Text(stringResource(id = R.string.sec_label_code), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_code), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(
@@ -138,6 +139,8 @@ fun SecuritySetupForm(
                     }
                 },
                 textStyle = LocalTextStyle.current.copy(
+                    fontFamily = CairoFontFamily,
+                    fontFeatureSettings = "tnum",
                     textAlign = TextAlign.Start,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
@@ -169,8 +172,8 @@ fun SecuritySetupForm(
                         }
                     }
                 },
-                label = { Text(stringResource(id = R.string.sec_label_confirm), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontSize = 12.sp) },
+                label = { Text(stringResource(id = R.string.sec_label_confirm), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(
@@ -191,6 +194,8 @@ fun SecuritySetupForm(
                     }
                 },
                 textStyle = LocalTextStyle.current.copy(
+                    fontFamily = CairoFontFamily,
+                    fontFeatureSettings = "tnum",
                     textAlign = TextAlign.Start,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
@@ -219,6 +224,7 @@ fun SecuritySetupForm(
 
             Text(
                 text = stringResource(id = R.string.sec_recovery_title),
+                fontFamily = CairoFontFamily,
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -230,9 +236,9 @@ fun SecuritySetupForm(
 
             OutlinedTextField(
                 value = recoveryPhrase,
-                onValueChange = onRecoveryPhraseChange,
-                label = { Text(stringResource(id = R.string.sec_label_recovery), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_recovery), fontSize = 12.sp) },
+                onValueChange = { onRecoveryPhraseChange(it.toEnglishDigits()) },
+                label = { Text(stringResource(id = R.string.sec_label_recovery), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_recovery), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(
@@ -243,6 +249,7 @@ fun SecuritySetupForm(
                     )
                 },
                 textStyle = LocalTextStyle.current.copy(
+                    fontFamily = CairoFontFamily,
                     textAlign = TextAlign.Start,
                     fontSize = 14.sp
                 ),
@@ -263,9 +270,9 @@ fun SecuritySetupForm(
 
             OutlinedTextField(
                 value = recoveryHint,
-                onValueChange = onRecoveryHintChange,
-                label = { Text(stringResource(id = R.string.sec_label_hint), fontSize = 12.sp) },
-                placeholder = { Text(stringResource(id = R.string.sec_placeholder_hint), fontSize = 12.sp) },
+                onValueChange = { onRecoveryHintChange(it.toEnglishDigits()) },
+                label = { Text(stringResource(id = R.string.sec_label_hint), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                placeholder = { Text(stringResource(id = R.string.sec_placeholder_hint), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(
@@ -276,6 +283,7 @@ fun SecuritySetupForm(
                     )
                 },
                 textStyle = LocalTextStyle.current.copy(
+                    fontFamily = CairoFontFamily,
                     textAlign = TextAlign.Start,
                     fontSize = 14.sp
                 ),
@@ -310,6 +318,7 @@ fun SecuritySetupForm(
             ) {
                 Text(
                     text = stringResource(id = R.string.sec_checkbox_ack),
+                    fontFamily = CairoFontFamily,
                     fontSize = 11.sp,
                     color = ackText,
                     textAlign = TextAlign.Start,
@@ -363,6 +372,7 @@ fun SecuritySetupForm(
                 } else {
                     Text(
                         text = stringResource(id = R.string.sec_btn_activate),
+                        fontFamily = CairoFontFamily,
                         color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp

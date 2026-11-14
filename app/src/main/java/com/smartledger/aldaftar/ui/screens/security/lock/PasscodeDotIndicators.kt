@@ -1,8 +1,8 @@
 package com.smartledger.aldaftar.ui.screens.security.lock
 
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -38,10 +38,10 @@ fun PasscodeDotIndicators(
         for (i in 0 until totalDots) {
             val filled = enteredLength > i
             val dotScale by animateFloatAsState(
-                targetValue = if (filled) 1.25f else 1.0f,
-                animationSpec = spring(
-                    stiffness = Spring.StiffnessHigh,
-                    dampingRatio = Spring.DampingRatioMediumBouncy
+                targetValue = if (filled) 1.2f else 1.0f,
+                animationSpec = tween(
+                    durationMillis = 75,
+                    easing = FastOutSlowInEasing
                 ),
                 label = "dotScale_$i"
             )

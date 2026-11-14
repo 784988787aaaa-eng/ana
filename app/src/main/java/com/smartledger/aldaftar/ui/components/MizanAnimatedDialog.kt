@@ -95,7 +95,7 @@ fun MizanAnimatedDialog(
             ) + scaleIn(
                 initialScale = MizanDialogTokens.enterScale,
                 animationSpec = tween(
-                    durationMillis = MizanDialogTokens.enterDuration,
+                    durationMillis = MizanDialogTokens.scaleEnterDuration,
                     easing = FastOutSlowInEasing
                 )
             ),

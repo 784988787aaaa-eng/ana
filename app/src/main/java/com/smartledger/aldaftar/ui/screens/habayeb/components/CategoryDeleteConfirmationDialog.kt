@@ -24,6 +24,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
@@ -59,6 +60,7 @@ fun CategoryDeleteConfirmationDialog(
                         stringResource(R.string.habayeb_category_delete_only),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium,
+                        fontFamily = CairoFontFamily,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
@@ -77,6 +79,7 @@ fun CategoryDeleteConfirmationDialog(
                         stringResource(R.string.habayeb_category_delete_all_accounts),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold,
+                        fontFamily = CairoFontFamily,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
@@ -92,6 +95,7 @@ fun CategoryDeleteConfirmationDialog(
                         stringResource(R.string.habayeb_category_delete_cancel),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis

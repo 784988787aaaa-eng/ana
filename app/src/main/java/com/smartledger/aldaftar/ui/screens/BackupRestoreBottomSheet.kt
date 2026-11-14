@@ -62,6 +62,7 @@ import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.MizanSelectionBar
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.helper.VibrationHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import java.io.File
@@ -361,11 +362,12 @@ fun BackupRestoreBottomSheet(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
                         ) {
                             Text(
-                                text = it,
+                                text = WesternDigits.normalize(it),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                                 fontSize = 11.5.sp,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Center
                             )
@@ -447,6 +449,7 @@ fun BackupRestoreBottomSheet(
                                 text = stringResource(R.string.dialog_wipe_desc),
                                 fontSize = 12.5.sp,
                                 lineHeight = 19.sp,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
@@ -513,11 +516,13 @@ private fun BackupMainHeader(
                     text = stringResource(R.string.backup_screen_title),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = stringResource(R.string.backup_subtitle),
                     fontSize = 10.5.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -553,6 +558,7 @@ private fun BackupMainHeader(
                     text = stringResource(if (connected) R.string.backup_status_connected else R.string.backup_status_disconnected),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
                     color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -612,12 +618,14 @@ private fun CloudSyncCard(
                             text = stringResource(R.string.backup_cloud_title),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.backup_cloud_hero_desc),
                             fontSize = 10.5.sp,
                             lineHeight = 15.sp,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -638,7 +646,8 @@ private fun CloudSyncCard(
                     Text(
                         text = stringResource(R.string.backup_btn_connect_google),
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily
                     )
                 }
 
@@ -655,6 +664,7 @@ private fun CloudSyncCard(
                             text = stringResource(if (manualOptionsOpen) R.string.backup_manual_toggle_hide else R.string.backup_manual_fallback_link),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -701,6 +711,7 @@ private fun CloudSyncCard(
                                     text = email ?: stringResource(R.string.backup_cloud_title),
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -709,6 +720,7 @@ private fun CloudSyncCard(
                                     text = stringResource(R.string.backup_cloud_active_status),
                                     fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Medium,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -756,6 +768,7 @@ private fun CloudSyncCard(
                                 text = stringResource(R.string.backup_btn_cloud_upload),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -782,6 +795,7 @@ private fun CloudSyncCard(
                                 text = stringResource(R.string.backup_btn_restore_latest),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -828,11 +842,13 @@ private fun CloudSyncCard(
                                     text = stringResource(R.string.backup_history_nav_title),
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = stringResource(R.string.backup_history_nav_desc),
                                     fontSize = 10.5.sp,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -893,11 +909,13 @@ private fun LocalBackupCard(
                         text = stringResource(R.string.backup_local_section_title),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.backup_local_section_desc),
                         fontSize = 10.5.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -928,6 +946,7 @@ private fun LocalBackupCard(
                             text = stringResource(R.string.backup_btn_local_export),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -960,6 +979,7 @@ private fun LocalBackupCard(
                             text = stringResource(R.string.backup_btn_local_import),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1014,11 +1034,13 @@ private fun SensitiveResetCard(
                         text = stringResource(R.string.backup_reset_section_title),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(
                         text = stringResource(R.string.backup_reset_section_desc),
                         fontSize = 10.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1036,7 +1058,8 @@ private fun SensitiveResetCard(
                 Text(
                     text = stringResource(R.string.backup_reset_action_btn),
                     fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily
                 )
             }
         }
@@ -1096,6 +1119,8 @@ private fun DirectCloudRestoreDialog(
                             text = formattedDateTime,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            style = TextStyle(fontFeatureSettings = "tnum"),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Surface(
@@ -1107,6 +1132,8 @@ private fun DirectCloudRestoreDialog(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
+                                style = TextStyle(fontFeatureSettings = "tnum"),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -1117,6 +1144,7 @@ private fun DirectCloudRestoreDialog(
                     text = stringResource(R.string.dialog_restore_desc),
                     fontSize = 12.5.sp,
                     lineHeight = 19.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -1154,6 +1182,7 @@ private fun OperationStatusBanner(text: String) {
                 text = text,
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Medium,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -1174,16 +1203,19 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
                 text = stringResource(R.string.backup_manual_steps_title),
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = stringResource(R.string.backup_manual_step_1),
                 fontSize = 10.5.sp,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = stringResource(R.string.backup_manual_step_2),
                 fontSize = 10.5.sp,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             OutlinedButton(
@@ -1197,7 +1229,8 @@ private fun ManualConnectionCard(busy: Boolean, onConnect: () -> Unit) {
                 Text(
                     text = stringResource(R.string.backup_manual_btn),
                     fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily
                 )
             }
         }
@@ -1348,7 +1381,8 @@ private fun CloudArchiveBottomSheet(
                     Text(
                         text = stringResource(R.string.history_btn_create_new),
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily
                     )
                 }
             }
@@ -1398,6 +1432,7 @@ private fun CloudArchiveBottomSheet(
                         text = stringResource(R.string.backup_delete_single_confirm, item.name),
                         fontSize = 12.5.sp,
                         lineHeight = 19.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -1442,6 +1477,7 @@ private fun CloudArchiveBottomSheet(
                         text = stringResource(R.string.history_delete_selected_confirm),
                         fontSize = 12.5.sp,
                         lineHeight = 19.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -1492,6 +1528,7 @@ private fun ArchiveHeader(onDismiss: () -> Unit) {
                 text = stringResource(R.string.history_sheet_title),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -1532,6 +1569,8 @@ private fun ArchiveSubBar(
                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.SemiBold,
+                fontFamily = CairoFontFamily,
+                style = TextStyle(fontFeatureSettings = "tnum"),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -1603,6 +1642,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
             textStyle = TextStyle(
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Medium,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface
             ),
             singleLine = true,
@@ -1611,6 +1651,7 @@ private fun SearchHeader(search: String, onSearchChange: (String) -> Unit, onClo
                     Text(
                         text = stringResource(R.string.backup_search_hint),
                         fontSize = 12.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1681,11 +1722,15 @@ private fun CloudBackupRow(
                     text = dateText,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
+                    style = TextStyle(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = timeText,
                     fontSize = 10.5.sp,
+                    fontFamily = CairoFontFamily,
+                    style = TextStyle(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1703,6 +1748,8 @@ private fun CloudBackupRow(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.SemiBold,
+                        fontFamily = CairoFontFamily,
+                        style = TextStyle(fontFeatureSettings = "tnum"),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
                     )
@@ -1743,7 +1790,8 @@ private fun CloudBackupRow(
                             Text(
                                 text = stringResource(R.string.dialog_btn_restore),
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = CairoFontFamily
                             )
                         }
 
@@ -1796,12 +1844,14 @@ private fun EmptyCloudState(onConnect: () -> Unit) {
             text = stringResource(R.string.backup_empty_cloud_title),
             fontSize = 14.5.sp,
             fontWeight = FontWeight.Bold,
+            fontFamily = CairoFontFamily,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = stringResource(R.string.backup_empty_cloud_desc),
             fontSize = 11.5.sp,
             lineHeight = 18.sp,
+            fontFamily = CairoFontFamily,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1816,7 +1866,8 @@ private fun EmptyCloudState(onConnect: () -> Unit) {
             Text(
                 text = stringResource(R.string.backup_btn_connect_google),
                 fontSize = 12.5.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily
             )
         }
     }
@@ -1835,6 +1886,7 @@ private fun LoadingCloudState() {
         Text(
             text = stringResource(R.string.backup_loading_cloud),
             fontSize = 12.sp,
+            fontFamily = CairoFontFamily,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -1867,12 +1919,14 @@ private fun EmptyListState() {
             text = stringResource(R.string.backup_empty_list_title),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
+            fontFamily = CairoFontFamily,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = stringResource(R.string.backup_empty_list_desc),
             fontSize = 11.5.sp,
             lineHeight = 18.sp,
+            fontFamily = CairoFontFamily,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

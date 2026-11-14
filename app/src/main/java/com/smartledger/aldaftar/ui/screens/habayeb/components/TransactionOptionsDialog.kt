@@ -8,16 +8,19 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
@@ -28,6 +31,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,14 +54,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 import com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper
 import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
 private data class TransactionHeaderSummary(
@@ -90,22 +97,18 @@ fun TransactionOptionsDialog(
 ) {
     val mizanColors = MaterialTheme.mizanColors
     var showShareMenu by remember { mutableStateOf(false) }
-    val isPhoneValid = remember(customerPhone) { CustomerPhoneHelper.isValidDestination(customerPhone) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    MizanAnimatedDialog(onDismissRequest = onDismiss) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            MizanDialogCard(
+                maxWidth = MizanDialogTokens.compactMaxWidth,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -115,10 +118,10 @@ fun TransactionOptionsDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box {
-                             IconButton(
+                            IconButton(
                                 onClick = { showShareMenu = true },
                                 modifier = Modifier.size(44.dp)
-                             ) {
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Share,
                                     contentDescription = stringResource(id = R.string.share_label),
@@ -126,13 +129,20 @@ fun TransactionOptionsDialog(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                            
+
                             DropdownMenu(
                                 expanded = showShareMenu,
                                 onDismissRequest = { showShareMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.share_whatsapp), fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                    text = {
+                                        Text(
+                                            stringResource(id = R.string.share_whatsapp),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            fontFamily = CairoFontFamily
+                                        )
+                                    },
                                     onClick = {
                                         showShareMenu = false
                                         onWhatsAppShare()
@@ -147,7 +157,14 @@ fun TransactionOptionsDialog(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.share_sms), fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                    text = {
+                                        Text(
+                                            stringResource(id = R.string.share_sms),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            fontFamily = CairoFontFamily
+                                        )
+                                    },
                                     onClick = {
                                         showShareMenu = false
                                         onSmsShare()
@@ -168,6 +185,7 @@ fun TransactionOptionsDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier
+                                .weight(1f, fill = false)
                                 .background(
                                     color = MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(12.dp)
@@ -202,11 +220,13 @@ fun TransactionOptionsDialog(
                                 text = headerSummary.shortDesc,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = " • ",
                                 fontSize = 12.sp,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                 modifier = Modifier.padding(horizontal = 4.dp)
                             )
@@ -214,7 +234,21 @@ fun TransactionOptionsDialog(
                                 text = "${headerSummary.formattedAmount} ${headerSummary.currencySymbol}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
+                                fontFamily = CairoFontFamily,
+                                style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                 color = headerSummary.amountColor
+                            )
+                        }
+
+                        IconButton(
+                            onClick = dismissDialog,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(id = R.string.desc_close),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -255,6 +289,7 @@ fun TransactionOptionsDialog(
                                     text = stringResource(id = R.string.habayeb_recurring_warning_banner),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium,
+                                    fontFamily = CairoFontFamily,
                                     color = warningText,
                                     lineHeight = 14.sp
                                 )
@@ -285,6 +320,8 @@ fun TransactionOptionsDialog(
                                     text = stringResource(id = R.string.habayeb_auto_generated_desc, parentSeqNumber),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium,
+                                    fontFamily = CairoFontFamily,
+                                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                     color = infoText,
                                     lineHeight = 14.sp
                                 )
@@ -382,6 +419,7 @@ fun ActionCircleItem(
             text = title,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
+            fontFamily = CairoFontFamily,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 2,

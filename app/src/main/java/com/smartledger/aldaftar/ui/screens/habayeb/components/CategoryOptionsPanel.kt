@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 @Composable
 fun CategoryOptionsPanel(
@@ -74,6 +75,7 @@ fun CategoryOptionsPanel(
                     text = stringResource(R.string.habayeb_category_edit_prefix, displayName),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

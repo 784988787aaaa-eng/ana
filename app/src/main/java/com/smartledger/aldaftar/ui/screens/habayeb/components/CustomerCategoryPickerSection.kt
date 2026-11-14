@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 @Composable
 fun CustomerCategoryPickerSection(
@@ -72,6 +73,7 @@ fun CustomerCategoryPickerSection(
                 text = stringResource(R.string.context_menu_folders_and_categories),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -84,6 +86,7 @@ fun CustomerCategoryPickerSection(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
+                .weight(1f, fill = false)
                 .heightIn(max = 240.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -117,6 +120,7 @@ fun CustomerCategoryPickerSection(
                         text = stringResource(R.string.context_menu_no_category),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -152,6 +156,7 @@ fun CustomerCategoryPickerSection(
                         text = category.name,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }

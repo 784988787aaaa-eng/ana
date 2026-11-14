@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.components.AutoSizeText
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
 
@@ -77,6 +79,8 @@ fun TransactionRowDateSection(
                 text = "#$txSeqNo",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
+                style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                 color = activeThemeColor,
                 modifier = Modifier
                     .background(activeThemeColor.copy(alpha = 0.08f), RoundedCornerShape(3.dp))
@@ -105,13 +109,13 @@ fun TransactionRowDateSection(
         val onSurfaceColor = MaterialTheme.colorScheme.onSurface
         val annotatedDate = remember(dayName, cached.dateStr, activeThemeColor, onSurfaceColor) {
             buildAnnotatedString {
-                withStyle(style = SpanStyle(color = activeThemeColor, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = activeThemeColor, fontWeight = FontWeight.Bold, fontFamily = CairoFontFamily)) {
                     append(dayName)
                 }
-                withStyle(style = SpanStyle(color = activeThemeColor.copy(alpha = 0.5f))) {
+                withStyle(style = SpanStyle(color = activeThemeColor.copy(alpha = 0.5f), fontFamily = CairoFontFamily)) {
                     append(" • ")
                 }
-                withStyle(style = SpanStyle(color = onSurfaceColor, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = onSurfaceColor, fontWeight = FontWeight.Bold, fontFamily = CairoFontFamily, fontFeatureSettings = "tnum")) {
                     append(cached.dateStr)
                 }
             }
@@ -120,6 +124,8 @@ fun TransactionRowDateSection(
         Text(
             text = annotatedDate,
             fontSize = 8.5.sp,
+            fontFamily = CairoFontFamily,
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -128,6 +134,8 @@ fun TransactionRowDateSection(
         Text(
             text = cached.timeStr,
             fontSize = 7.5.sp,
+            fontFamily = CairoFontFamily,
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
             color = mizanColors.contentSecondary,
             fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
@@ -158,6 +166,7 @@ fun TransactionRowDetailsSection(
         Text(
             text = stringResource(id = cached.typeResId),
             fontSize = 8.5.sp,
+            fontFamily = CairoFontFamily,
             color = cached.indicatorColor,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -166,6 +175,7 @@ fun TransactionRowDetailsSection(
         Text(
             text = cached.cleanDescription.ifEmpty { stringResource(id = R.string.habayeb_no_notes) },
             fontSize = 10.5.sp,
+            fontFamily = CairoFontFamily,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -192,6 +202,7 @@ fun TransactionRowDetailsSection(
                             text = stringResource(id = R.string.habayeb_recurring_source),
                             fontSize = 7.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             maxLines = 1,
                             softWrap = false,
                             color = mizanColors.alertGoldText
@@ -208,6 +219,8 @@ fun TransactionRowDetailsSection(
                             text = stringResource(id = R.string.habayeb_auto_generated_sub, parentTxSeq),
                             fontSize = 7.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                             maxLines = 1,
                             softWrap = false,
                             color = mizanColors.infoBlueText
@@ -250,6 +263,8 @@ fun TransactionRowDetailsSection(
                             },
                             fontSize = 7.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                             maxLines = 1,
                             softWrap = false,
                             color = if (isCalculated) mizanColors.successGreenBorder else mizanColors.contentSecondary.copy(alpha = 0.8f)
@@ -320,6 +335,8 @@ fun TransactionRowAmountSection(
                     text = "$statusLabel: ${cached.runningBalanceText}",
                     fontSize = 8.sp,
                     fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
+                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                     color = badgeColor,
                     maxLines = 1,
                     softWrap = false,

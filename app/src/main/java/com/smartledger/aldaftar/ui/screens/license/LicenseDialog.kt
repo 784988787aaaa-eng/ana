@@ -51,7 +51,6 @@ import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.VpnKey
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -107,8 +106,11 @@ import com.smartledger.aldaftar.domain.license.LicenseStatus
 import com.smartledger.aldaftar.domain.license.RevocationReason
 import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
+import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.WhatsAppGreen
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
@@ -383,7 +385,12 @@ fun LicenseDialog(
                         ) {
                             Icon(Icons.Default.Check, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.btn_close), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                stringResource(R.string.btn_close),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily
+                            )
                         }
                     } else {
                         OutlinedButton(
@@ -398,6 +405,7 @@ fun LicenseDialog(
                                 stringResource(R.string.license_continue_later),
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -414,50 +422,36 @@ fun DeviceReplacedDialog(
     onDismiss: () -> Unit,
     onReSignIn: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                Icons.Default.DevicesOther,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(28.dp)
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismiss ->
+        MizanDialogCard(
+            maxWidth = MizanDialogTokens.compactMaxWidth
+        ) {
+            MizanDialogHeader(
+                title = stringResource(R.string.license_device_alert_title),
+                icon = Icons.Default.DevicesOther,
+                iconTint = MaterialTheme.colorScheme.error,
+                isCentered = true,
+                onCloseClick = dismiss
             )
-        },
-        title = {
-            Text(
-                stringResource(R.string.license_device_alert_title),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        text = {
             Text(
                 text = WesternDigits.normalize(message),
                 fontSize = 12.5.sp,
                 lineHeight = 19.sp,
+                fontFamily = CairoFontFamily,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth()
             )
-        },
-        confirmButton = {
-            Button(
-                onClick = onReSignIn,
-                shape = MizanDialogTokens.buttonShape
-            ) {
-                Text(stringResource(R.string.license_re_sign_in), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.btn_close), fontSize = 12.sp)
-            }
-        },
-        shape = MizanDialogTokens.shape,
-    )
+            MizanDialogActions(
+                confirmText = stringResource(R.string.license_re_sign_in),
+                onConfirm = onReSignIn,
+                cancelText = stringResource(R.string.btn_close),
+                onCancel = dismiss
+            )
+        }
+    }
 }
 
 @Composable
@@ -516,6 +510,7 @@ private fun CompactLicenseHeader(
                         text = title,
                         fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -525,6 +520,7 @@ private fun CompactLicenseHeader(
                             stringResource(R.string.license_subtitle_inactive)
                         },
                         fontSize = 11.5.sp,
+                        fontFamily = CairoFontFamily,
                         color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -614,6 +610,7 @@ private fun CompactStateBanner(
                     fontSize = 11.5.sp,
                     lineHeight = 16.sp,
                     fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
                     color = textColor
                 )
             }
@@ -716,6 +713,7 @@ private fun CompactTabItem(
                 text = label,
                 fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                fontFamily = CairoFontFamily,
                 color = contentColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -777,11 +775,12 @@ private fun SignedTokenCompactSection(
                         lineHeight = 18.sp,
                         textDirection = TextDirection.Ltr
                     ),
-                    label = { Text(stringResource(R.string.license_local_token_label), fontSize = 11.5.sp) },
+                    label = { Text(stringResource(R.string.license_local_token_label), fontSize = 11.5.sp, fontFamily = CairoFontFamily) },
                     placeholder = {
                         Text(
                             text = stringResource(R.string.license_local_token_placeholder),
                             fontSize = 11.sp,
+                            fontFamily = CairoFontFamily,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -861,6 +860,7 @@ private fun SignedTokenCompactSection(
                             text = stringResource(R.string.license_paste_from_clipboard),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
+                            fontFamily = CairoFontFamily,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -883,6 +883,7 @@ private fun SignedTokenCompactSection(
                             text = stringResource(R.string.license_import_slic_btn),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
+                            fontFamily = CairoFontFamily,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -903,7 +904,8 @@ private fun SignedTokenCompactSection(
                     Text(
                         stringResource(R.string.license_activate_token_btn),
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily
                     )
                 }
             }
@@ -924,6 +926,7 @@ private fun SignedTokenCompactSection(
                     text = stringResource(R.string.license_local_request_type_label),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -961,6 +964,7 @@ private fun SignedTokenCompactSection(
                         text = stringResource(R.string.license_whatsapp_local_request),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = Color.White
                     )
                 }
@@ -1006,6 +1010,7 @@ private fun PlanChoiceChip(
                 text = label,
                 fontSize = 11.5.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                fontFamily = CairoFontFamily,
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -1048,6 +1053,7 @@ private fun UnifiedAccountLoginSection(
                     Text(
                         text = stringResource(R.string.license_google_sign_in_hint),
                         fontSize = 12.sp,
+                        fontFamily = CairoFontFamily,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 18.sp
@@ -1069,7 +1075,8 @@ private fun UnifiedAccountLoginSection(
                         Text(
                             stringResource(R.string.license_google_sign_in_btn),
                             fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily
                         )
                     }
                 }
@@ -1112,6 +1119,7 @@ private fun UnifiedAccountLoginSection(
                                 text = session.email ?: stringResource(R.string.license_google_connected_fallback),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -1123,6 +1131,7 @@ private fun UnifiedAccountLoginSection(
                                     stringResource(R.string.license_account_awaiting_cloud)
                                 },
                                 fontSize = 10.5.sp,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -1137,6 +1146,7 @@ private fun UnifiedAccountLoginSection(
                         Text(
                             stringResource(R.string.license_sign_out),
                             fontSize = 11.sp,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -1159,6 +1169,7 @@ private fun UnifiedAccountLoginSection(
                     stringResource(R.string.license_check_cloud_btn),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -1180,6 +1191,7 @@ private fun UnifiedAccountLoginSection(
                             stringResource(R.string.license_enter_code_link_account)
                         },
                         fontSize = 11.5.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -1196,13 +1208,14 @@ private fun UnifiedAccountLoginSection(
                             fontSize = 13.sp,
                             textDirection = TextDirection.Ltr
                         ),
-                        label = { Text(stringResource(R.string.license_activation_code_label), fontSize = 11.5.sp) },
+                        label = { Text(stringResource(R.string.license_activation_code_label), fontSize = 11.5.sp, fontFamily = CairoFontFamily) },
                         placeholder = {
                             Text(
                                 text = stringResource(R.string.license_activation_code_placeholder),
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Start,
                                 fontSize = 11.sp,
+                                fontFamily = CairoFontFamily,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis
@@ -1273,7 +1286,8 @@ private fun UnifiedAccountLoginSection(
                         Text(
                             stringResource(R.string.license_activate_account_btn),
                             fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily
                         )
                     }
                 }
@@ -1335,6 +1349,7 @@ private fun CompactDeviceCodeRow(
                 Text(
                     text = stringResource(R.string.license_device_code_label),
                     fontSize = 10.5.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
@@ -1393,6 +1408,7 @@ private fun CompactWhatsAppButton(
             text = stringResource(R.string.license_whatsapp_request_help),
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,
+            fontFamily = CairoFontFamily,
             color = Color.White
         )
     }
@@ -1441,6 +1457,7 @@ private fun ActiveLicenseCompactCard(
                             },
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         if (isTrial) {
@@ -1449,6 +1466,7 @@ private fun ActiveLicenseCompactCard(
                                 text = WesternDigits.normalize(stringResource(R.string.license_remaining_days, remaining)),
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -1464,6 +1482,7 @@ private fun ActiveLicenseCompactCard(
                         Text(
                             stringResource(R.string.license_sign_out),
                             fontSize = 11.sp,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -1479,6 +1498,7 @@ private fun ActiveLicenseCompactCard(
                     ),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1504,6 +1524,7 @@ private fun ActiveLicenseCompactCard(
                         ),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Medium,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1512,6 +1533,7 @@ private fun ActiveLicenseCompactCard(
             Text(
                 text = stringResource(R.string.license_active_protection_note),
                 fontSize = 10.5.sp,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -1548,6 +1570,7 @@ private fun CompactMessageBanner(
             Text(
                 text = WesternDigits.normalize(message),
                 fontSize = 11.5.sp,
+                fontFamily = CairoFontFamily,
                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium
             )

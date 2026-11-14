@@ -7,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -29,11 +29,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.domain.model.TransactionType
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
+import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.smartledger.aldaftar.ui.theme.mizanColors
-
-import com.smartledger.aldaftar.domain.model.TransactionType
+import kotlin.math.abs
 
 @Composable
 fun AutoSizeText(
@@ -45,12 +46,35 @@ fun AutoSizeText(
     modifier: Modifier = Modifier,
     maxLines: Int = 1
 ) {
-    var fontSizeState by remember(text, fontSize) { mutableStateOf(fontSize) }
+    val minFontSizeVal = 8f
+    val initialSize = remember(text, fontSize) {
+        val estimated = when {
+            text.length > 22 -> fontSize.value * 0.70f
+            text.length > 16 -> fontSize.value * 0.80f
+            text.length > 12 -> fontSize.value * 0.90f
+            else -> fontSize.value
+        }
+        estimated.coerceAtLeast(minFontSizeVal).sp
+    }
+    var fontSizeState by remember(text, fontSize) { mutableStateOf(initialSize) }
+    var hasAdjusted by remember(text, fontSize) { mutableStateOf(false) }
     var readyToDraw by remember(text, fontSize) { mutableStateOf(false) }
+
+    val baseStyle = LocalTextStyle.current
+    val mergedStyle = baseStyle.merge(
+        TextStyle(
+            fontFamily = CairoFontFamily,
+            fontFeatureSettings = "tnum",
+            fontSize = fontSizeState,
+            fontWeight = fontWeight ?: baseStyle.fontWeight,
+            color = color,
+            textAlign = textAlign ?: baseStyle.textAlign
+        )
+    )
 
     Text(
         text = text,
-        style = TextStyle(fontSize = fontSizeState, fontWeight = fontWeight, color = color),
+        style = mergedStyle,
         textAlign = textAlign,
         maxLines = maxLines,
         overflow = TextOverflow.Clip,
@@ -61,10 +85,27 @@ fun AutoSizeText(
             }
         },
         onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.hasVisualOverflow) {
+            if (textLayoutResult.hasVisualOverflow && !hasAdjusted) {
+                hasAdjusted = true
                 val currentSize = fontSizeState.value
-                if (currentSize > 8f) {
-                    fontSizeState = (currentSize - 0.5f).sp
+                if (currentSize > minFontSizeVal) {
+                    val containerWidth = textLayoutResult.size.width.toFloat()
+                    val actualWidth = if (textLayoutResult.lineCount > 0) {
+                        abs(textLayoutResult.getLineRight(0) - textLayoutResult.getLineLeft(0))
+                    } else {
+                        0f
+                    }
+                    val ratio = if (containerWidth > 0f && actualWidth > containerWidth) {
+                        (containerWidth / actualWidth) * 0.95f
+                    } else {
+                        0.82f
+                    }
+                    val nextSize = (currentSize * ratio).coerceAtLeast(minFontSizeVal)
+                    if (nextSize < currentSize - 0.1f) {
+                        fontSizeState = nextSize.sp
+                    } else {
+                        readyToDraw = true
+                    }
                 } else {
                     readyToDraw = true
                 }

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.util.Date
 
 @Composable
@@ -96,6 +97,7 @@ fun AddTransactionFormFields(
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                     fontSize = 13.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -107,7 +109,8 @@ fun AddTransactionFormFields(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily
             ),
             leadingIcon = {
                 IconButton(onClick = onOpenCalculator) {
@@ -124,6 +127,7 @@ fun AddTransactionFormFields(
                     text = selectedTransactionCurrency,
                     color = dynamicThemeColor,
                     fontWeight = FontWeight.ExtraBold,
+                    fontFamily = CairoFontFamily,
                     modifier = Modifier.padding(horizontal = 12.dp),
                     fontSize = 14.sp
                 )
@@ -146,6 +150,7 @@ fun AddTransactionFormFields(
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Start,
                     fontSize = 11.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -153,7 +158,8 @@ fun AddTransactionFormFields(
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                fontSize = 13.sp
+                fontSize = 13.sp,
+                fontFamily = CairoFontFamily
             ),
             leadingIcon = {
                 Icon(
@@ -168,6 +174,7 @@ fun AddTransactionFormFields(
                     Text(
                         text = formattedSelectedDate,
                         fontSize = 10.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )

@@ -51,6 +51,7 @@ import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.screens.security.components.SecurityActivePanel
 import com.smartledger.aldaftar.ui.screens.security.components.SecuritySetupForm
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
@@ -110,6 +111,7 @@ fun SecurityScreen(
                     ) {
                         Text(
                             text = stringResource(id = R.string.sec_title),
+                            fontFamily = CairoFontFamily,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center
@@ -257,6 +259,7 @@ fun SecurityDialog(
 
             Column(
                 modifier = Modifier
+                    .weight(1f, fill = false)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,

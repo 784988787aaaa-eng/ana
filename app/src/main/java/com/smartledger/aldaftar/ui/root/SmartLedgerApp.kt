@@ -4,10 +4,25 @@ import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,10 +30,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModelProvider
@@ -30,12 +51,20 @@ import com.smartledger.aldaftar.ui.main.MainAppLayout
 import com.smartledger.aldaftar.ui.screens.AppLockScreen
 import com.smartledger.aldaftar.ui.screens.license.DeviceReplacedDialog
 import com.smartledger.aldaftar.ui.theme.AppTheme
+import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.viewmodel.BackupSyncViewModel
 import com.smartledger.aldaftar.ui.viewmodel.FinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import com.smartledger.aldaftar.ui.viewmodel.UiEvent
 import com.smartledger.aldaftar.ui.viewmodel.LicenseViewModel
+
+private enum class RootStage {
+    LOADING,
+    LOCKED,
+    UNLOCKED
+}
 
 @androidx.compose.runtime.Composable
 fun SmartLedgerApp(
@@ -109,6 +138,12 @@ fun SmartLedgerApp(
         if (firstLaunch) showOnboarding = true
     }
 
+    val rootStage = when {
+        !settingsLoaded -> RootStage.LOADING
+        settings.isPasscodeEnabled && !isUnlocked -> RootStage.LOCKED
+        else -> RootStage.UNLOCKED
+    }
+
     AppTheme(darkTheme = darkTheme) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             if (!deviceReplacedNotice.isNullOrBlank()) {
@@ -132,37 +167,78 @@ fun SmartLedgerApp(
                 )
             }
 
-            if (!settingsLoaded) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {}
-            } else if (settings.isPasscodeEnabled && !isUnlocked) {
-                AppLockScreen(
-                    viewModel = securityViewModel,
-                    onUnlockSuccess = { isUnlocked = true },
-                    onUnlockBypassedAndDisabled = {
-                        securityViewModel.saveSettings(
-                            settings.copy(
-                                isPasscodeEnabled = false,
-                                passcodeHash = null,
-                                recoveryPhraseHash = null
-                            )
-                        )
-                        isUnlocked = true
+            Crossfade(
+                targetState = rootStage,
+                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
+                label = "RootStageCrossfade"
+            ) { stage ->
+                when (stage) {
+                    RootStage.LOADING -> {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(CircleShape)
+                                        .background(BrandPrimary.copy(alpha = 0.14f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                        contentDescription = null,
+                                        tint = BrandPrimary,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = stringResource(id = R.string.app_name),
+                                    fontFamily = CairoFontFamily,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        }
                     }
-                )
-            } else {
-                MainAppLayout(
-                    viewModel = financeViewModel,
-                    habayebViewModel = habayebViewModel,
-                    securityViewModel = securityViewModel,
-                    backupSyncViewModel = backupSyncViewModel,
-                    businessProfileViewModel = businessProfileViewModel,
-                    licenseViewModel = licenseViewModel,
-                    settings = settings,
-                    onExit = onExit
-                )
+
+                    RootStage.LOCKED -> {
+                        AppLockScreen(
+                            viewModel = securityViewModel,
+                            onUnlockSuccess = { isUnlocked = true },
+                            onUnlockBypassedAndDisabled = {
+                                securityViewModel.saveSettings(
+                                    settings.copy(
+                                        isPasscodeEnabled = false,
+                                        passcodeHash = null,
+                                        recoveryPhraseHash = null
+                                    )
+                                )
+                                isUnlocked = true
+                            }
+                        )
+                    }
+
+                    RootStage.UNLOCKED -> {
+                        MainAppLayout(
+                            viewModel = financeViewModel,
+                            habayebViewModel = habayebViewModel,
+                            securityViewModel = securityViewModel,
+                            backupSyncViewModel = backupSyncViewModel,
+                            businessProfileViewModel = businessProfileViewModel,
+                            licenseViewModel = licenseViewModel,
+                            settings = settings,
+                            onExit = onExit
+                        )
+                    }
+                }
             }
         }
     }

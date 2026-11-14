@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.math.BigDecimal
 
 @Composable
@@ -43,6 +44,9 @@ fun CustomerHistoryTableSection(
     modifier: Modifier = Modifier,
     isDark: Boolean = false
 ) {
+    val selectedTxIdSet = remember(selectedTxIds.toList()) {
+        selectedTxIds.toHashSet()
+    }
     Box(modifier = modifier) {
         if (displayedTxs.isEmpty()) {
             Box(
@@ -54,6 +58,7 @@ fun CustomerHistoryTableSection(
                 Text(
                     text = if (txSearchQuery.isEmpty()) stringResource(id = R.string.habayeb_no_tx_recorded) else stringResource(id = R.string.habayeb_no_search_results),
                     fontSize = 12.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -67,8 +72,8 @@ fun CustomerHistoryTableSection(
                     bottom = contentPadding.calculateBottomPadding() + 80.dp
                 )
             ) {
-                items(displayedTxs, key = { it.id }, contentType = { "tx_row" }) { tx ->
-                    val isSelected = selectedTxIds.contains(tx.id)
+                items(displayedTxs, key = { it.id }, contentType = { "transaction_row" }) { tx ->
+                    val isSelected = isTxMultiSelectActive && tx.id in selectedTxIdSet
                     val hasActiveRecurring = tx.id in activeRecurringTxIds
                     val txSeqNo = txSequenceNumbers[tx.id] ?: 0
                     val parentTxSeq = remember(tx.linkedMainTxId, txSequenceNumbers, tx.id) {

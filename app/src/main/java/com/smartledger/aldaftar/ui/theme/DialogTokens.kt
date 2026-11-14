@@ -27,10 +27,11 @@ object MizanDialogTokens {
     val dialogVertical: Dp = 16.dp
     val headerContentGap: Dp = 16.dp
 
-    val enterDuration: Int = 120
-    val exitDuration: Int = 90
-    const val enterScale: Float = 0.92f
-    const val exitScale: Float = 0.98f
+    val enterDuration: Int = 150
+    val scaleEnterDuration: Int = 170
+    val exitDuration: Int = 110
+    const val enterScale: Float = 0.94f
+    const val exitScale: Float = 0.96f
 
     val outerPadding: Dp = dialogHorizontal
     val compactPadding: Dp = 12.dp

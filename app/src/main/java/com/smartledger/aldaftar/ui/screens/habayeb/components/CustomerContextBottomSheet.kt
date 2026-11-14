@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -46,16 +46,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.CustomCategory
+import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.state.CustomerUiState
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.FinanceConstants
-
-import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -154,6 +152,7 @@ fun CustomerContextBottomSheet(
                                 Text(
                                     text = stringResource(id = R.string.habayeb_manage_account_title),
                                     fontSize = 11.sp,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
@@ -162,6 +161,7 @@ fun CustomerContextBottomSheet(
                                     text = customer.name,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1,
@@ -192,7 +192,10 @@ fun CustomerContextBottomSheet(
                         )
 
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f, fill = false)
+                                .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             ContextMenuItem(
@@ -268,3 +271,4 @@ fun CustomerContextBottomSheet(
         }
     }
 }
+

@@ -1,5 +1,6 @@
 package com.smartledger.aldaftar.ui.helper
 
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,6 +20,7 @@ import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.ui.theme.AvatarPastelPalette
 import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.math.BigDecimal
+import kotlin.math.abs
 
 fun getInitialColor(name: String): Color {
     val hash = (name.hashCode() and Int.MAX_VALUE)
@@ -40,43 +42,61 @@ fun AutoScaleText(
     textAlign: TextAlign = TextAlign.Center,
     maxLines: Int = 1
 ) {
-    val initialSize = remember(text, baseFontSize) {
-        when {
-            text.length > 22 -> (baseFontSize.value * 0.68f).sp
-            text.length > 16 -> (baseFontSize.value * 0.78f).sp
-            text.length > 12 -> (baseFontSize.value * 0.88f).sp
-            else -> baseFontSize
+    val initialSize = remember(text, baseFontSize, minFontSize) {
+        val estimated = when {
+            text.length > 22 -> (baseFontSize.value * 0.68f)
+            text.length > 16 -> (baseFontSize.value * 0.78f)
+            text.length > 12 -> (baseFontSize.value * 0.88f)
+            else -> baseFontSize.value
         }
+        estimated.coerceAtLeast(minFontSize.value).sp
     }
-    var fontSizeState by remember(text, baseFontSize) { mutableStateOf(initialSize) }
-    var readyToDraw by remember(text, baseFontSize) { mutableStateOf(true) }
+    var fontSizeState by remember(text, baseFontSize, minFontSize) { mutableStateOf(initialSize) }
+    var hasAdjusted by remember(text, baseFontSize, minFontSize) { mutableStateOf(false) }
+    var readyToDraw by remember(text, baseFontSize, minFontSize) { mutableStateOf(false) }
 
-    Text(
-        text = text,
-        color = color,
-        style = TextStyle(
+    val mergedStyle = LocalTextStyle.current.merge(
+        TextStyle(
             fontFamily = CairoFontFamily,
             fontSize = fontSizeState,
             fontWeight = fontWeight,
             color = color,
             textAlign = textAlign
-        ),
+        )
+    )
+
+    Text(
+        text = text,
+        color = color,
+        style = mergedStyle,
         textAlign = textAlign,
         maxLines = maxLines,
         softWrap = false,
-        overflow = TextOverflow.Ellipsis,
+        overflow = if (readyToDraw) TextOverflow.Ellipsis else TextOverflow.Clip,
         modifier = modifier.drawWithContent {
             if (readyToDraw) {
                 drawContent()
             }
         },
         onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.hasVisualOverflow) {
+            if (textLayoutResult.hasVisualOverflow && !hasAdjusted) {
+                hasAdjusted = true
                 val currentSize = fontSizeState.value
                 val minSizeVal = minFontSize.value
                 if (currentSize > minSizeVal) {
-                    val nextSize = (currentSize - 1.0f).coerceAtLeast(minSizeVal)
-                    if (nextSize != currentSize) {
+                    val containerWidth = textLayoutResult.size.width.toFloat()
+                    val actualWidth = if (textLayoutResult.lineCount > 0) {
+                        abs(textLayoutResult.getLineRight(0) - textLayoutResult.getLineLeft(0))
+                    } else {
+                        0f
+                    }
+                    val ratio = if (containerWidth > 0f && actualWidth > containerWidth) {
+                        (containerWidth / actualWidth) * 0.95f
+                    } else {
+                        0.82f
+                    }
+                    val nextSize = (currentSize * ratio).coerceAtLeast(minSizeVal)
+                    if (nextSize < currentSize - 0.1f) {
                         fontSizeState = nextSize.sp
                     } else {
                         readyToDraw = true

@@ -32,6 +32,7 @@ import com.smartledger.aldaftar.domain.communication.CustomerCommunicationConfig
 import com.smartledger.aldaftar.domain.communication.CustomerPhoneHelper
 import com.smartledger.aldaftar.ui.helper.formatCurrency
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CustomerShareHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.CreditContainerLight
 import com.smartledger.aldaftar.ui.theme.CreditGreen
 import com.smartledger.aldaftar.ui.theme.DebtContainerLight
@@ -61,7 +62,6 @@ fun CustomerHistoryShareBottomSheet(
 
     val context = LocalContext.current
     val isPhoneAvailable = activeCustomer.phone.isNotBlank()
-    val isPhoneValid = remember(activeCustomer.phone) { CustomerPhoneHelper.isValidDestination(activeCustomer.phone) }
     val scrollState = androidx.compose.foundation.rememberScrollState()
 
     ModalBottomSheet(
@@ -83,6 +83,7 @@ fun CustomerHistoryShareBottomSheet(
                 text = stringResource(id = R.string.habayeb_share_options),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -112,6 +113,7 @@ fun CustomerHistoryShareBottomSheet(
                             text = activeCustomer.name.take(1),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = activeThemeColor
                         )
                     }
@@ -121,6 +123,7 @@ fun CustomerHistoryShareBottomSheet(
                             text = activeCustomer.name,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -128,6 +131,8 @@ fun CustomerHistoryShareBottomSheet(
                         Text(
                             text = if (isPhoneAvailable) activeCustomer.phone else stringResource(id = R.string.habayeb_no_phone_registered),
                             fontSize = 12.sp,
+                            fontFamily = CairoFontFamily,
+                            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -154,12 +159,15 @@ fun CustomerHistoryShareBottomSheet(
                             text = statusText,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = statusColor
                         )
                         Text(
                             text = formatCurrency(absVal, currencySymbol),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -181,6 +189,7 @@ fun CustomerHistoryShareBottomSheet(
                 text = stringResource(id = R.string.share_section_reports),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp)
             )
@@ -229,6 +238,7 @@ fun CustomerHistoryShareBottomSheet(
                 text = stringResource(id = R.string.share_section_messages),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.primary
             )
 
@@ -260,7 +270,8 @@ fun CustomerHistoryShareBottomSheet(
                     Text(
                         text = stringResource(id = R.string.share_whatsapp_text_btn),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily
                     )
                 }
 
@@ -288,7 +299,8 @@ fun CustomerHistoryShareBottomSheet(
                     Text(
                         text = stringResource(id = R.string.share_sms_text_btn),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily
                     )
                 }
             }
@@ -341,6 +353,7 @@ private fun FileShareOptionRow(
                     text = title,
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -348,6 +361,7 @@ private fun FileShareOptionRow(
                 Text(
                     text = description,
                     fontSize = 11.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 15.sp,
                     maxLines = 1,

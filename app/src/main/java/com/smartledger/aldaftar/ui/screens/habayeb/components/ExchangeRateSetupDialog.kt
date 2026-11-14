@@ -18,11 +18,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -70,6 +72,7 @@ import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogInnerCard
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
@@ -225,6 +228,8 @@ fun ExchangeRateSetupContent(
                             text = "1 $displayBase =",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            style = TextStyle(fontFeatureSettings = "tnum"),
                             color = activeThemeColor,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -254,6 +259,8 @@ fun ExchangeRateSetupContent(
                                 textAlign = TextAlign.Center,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
+                                fontFeatureSettings = "tnum",
                                 color = activeThemeColor
                             ),
                             keyboardOptions = KeyboardOptions(
@@ -275,6 +282,7 @@ fun ExchangeRateSetupContent(
                                         Text(
                                             text = stringResource(id = R.string.habayeb_exchange_rate_placeholder),
                                             fontSize = 11.sp,
+                                            fontFamily = CairoFontFamily,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                             textAlign = TextAlign.Center
                                         )
@@ -295,6 +303,7 @@ fun ExchangeRateSetupContent(
                             text = displayTarget,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -363,6 +372,7 @@ fun ExchangeRateSetupContent(
                         text = stringResource(id = R.string.habayeb_confirm_exchange_rate_question),
                         fontSize = 11.5.sp,
                         fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium,
+                        fontFamily = CairoFontFamily,
                         color = if (isChecked) activeThemeColor else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
@@ -372,6 +382,7 @@ fun ExchangeRateSetupContent(
             Text(
                 text = stringResource(id = R.string.habayeb_exchange_rate_hint_text),
                 fontSize = 9.5.sp,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -398,6 +409,7 @@ fun ExchangeRateSetupContent(
                         text = stringResource(id = R.string.habayeb_cancel),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -432,6 +444,7 @@ fun ExchangeRateSetupContent(
                         text = stringResource(id = R.string.habayeb_save),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -484,6 +497,7 @@ fun ExchangeRateSetupDialog(
                         text = stringResource(id = R.string.currency_settings_dialog_title),
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -511,7 +525,10 @@ fun ExchangeRateSetupDialog(
                 activeThemeColor = activeThemeColor,
                 onDismiss = dismissDialog,
                 onConfirm = onConfirm,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
             )
         }
     }

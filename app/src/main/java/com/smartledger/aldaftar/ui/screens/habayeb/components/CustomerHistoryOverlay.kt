@@ -67,7 +67,9 @@ fun CustomerHistoryOverlay(
 ) {
     val isDark = MaterialTheme.isDark
     val customers by viewModel.habayebCustomersState.collectAsStateWithLifecycle()
-    val activeCustomer = customers.find { it.id == customer.id } ?: customer
+    val activeCustomer = remember(customers, customer) {
+        customers.find { it.id == customer.id } ?: customer
+    }
 
     val transactions by remember(activeCustomer.id) {
         viewModel.getTransactionsForCustomerFlow(activeCustomer.id)
@@ -137,6 +139,10 @@ fun CustomerHistoryOverlay(
         transactions.sortedBy { it.timestamp }
     }
 
+    val allCustomerTxsDescending = remember(allCustomerTxs) {
+        allCustomerTxs.asReversed()
+    }
+
     fun launchCustomerPdfExport(action: PdfAction) {
         showShareSheet = false
         isPdfExporting = true
@@ -171,7 +177,7 @@ fun CustomerHistoryOverlay(
 
     val displayedTxs by rememberFilteredCustomerTransactions(
         context = context,
-        allCustomerTxs = allCustomerTxs,
+        allCustomerTxs = allCustomerTxsDescending,
         txSearchQuery = txSearchQuery,
         dateFilterMode = dialogState.dateFilterMode,
         customStartDate = dialogState.customStartDate,
@@ -188,8 +194,10 @@ fun CustomerHistoryOverlay(
 
     var refreshRecurringTrigger by remember { mutableStateOf(0) }
     var activeRecurringTxIds by remember(activeCustomer.id) { mutableStateOf<Set<String>>(emptySet()) }
-    LaunchedEffect(activeCustomer.id, refreshRecurringTrigger, allCustomerTxs) {
-        val existingTxIds = allCustomerTxs.map { it.id }.toSet()
+    val existingTxIds = remember(allCustomerTxs) {
+        allCustomerTxs.mapTo(HashSet(allCustomerTxs.size)) { it.id }
+    }
+    LaunchedEffect(activeCustomer.id, refreshRecurringTrigger, existingTxIds) {
         activeRecurringTxIds = viewModel.activeRecurringOriginalIds(activeCustomer.id, existingTxIds)
     }
 

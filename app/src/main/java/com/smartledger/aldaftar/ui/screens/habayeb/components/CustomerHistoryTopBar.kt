@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 @Composable
 fun CustomerHistoryTopBar(
@@ -113,7 +114,8 @@ fun CustomerHistoryTopBar(
                     textStyle = TextStyle(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = CairoFontFamily
                     ),
                     cursorBrush = SolidColor(activeThemeColor),
                     singleLine = true,
@@ -130,7 +132,8 @@ fun CustomerHistoryTopBar(
                             Text(
                                 text = stringResource(id = R.string.habayeb_search_tx_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                fontSize = 13.sp
+                                fontSize = 13.sp,
+                                fontFamily = CairoFontFamily
                             )
                         }
                         innerTextField()
@@ -182,6 +185,7 @@ fun CustomerHistoryTopBar(
                             text = customerName,
                             fontSize = 15.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -199,6 +203,8 @@ fun CustomerHistoryTopBar(
                             text = customerPhone,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
+                            fontFamily = CairoFontFamily,
+                            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -284,7 +290,7 @@ fun CustomerHistoryTopBar(
                         containerColor = MaterialTheme.colorScheme.surface
                     ) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.habayeb_search_tx_hint)) },
+                            text = { Text(stringResource(id = R.string.habayeb_search_tx_hint), fontFamily = CairoFontFamily) },
                             onClick = {
                                 isMenuExpanded = false
                                 onSearchOpen()
@@ -294,7 +300,7 @@ fun CustomerHistoryTopBar(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.context_menu_delete_customer)) },
+                            text = { Text(stringResource(id = R.string.context_menu_delete_customer), fontFamily = CairoFontFamily) },
                             onClick = {
                                 isMenuExpanded = false
                                 onDeleteClick()

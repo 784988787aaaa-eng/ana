@@ -70,6 +70,7 @@ import com.smartledger.aldaftar.ui.screens.business.BusinessProfileInfoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfileLogoSection
 import com.smartledger.aldaftar.ui.screens.business.BusinessProfilePhonesSection
 import com.smartledger.aldaftar.ui.screens.settings.components.LogoCropDialog
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.viewmodel.BusinessProfileViewModel
 import com.smartledger.aldaftar.ui.viewmodel.PhoneInputData
@@ -108,6 +109,7 @@ fun BusinessProfileScreen(
                             text = stringResource(id = R.string.biz_title),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onPrimary,
                             textAlign = TextAlign.Center
                         )
@@ -170,7 +172,8 @@ fun BusinessProfileDialog(
             BusinessProfileForm(
                 viewModel = viewModel,
                 isDialog = true,
-                onClose = dismissDialog
+                onClose = dismissDialog,
+                modifier = Modifier.weight(1f, fill = false)
             )
         }
     }
@@ -180,7 +183,8 @@ fun BusinessProfileDialog(
 private fun BusinessProfileForm(
     viewModel: BusinessProfileViewModel,
     isDialog: Boolean,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -284,7 +288,7 @@ private fun BusinessProfileForm(
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .then(
                 if (isDialog) {
@@ -334,6 +338,7 @@ private fun BusinessProfileForm(
                 text = uiState.nameError!!,
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 11.5.sp,
+                fontFamily = CairoFontFamily,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp)
@@ -376,6 +381,7 @@ private fun BusinessProfileForm(
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -429,6 +435,7 @@ private fun BusinessProfileForm(
                             text = stringResource(id = R.string.biz_btn_reset),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -458,6 +465,7 @@ private fun BusinessProfileForm(
                             text = if (uiState.isSaving) "جاري الحفظ..." else stringResource(id = R.string.biz_btn_save),
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             textAlign = TextAlign.Center
                         )
                     }

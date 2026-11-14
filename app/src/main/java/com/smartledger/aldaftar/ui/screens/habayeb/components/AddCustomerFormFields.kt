@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 @Composable
 fun AddCustomerFormFields(
@@ -60,7 +61,10 @@ fun AddCustomerFormFields(
         errorBorderColor = MaterialTheme.colorScheme.error
     )
 
-    val inputTextStyle = androidx.compose.material3.LocalTextStyle.current.copy(fontSize = 13.5.sp)
+    val inputTextStyle = androidx.compose.material3.LocalTextStyle.current.copy(
+        fontSize = 13.5.sp,
+        fontFamily = CairoFontFamily
+    )
 
     // The form is composed inside the dialog. Keep automatic IME startup here
     // so focus and the keyboard controller belong to the same Android Window.
@@ -78,8 +82,8 @@ fun AddCustomerFormFields(
             value = nameStr,
             onValueChange = onNameChange,
             textStyle = inputTextStyle,
-            label = { Text(stringResource(id = R.string.hint_account_name), fontSize = 11.sp) },
-            placeholder = { Text(stringResource(id = R.string.habayeb_edit_name_desc), fontSize = 11.sp) },
+            label = { Text(stringResource(id = R.string.hint_account_name), fontSize = 11.sp, fontFamily = CairoFontFamily) },
+            placeholder = { Text(stringResource(id = R.string.habayeb_edit_name_desc), fontSize = 11.sp, fontFamily = CairoFontFamily) },
             singleLine = true,
             shape = fieldShape,
             isError = isDuplicateName && nameStr.isNotBlank(),
@@ -96,6 +100,7 @@ fun AddCustomerFormFields(
                 text = stringResource(id = R.string.habayeb_error_duplicate_name),
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 10.sp,
+                fontFamily = CairoFontFamily,
                 modifier = Modifier
                     .padding(start = 8.dp, top = 2.dp, bottom = 4.dp)
                     .align(Alignment.Start)
@@ -106,8 +111,8 @@ fun AddCustomerFormFields(
             value = initialAmountStr,
             onValueChange = onInitialAmountChange,
             textStyle = inputTextStyle,
-            label = { Text(stringResource(id = R.string.hint_opening_balance), fontSize = 11.sp) },
-            placeholder = { Text("0", fontSize = 11.sp) },
+            label = { Text(stringResource(id = R.string.hint_opening_balance), fontSize = 11.sp, fontFamily = CairoFontFamily) },
+            placeholder = { Text("0", fontSize = 11.sp, fontFamily = CairoFontFamily) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { notesFocusRequester.requestFocus() }),
             singleLine = true,
@@ -133,6 +138,7 @@ fun AddCustomerFormFields(
                     fontSize = 11.sp,
                     color = activeThemeColor,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
@@ -142,8 +148,8 @@ fun AddCustomerFormFields(
             value = notesStr,
             onValueChange = onNotesChange,
             textStyle = inputTextStyle,
-            label = { Text(stringResource(id = R.string.hint_description), fontSize = 11.sp) },
-            placeholder = { Text(stringResource(id = R.string.hint_description), fontSize = 11.sp) },
+            label = { Text(stringResource(id = R.string.hint_description), fontSize = 11.sp, fontFamily = CairoFontFamily) },
+            placeholder = { Text(stringResource(id = R.string.hint_description), fontSize = 11.sp, fontFamily = CairoFontFamily) },
             singleLine = true,
             shape = fieldShape,
             modifier = Modifier
@@ -172,8 +178,8 @@ fun AddCustomerFormFields(
             value = phoneStr,
             onValueChange = onPhoneChange,
             textStyle = inputTextStyle,
-            label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 11.sp) },
-            placeholder = { Text(stringResource(id = R.string.habayeb_contact_picker), fontSize = 11.sp) },
+            label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 11.sp, fontFamily = CairoFontFamily) },
+            placeholder = { Text(stringResource(id = R.string.habayeb_contact_picker), fontSize = 11.sp, fontFamily = CairoFontFamily) },
             singleLine = true,
             shape = fieldShape,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),

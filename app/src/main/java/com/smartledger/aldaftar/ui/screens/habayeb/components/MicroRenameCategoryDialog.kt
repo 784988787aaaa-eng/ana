@@ -37,6 +37,7 @@ import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 @Composable
@@ -84,10 +85,11 @@ fun MicroRenameCategoryDialog(
                 OutlinedTextField(
                     value = categoryNameTfv,
                     onValueChange = { categoryNameTfv = it },
-                    placeholder = { Text(stringResource(R.string.habayeb_category_edit_placeholder), fontSize = 13.5.sp) },
+                    placeholder = { Text(stringResource(R.string.habayeb_category_edit_placeholder), fontSize = 13.5.sp, fontFamily = CairoFontFamily) },
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
                         fontSize = 14.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Start
                     ),

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.model.TransactionType
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import java.math.BigDecimal
 
@@ -120,6 +121,7 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = label,
                         fontSize = 10.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = CairoFontFamily,
                         color = if (isSelected) currentTypeThemeColor else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
@@ -194,6 +196,7 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = stringResource(id = R.string.habayeb_add_with_rate_question),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -238,6 +241,7 @@ fun AddCustomerTypeAndCurrencySelector(
                                 text = displayText,
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 color = activeThemeColor
                             )
                         }
@@ -264,6 +268,7 @@ fun AddCustomerTypeAndCurrencySelector(
                                 text = context.getString(R.string.currency_setup_rate_to_start),
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
@@ -300,6 +305,7 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = stringResource(id = R.string.habayeb_owed),
                         fontSize = 10.sp,
                         fontWeight = if (isOwedByThem) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = CairoFontFamily,
                         color = if (isOwedByThem) debtRed else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
@@ -338,6 +344,7 @@ fun AddCustomerTypeAndCurrencySelector(
                         text = stringResource(id = R.string.habayeb_to_them),
                         fontSize = 10.sp,
                         fontWeight = if (isOwedToThem) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = CairoFontFamily,
                         color = if (isOwedToThem) creditGreen else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
@@ -381,6 +388,7 @@ fun AddCustomerTypeAndCurrencySelector(
                     text = stringResource(id = R.string.btn_save),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis

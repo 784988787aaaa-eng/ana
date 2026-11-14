@@ -37,6 +37,7 @@ import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
 import com.smartledger.aldaftar.ui.screens.CalculatorDialog
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.HabayebFinanceViewModel
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.CurrencyConfig
 import java.math.BigDecimal
 import java.util.Calendar
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 @Composable
@@ -92,15 +94,21 @@ fun AddCustomerPopup(
     var isSavingCustomer by rememberSaveable { mutableStateOf(false) }
 
     val existingCustomers by viewModel.habayebCustomersState.collectAsStateWithLifecycle()
-    val normalizedInputName = remember(nameStr) { StringUtils.normalizeArabic(nameStr.trim()) }
-    val isDuplicateName = remember(normalizedInputName, existingCustomers, isSavingCustomer) {
-        if (isSavingCustomer || normalizedInputName.isBlank()) false
-        else {
-            existingCustomers.any { customer ->
-                val normalizedExisting = StringUtils.normalizeArabic(customer.name.trim())
-                normalizedExisting.isNotBlank() && normalizedExisting.equals(normalizedInputName, ignoreCase = true)
+    val normalizedExistingNames = remember(existingCustomers) {
+        val set = HashSet<String>(existingCustomers.size)
+        for (i in existingCustomers.indices) {
+            val norm = StringUtils.normalizeArabic(existingCustomers[i].name.trim()).lowercase(Locale.ROOT)
+            if (norm.isNotEmpty()) {
+                set.add(norm)
             }
         }
+        set
+    }
+    val normalizedInputName = remember(nameStr) {
+        StringUtils.normalizeArabic(nameStr.trim()).lowercase(Locale.ROOT)
+    }
+    val isDuplicateName = remember(normalizedInputName, normalizedExistingNames, isSavingCustomer) {
+        !isSavingCustomer && normalizedInputName.isNotEmpty() && normalizedExistingNames.contains(normalizedInputName)
     }
 
     var selectedCalendar by remember { mutableStateOf(Calendar.getInstance()) }
@@ -208,6 +216,7 @@ fun AddCustomerPopup(
                                     text = stringResource(id = R.string.dialog_title_add_account),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
+                                    fontFamily = CairoFontFamily,
                                     color = dynamicThemeColor,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.weight(1f)

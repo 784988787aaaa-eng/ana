@@ -1,12 +1,8 @@
 package com.smartledger.aldaftar.ui.screens
 
 import android.widget.Toast
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -28,6 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.HashUtils
 import com.smartledger.aldaftar.platform.security.BiometricAuthHelper
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType
 import com.smartledger.aldaftar.ui.screens.security.lock.PasscodeKeypadContent
@@ -60,6 +58,7 @@ fun AppLockScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showRecoveryView by remember { mutableStateOf(false) }
     var recoveryPhraseInput by remember { mutableStateOf("") }
+    var recoveryErrorMessage by remember { mutableStateOf<String?>(null) }
     var showHintText by remember { mutableStateOf(false) }
     val recoveryHint = settings.recoveryHint
 
@@ -82,10 +81,11 @@ fun AppLockScreen(
     val triggerErrorAnimationAndHaptic = {
         scope.launch {
             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
-            shakeOffset.animateTo(12f, tween(40))
-            shakeOffset.animateTo(-12f, tween(40))
-            shakeOffset.animateTo(6f, tween(40))
-            shakeOffset.animateTo(0f, tween(40))
+            shakeOffset.animateTo(14f, tween(50))
+            shakeOffset.animateTo(-14f, tween(50))
+            shakeOffset.animateTo(10f, tween(50))
+            shakeOffset.animateTo(-6f, tween(50))
+            shakeOffset.animateTo(0f, tween(50))
         }
         Unit
     }
@@ -143,15 +143,16 @@ fun AppLockScreen(
                             LockHapticHelper.performLockHaptic(vibrator, LockHapticType.SUCCESS)
                             onUnlockSuccess()
                         } else {
+                            // Immediately clear passcode & unlock keypad before running 250ms shake
+                            enteredPasscode = ""
+                            isCheckingPasscode = false
                             viewModel.handleFailedAttempt()
                             val newMs = viewModel.getLockoutTimeRemainingMs()
                             if (newMs > 0) {
                                 lockoutTimeRemainingSec = (newMs + 999) / 1000
                             }
-                            triggerErrorAnimationAndHaptic()
                             errorMessage = context.getString(R.string.lock_incorrect_pin)
-                            enteredPasscode = ""
-                            isCheckingPasscode = false
+                            triggerErrorAnimationAndHaptic()
                         }
                     }
                 }
@@ -171,6 +172,7 @@ fun AppLockScreen(
 
     val onForgotClick = {
         LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
+        recoveryErrorMessage = null
         showRecoveryView = true
     }
 
@@ -189,10 +191,12 @@ fun AppLockScreen(
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.SUCCESS)
                 keyboardController?.hide()
                 focusManager.clearFocus()
+                showRecoveryView = false
                 Toast.makeText(context, context.getString(R.string.lock_recovery_matched), Toast.LENGTH_SHORT).show()
                 onUnlockBypassedAndDisabled()
             } else {
                 LockHapticHelper.performLockHaptic(vibrator, LockHapticType.ERROR)
+                recoveryErrorMessage = context.getString(R.string.lock_recovery_wrong)
                 Toast.makeText(context, context.getString(R.string.lock_recovery_wrong), Toast.LENGTH_SHORT).show()
             }
         }
@@ -204,6 +208,7 @@ fun AppLockScreen(
         keyboardController?.hide()
         focusManager.clearFocus()
         recoveryPhraseInput = ""
+        recoveryErrorMessage = null
         showRecoveryView = false
     }
 
@@ -214,40 +219,40 @@ fun AppLockScreen(
             .navigationBarsPadding(),
         color = NeutralBackgroundDark
     ) {
-        AnimatedContent(
-            targetState = showRecoveryView,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(120)) togetherWith
-                        fadeOut(animationSpec = tween(90))
+        PasscodeKeypadContent(
+            enteredPasscode = enteredPasscode,
+            isCheckingPasscode = isCheckingPasscode,
+            shakeOffsetPx = shakeOffset.value,
+            isBiometricSupported = isBiometricSupported,
+            errorMessage = errorMessage,
+            onKeyPress = onKeyPress,
+            onDeleteClick = onDeleteClick,
+            onForgotClick = onForgotClick,
+            onBiometricClick = {
+                LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
+                triggerBiometricPrompt()
             },
-            label = "ScreenType"
-        ) { isRecovery ->
-            if (isRecovery) {
-                RecoveryPhraseContent(
-                    recoveryPhraseInput = recoveryPhraseInput,
-                    onRecoveryPhraseChange = { recoveryPhraseInput = it },
-                    recoveryHint = recoveryHint,
-                    showHintText = showHintText,
-                    onToggleHint = { showHintText = !showHintText },
-                    onVerifyClick = onVerifyRecoveryPhrase,
-                    onReturnToKeypadClick = onReturnToKeypadClick
-                )
-            } else {
-                PasscodeKeypadContent(
-                    enteredPasscode = enteredPasscode,
-                    isCheckingPasscode = isCheckingPasscode,
-                    shakeOffsetPx = shakeOffset.value,
-                    isBiometricSupported = isBiometricSupported,
-                    errorMessage = errorMessage,
-                    onKeyPress = onKeyPress,
-                    onDeleteClick = onDeleteClick,
-                    onForgotClick = onForgotClick,
-                    onBiometricClick = {
-                        LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
-                        triggerBiometricPrompt()
-                    },
-                    lockoutTimeRemainingSec = lockoutTimeRemainingSec
-                )
+            lockoutTimeRemainingSec = lockoutTimeRemainingSec
+        )
+
+        if (showRecoveryView) {
+            MizanAnimatedDialog(onDismissRequest = onReturnToKeypadClick) { dismissWithAnimation ->
+                MizanDialogCard {
+                    RecoveryPhraseContent(
+                        recoveryPhraseInput = recoveryPhraseInput,
+                        onRecoveryPhraseChange = {
+                            recoveryPhraseInput = it
+                            recoveryErrorMessage = null
+                        },
+                        recoveryHint = recoveryHint,
+                        showHintText = showHintText,
+                        onToggleHint = { showHintText = !showHintText },
+                        onVerifyClick = onVerifyRecoveryPhrase,
+                        onReturnToKeypadClick = { dismissWithAnimation() },
+                        recoveryErrorMessage = recoveryErrorMessage,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
             }
         }
     }

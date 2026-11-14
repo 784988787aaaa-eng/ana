@@ -27,11 +27,12 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.isDark
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -50,10 +51,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
+import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.platform.contacts.FormatUtils
 import com.smartledger.aldaftar.domain.model.RecurringConfig
@@ -126,35 +127,31 @@ fun RecurringTransactionPopup(
         found
     }
 
+    val nextOccFormatter = remember {
+        java.text.SimpleDateFormat(
+            "yyyy-MM-dd  hh:mm a",
+            com.smartledger.aldaftar.presentation.formatters.WesternDigits.ARABIC_LATN_LOCALE
+        )
+    }
+
     val nextOccFormatted = remember(nextOcc) {
         if (nextOcc != null) {
-            val sdf = java.text.SimpleDateFormat(
-                "yyyy-MM-dd  hh:mm a",
-                com.smartledger.aldaftar.presentation.formatters.WesternDigits.ARABIC_LATN_LOCALE
-            )
             com.smartledger.aldaftar.presentation.formatters.WesternDigits.normalize(
-                sdf.format(java.util.Date(nextOcc))
+                nextOccFormatter.format(java.util.Date(nextOcc))
             )
         } else {
             null
         }
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    MizanAnimatedDialog(
+        onDismissRequest = onDismiss
+    ) { dismissDialog ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(max = MizanDialogTokens.compactMaxWidth)
-                    .heightIn(max = 540.dp)
-                    .imePadding(),
-                shape = MizanDialogTokens.shape,
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            MizanDialogCard(
+                maxWidth = MizanDialogTokens.compactMaxWidth,
+                maxHeight = 560.dp,
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
@@ -195,7 +192,8 @@ fun RecurringTransactionPopup(
                                     text = stringResource(id = R.string.habayeb_recurring_title),
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily
                                 )
                             }
 
@@ -213,7 +211,9 @@ fun RecurringTransactionPopup(
                                     text = "$customerName • $formattedAmount $currStr",
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
+                                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum")
                                 )
                             }
                         }
@@ -222,6 +222,7 @@ fun RecurringTransactionPopup(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .weight(1f, fill = false)
                             .verticalScroll(rememberScrollState())
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -268,12 +269,15 @@ fun RecurringTransactionPopup(
                                         text = stringResource(id = R.string.habayeb_recurring_next_occurrence_label),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
+                                        fontFamily = CairoFontFamily,
                                         color = activeThemeColor
                                     )
                                     Text(
                                         text = formattedDate,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
+                                        fontFamily = CairoFontFamily,
+                                        style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
@@ -296,7 +300,7 @@ fun RecurringTransactionPopup(
                             startDateMillis = startDateMillis,
                             endDateMillis = endDateMillis,
                             activeThemeColor = activeThemeColor,
-                            onDismiss = onDismiss
+                            onDismiss = dismissDialog
                         )
                     }
                 }
@@ -341,7 +345,8 @@ private fun RecurringActionsRow(
             Text(
                 text = stringResource(id = R.string.habayeb_cancel),
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily
             )
         }
 
@@ -368,7 +373,8 @@ private fun RecurringActionsRow(
                 Text(
                     text = stringResource(id = R.string.habayeb_recurring_btn_stop_short),
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily
                 )
             }
         }
@@ -423,6 +429,7 @@ private fun RecurringActionsRow(
                 text = if (existingConfig != null) stringResource(id = R.string.habayeb_recurring_btn_update) else stringResource(id = R.string.habayeb_recurring_btn_activate),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onPrimary
             )
         }

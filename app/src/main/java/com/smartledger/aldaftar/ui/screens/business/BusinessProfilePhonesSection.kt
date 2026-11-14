@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,6 +59,8 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.business.BusinessPhoneFormatter
 import com.smartledger.aldaftar.domain.business.CountryCode
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.viewmodel.PhoneInputData
 
 @Composable
@@ -103,15 +106,18 @@ fun BusinessProfilePhonesSection(
                         text = stringResource(id = R.string.biz_phones_section),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.testTag("biz_phones_section")
                     )
                     val validCount = phoneInputs.count { it.nationalNumber.isNotBlank() }
                     if (validCount > 0) {
                         Text(
-                            text = validCount.toString(),
+                            text = WesternDigits.normalize(validCount.toString()),
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            style = TextStyle(fontFeatureSettings = "tnum"),
                             color = activeThemeColor,
                             modifier = Modifier
                                 .clip(CircleShape)
@@ -138,6 +144,7 @@ fun BusinessProfilePhonesSection(
                             text = stringResource(id = R.string.biz_btn_add_phone),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
                             color = activeThemeColor
                         )
                     }
@@ -181,8 +188,8 @@ fun BusinessProfilePhonesSection(
                                 onPhoneDataChange(index, phoneData.copy(nationalNumber = clean))
                             }
                         },
-                        label = { Text(text = fieldLabel, fontSize = 11.5.sp) },
-                        placeholder = { Text(text = "771234567", fontSize = 11.5.sp) },
+                        label = { Text(text = WesternDigits.normalize(fieldLabel), fontSize = 11.5.sp, fontFamily = CairoFontFamily) },
+                        placeholder = { Text(text = "771234567", fontSize = 11.5.sp, fontFamily = CairoFontFamily) },
                         isError = errorMessage != null,
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -202,7 +209,12 @@ fun BusinessProfilePhonesSection(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) },
                             onDone = { focusManager.clearFocus() }
                         ),
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start, fontSize = 13.sp)
+                        textStyle = LocalTextStyle.current.copy(
+                            textAlign = TextAlign.Start,
+                            fontSize = 13.sp,
+                            fontFamily = CairoFontFamily,
+                            fontFeatureSettings = "tnum"
+                        )
                     )
 
                     // 3. Delete button for secondary numbers
@@ -226,6 +238,7 @@ fun BusinessProfilePhonesSection(
                         text = errorMessage,
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 11.sp,
+                        fontFamily = CairoFontFamily,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
@@ -265,6 +278,8 @@ private fun CountryCodeSelector(
                     text = "${currentCountry.flagEmoji} ${currentCountry.code}",
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
+                    style = TextStyle(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Icon(
@@ -293,6 +308,7 @@ private fun CountryCodeSelector(
                                 text = "${country.countryNameAr} (${country.code})",
                                 fontSize = 13.sp,
                                 fontWeight = if (country.code == selectedCode) FontWeight.Bold else FontWeight.Normal,
+                                fontFamily = CairoFontFamily,
                                 color = if (country.code == selectedCode) activeThemeColor else MaterialTheme.colorScheme.onSurface
                             )
                         }

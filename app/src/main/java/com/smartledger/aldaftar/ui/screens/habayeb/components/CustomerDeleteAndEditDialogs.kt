@@ -38,9 +38,11 @@ import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
 import com.smartledger.aldaftar.ui.components.MizanDeleteConfirmationDialog
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.ui.helper.rememberContactPicker
+import java.util.Locale
 
 @Composable
 fun CustomerDeleteConfirmationDialog(
@@ -93,16 +95,24 @@ fun CustomerEditDialog(
     val editedPhoneStr = editedPhoneTfv.text
 
     val normalizedExistingNames = remember(existingCustomers, customer.id) {
-        existingCustomers
-            .filter { it.id != customer.id }
-            .map { StringUtils.normalizeArabic(it.name.trim()) }
-            .filter { it.isNotBlank() }
-            .toSet()
+        val set = HashSet<String>(existingCustomers.size)
+        for (i in existingCustomers.indices) {
+            val item = existingCustomers[i]
+            if (item.id != customer.id) {
+                val norm = StringUtils.normalizeArabic(item.name.trim()).lowercase(Locale.ROOT)
+                if (norm.isNotEmpty()) {
+                    set.add(norm)
+                }
+            }
+        }
+        set
     }
 
-    val normalizedEditedName = remember(editedNameStr) { StringUtils.normalizeArabic(editedNameStr.trim()) }
-    val isDuplicateName = remember(editedNameStr, normalizedExistingNames, isSaving) {
-        !isSaving && editedNameStr.trim().isNotBlank() && normalizedEditedName.isNotBlank() && normalizedExistingNames.contains(normalizedEditedName)
+    val normalizedEditedName = remember(editedNameStr) {
+        StringUtils.normalizeArabic(editedNameStr.trim()).lowercase(Locale.ROOT)
+    }
+    val isDuplicateName = remember(editedNameStr, normalizedEditedName, normalizedExistingNames, isSaving) {
+        !isSaving && editedNameStr.trim().isNotBlank() && normalizedEditedName.isNotEmpty() && normalizedExistingNames.contains(normalizedEditedName)
     }
 
     val editNameFocusRequester = remember { FocusRequester() }
@@ -155,6 +165,7 @@ fun CustomerEditDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -162,7 +173,7 @@ fun CustomerEditDialog(
                     OutlinedTextField(
                         value = editedNameTfv,
                         onValueChange = { editedNameTfv = it },
-                        label = { Text(stringResource(id = R.string.habayeb_account_name), fontSize = 12.sp) },
+                        label = { Text(stringResource(id = R.string.habayeb_account_name), fontSize = 12.sp, fontFamily = CairoFontFamily) },
                         singleLine = true,
                         isError = isDuplicateName && editedNameStr.isNotBlank(),
                         shape = MizanDialogTokens.buttonShape,
@@ -170,6 +181,7 @@ fun CustomerEditDialog(
                         keyboardActions = KeyboardActions(onNext = { editPhoneFocusRequester.requestFocus() }),
                         textStyle = LocalTextStyle.current.copy(
                             fontSize = 13.5.sp,
+                            fontFamily = CairoFontFamily,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Start
                         ),
                         leadingIcon = {
@@ -198,6 +210,7 @@ fun CustomerEditDialog(
                             text = stringResource(id = R.string.habayeb_error_duplicate_name),
                             color = MaterialTheme.colorScheme.error,
                             fontSize = 11.sp,
+                            fontFamily = CairoFontFamily,
                             modifier = Modifier.padding(start = 8.dp, top = 2.dp)
                         )
                     }
@@ -206,7 +219,7 @@ fun CustomerEditDialog(
                 OutlinedTextField(
                     value = editedPhoneTfv,
                     onValueChange = { editedPhoneTfv = it },
-                    label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 12.sp) },
+                    label = { Text(stringResource(id = R.string.habayeb_phone_label), fontSize = 12.sp, fontFamily = CairoFontFamily) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
@@ -220,6 +233,7 @@ fun CustomerEditDialog(
                     ),
                     textStyle = LocalTextStyle.current.copy(
                         fontSize = 13.5.sp,
+                        fontFamily = CairoFontFamily,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Start
                     ),
                     shape = MizanDialogTokens.buttonShape,

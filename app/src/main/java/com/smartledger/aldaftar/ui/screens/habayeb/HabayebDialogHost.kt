@@ -104,6 +104,8 @@ fun HabayebDialogHost(
         is HabayebDialogState.BulkAssignCategory -> {
             HabayebBulkAssignDialog(
                 customCategories = customCategories,
+                currentSelectedCategory = selectedCategory,
+                activeThemeColor = activeThemeColor,
                 onDismiss = onDismissDialog,
                 onAssign = { categoryName ->
                     viewModel.assignCategoryToCustomers(selectedCustomerIds.toList(), categoryName)

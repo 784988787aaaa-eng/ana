@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -36,8 +35,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
 import com.smartledger.aldaftar.ui.theme.BrandSecondary
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.NeutralTextPrimaryDark
 
 private val KEYPAD_ROW_1 = listOf("1", "2", "3")
@@ -72,7 +73,7 @@ fun PasscodeKeypadContent(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
+            modifier = Modifier.padding(top = 36.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -89,22 +90,23 @@ fun PasscodeKeypadContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = stringResource(id = R.string.lock_ledger_locked),
+                fontFamily = CairoFontFamily,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = LOCK_TEXT_COLOR
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            val subtitleText = when {
+            val subtitleText = (when {
                 lockoutTimeRemainingSec > 0L -> stringResource(id = R.string.lock_lockout_active, lockoutTimeRemainingSec)
                 !errorMessage.isNullOrBlank() -> errorMessage
                 else -> stringResource(id = R.string.lock_enter_pin_prompt)
-            }
+            }).toEnglishDigits()
 
             val subtitleColor = when {
                 lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank() -> Color(0xFFEF4444)
@@ -113,9 +115,10 @@ fun PasscodeKeypadContent(
 
             Text(
                 text = subtitleText,
-                fontSize = 12.5.sp,
+                fontFamily = CairoFontFamily,
+                fontSize = 13.sp,
                 color = subtitleColor,
-                fontWeight = if (lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank()) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank()) FontWeight.Bold else FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -132,7 +135,7 @@ fun PasscodeKeypadContent(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 KeypadRow(row = KEYPAD_ROW_1, onKeyClick = onKeyPress)
                 KeypadRow(row = KEYPAD_ROW_2, onKeyClick = onKeyPress)
@@ -161,20 +164,21 @@ fun PasscodeKeypadContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = stringResource(id = R.string.lock_forgot_pin),
-                    fontSize = 13.sp,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = BrandSecondary,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(10.dp))
                         .clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onForgotClick()
                         }
-                        .padding(8.dp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                         .testTag("lock_forgot_pin_btn"),
                     textAlign = TextAlign.Center
                 )

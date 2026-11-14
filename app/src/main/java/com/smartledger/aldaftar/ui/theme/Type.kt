@@ -1,10 +1,12 @@
 package com.smartledger.aldaftar.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 
@@ -17,111 +19,150 @@ val CairoFontFamily = FontFamily(
     Font(resId = R.font.cairo, weight = FontWeight.ExtraBold)
 )
 
+private val ArabicPlatformTextStyle = PlatformTextStyle(
+    includeFontPadding = false
+)
+
+private val ArabicLineHeightStyle = LineHeightStyle(
+    alignment = LineHeightStyle.Alignment.Center,
+    trim = LineHeightStyle.Trim.None
+)
+
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 42.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     displayMedium = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
         lineHeight = 38.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     displaySmall = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 34.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     headlineLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 30.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     headlineMedium = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 28.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     headlineSmall = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 18.sp,
         lineHeight = 26.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     titleLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 28.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     titleMedium = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     titleSmall = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 22.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     bodyLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     bodyMedium = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 22.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     bodySmall = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     labelLarge = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     labelMedium = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     ),
     labelSmall = TextStyle(
         fontFamily = CairoFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 )
 
@@ -134,7 +175,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Bold,
         fontSize = 26.sp,
         lineHeight = 34.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val metricValue = TextStyle(
@@ -142,7 +185,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 26.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val metricLabel = TextStyle(
@@ -150,7 +195,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val cardTitle = TextStyle(
@@ -158,7 +205,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Bold,
         fontSize = 15.5.sp,
         lineHeight = 22.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val cardSubtitle = TextStyle(
@@ -166,7 +215,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val dialogTitle = TextStyle(
@@ -174,7 +225,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val dialogSubtitle = TextStyle(
@@ -182,7 +235,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val badge = TextStyle(
@@ -190,7 +245,9 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Bold,
         fontSize = 10.5.sp,
         lineHeight = 15.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 
     val button = TextStyle(
@@ -198,6 +255,8 @@ object MizanTypographyTokens {
         fontWeight = FontWeight.Bold,
         fontSize = 13.5.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        platformStyle = ArabicPlatformTextStyle,
+        lineHeightStyle = ArabicLineHeightStyle
     )
 }

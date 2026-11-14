@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 
 /**
@@ -134,6 +135,7 @@ fun MizanDialogHeader(
                     text = title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
@@ -144,6 +146,7 @@ fun MizanDialogHeader(
                     Text(
                         text = subtitle,
                         fontSize = 11.5.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         lineHeight = 16.sp,
@@ -217,6 +220,7 @@ fun MizanDialogHeader(
                         text = title,
                         fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -225,6 +229,7 @@ fun MizanDialogHeader(
                         Text(
                             text = subtitle,
                             fontSize = 11.5.sp,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -327,6 +332,7 @@ fun MizanDialogActions(
                     text = extraActionText,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.SemiBold,
+                    fontFamily = CairoFontFamily,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -347,6 +353,7 @@ fun MizanDialogActions(
                     text = cancelText,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Medium,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
@@ -392,6 +399,7 @@ fun MizanDialogActions(
                         text = confirmText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis

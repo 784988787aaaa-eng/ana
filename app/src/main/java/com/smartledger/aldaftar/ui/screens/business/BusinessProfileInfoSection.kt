@@ -31,7 +31,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 
 private const val MAX_BIZ_NAME_LENGTH = 40
 private const val MAX_BIZ_DESC_LENGTH = 45
@@ -63,12 +65,13 @@ fun BusinessProfileInfoSection(
             OutlinedTextField(
                 value = bizName,
                 onValueChange = { if (it.length <= MAX_BIZ_NAME_LENGTH) onBizNameChange(it) },
-                label = { Text(text = stringResource(id = R.string.biz_label_name), fontSize = 13.sp) },
-                placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_name), fontSize = 13.sp) },
+                label = { Text(text = stringResource(id = R.string.biz_label_name), fontSize = 13.sp, fontFamily = CairoFontFamily) },
+                placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_name), fontSize = 13.sp, fontFamily = CairoFontFamily) },
                 supportingText = {
                     Text(
-                        text = "${bizName.length}/$MAX_BIZ_NAME_LENGTH",
+                        text = WesternDigits.normalize("${bizName.length}/$MAX_BIZ_NAME_LENGTH"),
                         fontSize = 11.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Start
@@ -87,7 +90,7 @@ fun BusinessProfileInfoSection(
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right, fontFamily = CairoFontFamily)
             )
 
             if (isDialog) {
@@ -97,12 +100,13 @@ fun BusinessProfileInfoSection(
             OutlinedTextField(
                 value = bizDesc,
                 onValueChange = { if (it.length <= MAX_BIZ_DESC_LENGTH) onBizDescChange(it) },
-                label = { Text(text = stringResource(id = R.string.biz_label_desc), fontSize = 13.sp) },
-                placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_desc), fontSize = 13.sp) },
+                label = { Text(text = stringResource(id = R.string.biz_label_desc), fontSize = 13.sp, fontFamily = CairoFontFamily) },
+                placeholder = { Text(text = stringResource(id = R.string.biz_placeholder_desc), fontSize = 13.sp, fontFamily = CairoFontFamily) },
                 supportingText = {
                     Text(
-                        text = "${bizDesc.length}/$MAX_BIZ_DESC_LENGTH",
+                        text = WesternDigits.normalize("${bizDesc.length}/$MAX_BIZ_DESC_LENGTH"),
                         fontSize = 11.sp,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Start
@@ -121,7 +125,7 @@ fun BusinessProfileInfoSection(
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right)
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right, fontFamily = CairoFontFamily)
             )
         }
     }

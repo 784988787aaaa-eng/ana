@@ -42,6 +42,7 @@ import com.smartledger.aldaftar.ui.components.MizanAnimatedDialog
 import com.smartledger.aldaftar.ui.components.MizanDialogActions
 import com.smartledger.aldaftar.ui.components.MizanDialogCard
 import com.smartledger.aldaftar.ui.components.MizanDialogHeader
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.ui.components.RequestFocusAndShowKeyboard
 import com.smartledger.aldaftar.data.local.entities.AppSettings
@@ -102,6 +103,7 @@ fun SecurityActivePanel(
 
             Text(
                 text = stringResource(id = R.string.sec_toast_active_success),
+                fontFamily = CairoFontFamily,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = activeText
@@ -109,6 +111,7 @@ fun SecurityActivePanel(
 
             Text(
                 text = stringResource(id = R.string.sec_card_desc_warning),
+                fontFamily = CairoFontFamily,
                 fontSize = 11.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 16.sp,
@@ -146,12 +149,14 @@ fun SecurityActivePanel(
                             Column {
                                 Text(
                                     text = stringResource(id = R.string.sec_biometric_title),
+                                    fontFamily = CairoFontFamily,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = stringResource(id = R.string.sec_biometric_desc),
+                                    fontFamily = CairoFontFamily,
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -198,6 +203,7 @@ fun SecurityActivePanel(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.sec_btn_change_pin),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -231,6 +237,7 @@ fun SecurityActivePanel(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(id = R.string.sec_deactivate_btn),
+                        fontFamily = CairoFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -282,6 +289,17 @@ fun VerifyOldPinDialog(
 
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
+    val submitVerification = {
+        val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
+        if (targetInput.isNotBlank() && onVerify(targetInput)) {
+            onSuccess()
+        } else {
+            val msg = if (!showRecoveryMode) context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_current_pin) else context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_recovery)
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
+        }
+    }
+
     MizanAnimatedDialog(
         onDismissRequest = onDismiss
     ) { dismissDialog ->
@@ -300,6 +318,7 @@ fun VerifyOldPinDialog(
 
             Column(
                 modifier = Modifier
+                    .weight(1f, fill = false)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -314,8 +333,8 @@ fun VerifyOldPinDialog(
                                 pinInput = clean
                             }
                         },
-                        label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_current_pin_label), fontSize = 12.sp) },
-                        placeholder = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_placeholder_code), fontSize = 12.sp) },
+                        label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_current_pin_label), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                        placeholder = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_placeholder_code), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                         singleLine = true,
                         trailingIcon = {
                             IconButton(onClick = { pinVisible = !pinVisible }) {
@@ -326,11 +345,20 @@ fun VerifyOldPinDialog(
                                 )
                             }
                         },
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                        textStyle = LocalTextStyle.current.copy(
+                            fontFamily = CairoFontFamily,
+                            fontFeatureSettings = "tnum",
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
                         visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
                             focusManager.clearFocus()
+                            if (pinInput.length == 4) {
+                                submitVerification()
+                            }
                         }),
                         shape = MizanDialogTokens.inputShape,
                         modifier = Modifier
@@ -346,6 +374,7 @@ fun VerifyOldPinDialog(
                     ) {
                         Text(
                             text = stringResource(id = com.smartledger.aldaftar.R.string.sec_forgot_pin_recovery_link),
+                            fontFamily = CairoFontFamily,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -355,13 +384,21 @@ fun VerifyOldPinDialog(
                     OutlinedTextField(
                         value = recoveryInput,
                         onValueChange = { recoveryInput = it.toEnglishDigits() },
-                        label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_recovery_phrase_label), fontSize = 12.sp) },
-                        placeholder = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_recovery_phrase_placeholder), fontSize = 12.sp) },
+                        label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_recovery_phrase_label), fontFamily = CairoFontFamily, fontSize = 12.sp) },
+                        placeholder = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_recovery_phrase_placeholder), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                         singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(
+                            fontFamily = CairoFontFamily,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
                         shape = MizanDialogTokens.inputShape,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
                             focusManager.clearFocus()
+                            if (recoveryInput.isNotBlank()) {
+                                submitVerification()
+                            }
                         }),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -380,7 +417,8 @@ fun VerifyOldPinDialog(
                             Icon(imageVector = Icons.Default.Lightbulb, contentDescription = null, tint = mizanColors.warning, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (showHint) stringResource(id = com.smartledger.aldaftar.R.string.sec_hint_display_pattern, recoveryHint) else stringResource(id = com.smartledger.aldaftar.R.string.sec_hint_toggle_show),
+                                text = if (showHint) stringResource(id = com.smartledger.aldaftar.R.string.sec_hint_display_pattern, recoveryHint).toEnglishDigits() else stringResource(id = com.smartledger.aldaftar.R.string.sec_hint_toggle_show),
+                                fontFamily = CairoFontFamily,
                                 fontSize = 12.sp,
                                 color = mizanColors.warning,
                                 fontWeight = FontWeight.Medium
@@ -389,7 +427,11 @@ fun VerifyOldPinDialog(
                     }
 
                     TextButton(onClick = { showRecoveryMode = false }) {
-                        Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_back_to_passcode_btn), fontSize = 12.sp)
+                        Text(
+                            text = stringResource(id = com.smartledger.aldaftar.R.string.sec_back_to_passcode_btn),
+                            fontFamily = CairoFontFamily,
+                            fontSize = 12.sp
+                        )
                     }
                 }
 
@@ -397,16 +439,7 @@ fun VerifyOldPinDialog(
 
                 MizanDialogActions(
                     confirmText = stringResource(id = com.smartledger.aldaftar.R.string.sec_btn_confirm),
-                    onConfirm = {
-                        val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
-                        if (targetInput.isNotBlank() && onVerify(targetInput)) {
-                            onSuccess()
-                        } else {
-                            val msg = if (!showRecoveryMode) context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_current_pin) else context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_recovery)
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
-                        }
-                    },
+                    onConfirm = submitVerification,
                     confirmEnabled = if (!showRecoveryMode) pinInput.length == 4 else recoveryInput.isNotBlank(),
                     cancelText = stringResource(id = com.smartledger.aldaftar.R.string.sec_btn_cancel),
                     onCancel = dismissDialog

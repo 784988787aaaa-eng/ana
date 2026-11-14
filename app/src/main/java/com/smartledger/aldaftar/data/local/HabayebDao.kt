@@ -21,7 +21,6 @@ import java.math.BigDecimal
 @Dao
 interface HabayebDao {
 
-
     @Query("SELECT * FROM habayeb_customers ORDER BY createdAt DESC")
     fun getAllCustomersFlow(): Flow<List<HabayebCustomer>>
 
@@ -51,9 +50,6 @@ interface HabayebDao {
 
     @Query("DELETE FROM pinned_habayeb_customers")
     suspend fun clearAllPins()
-
-
-
 
     @Query("UPDATE habayeb_customers SET categoryId = :categoryId WHERE id IN (:customerIds)")
     suspend fun assignCustomersToCategory(customerIds: List<String>, categoryId: Int?)
@@ -91,9 +87,12 @@ interface HabayebDao {
     @Query("SELECT * FROM habayeb_transactions")
     fun getAllTransactionsFlow(): Flow<List<HabayebTransaction>>
 
+    @Query("SELECT id, customerId, type, amount, timestamp, '' AS description, linkedMainTxId, is_foreign, currency_code, foreign_amount, exchange_rate, is_rate_calculated, equivalent_amount, base_currency_code, snapshot_version, rate_context FROM habayeb_transactions")
+    fun getAllTransactionsForBalancesFlow(): Flow<List<HabayebTransaction>>
+
     fun getAllCustomerBalancesFlow(defaultCurrencySymbol: String): Flow<List<CustomerCurrencyBalance>> {
         val normDefault = FinancialPolicy.canonicalCurrencySymbol(defaultCurrencySymbol)
-        return getAllTransactionsFlow().map { transactions ->
+        return getAllTransactionsForBalancesFlow().map { transactions ->
             aggregateCustomerBalancesBigDecimal(transactions, normDefault)
         }
     }
@@ -113,33 +112,48 @@ interface HabayebDao {
             var txCount: Int = 0
         )
 
-        val grouped = LinkedHashMap<Pair<String, String>, BalanceAccumulator>(transactions.size.coerceAtLeast(4))
-        for (tx in transactions) {
+        val byCustomer = LinkedHashMap<String, LinkedHashMap<String, BalanceAccumulator>>()
+        var totalBuckets = 0
+
+        for (i in transactions.indices) {
+            val tx = transactions[i]
             val (rawCurrency, bdAmount) = CurrencyConfig.getTransactionCurrencyAndAmountBigDecimal(tx, defaultCurrencySymbol)
             val txCurrency = FinancialPolicy.canonicalCurrencySymbol(rawCurrency)
             val safeAmount = FinancialPolicy.normalize(bdAmount)
             val safeEquiv = FinancialPolicy.normalize(tx.equivalentAmount)
             val txType = TransactionType.fromValue(tx.type)
 
-            val signedAmount = when (txType) {
-                TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> safeAmount
-                TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> safeAmount.negate()
+            val isPositive = txType == TransactionType.OWED_BY_THEM || txType == TransactionType.PAYMENT_TO_THEM
+            val isNegative = txType == TransactionType.PAYMENT_BY_THEM || txType == TransactionType.OWED_TO_THEM
+
+            val signedAmount = when {
+                isPositive -> safeAmount
+                isNegative -> safeAmount.negate()
                 else -> BigDecimal.ZERO
             }
-            val signedEquiv = when (txType) {
-                TransactionType.OWED_BY_THEM, TransactionType.PAYMENT_TO_THEM -> safeEquiv
-                TransactionType.PAYMENT_BY_THEM, TransactionType.OWED_TO_THEM -> safeEquiv.negate()
+            val signedEquiv = when {
+                isPositive -> safeEquiv
+                isNegative -> safeEquiv.negate()
                 else -> BigDecimal.ZERO
             }
 
-            val key = tx.customerId to txCurrency
-            val acc = grouped.getOrPut(key) {
-                BalanceAccumulator(
+            var currencyMap = byCustomer[tx.customerId]
+            if (currencyMap == null) {
+                currencyMap = LinkedHashMap(4)
+                byCustomer[tx.customerId] = currencyMap
+            }
+
+            var acc = currencyMap[txCurrency]
+            if (acc == null) {
+                acc = BalanceAccumulator(
                     customerId = tx.customerId,
                     currencyCode = txCurrency,
                     lastTimestamp = tx.timestamp
                 )
+                currencyMap[txCurrency] = acc
+                totalBuckets += 1
             }
+
             acc.netAmount = acc.netAmount.add(signedAmount)
             acc.netEquivalentAmount = acc.netEquivalentAmount.add(signedEquiv)
             if (tx.timestamp > acc.lastTimestamp) {
@@ -148,16 +162,22 @@ interface HabayebDao {
             acc.txCount += 1
         }
 
-        return grouped.values.map { acc ->
-            CustomerCurrencyBalance(
-                customerId = acc.customerId,
-                currencyCode = acc.currencyCode,
-                netAmount = FinancialPolicy.normalize(acc.netAmount),
-                netEquivalentAmount = FinancialPolicy.normalize(acc.netEquivalentAmount),
-                lastTimestamp = acc.lastTimestamp,
-                txCount = acc.txCount
-            )
+        val result = ArrayList<CustomerCurrencyBalance>(totalBuckets)
+        for (currencyMap in byCustomer.values) {
+            for (acc in currencyMap.values) {
+                result.add(
+                    CustomerCurrencyBalance(
+                        customerId = acc.customerId,
+                        currencyCode = acc.currencyCode,
+                        netAmount = FinancialPolicy.normalize(acc.netAmount),
+                        netEquivalentAmount = FinancialPolicy.normalize(acc.netEquivalentAmount),
+                        lastTimestamp = acc.lastTimestamp,
+                        txCount = acc.txCount
+                    )
+                )
+            }
         }
+        return result
     }
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")
@@ -220,8 +240,6 @@ interface HabayebDao {
         """)
     suspend fun getBaseOperationsCountDirect(): Int
 
-
-
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC")
     fun getTransactionsPagingSourceForCustomer(customerId: String): PagingSource<Int, HabayebTransaction>
 
@@ -230,8 +248,6 @@ interface HabayebDao {
 
     @Query("SELECT * FROM habayeb_transactions WHERE customerId = :customerId ORDER BY timestamp DESC LIMIT :limit")
     fun getTransactionsForCustomerWithLimitFlow(customerId: String, limit: Int): Flow<List<HabayebTransaction>>
-
-
 
     @Query("""
         UPDATE habayeb_transactions 
@@ -273,4 +289,3 @@ interface HabayebDao {
         }
     }
 }
-

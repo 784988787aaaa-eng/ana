@@ -38,6 +38,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.focus.focusProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smartledger.aldaftar.R
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import com.smartledger.aldaftar.data.local.entities.HabayebCustomer
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
@@ -67,7 +68,9 @@ fun AddTransactionPopup(
     val haptic = LocalHapticFeedback.current
 
     val customersUiState by viewModel.customersUiState.collectAsStateWithLifecycle()
-    val customerState = customersUiState.customers.find { it.id == customer.id }
+    val customerState = remember(customersUiState.customers, customer.id) {
+        customersUiState.customers.find { it.id == customer.id }
+    }
     val netDebt = customerState?.netDebt ?: java.math.BigDecimal.ZERO
 
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
@@ -326,12 +329,14 @@ fun AddTransactionPopup(
                                         text = if (editingTransaction != null) stringResource(id = R.string.add_transaction_title_edit) else stringResource(id = R.string.add_transaction_title_new),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.ExtraBold,
+                                        fontFamily = CairoFontFamily,
                                         color = activeThemeColor
                                     )
                                     Text(
                                         text = stringResource(id = R.string.add_transaction_account_label, "${customer.name.take(15)}${if (customer.name.length > 15) ".." else ""}"),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
+                                        fontFamily = CairoFontFamily,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -418,6 +423,7 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.tx_action_debt_on_him) else stringResource(id = R.string.tx_action_debt_to_him),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
+                                        fontFamily = CairoFontFamily,
                                         color = mizanColors.onDebt
                                     )
                                 }
@@ -434,6 +440,7 @@ fun AddTransactionPopup(
                                         text = if (isLendOperationSelected) stringResource(id = R.string.btn_receive) else stringResource(id = R.string.btn_pay),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
+                                        fontFamily = CairoFontFamily,
                                         color = mizanColors.onCredit
                                     )
                                 }

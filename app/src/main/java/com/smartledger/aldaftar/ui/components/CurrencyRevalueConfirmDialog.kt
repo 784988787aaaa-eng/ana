@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
@@ -35,6 +37,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,6 +46,7 @@ import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -91,6 +95,7 @@ fun CurrencyRevalueConfirmContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -125,6 +130,7 @@ fun CurrencyRevalueConfirmContent(
                     text = stringResource(id = R.string.currency_update_rate_title),
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -188,12 +194,16 @@ fun CurrencyRevalueConfirmContent(
                                 text = "1 $canonicalBase = ",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
+                                style = TextStyle(fontFeatureSettings = "tnum"),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = HabayebMathHelper.formatRate(canonicalDisplayRate),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Black,
+                                fontFamily = CairoFontFamily,
+                                style = TextStyle(fontFeatureSettings = "tnum"),
                                 color = MaterialTheme.colorScheme.primary
                             )
                             if (canonicalTarget.isNotBlank()) {
@@ -201,6 +211,7 @@ fun CurrencyRevalueConfirmContent(
                                     text = " $canonicalTarget",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
@@ -214,6 +225,7 @@ fun CurrencyRevalueConfirmContent(
             text = stringResource(id = R.string.currency_update_rate_confirm_msg, targetCurrency),
             fontSize = 11.sp,
             lineHeight = 15.sp,
+            fontFamily = CairoFontFamily,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -261,6 +273,7 @@ fun CurrencyRevalueConfirmContent(
                 text = stringResource(R.string.currency_settings_dialog_cancel),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -314,11 +327,13 @@ private fun RevalueOptionCard(
                     text = title,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = description,
                     fontSize = 9.5.sp,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 13.sp
                 )

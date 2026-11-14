@@ -3,7 +3,9 @@ package com.smartledger.aldaftar.ui.screens.habayeb.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material3.*
@@ -19,12 +21,9 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.DateTimeArabicHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
-import com.smartledger.aldaftar.presentation.formatters.WesternDigits
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,6 +121,7 @@ fun CustomerHistoryFilterSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -129,6 +129,7 @@ fun CustomerHistoryFilterSheet(
                 text = stringResource(id = R.string.habayeb_smart_filter),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 2.dp)
             )
@@ -137,6 +138,7 @@ fun CustomerHistoryFilterSheet(
                 text = stringResource(id = R.string.habayeb_filter_date),
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -164,7 +166,7 @@ fun CustomerHistoryFilterSheet(
                             .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)
+                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, fontFamily = CairoFontFamily, color = chipText)
                     }
                 }
             }
@@ -206,6 +208,8 @@ fun CustomerHistoryFilterSheet(
                                     text = startStr,
                                     fontSize = 12.sp,
                                     fontWeight = if (customStartDate != null) FontWeight.Bold else FontWeight.Normal,
+                                    fontFamily = CairoFontFamily,
+                                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                     color = if (customStartDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
                                 )
@@ -216,6 +220,7 @@ fun CustomerHistoryFilterSheet(
                             text = stringResource(id = R.string.habayeb_to_text),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
+                            fontFamily = CairoFontFamily,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
@@ -246,6 +251,8 @@ fun CustomerHistoryFilterSheet(
                                     text = endStr,
                                     fontSize = 12.sp,
                                     fontWeight = if (customEndDate != null) FontWeight.Bold else FontWeight.Normal,
+                                    fontFamily = CairoFontFamily,
+                                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                     color = if (customEndDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
                                 )
@@ -275,6 +282,8 @@ fun CustomerHistoryFilterSheet(
                                     text = "المدة المحددة: $filterDurationLabel",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
+                                    style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                     color = activeThemeColor
                                 )
                             }
@@ -289,6 +298,7 @@ fun CustomerHistoryFilterSheet(
                 text = stringResource(id = R.string.habayeb_filter_by_type),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -311,7 +321,7 @@ fun CustomerHistoryFilterSheet(
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = chipText)
+                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, fontFamily = CairoFontFamily, color = chipText)
                     }
                 }
             }
@@ -332,6 +342,7 @@ fun CustomerHistoryFilterSheet(
                     Text(
                         stringResource(id = R.string.habayeb_filter_reset),
                         fontSize = 13.sp,
+                        fontFamily = CairoFontFamily,
                         maxLines = 1
                     )
                 }
@@ -346,6 +357,7 @@ fun CustomerHistoryFilterSheet(
                     Text(
                         stringResource(id = R.string.habayeb_filter_apply),
                         fontSize = 13.sp,
+                        fontFamily = CairoFontFamily,
                         maxLines = 1
                     )
                 }

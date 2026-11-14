@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.presentation.formatters.WesternDigits
 import com.smartledger.aldaftar.ui.screens.habayeb.components.datetime.RangeTab
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -156,6 +158,8 @@ private fun DateTimePill(
                 text = text,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
+                style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis

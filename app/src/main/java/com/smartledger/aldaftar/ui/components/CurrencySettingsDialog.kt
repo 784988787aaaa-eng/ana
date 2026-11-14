@@ -75,6 +75,7 @@ import com.smartledger.aldaftar.data.local.entities.AppSettings
 import com.smartledger.aldaftar.domain.model.FinancialPolicy
 import com.smartledger.aldaftar.ui.helper.HabayebMathHelper
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.MizanDialogTokens
 import java.math.BigDecimal
 
@@ -117,6 +118,7 @@ fun CurrencySettingsDialog(
         ) {
             AnimatedContent(
                 targetState = state.activeDialogState,
+                modifier = Modifier.weight(1f, fill = false),
                 transitionSpec = {
                     (fadeIn(animationSpec = tween(120)) + slideInVertically(
                         animationSpec = tween(120),
@@ -137,9 +139,8 @@ fun CurrencySettingsDialog(
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            // Ultra-compact horizontal header
                             CompactDialogHeader(
                                 title = stringResource(R.string.currency_settings_dialog_title),
                                 icon = Icons.Default.MonetizationOn,
@@ -158,7 +159,7 @@ fun CurrencySettingsDialog(
                                 haptic = haptic
                             )
 
-                            // 2. Exchange Rate Section (سعر الصرف)
+                            // 2. Secondary & Third Currencies + Exchange Rate (سعر الصرف)
                             CompactExchangeRateCard(
                                 currenciesToDisplay = state.currenciesToDisplay,
                                 localDefaultCurrency = state.localDefaultCurrency,
@@ -241,17 +242,17 @@ private fun CompactDialogHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 2.dp, vertical = 2.dp),
+            .padding(horizontal = 2.dp, vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(26.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(iconTint.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
@@ -260,13 +261,14 @@ private fun CompactDialogHeader(
                     imageVector = icon,
                     contentDescription = null,
                     tint = iconTint,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(15.dp)
                 )
             }
             Text(
                 text = title,
-                fontSize = 14.5.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -274,7 +276,7 @@ private fun CompactDialogHeader(
         IconButton(
             onClick = onClose,
             modifier = Modifier
-                .size(36.dp)
+                .size(32.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
@@ -282,7 +284,7 @@ private fun CompactDialogHeader(
                 imageVector = Icons.Default.Close,
                 contentDescription = stringResource(R.string.desc_close),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(15.dp)
+                modifier = Modifier.size(14.dp)
             )
         }
     }
@@ -299,40 +301,37 @@ private fun CompactPrimaryCurrencyCard(
     haptic: HapticFeedback
 ) {
     MizanDialogInnerCard(
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.10f)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.currency_primary_section_title),
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            Text(
+                text = stringResource(R.string.currency_primary_section_title),
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
             ) {
                 Text(
-                    text = "العملة الرئيسية",
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = selectedCurrency,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -349,7 +348,7 @@ private fun CompactPrimaryCurrencyCard(
 
                 Surface(
                     onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelectCurrency(symbol)
                     },
                     modifier = Modifier
@@ -359,7 +358,7 @@ private fun CompactPrimaryCurrencyCard(
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                     border = BorderStroke(
-                        width = if (isSelected) 1.5.dp else 1.dp,
+                        width = if (isSelected) 1.5.dp else 0.8.dp,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
                 ) {
@@ -376,18 +375,20 @@ private fun CompactPrimaryCurrencyCard(
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp)
                             )
-                            Spacer(modifier = Modifier.width(3.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
                         }
                         Text(
                             text = symbol,
                             fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = CairoFontFamily
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = currencyName,
                             fontSize = 9.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontFamily = CairoFontFamily,
                             maxLines = 1
                         )
                     }
@@ -422,13 +423,13 @@ private fun CompactExchangeRateCard(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     MizanDialogInnerCard(
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            // Header row with section title and target currency tabs
+            // Header + Secondary/Third Currency Selector Cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -438,6 +439,7 @@ private fun CompactExchangeRateCard(
                     text = stringResource(R.string.currency_exchange_section_title),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = CairoFontFamily,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -445,12 +447,6 @@ private fun CompactExchangeRateCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = "تعديل سعر:",
-                        fontSize = 9.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                    )
-
                     availableTargets.forEach { symbol ->
                         val isSelected = selectedTargetCurrency == symbol
                         val currencyName = when (symbol) {
@@ -462,38 +458,34 @@ private fun CompactExchangeRateCard(
 
                         Surface(
                             onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onTargetCurrencyChange(symbol)
                             },
                             modifier = Modifier.height(26.dp),
-                            shape = RoundedCornerShape(13.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                             border = BorderStroke(
                                 width = 1.dp,
                                 color = if (isSelected) MaterialTheme.colorScheme.secondary else Color.Transparent
                             )
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp),
+                                modifier = Modifier.padding(horizontal = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Sync,
-                                    contentDescription = null,
-                                    tint = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(11.dp)
-                                )
                                 Text(
                                     text = symbol,
                                     fontSize = 10.5.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = CairoFontFamily,
                                     color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "($currencyName)",
+                                    text = currencyName,
                                     fontSize = 8.5.sp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    fontFamily = CairoFontFamily,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             }
                         }
@@ -501,138 +493,135 @@ private fun CompactExchangeRateCard(
                 }
             }
 
-        Spacer(modifier = Modifier.height(5.dp))
-
-        // Conversion Equation Input Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(36.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(
-                    width = if (isFocused) 1.5.dp else 1.dp,
-                    color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(5.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
-            ) {
-                Text(
-                    text = "1 ${displayPair.first} =",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
-
-            Box(
+            // Conversion Equation Input Row
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 2.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(
+                        width = if (isFocused) 1.5.dp else 1.dp,
+                        color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                BasicTextField(
-                    value = rateInputStr,
-                    onValueChange = onRateInputChange,
-                    singleLine = true,
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(onDone = {
-                        keyboardController?.hide()
-                        focusManager.clearFocus()
-                    }),
-                    textStyle = TextStyle(
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
+                Surface(
+                    shape = RoundedCornerShape(5.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                ) {
+                    Text(
+                        text = "1 ${displayPair.first} =",
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
+                        fontFamily = CairoFontFamily,
+                        style = TextStyle(fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(rateFocusRequester)
-                        .onFocusChanged { isFocused = it.isFocused },
-                    decorationBox = { innerTextField ->
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if (rateInputStr.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.currency_settings_dialog_price),
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    textAlign = TextAlign.Center
-                                )
+                        .weight(1f)
+                        .padding(horizontal = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BasicTextField(
+                        value = rateInputStr,
+                        onValueChange = onRateInputChange,
+                        singleLine = true,
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        }),
+                        textStyle = TextStyle(
+                            textAlign = TextAlign.Center,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = CairoFontFamily,
+                            fontFeatureSettings = "tnum",
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(rateFocusRequester)
+                            .onFocusChanged { isFocused = it.isFocused },
+                        decorationBox = { innerTextField ->
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                if (rateInputStr.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.currency_settings_dialog_price),
+                                        fontSize = 11.sp,
+                                        fontFamily = CairoFontFamily,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
                         }
-                    }
-                )
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(5.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        text = displayPair.second,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CairoFontFamily,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onToggleDirection()
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Sync,
+                        contentDescription = "تبديل الاتجاه",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
             }
 
-            Surface(
-                shape = RoundedCornerShape(5.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            ) {
-                Text(
-                    text = displayPair.second,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
-
-            IconButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onToggleDirection()
-                },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Sync,
-                    contentDescription = "تبديل الاتجاه",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(3.dp))
-
-        // Status note showing direct rate and reciprocal market equivalent
-        val currentRateFormatted = if (currentRateValue > BigDecimal.ZERO) {
-            val directStr = "1 ${displayPair.first} = ${HabayebMathHelper.formatRate(currentRateValue)} ${displayPair.second}"
-            val reciprocal = runCatching {
-                BigDecimal.ONE.divide(currentRateValue, FinancialPolicy.rateScale, java.math.RoundingMode.HALF_EVEN)
-            }.getOrNull()
-            if (reciprocal != null && reciprocal > BigDecimal.ZERO) {
-                "$directStr (أي: 1 ${displayPair.second} = ${HabayebMathHelper.formatRate(reciprocal)} ${displayPair.first})"
+            // Concise single-line rate summary
+            val currentRateFormatted = if (currentRateValue > BigDecimal.ZERO) {
+                "1 ${displayPair.first} = ${HabayebMathHelper.formatRate(currentRateValue)} ${displayPair.second}"
             } else {
-                directStr
+                stringResource(R.string.currency_no_rate_set)
             }
-        } else {
-            stringResource(R.string.currency_no_rate_set)
-        }
 
-        Text(
-            text = currentRateFormatted,
-            fontSize = 9.5.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+            Text(
+                text = currentRateFormatted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = CairoFontFamily,
+                style = TextStyle(fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -645,7 +634,7 @@ private fun CompactActionButtons(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 2.dp),
+            .padding(top = 1.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -660,7 +649,8 @@ private fun CompactActionButtons(
             Text(
                 text = stringResource(R.string.currency_settings_dialog_cancel),
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -678,6 +668,7 @@ private fun CompactActionButtons(
                 text = stringResource(R.string.currency_settings_dialog_save),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = CairoFontFamily,
                 color = MaterialTheme.colorScheme.onPrimary
             )
         }

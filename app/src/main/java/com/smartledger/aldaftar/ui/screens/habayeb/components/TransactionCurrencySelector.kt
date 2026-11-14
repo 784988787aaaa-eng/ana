@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.data.local.entities.HabayebTransaction
 import com.smartledger.aldaftar.ui.screens.habayeb.utils.ExchangeRateHelper
+import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -107,6 +108,7 @@ fun TransactionCurrencySelector(
                         text = label,
                         fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = CairoFontFamily,
                         color = if (isSelected) dynamicThemeColor else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -179,6 +181,7 @@ fun TransactionCurrencySelector(
                         text = stringResource(id = R.string.add_transaction_exchange_rate_prompt),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
+                        fontFamily = CairoFontFamily,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -231,6 +234,7 @@ fun TransactionCurrencySelector(
                                 text = displayText,
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 color = activeThemeColor
                             )
                         }
@@ -257,6 +261,7 @@ fun TransactionCurrencySelector(
                                 text = stringResource(R.string.currency_setup_rate_to_start),
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = CairoFontFamily,
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
