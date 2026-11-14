@@ -21,6 +21,9 @@ interface RecurringConfigDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(config: RecurringConfigEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveAll(configs: List<RecurringConfigEntity>)
+
     @Query("DELETE FROM recurring_configs WHERE id=:id")
     suspend fun delete(id: String)
 

@@ -183,6 +183,7 @@ fun SecurityScreen(
                                     viewModel.saveSettingsSync(updated)
                                     isSaving = false
                                     isEditingPasscode = false
+                                    com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                                     Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
                                     onBack()
                                 } catch (e: Exception) {
@@ -288,11 +289,12 @@ fun SecurityDialog(
                                 isSaving = true
                                 coroutineScope.launch {
                                     val updated = buildSecuritySettings(passcode, recoveryPhrase, recoveryHint, currentSettings)
-                                    viewModel.saveSettings(updated)
+                                    viewModel.saveSettingsSync(updated)
                                     isSaving = false
                                     isEditingPasscodeInDialog = false
+                                    com.smartledger.aldaftar.ui.helper.VibrationHelper.triggerSuccessVibration(context)
                                     Toast.makeText(context, context.getString(R.string.sec_toast_enabled_success), Toast.LENGTH_SHORT).show()
-                                    onDismiss()
+                                    dismissDialog()
                                 }
                             }
                         }

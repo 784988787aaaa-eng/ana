@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.smartledger.aldaftar.ui.theme.mizanColors
 
@@ -31,16 +33,25 @@ fun PasscodeDotIndicators(
     val mizanColors = MaterialTheme.mizanColors
 
     Row(
-        modifier = modifier.offset(x = shakeOffsetPx.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier
+            .offset(x = shakeOffsetPx.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.06f))
+            .border(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.14f),
+                shape = CircleShape
+            )
+            .padding(horizontal = 24.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         for (i in 0 until totalDots) {
             val filled = enteredLength > i
             val dotScale by animateFloatAsState(
-                targetValue = if (filled) 1.2f else 1.0f,
+                targetValue = if (filled) 1.22f else 1.0f,
                 animationSpec = tween(
-                    durationMillis = 75,
+                    durationMillis = 70,
                     easing = FastOutSlowInEasing
                 ),
                 label = "dotScale_$i"
@@ -52,8 +63,8 @@ fun PasscodeDotIndicators(
                     .clip(CircleShape)
                     .background(if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityIndicatorEmpty)
                     .border(
-                        width = 1.2.dp,
-                        color = if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityIndicatorEmpty,
+                        width = 1.5.dp,
+                        color = if (filled) mizanColors.securityIndicatorFilled else mizanColors.securityKeyBorder,
                         shape = CircleShape
                     )
             )

@@ -3,6 +3,7 @@ package com.smartledger.aldaftar.ui.screens
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -30,7 +31,7 @@ import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper
 import com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType
 import com.smartledger.aldaftar.ui.screens.security.lock.PasscodeKeypadContent
 import com.smartledger.aldaftar.ui.screens.security.lock.RecoveryPhraseContent
-import com.smartledger.aldaftar.ui.theme.NeutralBackgroundDark
+import com.smartledger.aldaftar.ui.theme.mizanColors
 import com.smartledger.aldaftar.ui.viewmodel.SecurityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -41,15 +42,18 @@ import kotlinx.coroutines.withContext
 fun AppLockScreen(
     viewModel: SecurityViewModel,
     onUnlockSuccess: () -> Unit,
-    onUnlockBypassedAndDisabled: () -> Unit
+    onUnlockBypassedAndDisabled: () -> Unit,
+    initialSettings: com.smartledger.aldaftar.data.local.entities.AppSettings? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val vibrator = remember(context) { LockHapticHelper.getVibrator(context) }
+    val mizanColors = androidx.compose.material3.MaterialTheme.mizanColors
 
-    val settings by viewModel.settingsState.collectAsStateWithLifecycle()
+    val vmSettings by viewModel.settingsState.collectAsStateWithLifecycle()
+    val settings = if (vmSettings.passcodeHash.isNullOrBlank() && initialSettings != null) initialSettings else vmSettings
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
     val isBiometricSupported = remember(context) { BiometricAuthHelper.isBiometricAvailable(context) }
 
@@ -212,46 +216,61 @@ fun AppLockScreen(
         showRecoveryView = false
     }
 
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-        color = NeutralBackgroundDark
-    ) {
-        PasscodeKeypadContent(
-            enteredPasscode = enteredPasscode,
-            isCheckingPasscode = isCheckingPasscode,
-            shakeOffsetPx = shakeOffset.value,
-            isBiometricSupported = isBiometricSupported,
-            errorMessage = errorMessage,
-            onKeyPress = onKeyPress,
-            onDeleteClick = onDeleteClick,
-            onForgotClick = onForgotClick,
-            onBiometricClick = {
-                LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
-                triggerBiometricPrompt()
-            },
-            lockoutTimeRemainingSec = lockoutTimeRemainingSec
+    val bgGradient = remember(mizanColors.securityBackground) {
+        androidx.compose.ui.graphics.Brush.verticalGradient(
+            colors = listOf(
+                androidx.compose.ui.graphics.Color(0xFF2E1E7A),
+                mizanColors.securityBackground,
+                androidx.compose.ui.graphics.Color(0xFF0E0922)
+            )
         )
+    }
 
-        if (showRecoveryView) {
-            MizanAnimatedDialog(onDismissRequest = onReturnToKeypadClick) { dismissWithAnimation ->
-                MizanDialogCard {
-                    RecoveryPhraseContent(
-                        recoveryPhraseInput = recoveryPhraseInput,
-                        onRecoveryPhraseChange = {
-                            recoveryPhraseInput = it
-                            recoveryErrorMessage = null
-                        },
-                        recoveryHint = recoveryHint,
-                        showHintText = showHintText,
-                        onToggleHint = { showHintText = !showHintText },
-                        onVerifyClick = onVerifyRecoveryPhrase,
-                        onReturnToKeypadClick = { dismissWithAnimation() },
-                        recoveryErrorMessage = recoveryErrorMessage,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = mizanColors.securityBackground
+    ) {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(bgGradient)
+                .statusBarsPadding()
+                .navigationBarsPadding()
+        ) {
+            PasscodeKeypadContent(
+                enteredPasscode = enteredPasscode,
+                isCheckingPasscode = isCheckingPasscode,
+                shakeOffsetPx = shakeOffset.value,
+                isBiometricSupported = isBiometricSupported,
+                errorMessage = errorMessage,
+                onKeyPress = onKeyPress,
+                onDeleteClick = onDeleteClick,
+                onForgotClick = onForgotClick,
+                onBiometricClick = {
+                    LockHapticHelper.performLockHaptic(vibrator, LockHapticType.KEYPRESS)
+                    triggerBiometricPrompt()
+                },
+                lockoutTimeRemainingSec = lockoutTimeRemainingSec
+            )
+
+            if (showRecoveryView) {
+                MizanAnimatedDialog(onDismissRequest = onReturnToKeypadClick) { dismissWithAnimation ->
+                    MizanDialogCard {
+                        RecoveryPhraseContent(
+                            recoveryPhraseInput = recoveryPhraseInput,
+                            onRecoveryPhraseChange = {
+                                recoveryPhraseInput = it
+                                recoveryErrorMessage = null
+                            },
+                            recoveryHint = recoveryHint,
+                            showHintText = showHintText,
+                            onToggleHint = { showHintText = !showHintText },
+                            onVerifyClick = onVerifyRecoveryPhrase,
+                            onReturnToKeypadClick = { dismissWithAnimation() },
+                            recoveryErrorMessage = recoveryErrorMessage,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
                 }
             }
         }

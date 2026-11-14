@@ -36,6 +36,7 @@ class FinanceApplication : Application(), Configuration.Provider {
         super.onCreate()
         CoroutineScope(Dispatchers.Default).launch {
             try {
+                com.smartledger.aldaftar.platform.security.AppSecurityManager.getInstance(this@FinanceApplication).warmupStorage()
                 BackupScheduler(this@FinanceApplication).scheduleDaily()
                 val workManager = WorkManager.getInstance(this@FinanceApplication)
                 workManager.enqueueUniquePeriodicWork(
@@ -44,6 +45,8 @@ class FinanceApplication : Application(), Configuration.Provider {
                     androidx.work.PeriodicWorkRequestBuilder<com.smartledger.aldaftar.work.LicenseVerificationWorker>(24, TimeUnit.HOURS)
                         .setConstraints(Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build()).build()
                 )
+                kotlinx.coroutines.delay(5_000L)
+                runCatching { container.automaticBackup.runDailyIfDue(this@FinanceApplication) }
             } catch (e: Exception) {
                 android.util.Log.w("FinanceApplication", "Failed to schedule background workers", e)
             }

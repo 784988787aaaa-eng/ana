@@ -33,6 +33,9 @@ interface HabayebDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCustomer(customer: HabayebCustomer)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomersBatch(customers: List<HabayebCustomer>)
+
     @Update
     suspend fun updateCustomer(customer: HabayebCustomer)
 
@@ -71,6 +74,9 @@ interface HabayebDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPinnedCustomer(pin: PinnedCustomer): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertPinnedCustomersBatch(pins: List<PinnedCustomer>)
 
     @Query("DELETE FROM pinned_habayeb_customers WHERE scopeCategoryId = :scope AND customerId = :customerId")
     suspend fun deletePinnedCustomer(scope: Int, customerId: String)

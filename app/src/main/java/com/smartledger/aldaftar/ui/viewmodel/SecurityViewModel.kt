@@ -96,10 +96,34 @@ class SecurityViewModel(
         return try {
             val value = String(inputChars)
             val settings = settingsState.value
-            HashUtils.verifyPin(value, settings.passcodeHash) ||
-                HashUtils.verifyPin(value, settings.recoveryPhraseHash)
+            val isFourDigitPin = value.length == 4 && value.all { it.isDigit() }
+            if (isFourDigitPin) {
+                HashUtils.verifyPin(value, settings.passcodeHash) ||
+                    HashUtils.verifyPin(value, settings.recoveryPhraseHash)
+            } else {
+                HashUtils.verifyPin(value, settings.recoveryPhraseHash) ||
+                    HashUtils.verifyPin(value, settings.passcodeHash)
+            }
         } finally {
             HashUtils.wipeCharArray(inputChars)
         }
     }
+
+    suspend fun verifyCredentialsAsync(input: String, preferRecoveryOnly: Boolean = false): Boolean =
+        withContext(Dispatchers.Default) {
+            val inputChars = input.trim().toCharArray()
+            try {
+                val value = String(inputChars)
+                val settings = settingsState.value
+                if (preferRecoveryOnly) {
+                    HashUtils.verifyPin(value, settings.recoveryPhraseHash)
+                } else if (value.length == 4 && value.all { it.isDigit() }) {
+                    HashUtils.verifyPin(value, settings.passcodeHash)
+                } else {
+                    verifyCredentials(value)
+                }
+            } finally {
+                HashUtils.wipeCharArray(inputChars)
+            }
+        }
 }

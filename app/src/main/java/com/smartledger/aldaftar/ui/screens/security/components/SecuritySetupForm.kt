@@ -64,8 +64,10 @@ fun SecuritySetupForm(
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val focusManager = LocalFocusManager.current
     val haptic = LocalHapticFeedback.current
+    val vibrator = remember(context) { com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.getVibrator(context) }
 
     var passcodeVisible by remember { mutableStateOf(false) }
     var confirmPasscodeVisible by remember { mutableStateOf(false) }
@@ -78,6 +80,25 @@ fun SecuritySetupForm(
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     RequestFocusAndShowKeyboard(focusRequester = passcodeFocus, autoShow = true)
 
+    // Pre-warm PBKDF2 hashes in the background as the user completes each field so clicking Save has 0ms lag
+    LaunchedEffect(passcode) {
+        if (passcode.length == 4) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                com.smartledger.aldaftar.domain.HashUtils.prewarmHash(passcode)
+            }
+        }
+    }
+
+    LaunchedEffect(recoveryPhrase) {
+        val trimmed = recoveryPhrase.trim()
+        if (trimmed.isNotBlank()) {
+            kotlinx.coroutines.delay(180L)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                com.smartledger.aldaftar.domain.HashUtils.prewarmHash(trimmed)
+            }
+        }
+    }
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = MizanDialogTokens.innerCardShape,
@@ -85,32 +106,80 @@ fun SecuritySetupForm(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                width = 0.8.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
                 shape = MizanDialogTokens.innerCardShape
             )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp) // تقارب الحقول بمسافات دقيقة واحترافية تمنع التشتت
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.sec_setup_title),
-                fontFamily = CairoFontFamily,
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 2.dp)
-            )
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f))
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = stringResource(id = R.string.sec_setup_title),
+                        fontFamily = CairoFontFamily,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Live 4-dot visual PIN indicator & match badge
+                val pinsMatch = passcode.length == 4 && confirmPasscode.length == 4 && passcode == confirmPasscode
+                val pinsMismatch = passcode.length == 4 && confirmPasscode.length == 4 && passcode != confirmPasscode
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    for (i in 0 until 4) {
+                        val filled = passcode.length > i
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(
+                                    when {
+                                        pinsMismatch -> MaterialTheme.colorScheme.error
+                                        pinsMatch -> Color(0xFF10B981)
+                                        filled -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.outlineVariant
+                                    }
+                                )
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = passcode,
                 onValueChange = { input ->
                     val clean = input.toEnglishDigits()
                     if (clean.length <= 4 && clean.all { c -> c.isDigit() }) {
+                        if (clean != passcode) {
+                            com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.performLockHaptic(
+                                vibrator,
+                                com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType.KEYPRESS
+                            )
+                        }
                         onPasscodeChange(clean)
                         if (clean.length == 4) {
                             confirmPasscodeFocus.requestFocus()
@@ -166,8 +235,14 @@ fun SecuritySetupForm(
                 onValueChange = { input ->
                     val clean = input.toEnglishDigits()
                     if (clean.length <= 4 && clean.all { c -> c.isDigit() }) {
+                        if (clean != confirmPasscode) {
+                            com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.performLockHaptic(
+                                vibrator,
+                                com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType.KEYPRESS
+                            )
+                        }
                         onConfirmPasscodeChange(clean)
-                        if (clean.length == 4) {
+                        if (clean.length == 4 && clean == passcode) {
                             recoveryPhraseFocus.requestFocus()
                         }
                     }
@@ -175,11 +250,12 @@ fun SecuritySetupForm(
                 label = { Text(stringResource(id = R.string.sec_label_confirm), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 placeholder = { Text(stringResource(id = R.string.sec_placeholder_confirm), fontFamily = CairoFontFamily, fontSize = 12.sp) },
                 singleLine = true,
+                isError = confirmPasscode.length == 4 && passcode.length == 4 && confirmPasscode != passcode,
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.LockReset,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (confirmPasscode.length == 4 && confirmPasscode == passcode) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 },

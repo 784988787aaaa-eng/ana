@@ -48,21 +48,27 @@ fun KeypadButton(
     val mizanColors = MaterialTheme.mizanColors
     val haptic = LocalHapticFeedback.current
     val normalizedText = remember(text) { text.toEnglishDigits() }
-    val bg = remember(isFunctional, mizanColors) {
-        if (isFunctional) mizanColors.securityKeyBackground.copy(alpha = 0.5f) else mizanColors.securityKeyBackground
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.91f else 1f,
+        animationSpec = tween(durationMillis = 50, easing = FastOutSlowInEasing),
+        label = "keypadBtnScale"
+    )
+    val bg = when {
+        isPressed -> mizanColors.securityIndicatorFilled.copy(alpha = 0.28f)
+        isFunctional -> mizanColors.securityKeyBackground.copy(alpha = 0.55f)
+        else -> mizanColors.securityKeyBackground
+    }
+    val borderColor = when {
+        isPressed -> mizanColors.securityIndicatorFilled.copy(alpha = 0.75f)
+        else -> mizanColors.securityKeyBorder
     }
     val textCol = remember(isFunctional, mizanColors) {
         if (isFunctional) mizanColors.securityForegroundMuted else mizanColors.securityKeyContent
     }
-    val textSize = remember(isFunctional) { if (isFunctional) 13.sp else 24.sp }
+    val textSize = remember(isFunctional) { if (isFunctional) 13.5.sp else 25.sp }
     val fontWeight = remember(isFunctional) { if (isFunctional) FontWeight.Bold else FontWeight.ExtraBold }
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val buttonScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
-        animationSpec = tween(durationMillis = 55, easing = FastOutSlowInEasing),
-        label = "keypadBtnScale"
-    )
 
     Box(
         modifier = Modifier
@@ -71,8 +77,8 @@ fun KeypadButton(
             .clip(CircleShape)
             .background(bg)
             .border(
-                width = 1.dp,
-                color = mizanColors.securityKeyBorder,
+                width = if (isPressed) 1.5.dp else 1.dp,
+                color = borderColor,
                 shape = CircleShape
             )
             .clickable(
@@ -117,8 +123,8 @@ fun KeypadIconButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
-        animationSpec = tween(durationMillis = 55, easing = FastOutSlowInEasing),
+        targetValue = if (isPressed) 0.91f else 1f,
+        animationSpec = tween(durationMillis = 50, easing = FastOutSlowInEasing),
         label = "keypadIconScale"
     )
 
@@ -127,10 +133,13 @@ fun KeypadIconButton(
             .size(72.dp)
             .scale(buttonScale)
             .clip(CircleShape)
-            .background(mizanColors.securityIndicatorFilled.copy(alpha = 0.15f))
+            .background(
+                if (isPressed) mizanColors.securityIndicatorFilled.copy(alpha = 0.28f)
+                else mizanColors.securityIndicatorFilled.copy(alpha = 0.16f)
+            )
             .border(
                 width = 1.dp,
-                color = mizanColors.securityIndicatorFilled.copy(alpha = 0.3f),
+                color = mizanColors.securityIndicatorFilled.copy(alpha = if (isPressed) 0.7f else 0.35f),
                 shape = CircleShape
             )
             .clickable(
@@ -159,7 +168,7 @@ fun KeypadRow(
     onKeyClick: (String) -> Unit
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(28.dp),
+        horizontalArrangement = Arrangement.spacedBy(26.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         row.forEach { digit ->

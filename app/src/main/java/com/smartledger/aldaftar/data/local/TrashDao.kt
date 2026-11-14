@@ -39,6 +39,9 @@ abstract class TrashDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertDeletedItem(item: DeletedItemEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertDeletedItemsBatch(items: List<DeletedItemEntity>)
+
     @Delete
     abstract suspend fun deleteItem(item: DeletedItemEntity)
 

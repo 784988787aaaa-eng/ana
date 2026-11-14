@@ -167,77 +167,43 @@ fun SmartLedgerApp(
                 )
             }
 
-            Crossfade(
-                targetState = rootStage,
-                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
-                label = "RootStageCrossfade"
-            ) { stage ->
-                when (stage) {
-                    RootStage.LOADING -> {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .clip(CircleShape)
-                                        .background(BrandPrimary.copy(alpha = 0.14f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                                        contentDescription = null,
-                                        tint = BrandPrimary,
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = stringResource(id = R.string.app_name),
-                                    fontFamily = CairoFontFamily,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onBackground
+            when (rootStage) {
+                RootStage.LOADING -> {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {}
+                }
+
+                RootStage.LOCKED -> {
+                    AppLockScreen(
+                        viewModel = securityViewModel,
+                        initialSettings = settings,
+                        onUnlockSuccess = { isUnlocked = true },
+                        onUnlockBypassedAndDisabled = {
+                            securityViewModel.saveSettings(
+                                settings.copy(
+                                    isPasscodeEnabled = false,
+                                    passcodeHash = null,
+                                    recoveryPhraseHash = null
                                 )
-                            }
+                            )
+                            isUnlocked = true
                         }
-                    }
+                    )
+                }
 
-                    RootStage.LOCKED -> {
-                        AppLockScreen(
-                            viewModel = securityViewModel,
-                            onUnlockSuccess = { isUnlocked = true },
-                            onUnlockBypassedAndDisabled = {
-                                securityViewModel.saveSettings(
-                                    settings.copy(
-                                        isPasscodeEnabled = false,
-                                        passcodeHash = null,
-                                        recoveryPhraseHash = null
-                                    )
-                                )
-                                isUnlocked = true
-                            }
-                        )
-                    }
-
-                    RootStage.UNLOCKED -> {
-                        MainAppLayout(
-                            viewModel = financeViewModel,
-                            habayebViewModel = habayebViewModel,
-                            securityViewModel = securityViewModel,
-                            backupSyncViewModel = backupSyncViewModel,
-                            businessProfileViewModel = businessProfileViewModel,
-                            licenseViewModel = licenseViewModel,
-                            settings = settings,
-                            onExit = onExit
-                        )
-                    }
+                RootStage.UNLOCKED -> {
+                    MainAppLayout(
+                        viewModel = financeViewModel,
+                        habayebViewModel = habayebViewModel,
+                        securityViewModel = securityViewModel,
+                        backupSyncViewModel = backupSyncViewModel,
+                        businessProfileViewModel = businessProfileViewModel,
+                        licenseViewModel = licenseViewModel,
+                        settings = settings,
+                        onExit = onExit
+                    )
                 }
             }
         }

@@ -36,6 +36,7 @@ class BackupEngine(
         val payload = snapshot().toString().toByteArray(StandardCharsets.UTF_8)
         val hash = sha256(payload)
         val (salt, iv, encrypted) = crypto.encrypt(payload)
+        val keyWrap = crypto.wrapRecoveryKey(crypto.localRecoveryCode(), salt, iv)
         target.parentFile?.mkdirs()
         val envelope = JSONObject()
             .put("formatVersion", FORMAT_VERSION)
@@ -49,6 +50,7 @@ class BackupEngine(
             .put("salt", Base64.encodeToString(salt, Base64.NO_WRAP))
             .put("iv", Base64.encodeToString(iv, Base64.NO_WRAP))
             .put("payload", Base64.encodeToString(encrypted, Base64.NO_WRAP))
+            .put("keyWrap", keyWrap)
         val temp = File(target.parentFile, ".${target.name}.tmp")
         temp.writeText(envelope.toString(), Charsets.UTF_8)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -97,14 +99,14 @@ class BackupEngine(
         val salt = Base64.decode(envelope.getString("salt"), Base64.DEFAULT)
         val iv = Base64.decode(envelope.getString("iv"), Base64.DEFAULT)
         val cipherText = Base64.decode(envelope.getString("payload"), Base64.DEFAULT)
-        val payload = crypto.decrypt(salt, iv, cipherText, recoveryCode)
+        val keyWrap = envelope.optStringOrNull("keyWrap")
+        val payload = crypto.decrypt(salt, iv, cipherText, recoveryCode, keyWrap)
         require(sha256(payload).equals(envelope.getString("payloadSha256"), ignoreCase = true)) { "سلامة النسخة غير صحيحة" }
         val root = JSONObject(String(payload, StandardCharsets.UTF_8))
         validatePayload(root)
         // Protect the currently installed state before any destructive restore.
-        // The backup source is already in memory, so creating the safety copy
-        // cannot overwrite the source file being restored.
-        createAutomatic()
+        // Only write a pre-restore safety snapshot if there is existing data or if an automatic file path is expected.
+        runCatching { createAutomatic() }
         val restored = rootToDatabase(root)
         return restored
     }
@@ -149,7 +151,6 @@ class BackupEngine(
         val trash = root.array("trash").map(::parseTrash)
         val customers = root.array("customers").map(::parseCustomer)
         val habayebTransactions = root.array("habayebTransactions").map(::parseHabayebTransaction)
-        val transactionById = habayebTransactions.associateBy { it.id }
         val pins = root.array("pins").map(::parsePin)
         val profile = parseProfile(root.getJSONObject("businessProfile"))
         val recurring = root.array("recurring").map(::parseRecurring)
@@ -162,12 +163,24 @@ class BackupEngine(
             database.customCategoryDao().clearAllCustomCategories()
             database.settingsDao().insertOrUpdateSettings(settings.copy(id = 1))
             database.businessProfileDao().save(profile.copy(id = 1))
-            for (item in categories) database.customCategoryDao().insertCategory(item)
-            for (item in customers) database.habayebDao().insertCustomer(item)
-            for (item in habayebTransactions) database.habayebDao().insertTransaction(item)
-            for (item in pins) database.habayebDao().insertPinnedCustomer(item)
-            for (item in recurring) database.recurringConfigDao().save(item)
-            for (item in trash) database.trashDao().insertDeletedItem(item)
+            if (categories.isNotEmpty()) {
+                categories.chunked(500).forEach { database.customCategoryDao().insertCategoriesBatch(it) }
+            }
+            if (customers.isNotEmpty()) {
+                customers.chunked(500).forEach { database.habayebDao().insertCustomersBatch(it) }
+            }
+            if (habayebTransactions.isNotEmpty()) {
+                habayebTransactions.chunked(500).forEach { database.habayebDao().insertTransactionsBatch(it) }
+            }
+            if (pins.isNotEmpty()) {
+                pins.chunked(500).forEach { database.habayebDao().insertPinnedCustomersBatch(it) }
+            }
+            if (recurring.isNotEmpty()) {
+                recurring.chunked(500).forEach { database.recurringConfigDao().saveAll(it) }
+            }
+            if (trash.isNotEmpty()) {
+                trash.chunked(500).forEach { database.trashDao().insertDeletedItemsBatch(it) }
+            }
         }
         return settings
     }

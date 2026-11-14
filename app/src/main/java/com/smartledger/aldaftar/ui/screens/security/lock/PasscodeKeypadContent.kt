@@ -1,6 +1,7 @@
 package com.smartledger.aldaftar.ui.screens.security.lock
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.smartledger.aldaftar.R
 import com.smartledger.aldaftar.platform.contacts.StringUtils.toEnglishDigits
 import com.smartledger.aldaftar.ui.theme.BrandPrimary
+import com.smartledger.aldaftar.ui.theme.BrandPrimaryLight
 import com.smartledger.aldaftar.ui.theme.BrandSecondary
 import com.smartledger.aldaftar.ui.theme.CairoFontFamily
 import com.smartledger.aldaftar.ui.theme.NeutralTextPrimaryDark
@@ -67,27 +69,40 @@ fun PasscodeKeypadContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 36.dp)
+            modifier = Modifier.padding(top = 24.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(76.dp)
                     .clip(CircleShape)
-                    .background(BrandPrimary.copy(alpha = 0.25f)),
+                    .background(BrandPrimaryLight.copy(alpha = 0.14f))
+                    .border(
+                        width = 1.dp,
+                        color = BrandPrimaryLight.copy(alpha = 0.35f),
+                        shape = CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = stringResource(id = R.string.lock_app_locked_desc),
-                    tint = BrandPrimary,
-                    modifier = Modifier.size(32.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .background(BrandPrimary.copy(alpha = 0.55f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = stringResource(id = R.string.lock_app_locked_desc),
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -95,13 +110,14 @@ fun PasscodeKeypadContent(
             Text(
                 text = stringResource(id = R.string.lock_ledger_locked),
                 fontFamily = CairoFontFamily,
-                fontSize = 20.sp,
+                fontSize = 21.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = LOCK_TEXT_COLOR
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
+            val isErrorOrLockout = lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank()
             val subtitleText = (when {
                 lockoutTimeRemainingSec > 0L -> stringResource(id = R.string.lock_lockout_active, lockoutTimeRemainingSec)
                 !errorMessage.isNullOrBlank() -> errorMessage
@@ -109,19 +125,28 @@ fun PasscodeKeypadContent(
             }).toEnglishDigits()
 
             val subtitleColor = when {
-                lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank() -> Color(0xFFEF4444)
+                isErrorOrLockout -> Color(0xFFFF8A80)
                 else -> LOCK_TEXT_SECONDARY_COLOR
             }
 
-            Text(
-                text = subtitleText,
-                fontFamily = CairoFontFamily,
-                fontSize = 13.sp,
-                color = subtitleColor,
-                fontWeight = if (lockoutTimeRemainingSec > 0L || !errorMessage.isNullOrBlank()) FontWeight.Bold else FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        if (isErrorOrLockout) Color(0xFFEF4444).copy(alpha = 0.18f)
+                        else Color.White.copy(alpha = 0.06f)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = subtitleText,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 13.sp,
+                    color = subtitleColor,
+                    fontWeight = if (isErrorOrLockout) FontWeight.Bold else FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -135,14 +160,14 @@ fun PasscodeKeypadContent(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 KeypadRow(row = KEYPAD_ROW_1, onKeyClick = onKeyPress)
                 KeypadRow(row = KEYPAD_ROW_2, onKeyClick = onKeyPress)
                 KeypadRow(row = KEYPAD_ROW_3, onKeyClick = onKeyPress)
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(28.dp),
+                    horizontalArrangement = Arrangement.spacedBy(26.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (isBiometricSupported) {
@@ -164,7 +189,7 @@ fun PasscodeKeypadContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = stringResource(id = R.string.lock_forgot_pin),
@@ -173,12 +198,14 @@ fun PasscodeKeypadContent(
                     fontWeight = FontWeight.Bold,
                     color = BrandSecondary,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(50))
+                        .background(BrandSecondary.copy(alpha = 0.12f))
+                        .border(0.8.dp, BrandSecondary.copy(alpha = 0.30f), RoundedCornerShape(50))
                         .clickable {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onForgotClick()
                         }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .padding(horizontal = 18.dp, vertical = 8.dp)
                         .testTag("lock_forgot_pin_btn"),
                     textAlign = TextAlign.Center
                 )

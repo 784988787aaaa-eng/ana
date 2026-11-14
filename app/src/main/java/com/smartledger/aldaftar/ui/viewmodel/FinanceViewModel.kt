@@ -88,7 +88,7 @@ class FinanceViewModel(
     init {
         viewModelScope.launch {
             combine(
-                settingsState,
+                settingsRepository.settingsFlow.map { it ?: AppSettings() },
                 habayebRepository.customersFlow
             ) { settings, customers ->
                 settings to customers

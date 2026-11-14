@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -251,8 +252,8 @@ fun SecurityActivePanel(
         VerifyOldPinDialog(
             action = activePendingAction,
             recoveryHint = currentSettings.recoveryHint,
-            onVerify = { input ->
-                viewModel.verifyCredentials(input)
+            onVerifyAsync = { input, isRecovery ->
+                viewModel.verifyCredentialsAsync(input, preferRecoveryOnly = isRecovery)
             },
             onSuccess = {
                 val action = pendingAction
@@ -272,31 +273,49 @@ fun SecurityActivePanel(
 fun VerifyOldPinDialog(
     action: SecurityActiveAction,
     recoveryHint: String?,
-    onVerify: (String) -> Boolean,
+    onVerifyAsync: suspend (String, Boolean) -> Boolean,
     onSuccess: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val vibrator = remember(context) { com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.getVibrator(context) }
     val mizanColors = MaterialTheme.mizanColors
     var pinInput by remember { mutableStateOf("") }
     var recoveryInput by remember { mutableStateOf("") }
     var showRecoveryMode by remember { mutableStateOf(false) }
     var showHint by remember { mutableStateOf(false) }
     var pinVisible by remember { mutableStateOf(false) }
+    var isVerifying by remember { mutableStateOf(false) }
 
     val pinFocusRequester = remember { FocusRequester() }
     val recoveryFocusRequester = remember { FocusRequester() }
 
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
-    val submitVerification = {
-        val targetInput = if (!showRecoveryMode) pinInput else recoveryInput
-        if (targetInput.isNotBlank() && onVerify(targetInput)) {
-            onSuccess()
-        } else {
-            val msg = if (!showRecoveryMode) context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_current_pin) else context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_recovery)
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-            if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
+    val submitVerification: (String?) -> Unit = { overrideInput ->
+        val targetInput = overrideInput ?: if (!showRecoveryMode) pinInput else recoveryInput
+        if (targetInput.isNotBlank() && !isVerifying) {
+            isVerifying = true
+            scope.launch {
+                val matched = onVerifyAsync(targetInput, showRecoveryMode)
+                isVerifying = false
+                if (matched) {
+                    com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.performLockHaptic(
+                        vibrator,
+                        com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType.SUCCESS
+                    )
+                    onSuccess()
+                } else {
+                    com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.performLockHaptic(
+                        vibrator,
+                        com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType.ERROR
+                    )
+                    val msg = if (!showRecoveryMode) context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_current_pin) else context.getString(com.smartledger.aldaftar.R.string.sec_toast_incorrect_recovery)
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    if (!showRecoveryMode) pinInput = "" else recoveryInput = ""
+                }
+            }
         }
     }
 
@@ -325,12 +344,40 @@ fun VerifyOldPinDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (!showRecoveryMode) {
+                    // Visual 4-dot indicator bar for current PIN entry
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    ) {
+                        for (i in 0 until 4) {
+                            val filled = pinInput.length > i
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(
+                                        color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                    }
+
                     OutlinedTextField(
                         value = pinInput,
                         onValueChange = {
                             val clean = it.toEnglishDigits()
-                            if (clean.length <= 4 && clean.all { c -> c.isDigit() }) {
+                            if (clean.length <= 4 && clean.all { c -> c.isDigit() } && !isVerifying) {
+                                if (clean != pinInput) {
+                                    com.smartledger.aldaftar.ui.screens.security.lock.LockHapticHelper.performLockHaptic(
+                                        vibrator,
+                                        com.smartledger.aldaftar.ui.screens.security.lock.LockHapticType.KEYPRESS
+                                    )
+                                }
                                 pinInput = clean
+                                if (clean.length == 4) {
+                                    submitVerification(clean)
+                                }
                             }
                         },
                         label = { Text(stringResource(id = com.smartledger.aldaftar.R.string.sec_current_pin_label), fontFamily = CairoFontFamily, fontSize = 12.sp) },
@@ -357,7 +404,7 @@ fun VerifyOldPinDialog(
                         keyboardActions = KeyboardActions(onDone = {
                             focusManager.clearFocus()
                             if (pinInput.length == 4) {
-                                submitVerification()
+                                submitVerification(pinInput)
                             }
                         }),
                         shape = MizanDialogTokens.inputShape,
@@ -397,7 +444,7 @@ fun VerifyOldPinDialog(
                         keyboardActions = KeyboardActions(onDone = {
                             focusManager.clearFocus()
                             if (recoveryInput.isNotBlank()) {
-                                submitVerification()
+                                submitVerification(recoveryInput)
                             }
                         }),
                         modifier = Modifier
@@ -439,8 +486,8 @@ fun VerifyOldPinDialog(
 
                 MizanDialogActions(
                     confirmText = stringResource(id = com.smartledger.aldaftar.R.string.sec_btn_confirm),
-                    onConfirm = submitVerification,
-                    confirmEnabled = if (!showRecoveryMode) pinInput.length == 4 else recoveryInput.isNotBlank(),
+                    onConfirm = { submitVerification(null) },
+                    confirmEnabled = !isVerifying && (if (!showRecoveryMode) pinInput.length == 4 else recoveryInput.isNotBlank()),
                     cancelText = stringResource(id = com.smartledger.aldaftar.R.string.sec_btn_cancel),
                     onCancel = dismissDialog
                 )

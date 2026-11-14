@@ -252,6 +252,18 @@ class BackupSyncViewModel(
         engine.createManual().readBytes()
     }
 
+    private fun formatRestoreErrorMessage(throwable: Throwable?): String {
+        val raw = throwable?.message.orEmpty()
+        return when {
+            throwable is javax.crypto.AEADBadTagException ||
+                raw.contains("BAD_DECRYPT", ignoreCase = true) ||
+                raw.contains("AEADBadTagException", ignoreCase = true) ->
+                "تعذر فك تشفير هذه النسخة لأنها أُنشئت بمفتاح محلي قديم قبل تحديث التشفير الموحد. يرجى إنشاء نسخة احتياطية جديدة لتوحيد المفتاح."
+            raw.isNotBlank() -> raw
+            else -> "تعذر استعادة النسخة الاحتياطية"
+        }
+    }
+
     fun restoreFromBytes(
         bytes: ByteArray,
         recoveryCode: String? = null,
@@ -261,9 +273,11 @@ class BackupSyncViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val result = runCatching { engine.restoreBytes(bytes, recoveryCode) }
+            val friendlyErr = result.exceptionOrNull()?.let(::formatRestoreErrorMessage)
+            if (friendlyErr != null) _error.value = friendlyErr
             completeOperation(result.isSuccess)
             withContext(Dispatchers.Main) {
-                onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message)
+                onComplete(result.isSuccess, result.getOrNull(), friendlyErr)
             }
         }
     }
@@ -277,9 +291,11 @@ class BackupSyncViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _error.value = null
             val result = runCatching { engine.restoreBytes(file.readBytes(), recoveryCode) }
+            val friendlyErr = result.exceptionOrNull()?.let(::formatRestoreErrorMessage)
+            if (friendlyErr != null) _error.value = friendlyErr
             completeOperation(result.isSuccess)
             withContext(Dispatchers.Main) {
-                onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message)
+                onComplete(result.isSuccess, result.getOrNull(), friendlyErr)
             }
         }
     }
@@ -326,10 +342,30 @@ class BackupSyncViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _busyMessage.value = "جاري تنزيل النسخة وفك التشفير واستعادة السجلات..."
             _error.value = null
-            val result = runCatching { engine.restoreBytes(cloud.download(item.id), recoveryCode) }
-            completeOperation(result.isSuccess)
+            val primaryResult = runCatching { engine.restoreBytes(cloud.download(item.id), recoveryCode) }
+            val finalResult = if (primaryResult.isFailure && recoveryCode == null) {
+                // If the selected cloud archive fails decryption (e.g. created under a wiped legacy key),
+                // try other cloud archives from newest to oldest before giving up.
+                val fallbacks = _cloudBackups.value
+                    .filter { it.id != item.id }
+                    .sortedByDescending { it.modifiedTime }
+                var recovered: Result<AppSettings>? = null
+                for (candidate in fallbacks) {
+                    val attempt = runCatching { engine.restoreBytes(cloud.download(candidate.id), null) }
+                    if (attempt.isSuccess) {
+                        recovered = attempt
+                        break
+                    }
+                }
+                recovered ?: primaryResult
+            } else {
+                primaryResult
+            }
+            val friendlyErr = finalResult.exceptionOrNull()?.let(::formatRestoreErrorMessage)
+            if (friendlyErr != null) _error.value = friendlyErr
+            completeOperation(finalResult.isSuccess)
             withContext(Dispatchers.Main) {
-                onComplete(result.isSuccess, result.getOrNull(), result.exceptionOrNull()?.message)
+                onComplete(finalResult.isSuccess, finalResult.getOrNull(), friendlyErr)
             }
         }
     }

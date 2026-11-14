@@ -21,6 +21,9 @@ interface CustomCategoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CustomCategory)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategoriesBatch(categories: List<CustomCategory>)
+
     @Update
     suspend fun updateCategories(categories: List<CustomCategory>)
 

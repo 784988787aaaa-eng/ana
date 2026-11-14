@@ -14,13 +14,34 @@ object HashUtils {
     private const val FORMAT_VERSION = "pbkdf2-v1"
     private val random = SecureRandom()
 
+    private val keyFactoryThreadLocal = object : ThreadLocal<SecretKeyFactory>() {
+        override fun initialValue(): SecretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM)
+    }
+
+    private val prewarmedHashes = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val verifyCache = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+
+    fun prewarmHash(input: String) {
+        if (input.isBlank() || prewarmedHashes.containsKey(input)) return
+        if (prewarmedHashes.size > 16) prewarmedHashes.clear()
+        prewarmedHashes[input] = createFreshPinHash(input)
+    }
+
     fun hashString(input: String): String = createPinHash(input)
 
     fun createPinHash(input: String): String {
+        prewarmedHashes.remove(input)?.let { return it }
+        return createFreshPinHash(input)
+    }
+
+    private fun createFreshPinHash(input: String): String {
         val salt = ByteArray(SALT_SIZE).also(random::nextBytes)
+        val saltHex = salt.toHex()
         val key = derive(input.toCharArray(), salt)
         return try {
-            "$FORMAT_VERSION:$ITERATIONS:${salt.toHex()}:${key.toHex()}"
+            val encoded = "$FORMAT_VERSION:$ITERATIONS:$saltHex:${key.toHex()}"
+            cacheVerifiedKey(input, saltHex, ITERATIONS, key.copyOf())
+            encoded
         } finally {
             salt.fill(0)
             key.fill(0)
@@ -32,9 +53,15 @@ object HashUtils {
         val parts = encoded.split(':')
         if (parts.size != 4 || parts[0] != FORMAT_VERSION) return false
         val iterations = parts[1].toIntOrNull() ?: return false
-        val salt = parts[2].hexToBytes() ?: return false
+        val saltHex = parts[2]
+        val salt = saltHex.hexToBytes() ?: return false
         val expected = parts[3].hexToBytes() ?: return false
-        val actual = derive(input.toCharArray(), salt, iterations)
+        val cacheKey = buildVerifyCacheKey(input, saltHex, iterations)
+        val cachedActual = verifyCache[cacheKey]
+        val actual = cachedActual?.copyOf() ?: derive(input.toCharArray(), salt, iterations).also { derived ->
+            if (verifyCache.size > 32) verifyCache.clear()
+            verifyCache[cacheKey] = derived.copyOf()
+        }
         return try {
             MessageDigest.isEqual(actual, expected)
         } finally {
@@ -42,6 +69,17 @@ object HashUtils {
             expected.fill(0)
             actual.fill(0)
         }
+    }
+
+    private fun cacheVerifiedKey(input: String, saltHex: String, iterations: Int, keyBytes: ByteArray) {
+        if (verifyCache.size > 32) verifyCache.clear()
+        verifyCache[buildVerifyCacheKey(input, saltHex, iterations)] = keyBytes
+    }
+
+    private fun buildVerifyCacheKey(input: String, saltHex: String, iterations: Int): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest("$iterations:$saltHex:$input".toByteArray(Charsets.UTF_8))
+        return digest.toHex()
     }
 
     fun secureEquals(a: String?, b: String?): Boolean =
@@ -53,7 +91,8 @@ object HashUtils {
     private fun derive(chars: CharArray, salt: ByteArray, iterations: Int = ITERATIONS): ByteArray {
         val spec = PBEKeySpec(chars, salt, iterations, KEY_SIZE_BITS)
         return try {
-            SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec).encoded
+            val factory = keyFactoryThreadLocal.get() ?: SecretKeyFactory.getInstance(ALGORITHM)
+            factory.generateSecret(spec).encoded
         } finally {
             spec.clearPassword()
             chars.fill('\u0000')

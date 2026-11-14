@@ -31,30 +31,38 @@ object LockHapticHelper {
         try {
             if (!vib.hasVibrator()) return
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                when (type) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                @Suppress("DEPRECATION")
+                val audioAttrs = android.media.AudioAttributes.Builder()
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    .build()
+
+                // Use crisp, universally supported one-shot amplitude pulses so ERM and LRA motors
+                // both produce unmistakable tactile feedback when pressing numbers, with predefined fallback.
+                val effect = when (type) {
                     LockHapticType.KEYPRESS -> {
-                        vib.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && false) {
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+                        } else {
+                            VibrationEffect.createOneShot(18L, VibrationEffect.DEFAULT_AMPLITUDE)
+                        }
                     }
                     LockHapticType.SUCCESS -> {
-                        vib.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+                        VibrationEffect.createOneShot(35L, VibrationEffect.DEFAULT_AMPLITUDE)
                     }
                     LockHapticType.ERROR -> {
-                        vib.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK))
+                        VibrationEffect.createWaveform(longArrayOf(0L, 35L, 55L, 35L), -1)
                     }
                 }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                when (type) {
-                    LockHapticType.KEYPRESS -> vib.vibrate(VibrationEffect.createOneShot(10, 90))
-                    LockHapticType.SUCCESS -> vib.vibrate(VibrationEffect.createOneShot(35, 180))
-                    LockHapticType.ERROR -> vib.vibrate(VibrationEffect.createOneShot(25, 120))
-                }
+                @Suppress("DEPRECATION")
+                vib.vibrate(effect, audioAttrs)
             } else {
                 @Suppress("DEPRECATION")
                 when (type) {
-                    LockHapticType.KEYPRESS -> vib.vibrate(10)
-                    LockHapticType.SUCCESS -> vib.vibrate(35)
-                    LockHapticType.ERROR -> vib.vibrate(25)
+                    LockHapticType.KEYPRESS -> vib.vibrate(18L)
+                    LockHapticType.SUCCESS -> vib.vibrate(35L)
+                    LockHapticType.ERROR -> vib.vibrate(longArrayOf(0L, 35L, 55L, 35L), -1)
                 }
             }
         } catch (_: Exception) {
