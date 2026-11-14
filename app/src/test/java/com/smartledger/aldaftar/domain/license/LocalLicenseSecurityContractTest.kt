@@ -318,4 +318,35 @@ class LocalLicenseSecurityContractTest {
             db.close()
         }
     }
+
+    @Test
+    fun keyRotationSupportsMultipleKidsAndRejectsUnknownOrTraversalKid() {
+        val now = 1_750_000_005_000L
+        val keyV2 = generateP256KeyPair()
+        val keyV3 = generateP256KeyPair()
+        val rotatedCrypto = LicenseCrypto(
+            context = context,
+            localEcKeyringOverride = mapOf(
+                "LOCAL2" to keyV2.public,
+                "LOCAL3" to keyV3.public
+            )
+        )
+        val rotatedRepo = LicenseRepository(context = context, crypto = rotatedCrypto)
+
+        val tokenV2 = signSlk1Token(buildPayload(licenseId = "LIC-V2").put("kid", "LOCAL2"), keyPair = keyV2)
+        assertEquals(LicenseStatus.ACTIVE, rotatedRepo.applySignedToken(tokenV2, now = now).status)
+
+        val tokenV3 = signSlk1Token(buildPayload(licenseId = "LIC-V3").put("kid", "LOCAL3"), keyPair = keyV3)
+        assertEquals(LicenseStatus.ACTIVE, rotatedRepo.applySignedToken(tokenV3, now = now).status)
+
+        listOf("LOCAL99", "LOCAL1", "../LOCAL2").forEach { badKid ->
+            val badToken = signSlk1Token(buildPayload(licenseId = "LIC-BAD").put("kid", badKid), keyPair = keyV3)
+            try {
+                rotatedRepo.applySignedToken(badToken, now = now)
+                fail("Expected bad/unknown kid to be rejected: $badKid")
+            } catch (_: Exception) {
+                // Expected
+            }
+        }
+    }
 }

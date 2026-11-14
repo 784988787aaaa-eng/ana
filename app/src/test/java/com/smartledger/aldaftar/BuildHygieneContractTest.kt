@@ -66,9 +66,18 @@ class BuildHygieneContractTest {
 
         val ecPublicAsset = File(root, "app/src/main/assets/license_local_ec_public.pem")
         assertTrue("Missing ECDSA public key asset: ${ecPublicAsset.path}", ecPublicAsset.exists())
+        val pemText = ecPublicAsset.readText().trim()
         assertTrue(
             "ECDSA asset must be a PEM public key",
-            ecPublicAsset.readText().trim().startsWith("-----BEGIN PUBLIC KEY-----")
+            pemText.contains("-----BEGIN PUBLIC KEY-----") && pemText.contains("-----END PUBLIC KEY-----")
         )
+        val firstBlock = pemText
+            .substringAfter("-----BEGIN PUBLIC KEY-----")
+            .substringBefore("-----END PUBLIC KEY-----")
+            .replace(Regex("\\s+"), "")
+        val decoded = java.util.Base64.getDecoder().decode(firstBlock)
+        val parsed = java.security.KeyFactory.getInstance("EC")
+            .generatePublic(java.security.spec.X509EncodedKeySpec(decoded))
+        assertTrue("ECDSA asset must be an ECPublicKey", parsed is java.security.interfaces.ECPublicKey)
     }
 }
