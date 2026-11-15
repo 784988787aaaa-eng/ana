@@ -258,7 +258,7 @@ class BackupSyncViewModel(
             throwable is javax.crypto.AEADBadTagException ||
                 raw.contains("BAD_DECRYPT", ignoreCase = true) ||
                 raw.contains("AEADBadTagException", ignoreCase = true) ->
-                "تعذر فك تشفير هذه النسخة لأنها أُنشئت بمفتاح محلي قديم قبل تحديث التشفير الموحد. يرجى إنشاء نسخة احتياطية جديدة لتوحيد المفتاح."
+                "تعذر فك تشفير ملف النسخة الاحتياطية؛ قد يكون الملف تالفاً أو من إصدار أقدم غير متوافق."
             raw.isNotBlank() -> raw
             else -> "تعذر استعادة النسخة الاحتياطية"
         }

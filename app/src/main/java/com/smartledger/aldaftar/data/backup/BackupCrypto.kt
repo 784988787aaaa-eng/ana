@@ -33,6 +33,13 @@ class BackupCrypto(context: Context) {
         }
     }
 
+    data class ArchiveEncryptionResult(
+        val salt: ByteArray,
+        val iv: ByteArray,
+        val cipherText: ByteArray,
+        val keyWrap: String
+    )
+
     private val appContext = context.applicationContext
     private val secure = SecureRandom()
     private val prefs by lazy {
@@ -48,28 +55,24 @@ class BackupCrypto(context: Context) {
         }
     }
 
+    /**
+     * Device-local recovery key (stored in local prefs only for local crypto contract APIs).
+     * Local and cloud backup archives created by BackupEngine do NOT depend on this key.
+     */
     fun localRecoveryCode(): String {
-        val existing = prefs.getString("recovery", null)
-        if (existing != null && existing != portableVaultCode) {
-            // Preserve pre-existing installation key as legacy fallback so older local/cloud backups on this device still decrypt
-            prefs.edit()
-                .putString("legacy_recovery", existing)
-                .putString("recovery", portableVaultCode)
-                .apply()
-        } else if (existing == null) {
-            prefs.edit().putString("recovery", portableVaultCode).apply()
-        }
-        return portableVaultCode
+        val existing = prefs.getString("recovery", null)?.trim()?.takeIf { it.isNotEmpty() }
+        if (existing != null) return existing
+        val generated = ByteArray(SECRET_BYTES).also(secure::nextBytes).let(::encode)
+        prefs.edit().putString("recovery", generated).apply()
+        return generated
     }
 
-    private fun candidateRecoveryCodes(unwrappedKey: String?): List<String> {
-        val candidates = LinkedHashSet<String>()
-        if (!unwrappedKey.isNullOrBlank()) candidates.add(unwrappedKey.trim())
-        candidates.add(localRecoveryCode())
-        prefs.getString("legacy_recovery", null)?.takeIf { it.isNotBlank() }?.let { candidates.add(it.trim()) }
-        prefs.getString("recovery", null)?.takeIf { it.isNotBlank() }?.let { candidates.add(it.trim()) }
-        return candidates.toList()
-    }
+    private fun readOptionalLocalFallbackCodes(): List<String> = runCatching {
+        buildList {
+            prefs.getString("recovery", null)?.trim()?.takeIf { it.isNotEmpty() }?.let(::add)
+            prefs.getString("legacy_recovery", null)?.trim()?.takeIf { it.isNotEmpty() }?.let(::add)
+        }
+    }.getOrDefault(emptyList())
 
     fun wrapRecoveryKey(recoveryCode: String, salt: ByteArray, iv: ByteArray): String {
         return runCatching {
@@ -106,33 +109,63 @@ class BackupCrypto(context: Context) {
         return SecretKeySpec(digest.digest(), "AES")
     }
 
-    fun encrypt(plain: ByteArray): Triple<ByteArray, ByteArray, ByteArray> {
-        val recovery = localRecoveryCode()
+    /**
+     * Encrypts a portable backup archive (local or cloud) using a fresh random per-archive 256-bit key
+     * wrapped into the envelope. Completely independent of any local device/installation/license key.
+     */
+    fun encryptArchive(plain: ByteArray): ArchiveEncryptionResult {
         val salt = ByteArray(16).also(secure::nextBytes)
+        val rawArchiveKey = ByteArray(32).also(secure::nextBytes)
+        val archiveKey = SecretKeySpec(rawArchiveKey, "AES")
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, deriveKey(recovery, salt, FAST_ITERATIONS))
-        return Triple(salt, cipher.iv, cipher.doFinal(plain))
+        cipher.init(Cipher.ENCRYPT_MODE, archiveKey)
+        val iv = cipher.iv
+        val cipherText = cipher.doFinal(plain)
+        val wrappedSecret = "RAW256:" + Base64.encodeToString(rawArchiveKey, Base64.NO_WRAP)
+        val keyWrap = wrapRecoveryKey(wrappedSecret, salt, iv)
+        rawArchiveKey.fill(0)
+        return ArchiveEncryptionResult(salt = salt, iv = iv, cipherText = cipherText, keyWrap = keyWrap)
     }
 
-    fun decrypt(
+    /**
+     * Decrypts a portable backup archive (local or cloud) without requiring any local key to match.
+     * Supports:
+     * 1) Per-archive wrapped 256-bit AES keys ("RAW256:...")
+     * 2) Wrapped portable/legacy recovery codes inside keyWrap
+     * 3) Unified portable vault key (for portable archives without keyWrap)
+     * 4) Best-effort read-only local fallback only if an older unwrapped archive matches prefs
+     */
+    fun decryptArchive(
         salt: ByteArray,
         iv: ByteArray,
         cipherText: ByteArray,
-        recoveryCode: String? = null,
         keyWrap: String? = null
     ): ByteArray {
-        val explicitCode = recoveryCode?.trim()?.takeIf { it.isNotEmpty() }
-        val codesToTry = if (explicitCode != null) {
-            listOf(explicitCode)
-        } else {
-            val unwrapped = unwrapRecoveryKey(keyWrap, salt, iv)
-            candidateRecoveryCodes(unwrapped)
+        var lastError: Throwable? = null
+        val unwrapped = unwrapRecoveryKey(keyWrap, salt, iv)
+
+        if (unwrapped != null && unwrapped.startsWith("RAW256:")) {
+            try {
+                val rawKey = Base64.decode(unwrapped.removePrefix("RAW256:"), Base64.NO_WRAP)
+                if (rawKey.size == 32) {
+                    val cipher = Cipher.getInstance(TRANSFORMATION)
+                    cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(rawKey, "AES"), GCMParameterSpec(TAG_BITS, iv))
+                    return cipher.doFinal(cipherText)
+                }
+            } catch (e: Throwable) {
+                lastError = e
+            }
         }
 
-        val iterationsToTry = intArrayOf(FAST_ITERATIONS, LEGACY_ITERATIONS)
-        var lastError: Throwable? = null
+        val candidates = LinkedHashSet<String>()
+        if (unwrapped != null && !unwrapped.startsWith("RAW256:")) {
+            candidates.add(unwrapped.trim())
+        }
+        candidates.add(portableVaultCode)
+        candidates.addAll(readOptionalLocalFallbackCodes())
 
-        for (code in codesToTry) {
+        val iterationsToTry = intArrayOf(FAST_ITERATIONS, LEGACY_ITERATIONS)
+        for (code in candidates) {
             for (iterations in iterationsToTry) {
                 try {
                     val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -149,7 +182,48 @@ class BackupCrypto(context: Context) {
         }
 
         throw javax.crypto.AEADBadTagException(
-            "تعذر فك تشفير النسخة الاحتياطية لأنها أُنشئت بمفتاح محلي قديم أو أن الملف تالف. يرجى إنشاء نسخة احتياطية جديدة لتوحيد المفتاح."
+            "تعذر فك تشفير ملف النسخة الاحتياطية؛ قد يكون الملف تالفاً أو من إصدار أقدم غير متوافق."
+        ).apply {
+            if (lastError != null) initCause(lastError)
+        }
+    }
+
+    fun encrypt(plain: ByteArray): Triple<ByteArray, ByteArray, ByteArray> {
+        val recovery = localRecoveryCode()
+        val salt = ByteArray(16).also(secure::nextBytes)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, deriveKey(recovery, salt, FAST_ITERATIONS))
+        return Triple(salt, cipher.iv, cipher.doFinal(plain))
+    }
+
+    fun decrypt(
+        salt: ByteArray,
+        iv: ByteArray,
+        cipherText: ByteArray,
+        recoveryCode: String? = null,
+        keyWrap: String? = null
+    ): ByteArray {
+        val explicitCode = recoveryCode?.trim()?.takeIf { it.isNotEmpty() }
+            ?: return decryptArchive(salt, iv, cipherText, keyWrap)
+
+        val iterationsToTry = intArrayOf(FAST_ITERATIONS, LEGACY_ITERATIONS)
+        var lastError: Throwable? = null
+        for (iterations in iterationsToTry) {
+            try {
+                val cipher = Cipher.getInstance(TRANSFORMATION)
+                cipher.init(
+                    Cipher.DECRYPT_MODE,
+                    deriveKey(explicitCode, salt, iterations),
+                    GCMParameterSpec(TAG_BITS, iv)
+                )
+                return cipher.doFinal(cipherText)
+            } catch (e: Throwable) {
+                lastError = e
+            }
+        }
+
+        throw javax.crypto.AEADBadTagException(
+            "تعذر فك تشفير البيانات بالمفتاح المحدد."
         ).apply {
             if (lastError != null) initCause(lastError)
         }

@@ -204,4 +204,63 @@ class BackupComprehensiveSuiteTest {
         assertTrue(restoredSettings?.isPasscodeEnabled == true)
         assertEquals("LOCAL_PASSCODE_HASH", restoredSettings?.passcodeHash)
     }
+
+    @Test
+    fun restore_succeedsEvenWhenLocalKeyChangesOrIsWiped() = runTest {
+        val initialCustomer = HabayebCustomer(
+            id = "c_portable_1",
+            name = "تاجر التجزئة المتحد",
+            phone = "+967771112233",
+            notes = "اختبار استقلالية النسخة عن المفتاح المحلي",
+            createdAt = 1700000000000L
+        )
+        val initialTx = HabayebTransaction(
+            id = "tx_portable_1",
+            customerId = initialCustomer.id,
+            type = "OWED_BY_THEM",
+            amount = BigDecimal("5000.00"),
+            timestamp = 1700002000000L,
+            description = "فاتورة مبيعات مستقلة"
+        )
+        db.habayebDao().insertCustomer(initialCustomer)
+        db.habayebDao().insertTransaction(initialTx)
+        db.customCategoryDao().insertCategory(CustomCategory(id = 42, name = "جملة", tabType = "HABAYEB", iconEmoji = "📦", displayOrder = 1))
+
+        val created = engine.create(tempFile)
+        val archiveBytes = created.readBytes()
+
+        // Mutate and wipe local key preferences & local license key preferences to simulate reinstall / key change
+        val keyPrefs = context.getSharedPreferences("smartledger_backup_key_v1", Context.MODE_PRIVATE)
+        keyPrefs.edit()
+            .putString("recovery", "COMPLETELY_DIFFERENT_LOCAL_KEY_1234567890")
+            .putString("legacy_recovery", "ANOTHER_UNRELATED_LEGACY_KEY_0987654321")
+            .commit()
+
+        val licensePrefs = context.getSharedPreferences("smartledger_license_v1", Context.MODE_PRIVATE)
+        licensePrefs.edit()
+            .putString("token", "CHANGED_LOCAL_LICENSE_TOKEN")
+            .commit()
+
+        // Wipe database and create a brand-new BackupEngine instance
+        db.habayebDao().clearAllTransactions()
+        db.habayebDao().clearAllCustomers()
+        db.customCategoryDao().clearAllCustomCategories()
+
+        val freshEngine = BackupEngine(context, db)
+
+        // Restore from local file
+        freshEngine.restore(created)
+        assertEquals("تاجر التجزئة المتحد", db.habayebDao().getCustomerByIdDirect("c_portable_1")?.name)
+        assertEquals(0, BigDecimal("5000.00").compareTo(db.habayebDao().getTransactionById("tx_portable_1")?.amount))
+        assertEquals("جملة", db.customCategoryDao().getAllCustomCategoriesDirect().firstOrNull { it.id == 42 }?.name)
+
+        // Wipe again and restore raw bytes (cloud download simulation) even when an unrelated recoveryCode is passed
+        db.habayebDao().clearAllTransactions()
+        db.habayebDao().clearAllCustomers()
+        keyPrefs.edit().clear().commit()
+
+        freshEngine.restoreBytes(archiveBytes, recoveryCode = "WRONG_LOCAL_KEY_OVERRIDE_99999999")
+        assertEquals("تاجر التجزئة المتحد", db.habayebDao().getCustomerByIdDirect("c_portable_1")?.name)
+        assertEquals(0, BigDecimal("5000.00").compareTo(db.habayebDao().getTransactionById("tx_portable_1")?.amount))
+    }
 }

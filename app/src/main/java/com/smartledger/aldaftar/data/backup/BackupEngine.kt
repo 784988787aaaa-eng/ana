@@ -35,8 +35,7 @@ class BackupEngine(
     suspend fun create(target: File): File {
         val payload = snapshot().toString().toByteArray(StandardCharsets.UTF_8)
         val hash = sha256(payload)
-        val (salt, iv, encrypted) = crypto.encrypt(payload)
-        val keyWrap = crypto.wrapRecoveryKey(crypto.localRecoveryCode(), salt, iv)
+        val archive = crypto.encryptArchive(payload)
         target.parentFile?.mkdirs()
         val envelope = JSONObject()
             .put("formatVersion", FORMAT_VERSION)
@@ -47,10 +46,10 @@ class BackupEngine(
             .put("appVersion", appVersion())
             .put("payloadSha256", hash)
             .put("encryptionVersion", 2)
-            .put("salt", Base64.encodeToString(salt, Base64.NO_WRAP))
-            .put("iv", Base64.encodeToString(iv, Base64.NO_WRAP))
-            .put("payload", Base64.encodeToString(encrypted, Base64.NO_WRAP))
-            .put("keyWrap", keyWrap)
+            .put("salt", Base64.encodeToString(archive.salt, Base64.NO_WRAP))
+            .put("iv", Base64.encodeToString(archive.iv, Base64.NO_WRAP))
+            .put("payload", Base64.encodeToString(archive.cipherText, Base64.NO_WRAP))
+            .put("keyWrap", archive.keyWrap)
         val temp = File(target.parentFile, ".${target.name}.tmp")
         temp.writeText(envelope.toString(), Charsets.UTF_8)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -100,7 +99,15 @@ class BackupEngine(
         val iv = Base64.decode(envelope.getString("iv"), Base64.DEFAULT)
         val cipherText = Base64.decode(envelope.getString("payload"), Base64.DEFAULT)
         val keyWrap = envelope.optStringOrNull("keyWrap")
-        val payload = crypto.decrypt(salt, iv, cipherText, recoveryCode, keyWrap)
+        val payload = runCatching {
+            crypto.decryptArchive(salt, iv, cipherText, keyWrap)
+        }.getOrElse { archiveErr ->
+            if (!recoveryCode.isNullOrBlank()) {
+                crypto.decrypt(salt, iv, cipherText, recoveryCode, keyWrap)
+            } else {
+                throw archiveErr
+            }
+        }
         require(sha256(payload).equals(envelope.getString("payloadSha256"), ignoreCase = true)) { "سلامة النسخة غير صحيحة" }
         val root = JSONObject(String(payload, StandardCharsets.UTF_8))
         validatePayload(root)
